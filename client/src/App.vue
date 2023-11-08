@@ -1,16 +1,56 @@
 <script setup>
 import { Handle, Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
-import { ref, provide } from 'vue'
+import { ref, provide} from 'vue'
 const { updateEdge, addEdges } = useVueFlow();
+import ChickenFootEdge from './components/ChickenFootEdge.vue';
 
 function onConnect(params) {
+
   params.updatable = true;
   return addEdges([params])
 }
 function onEdgeUpdate({ edge, connection }) {
   return updateEdge(edge, connection)
 }
+const modalPosition = ref({ x: 0, y: 0 });
+const selectedEdge = ref(null);
+const showModal = ref(false);
+
+const onEdgeClick = (params) => {
+  selectedEdge.value = params.edge;
+  const edgeElement = document.querySelector(`[id="${params.edge.id}"]`);
+  const edgeRect = edgeElement.getBoundingClientRect();
+  modalPosition.value = {
+    x: edgeRect.left + window.scrollX,
+    y: edgeRect.top + window.scrollY
+  };
+  showModal.value = true;
+};
+
+const updateEdgeData = (relationshipType) => {
+  const edgeIndex = elements.value.findIndex(el => el.id === selectedEdge.value.id);
+  if (edgeIndex !== -1) {
+    elements.value[edgeIndex].data.relationshipType = relationshipType;
+    // Set the edge type to 'chickenFoot' by default
+    elements.value[edgeIndex].type = 'chickenFoot';
+    // Add a new property 'markerStart' and 'markerEnd' to the edge data based on the relationship type
+    if (relationshipType === 'one-to-one') {
+      elements.value[edgeIndex].data.markerStart = 'none';
+      elements.value[edgeIndex].data.markerEnd = 'none';
+    } else if (relationshipType === 'one-to-many') {
+      elements.value[edgeIndex].data.markerStart = 'none';
+      elements.value[edgeIndex].data.markerEnd = 'url(#chickenFoot)';
+    } else if (relationshipType === 'many-to-many') {
+      elements.value[edgeIndex].data.markerStart = 'url(#chickenFoot)';
+      elements.value[edgeIndex].data.markerEnd = 'url(#chickenFoot)';
+    }
+    showModal.value = false;
+  }
+};
+
+
+
 
 const TableStyle = {
   display: 'flex',
@@ -19,7 +59,7 @@ const TableStyle = {
   borderColor: '#ff3b25',
   color: 'white',
   borderRadius: '5px',
-  width: '300px',
+  width: '500px',
   height: '60px',
   alignItems: 'center',
   justifyContent: 'space-between',
@@ -31,7 +71,7 @@ const RowStyle = {
   background: '#ffffff',
   color: '#000000',
   borderRadius: '5px',
-  width: '300px',
+  width: '500px',
   height: '40px',
   alignItems: 'center',
   justifyContent: 'start',
@@ -58,7 +98,6 @@ const addTable = () => {
     },
     position: { x: 0, y: 0 },
     style: TableStyle,
-
   })
 }
 const updateLabel = (id, newLabel) => {
@@ -78,8 +117,6 @@ const addRow = (nodeProps) => {
     style: RowStyle,
     draggable: false,
     parentNode: nodeProps.id,
-    sourcePosition: 'right',
-    targetPosition: 'left',
     data: { editing: false, showModal: false, KeyMod: '', selectedSqlType: '', nullable: false },
   }]
 }
@@ -102,27 +139,6 @@ const deleteNode = (nodeId) => {
     });
   }
 };
-const collectData = () => {
-  const links = elements.value.filter(el => el.type === 'smoothstep');
-  const nodes = elements.value.filter(elem => elem.type === 'table');
-  const data = nodes.map(node => {
-    const rows = elements.value.filter(row => row.parentNode === node.id);
-    return {
-      table: node.label,
-      rows: rows.map(row => {
-        return {
-          id: row.id ,
-          label: row.label,
-          KeyMod: row.data.KeyMod,
-          sqlType: row.data.selectedSqlType,
-          nullable: row.data.nullable,
-          connectedTo: links.filter(link => link.source === row.id ).map(link => link.target)};
-      }),
-    }
-  });
-  console.log(data);
-
-}
 
 const updateKeyMod = (id, KeyMod) => {
   const element = elements.value.find(el => el.id === id);
@@ -137,6 +153,31 @@ const toggleNullable = (id) => {
   }
 }
 
+const collectData = () => {
+  const links = elements.value.filter(el => el.type === 'smoothstep');
+  const nodes = elements.value.filter(elem => elem.type === 'table');
+  const data = nodes.map(node => {
+    const rows = elements.value.filter(row => row.parentNode === node.id);
+    return {
+      table: node.label,
+      rows: rows.map(row => {
+        return {
+          id: row.id,
+          label: row.label,
+          KeyMod: row.data.KeyMod,
+          sqlType: row.data.selectedSqlType,
+          nullable: row.data.nullable,
+          connectedTo: links.filter(link => link.source === row.id).map(link => ({
+            targetId: link.target,
+            relationshipType: link.data.relationshipType
+          }))
+        };
+      }),
+    }
+  });
+  console.log(data);
+}
+
 provide('toggleNullable', toggleNullable);
 provide('updateKeyMod', updateKeyMod);
 provide('updateLabel', updateLabel);
@@ -145,20 +186,25 @@ provide('addTable', addTable)
 </script>
 
 <template>
+<!--  <img class="table_icon" src="./components/icons/chicken_foot.svg" alt="Add row">-->
   <button @mousedown.stop @click="collectData">Collect Data</button>
-
   <button @mousedown.stop @click="addTable">Add Table</button>
   <VueFlow
-      :default-edge-options="{ type:'smoothstep' }"
+      :default-edge-options="{ type:'chickenFoot' }"
       @edge-update="onEdgeUpdate"
+      @edge-click="onEdgeClick"
       @connect="onConnect"
       v-model="elements"
       fit-view-on-init
       class="vue-flow-basic-example"
   >
+    <template #edge-chickenFoot="props">
+      <ChickenFootEdge v-bind="props" />
+    </template>
     <Background :variant="BackgroundVariant.Lines" />
 
     <template #node-table="{ id, data, label }">
+
       <button class="table_button" @mousedown.stop @click="addRow({ id, data, label })">
         <img class="table_icon" src="./components/icons/plus.svg" alt="Add row">
       </button>
@@ -182,34 +228,34 @@ provide('addTable', addTable)
         <option value="DATE">DATE</option>
       </select>
 
-      <button class="table_button" @mousedown.stop @click="data.showModal = !data.showModal">
-        <img class="table_icon" src="./components/icons/key.svg" alt="Key">
-      </button>
-
-      <div class="modal row_select" v-if="data.showModal">
         <select v-model="data.KeyMod" @change="updateKeyMod(id, data.KeyMod)">
           <option selected="selected" value="None">None</option>
           <option value="Primary">Primary</option>
           <option value="Unique">Unique</option>
           <option value="Index">Index</option>
         </select>
-        <button class="modal_close_button" @click="data.showModal = false">Close</button>
-      </div>
 
       <button class="table_button nullable_button" :class="{ 'nullable_on': data.nullable }" @mousedown.stop @click="toggleNullable(id)">
         N
       </button>
-
 
       <button class ="table_button" @mousedown.stop  @click="deleteNode(id)">
         <img class="table_icon" src="./components/icons/cancel.svg" alt="Cancel">
       </button>
 
       <Handle type="source" position="right" />
-      <Handle type="target" position="left" />
+      <Handle type="source" position="left" />
     </template>
 
   </VueFlow>
+  <div v-if="showModal" class="modal" :style="{ left: `${modalPosition.x}px`, top: `${modalPosition.y}px` }">
+    <h2>Select Relationship Type</h2>
+    <button @click="updateEdgeData('one-to-one')">One to One</button>
+    <button @click="updateEdgeData('one-to-many')">One to Many</button>
+    <button @click="updateEdgeData('many-to-many')">Many to Many</button>
+    <button @click="showModal = false">Close</button>
+  </div>
+
 </template>
 
 <style scoped>
@@ -257,5 +303,8 @@ input {
 
 .nullable_button.nullable_on {
   background-color: #00ff00;
+}
+.modal {
+  position: absolute;
 }
 </style>
