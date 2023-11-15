@@ -1,18 +1,10 @@
 <script setup>
 import { Handle, Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
-import { ref, provide} from 'vue'
+import { ref, provide, onMounted, onBeforeMount} from 'vue'
 const { updateEdge, addEdges } = useVueFlow();
 import ChickenFootEdge from './components/ChickenFootEdge.vue';
 import axios from "axios";
-
-function onConnect(params) {
-  params.updatable = true;
-  return addEdges([params])
-}
-function onEdgeUpdate({ edge, connection }) {
-  return updateEdge(edge, connection)
-}
 
 const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
@@ -66,12 +58,7 @@ const addTable = () => {
     style: TableStyle,
   })
 }
-const updateLabel = (id, newLabel) => {
-  const element = elements.value.find(el => el.id === id);
-  if (element) {
-    element.label = newLabel;
-  }
-}
+
 const addRow = (nodeProps) => {
   const existingRows = elements.value.filter(el => el.parentNode === nodeProps.id);
   const position = nodeProps.data.position || { x: 0, y: 0 }
@@ -87,7 +74,73 @@ const addRow = (nodeProps) => {
   }]
 }
 
+const updateLabel = (id, newLabel) => {
+  const element = elements.value.find(el => el.id === id);
+  if (element) {
+    element.label = newLabel;
+  }
+}
 
+const updateKeyMod = (id, KeyMod) => {
+  const element = elements.value.find(el => el.id === id);
+  if (element) {
+    element.data.KeyMod = KeyMod;
+  }
+}
+
+const toggleNullable = (id) => {
+  const element = elements.value.find(el => el.id=== id);
+  if (element) {
+    element.data.nullable = !element.data.nullable;
+  }
+}
+
+function onConnect(params) {
+  params.updatable = true;
+  return addEdges([params])
+}
+
+function onEdgeUpdate({ edge, connection }) {
+  return updateEdge(edge, connection)
+}
+
+const onEdgeClick = (params) => {
+  selectedEdge.value = params.edge;
+  const edgeElement = document.querySelector(`[id="${params.edge.id}"]`);
+  const edgeRect = edgeElement.getBoundingClientRect();
+  modalPosition.value = {
+    // Calculate the midpoint of the edge
+    x: edgeRect.left + window.scrollX + edgeRect.width / 2,
+    y: edgeRect.top + window.scrollY + edgeRect.height / 2
+  };
+  showModal.value = true;
+};
+
+//changes chicken foot marker position based on relationship type
+const updateEdgeType = (relationshipType) => {
+  const edgeIndex = elements.value.findIndex(el => el.id === selectedEdge.value.id);
+  if (edgeIndex !== -1) {
+    elements.value[edgeIndex].data.relationshipType = relationshipType;
+    elements.value[edgeIndex].type = 'chickenFoot';
+    if (relationshipType === 'one-to-one') {
+      elements.value[edgeIndex].data.markerStart = 'none';
+      elements.value[edgeIndex].data.markerEnd = 'none';
+    } else if (relationshipType === 'one-to-many') {
+      elements.value[edgeIndex].data.markerStart = 'none';
+      elements.value[edgeIndex].data.markerEnd = 'url(#chickenFoot)';
+    } else if (relationshipType === 'many-to-many') {
+      elements.value[edgeIndex].data.markerStart = 'url(#chickenFoot)';
+      elements.value[edgeIndex].data.markerEnd = 'url(#chickenFoot)';
+    }
+    showModal.value = false;
+  }
+};
+
+const deleteEdge = () => {
+  elements.value = elements.value.filter(el => el.id !== selectedEdge.value.id);
+  showModal.value = false;
+};
+//deletes table or row
 const deleteNode = (nodeId) => {
 
   const nodeToDelete = elements.value.find(el => el.id === nodeId);
@@ -106,30 +159,19 @@ const deleteNode = (nodeId) => {
   }
 };
 
-const updateKeyMod = (id, KeyMod) => {
-  const element = elements.value.find(el => el.id === id);
-  if (element) {
-    element.data.KeyMod = KeyMod;
-  }
-}
-const toggleNullable = (id) => {
-  const element = elements.value.find(el => el.id=== id);
-  if (element) {
-    element.data.nullable = !element.data.nullable;
-  }
-}
-
 const saveData = async () => {
   const links = elements.value.filter(el => el.type === 'chickenFoot');
   const nodes = elements.value.filter(elem => elem.type === 'table');
   const data = nodes.map(node => {
     const rows = elements.value.filter(row => row.parentNode === node.id);
     return {
-      table: node.label,
+      name: node.label,
+      position: node.position, // Save the position of the node
       rows: rows.map(row => {
         return {
           id: row.id,
           label: row.label,
+          position: row.position, // Save the position of the row
           KeyMod: row.data.KeyMod,
           sqlType: row.data.SQLtype,
           nullable: row.data.nullable,
@@ -141,50 +183,40 @@ const saveData = async () => {
       }),
     }
   });
+  console.log(data);
+  // try {
+  //   const response = await axios.post('http://127.0.0.1:8000/api/mysql/save', data);
+  //   console.log(response.data);
+  // } catch (error) {
+  //   console.error(error);
+  // }
+}
 
-  try {
-    const response = await axios.post('http://127.0.0.1:8000/api/mysql/save', data);
-    console.log(response.data);
-  } catch (error) {
-    console.error(error);
+const saveElementsToLocalStorage = () => {
+  localStorage.setItem('elements', JSON.stringify(elements.value));
+  // Save elements to local storage every minute
+
+}
+
+const loadElementsFromLocalStorage = () => {
+  const storedElements = localStorage.getItem('elements');
+  if (storedElements) {
+    elements.value = JSON.parse(storedElements);
   }
 }
-const onEdgeClick = (params) => {
-  selectedEdge.value = params.edge;
-  const edgeElement = document.querySelector(`[id="${params.edge.id}"]`);
-  const edgeRect = edgeElement.getBoundingClientRect();
-  modalPosition.value = {
-    // Calculate the midpoint of the edge
-    x: edgeRect.left + window.scrollX + edgeRect.width / 2,
-    y: edgeRect.top + window.scrollY + edgeRect.height / 2
-  };
-  showModal.value = true;
-};
 
-//changes chicken foot marker position based on relationship type
-const updateEdgeTyoe = (relationshipType) => {
-  const edgeIndex = elements.value.findIndex(el => el.id === selectedEdge.value.id);
-  if (edgeIndex !== -1) {
-    elements.value[edgeIndex].data.relationshipType = relationshipType;
-    elements.value[edgeIndex].type = 'chickenFoot';
-    if (relationshipType === 'one-to-one') {
-      elements.value[edgeIndex].data.markerStart = 'none';
-      elements.value[edgeIndex].data.markerEnd = 'none';
-    } else if (relationshipType === 'one-to-many') {
-      elements.value[edgeIndex].data.markerStart = 'none';
-      elements.value[edgeIndex].data.markerEnd = 'url(#chickenFoot)';
-    } else if (relationshipType === 'many-to-many') {
-      elements.value[edgeIndex].data.markerStart = 'url(#chickenFoot)';
-      elements.value[edgeIndex].data.markerEnd = 'url(#chickenFoot)';
-    }
-    showModal.value = false;
-  }
-};
-const deleteEdge = () => {
-  elements.value = elements.value.filter(el => el.id !== selectedEdge.value.id);
-  showModal.value = false;
-};
+onBeforeMount(() => {
+  loadElementsFromLocalStorage();
+})
+onMounted(() => {
+  console.log("gang")
+  setInterval(() => {
+    localStorage.setItem('elements', JSON.stringify(elements.value));
+  }, 60000); // 60000 milliseconds = 1 minute
+})
 
+provide('saveElementsToLocalStorage', saveElementsToLocalStorage);
+provide('loadElementsFromLocalStorage', loadElementsFromLocalStorage);
 
 provide('toggleNullable', toggleNullable);
 provide('updateKeyMod', updateKeyMod);
@@ -274,13 +306,12 @@ provide('addTable', addTable)
   </VueFlow>
   <!--Relationship modal-->
   <div v-if="showModal" class="relationship_modal" :style="{ left: `${modalPosition.x}px`, top: `${modalPosition.y}px` }">
-    <button @click="updateEdgeTyoe('one-to-one')">One to One</button>
-    <button @click="updateEdgeTyoe('one-to-many')">One to Many</button>
-    <button @click="updateEdgeTyoe('many-to-many')">Many to Many</button>
+    <button @click="updateEdgeType('one-to-one')">One to One</button>
+    <button @click="updateEdgeType('one-to-many')">One to Many</button>
+    <button @click="updateEdgeType('many-to-many')">Many to Many</button>
     <button @click="deleteEdge">Delete</button>
     <button @click="showModal = false">Close</button>
   </div>
-
 
 </template>
 
@@ -315,16 +346,13 @@ provide('addTable', addTable)
   width: 80%;
   padding: 10px;
 }
-
 .nullable_button {
   background-color: #ff0000;
   color: #ffffff;
 }
-
 .nullable_button.nullable_on {
   background-color: #00ff00;
 }
-
 .relationship_modal {
   position: absolute;
   width: 200px;
@@ -336,7 +364,6 @@ provide('addTable', addTable)
   flex-direction: column;
   gap: 10px;
 }
-
 .relationship_modal button {
   padding: 10px;
   border: none;
@@ -346,7 +373,6 @@ provide('addTable', addTable)
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
-
 .relationship_modal button:hover {
   background-color: #0056b3;
 }
@@ -359,7 +385,6 @@ select {
   cursor: pointer;
 
 }
-
 select:hover {
   background-color: #f0f0f0;
 }
@@ -373,15 +398,12 @@ select:hover {
   transition: background-color 0.3s ease;
   margin: 0;
 }
-
 .table_button.nullable_button.nullable_on {
   background-color: #008000; /* Green when active */
 }
-
 .table_button.nullable_button:hover {
 
 }
-
 .table_button.nullable_button:active {
   background-color: #006400;
 }
