@@ -1,6 +1,7 @@
 <template>
   <svg>
     <defs>
+      <!--God knows how this svg is constructed-->
       <marker id="chickenFoot" viewBox="0 0 20 20" refX="8" refY="5"
               markerWidth="70" markerHeight="140"
               orient="auto-start-reverse">
@@ -11,25 +12,12 @@
     </defs>
   </svg>
 
-  <BaseEdge :id="id" :style="style" :path="path[0]" :marker-start="data.markerStart || 'none'" :marker-end="data.markerEnd || 'none'" />
-
-  <EdgeLabelRenderer>
-    <div
-        v-if="path[1] && path[2]"
-        :style="{
-        pointerEvents: 'all',
-        position: 'absolute',
-        transform: `translate(-50%, -50%) translate(${path[1]}px,${path[2]}px)`,
-      }"
-        class="nodrag nopan"
-    >
-      <button class="edgebutton" @click="removeEdges(id)">×</button>
-    </div>
-  </EdgeLabelRenderer>
+  <BaseEdge :id="id" :style="style" :path="path[0]"
+            :marker-start="data.markerStart || 'none'" :marker-end="data.markerEnd || 'none'" />
 </template>
 
 <script setup>
-import { BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useVueFlow } from '@vue-flow/core'
+import { BaseEdge, getSmoothStepPath, useVueFlow } from '@vue-flow/core'
 import { computed } from 'vue'
 
 const props = defineProps({
@@ -74,12 +62,5 @@ const props = defineProps({
     required: false,
   },
 })
-
-const { removeEdges } = useVueFlow()
-
 const path = computed(() => getSmoothStepPath(props))
 </script>
-
-<style scoped>
-/* Add your custom styles here */
-</style>
