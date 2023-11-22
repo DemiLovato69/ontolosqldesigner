@@ -20,7 +20,11 @@
 import { BaseEdge, getSmoothStepPath, useVueFlow } from '@vue-flow/core'
 import { computed } from 'vue'
 
+defineOptions({
+  inheritAttrs: false
+})
 const props = defineProps({
+
   id: {
     type: String,
     required: true,

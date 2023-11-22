@@ -13,8 +13,8 @@ const showModal = ref(false);
 const TableStyle = {
   display: 'flex',
   border: '1px solid #10b981',
-  background: '#ff3b25',
-  borderColor: '#ff3b25',
+  background: '#007BFF',
+  borderColor: '#007BFF',
   color: 'white',
   borderRadius: '5px',
   width: '500px',
@@ -25,7 +25,7 @@ const TableStyle = {
 const RowStyle = {
   display: 'flex',
   border: '1px solid #10b981',
-  borderColor: '#ff3b25',
+  borderColor: '#898989',
   background: '#ffffff',
   color: '#000000',
   borderRadius: '5px',
@@ -49,7 +49,7 @@ const addTable = () => {
   elements.value.push({
     id: Math.random().toString(),
     type: 'table',
-    label: 'New Table',
+    label: 'new table',
     data: {
       toolbarPosition: Position.Top,
       toolbarVisible: true
@@ -70,7 +70,7 @@ const addRow = (nodeProps) => {
     style: RowStyle,
     draggable: false,
     parentNode: nodeProps.id,
-    data: { editing: false, showModal: false, KeyMod: 'None', SQLtype: 'INT', nullable: false },
+    data: { editing: false, showModal: false, keyMod: 'None', sqlType: 'INT', nullable: false },
   }]
 }
 
@@ -81,10 +81,10 @@ const updateLabel = (id, newLabel) => {
   }
 }
 
-const updateKeyMod = (id, KeyMod) => {
+const updateKeyMod = (id, keyMod) => {
   const element = elements.value.find(el => el.id === id);
   if (element) {
-    element.data.KeyMod = KeyMod;
+    element.data.keyMod = keyMod;
   }
 }
 
@@ -159,7 +159,8 @@ const deleteNode = (nodeId) => {
   }
 };
 
-const saveData = async () => {
+const exportData = async () => {
+  //formatting chaotic elements array to a more civilised data array
   const links = elements.value.filter(el => el.type === 'chickenFoot');
   const nodes = elements.value.filter(elem => elem.type === 'table');
   const data = nodes.map(node => {
@@ -172,8 +173,8 @@ const saveData = async () => {
           id: row.id,
           label: row.label,
           position: row.position, // Save the position of the row
-          KeyMod: row.data.KeyMod,
-          sqlType: row.data.SQLtype,
+          keyMod: row.data.keyMod,
+          sqlType: row.data.sqlType,
           nullable: row.data.nullable,
           connectedTo: links.filter(link => link.source === row.id).map(link => ({
             targetId: link.target,
@@ -183,6 +184,34 @@ const saveData = async () => {
       }),
     }
   });
+  //this part forms the sql script string from formatted array
+  let script = '';
+  let primary_key_name = '';
+  let primary_key_set = false;
+  data.forEach((table)=>{
+      script += `CREATE TABLE \`${table.name}\`( \n\t`;
+      table.rows.forEach((row)=>{
+        script += `\`${row.label}\` ${row.sqlType} `
+        //setting modifies that persist with primary keys
+        if (row.keyMod === "Primary") {
+          primary_key_set = true;
+          primary_key_name = row.label;
+          script += "UNSIGNED ";
+        }
+        script += `${(row.nullable ? "NULL" : "NOT NULL")}${primary_key_set ? " AUTO_INCREMENT" : ""},\n\t`
+
+      })
+      script += ");\n"
+      //setting primary key
+      if(primary_key_set) {
+        script += `ALTER TABLE\n\t \`${table.name}\` ADD PRIMARY KEY \`${table.name}_${primary_key_name}_primary `;
+        script += `\`${primary_key_name}\``
+        primary_key_set = false;
+      }
+
+  })
+
+  console.log(script);
   console.log(data);
   // try {
   //   const response = await axios.post('http://127.0.0.1:8000/api/mysql/save', data);
@@ -194,8 +223,6 @@ const saveData = async () => {
 
 const saveElementsToLocalStorage = () => {
   localStorage.setItem('elements', JSON.stringify(elements.value));
-  // Save elements to local storage every minute
-
 }
 
 const loadElementsFromLocalStorage = () => {
@@ -209,10 +236,9 @@ onBeforeMount(() => {
   loadElementsFromLocalStorage();
 })
 onMounted(() => {
-  console.log("gang")
   setInterval(() => {
     localStorage.setItem('elements', JSON.stringify(elements.value));
-  }, 60000); // 60000 milliseconds = 1 minute
+  }, 5000);
 })
 
 provide('saveElementsToLocalStorage', saveElementsToLocalStorage);
@@ -226,7 +252,7 @@ provide('addTable', addTable)
 </script>
 
 <template>
-  <button @mousedown.stop @click="saveData">Collect Data</button>
+  <button @mousedown.stop @click="exportData">Collect Data</button>
   <button @mousedown.stop @click="addTable">Add Table</button>
 
   <VueFlow
@@ -273,7 +299,7 @@ provide('addTable', addTable)
       <span class="row_text" v-else @click="data.editing = true">{{ label }}</span>
       <!--SQL Type-->
       <div>
-        <select v-model="data.SQLtype">
+        <select v-model="data.sqlType">
           <option selected="selected" value="INT">INT</option>
           <option value="VARCHAR">VARCHAR</option>
           <option value="TEXT">TEXT</option>
@@ -282,7 +308,7 @@ provide('addTable', addTable)
       </div>
       <!--Key mod-->
       <div>
-        <select v-model="data.KeyMod" @change="updateKeyMod(id, data.KeyMod)">
+        <select v-model="data.keyMod" @change="updateKeyMod(id, data.keyMod)">
           <option selected="selected" value="None">None</option>
           <option value="Primary">Primary</option>
           <option value="Unique">Unique</option>
@@ -333,6 +359,7 @@ provide('addTable', addTable)
 .table_icon {
   width: 70%;
   height: 70%;
+  color: white;
 }
 .row_text{
   width: 150px;
@@ -346,12 +373,9 @@ provide('addTable', addTable)
   width: 80%;
   padding: 10px;
 }
-.nullable_button {
-  background-color: #ff0000;
-  color: #ffffff;
-}
 .nullable_button.nullable_on {
-  background-color: #00ff00;
+  background-color: #67e867;
+  color: #1b6a1b;
 }
 .relationship_modal {
   position: absolute;
@@ -392,19 +416,19 @@ select:hover {
   padding: 9px;
   border: none;
   border-radius: 5px;
-  background-color: #FF0000; /* Red when inactive */
+  background-color: #dc7474; /* Red when inactive */
   color: #000; /* Black text */
   cursor: pointer;
   transition: background-color 0.3s ease;
   margin: 0;
 }
 .table_button.nullable_button.nullable_on {
-  background-color: #008000; /* Green when active */
+  background-color: #67e867; /* Green when active */
 }
 .table_button.nullable_button:hover {
 
 }
 .table_button.nullable_button:active {
-  background-color: #006400;
+  background-color: #67e867;
 }
 </style>
