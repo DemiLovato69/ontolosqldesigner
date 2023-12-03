@@ -24,5 +24,5 @@ Route::post('/auth/login', [UserController::class, 'login']);
 
 //Route::middleware(['cors'])->group(function () {
 //
-//});
+//})
 Route::post('/mysql/save', [\App\Http\Controllers\MySqlController::class, 'save']);

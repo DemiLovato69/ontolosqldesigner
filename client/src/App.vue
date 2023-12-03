@@ -1,7 +1,7 @@
 <script setup>
 import { Handle, Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
-import { ref, provide, onMounted, onBeforeMount} from 'vue'
+import { ref, provide,computed, onMounted, onBeforeMount} from 'vue'
 const { updateEdge, addEdges } = useVueFlow();
 import ChickenFootEdge from './components/ChickenFootEdge.vue';
 import axios from "axios";
@@ -9,6 +9,7 @@ import axios from "axios";
 const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
 const showModal = ref(false);
+const optionsModalId = ref(null);
 
 const TableStyle = {
   display: 'flex',
@@ -17,8 +18,8 @@ const TableStyle = {
   borderColor: '#007BFF',
   color: 'white',
   borderRadius: '5px',
-  width: '500px',
-  height: '60px',
+  width: '350px',
+  height: '40px',
   alignItems: 'center',
   justifyContent: 'space-between',
 }
@@ -29,10 +30,10 @@ const RowStyle = {
   background: '#ffffff',
   color: '#000000',
   borderRadius: '5px',
-  width: '500px',
+  width: '350px',
   height: '40px',
   alignItems: 'center',
-  justifyContent: 'start',
+  justifyContent: 'space-between',
 }
 const elements = ref([
   {
@@ -66,11 +67,11 @@ const addRow = (nodeProps) => {
     id: Date.now().toString(), // use a timestamp to generate a unique id
     type: 'row', // change this to your actual row node type
     label: 'New Row',
-    position: { x: position.x, y: position.y + 60 + 40 * existingRows.length },
+    position: { x: position.x, y: position.y + 40 + 40 * existingRows.length },
     style: RowStyle,
     draggable: false,
     parentNode: nodeProps.id,
-    data: { editing: false, showModal: false, keyMod: 'None', sqlType: 'INT', nullable: false },
+    data: { editing: false, showModal: false, showOptionsModal: false, keyMod: 'None', sqlType: 'INT', nullable: false, unsigned: false},
   }]
 }
 
@@ -176,6 +177,7 @@ const exportData = async () => {
           keyMod: row.data.keyMod,
           sqlType: row.data.sqlType,
           nullable: row.data.nullable,
+          unsigned: row.data.unsigned,
           connectedTo: links.filter(link => link.source === row.id).map(link => ({
             targetId: link.target,
             relationshipType: link.data.relationshipType
@@ -232,6 +234,47 @@ const loadElementsFromLocalStorage = () => {
   }
 }
 
+const showOptionsModal = ref(false);
+const modalId = ref(null);
+
+const toggleOptionsModal = (id, event) => {
+  const row = elements.value.find(el => el.id === id);
+  const offsetX = 350;
+
+  const documentX = row.position.x;
+  const documentY = row.position.y;
+
+  const rowHeight = 60;
+  const rowIndex = elements.value.findIndex(el => el.id === id);
+  const offsetY = rowIndex * (rowHeight-20);
+
+  row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
+  row.data.showOptionsModal = !row.data.showOptionsModal;
+};
+
+
+
+
+
+
+
+
+
+const toggleUnsigned = (id) => {
+  const element = elements.value.find(el => el.id === id);
+  if (element) {
+    element.data.unsigned = !element.data.unsigned;
+  }
+};
+
+
+const getModalData = computed(() => {
+  const element = elements.value.find(el => el.id === modalId.value);
+  return element ? element.data : {};
+});
+
+
+
 onBeforeMount(() => {
   loadElementsFromLocalStorage();
 })
@@ -244,6 +287,8 @@ onMounted(() => {
 provide('saveElementsToLocalStorage', saveElementsToLocalStorage);
 provide('loadElementsFromLocalStorage', loadElementsFromLocalStorage);
 
+provide('toggleOptionsModal', toggleOptionsModal);
+provide('toggleUnsigned', toggleUnsigned);
 provide('toggleNullable', toggleNullable);
 provide('updateKeyMod', updateKeyMod);
 provide('updateLabel', updateLabel);
@@ -262,6 +307,8 @@ provide('addTable', addTable)
       @connect="onConnect"
       v-model="elements"
       fit-view-on-init
+      :zoomOnDoubleClick = false
+
       class="vue-flow-basic-example"
   >
     <!--Chicken foot custom edge component -->
@@ -306,20 +353,29 @@ provide('addTable', addTable)
           <option value="DATE">DATE</option>
         </select>
       </div>
-      <!--Key mod-->
-      <div>
-        <select v-model="data.keyMod" @change="updateKeyMod(id, data.keyMod)">
-          <option selected="selected" value="None">None</option>
-          <option value="Primary">Primary</option>
-          <option value="Unique">Unique</option>
-          <option value="Index">Index</option>
-        </select>
-      </div>
-      <!--Nullable-->
-      <button class="table_button nullable_button" :class="{ 'nullable_on': data.nullable }" @mousedown.stop @click="toggleNullable(id)">
-        N
+
+
+
+      <!--Options-->
+      <button class="table_button" @mousedown.stop @click="toggleOptionsModal(id, $event)">
+        <img class="table_icon" src="./components/icons/dots.svg" alt="More options">
       </button>
 
+      <!-- Options modal -->
+      <div v-if="data.showOptionsModal" class="options_modal" :style="{ left: `${data.modalPosition.x}px`, top: `${data.modalPosition.y}px` }">
+        <!--Key mod-->
+          <select v-model="data.keyMod" @change="updateKeyMod(id, data.keyMod)">
+            <option selected="selected" value="None">None</option>
+            <option value="Primary">Primary</option>
+            <option value="Unique">Unique</option>
+            <option value="Index">Index</option>
+          </select>
+          <p class="modal_text">Unsigned</p>
+            <input type="checkbox"  @mousedown.stop :checked="data.unsigned" @change="toggleUnsigned(id)">
+          <p class="modal_text">Nullable</p>
+        <input type="checkbox" @mousedown.stop :checked="data.nullable" @change="toggleNullable(id)">
+<!--        <button @click="showOptionsModal = false">Close</button>-->
+      </div>
       <!--Delete row-->
       <button class ="table_button" @mousedown.stop  @click="deleteNode(id)">
         <img class="table_icon" src="./components/icons/cancel.svg" alt="Cancel">
@@ -329,6 +385,7 @@ provide('addTable', addTable)
       <Handle type="source" position="left" />
 
     </template>
+
   </VueFlow>
   <!--Relationship modal-->
   <div v-if="showModal" class="relationship_modal" :style="{ left: `${modalPosition.x}px`, top: `${modalPosition.y}px` }">
@@ -373,10 +430,6 @@ provide('addTable', addTable)
   width: 80%;
   padding: 10px;
 }
-.nullable_button.nullable_on {
-  background-color: #67e867;
-  color: #1b6a1b;
-}
 .relationship_modal {
   position: absolute;
   width: 200px;
@@ -412,23 +465,21 @@ select {
 select:hover {
   background-color: #f0f0f0;
 }
-.table_button.nullable_button {
-  padding: 9px;
-  border: none;
+input{
+  margin :0;
+}
+.options_modal{
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid #007BFF;
   border-radius: 5px;
-  background-color: #dc7474; /* Red when inactive */
-  color: #000; /* Black text */
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  margin: 0;
+  width: 300px;
 }
-.table_button.nullable_button.nullable_on {
-  background-color: #67e867; /* Green when active */
-}
-.table_button.nullable_button:hover {
+.modal_text{
+  margin : 0;
+  font-size: 15px;
 
-}
-.table_button.nullable_button:active {
-  background-color: #67e867;
 }
 </style>
