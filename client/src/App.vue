@@ -189,28 +189,35 @@ const exportData = async () => {
   //this part forms the sql script string from formatted array
   let script = '';
   let primary_key_name = '';
-  let primary_key_set = false;
+  let primary_key = false;
+  let auto_increment_added = false;
   data.forEach((table)=>{
       script += `CREATE TABLE \`${table.name}\`( \n\t`;
       table.rows.forEach((row)=>{
         script += `\`${row.label}\` ${row.sqlType} `
         //setting modifies that persist with primary keys
         if (row.keyMod === "Primary") {
-          primary_key_set = true;
+          primary_key = true;
           primary_key_name = row.label;
           script += "UNSIGNED ";
         }
-        script += `${(row.nullable ? "NULL" : "NOT NULL")}${primary_key_set ? " AUTO_INCREMENT" : ""},\n\t`
+        script += `${(row.nullable ? "NULL" : "NOT NULL")}`;
 
+        if(primary_key){
+          script += " AUTO_INCREMENT";
+          primary_key = false;
+          auto_increment_added = true;
+        }
+        script+= ",\n\t"
       })
       script += ");\n"
       //setting primary key
-      if(primary_key_set) {
-        script += `ALTER TABLE\n\t \`${table.name}\` ADD PRIMARY KEY \`${table.name}_${primary_key_name}_primary `;
-        script += `\`${primary_key_name}\``
-        primary_key_set = false;
+      if(auto_increment_added) {
+        script += `ALTER TABLE\n\t \`${table.name}\` ADD PRIMARY KEY \`${table.name}_${primary_key_name}_primary\` `;
+        script += `(\`${primary_key_name}\`);\n`
+        auto_increment_added = false;
+        primary_key = false
       }
-
   })
 
   console.log(script);
