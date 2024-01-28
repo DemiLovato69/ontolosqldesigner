@@ -4,8 +4,8 @@ import { Background, BackgroundVariant } from '@vue-flow/background'
 import { ref, provide,computed, onMounted, onBeforeMount} from 'vue'
 const { updateEdge, addEdges } = useVueFlow();
 import ChickenFootEdge from '../components/ChickenFootEdge.vue';
-
 import { addRowS, addTableS, updateConnectionLineTypeS, deleteNodeS, deleteEdgeS } from '../services/TableActions.js';
+import Header from "../components/Header.vue";
 
 const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
@@ -71,6 +71,12 @@ const toggleNullable = (id) => {
     element.data.nullable = !element.data.nullable;
   }
 }
+const toggleUnsigned = (id) => {
+  const element = elements.value.find(el => el.id === id);
+  if (element) {
+    element.data.unsigned = !element.data.unsigned;
+  }
+};
 
 function onConnect(params) {
   params.updatable = true;
@@ -80,6 +86,20 @@ function onConnect(params) {
 function onEdgeUpdate({ edge, connection }) {
   return updateEdge(edge, connection)
 }
+const toggleOptionsModal = (id) => {
+  const row = elements.value.find(el => el.id === id);
+  const offsetX = 350;
+
+  const documentX = row.position.x;
+  const documentY = row.position.y;
+
+  const rowHeight = 60;
+  const rowIndex = elements.value.find(el => el.id === id);
+  const offsetY = rowIndex * (rowHeight-20);
+
+  row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
+  row.data.showOptionsModal = !row.data.showOptionsModal;
+};
 
 const openRelationshipModal = (params) => {
   selectedEdge.value = params.edge;
@@ -92,6 +112,24 @@ const openRelationshipModal = (params) => {
   };
   showRelationshipModal.value = true;
 };
+
+
+
+const saveElementsToLocalStorage = () => {
+  localStorage.setItem('elements', JSON.stringify(elements.value));
+}
+
+const loadElementsFromLocalStorage = () => {
+  const storedElements = localStorage.getItem('elements');
+  if (storedElements) {
+    elements.value = JSON.parse(storedElements);
+  }
+}
+
+
+
+
+
 
 const exportData = async () => {
   //formatting chaotic elements array to a more civilised data array
@@ -201,51 +239,7 @@ const exportData = async () => {
   console.log(script);
   console.log(data);
   console.log(foreignKeysArray)
-  // try {
-  //   const response = await axios.post('http://127.0.0.1:8000/api/mysql/save', data);
-  //   console.log(response.data);
-  // } catch (error) {
-  //   console.error(error);
-  // }
 }
-
-const saveElementsToLocalStorage = () => {
-  localStorage.setItem('elements', JSON.stringify(elements.value));
-}
-
-const loadElementsFromLocalStorage = () => {
-  const storedElements = localStorage.getItem('elements');
-  if (storedElements) {
-    elements.value = JSON.parse(storedElements);
-  }
-}
-
-const toggleOptionsModal = (id) => {
-  const row = elements.value.find(el => el.id === id);
-  const offsetX = 350;
-
-  const documentX = row.position.x;
-  const documentY = row.position.y;
-
-  const rowHeight = 60;
-  const rowIndex = elements.value.find(el => el.id === id);
-  const offsetY = rowIndex * (rowHeight-20);
-
-  row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
-  row.data.showOptionsModal = !row.data.showOptionsModal;
-};
-
-
-
-const toggleUnsigned = (id) => {
-  const element = elements.value.find(el => el.id === id);
-  if (element) {
-    element.data.unsigned = !element.data.unsigned;
-  }
-};
-
-
-
 // onBeforeMount(() => {
 //   loadElementsFromLocalStorage();
 // })
@@ -267,9 +261,10 @@ provide('addTable', addTable)
 </script>
 
 <template>
-  <button @mousedown.stop @click="exportData">Collect Data</button>
-  <button @mousedown.stop @click="addTable">Add Table</button>
 
+<!--  <button @mousedown.stop @click="exportData">Collect Data</button>-->
+<!--  <button @mousedown.stop @click="addTable">Add Table</button>-->
+  <Header />
   <VueFlow
       :default-edge-options="{ type:'chickenFoot' }"
       @edge-update="onEdgeUpdate"
@@ -279,8 +274,15 @@ provide('addTable', addTable)
       fit-view-on-init
       :zoomOnDoubleClick = false
 
-      class="vue-flow-basic-example"
+      :controlled = false
+
+      class=".vue-flow"
+
   >
+
+
+
+
     <!--Chicken foot custom edge component -->
     <template #edge-chickenFoot="props">
       <ChickenFootEdge v-bind="props" />
@@ -344,7 +346,6 @@ provide('addTable', addTable)
         <input type="checkbox"  @mousedown.stop :checked="data.unsigned" @change="toggleUnsigned(id)">
         <p class="modal_text">Nullable</p>
         <input type="checkbox" @mousedown.stop :checked="data.nullable" @change="toggleNullable(id)">
-        <!--        <button @click="showOptionsModal = false">Close</button>-->
       </div>
       <!--Delete row-->
       <button class ="table_button" @mousedown.stop  @click="deleteNode(id)">
