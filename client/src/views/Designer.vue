@@ -95,66 +95,112 @@ const openRelationshipModal = (params) => {
 
 const exportData = async () => {
   //formatting chaotic elements array to a more civilised data array
-  const links = elements.value.filter(el => el.type === 'chickenFoot');
-  const nodes = elements.value.filter(elem => elem.type === 'table');
-  const data = nodes.map(node => {
-    const rows = elements.value.filter(row => row.parentNode === node.id);
+  const connections = elements.value.filter(el => el.type === 'chickenFoot');
+  const tables = elements.value.filter(elem => elem.type === 'table');
+  const data = tables.map(table => {
+    const rows = elements.value.filter(row => row.parentNode === table.id);
     return {
-      name: node.label,
-      position: node.position, // Save the position of the node
+      name: table.label,
+      position: table.position,
       rows: rows.map(row => {
+        const connectedTo = connections
+            .filter(connection => connection.source === row.id)
+            .map(connection => {
+              const targetRow = elements.value.find(el => el.id === connection.target);
+              const targetTable = tables.find(table => table.id === targetRow.parentNode);
+              return {
+                targetId: connection.target,
+                targetRowName: targetRow.label,
+                targetTableName: targetTable.label,
+                relationshipType: connection.data.relationshipType
+              };
+            });
+
         return {
           id: row.id,
-          label: row.label,
-          position: row.position, // Save the position of the row
+          name: row.label,
+          position: row.position,
           keyMod: row.data.keyMod,
           sqlType: row.data.sqlType,
           nullable: row.data.nullable,
           unsigned: row.data.unsigned,
-          connectedTo: links.filter(link => link.source === row.id).map(link => ({
-            targetId: link.target,
-            relationshipType: link.data.relationshipType
-          }))
+          connectedTo: connectedTo
         };
       }),
-    }
+    };
   });
   //this part forms the sql script string from formatted array
   let script = '';
-  let primary_key_name = '';
   let primary_key = false;
-  let auto_increment_added = false;
+  let index = false;
+  let unique = false;
+  const foreignKeys = {
+    targetTableName: "",
+    targetRowName: "",
+    rowName: "",
+    table: ""
+  };
+  const foreignKeysArray= [];
+
   data.forEach((table)=>{
     script += `CREATE TABLE \`${table.name}\`( \n\t`;
     table.rows.forEach((row)=>{
-      script += `\`${row.label}\` ${row.sqlType} `
+      script += `\`${row.name}\` ${row.sqlType} `
       //setting modifies that persist with primary keys
       if (row.keyMod === "Primary") {
         primary_key = true;
-        primary_key_name = row.label;
         script += "UNSIGNED ";
       }
+      if (row.keyMod === "Index") {
+        index = true;
+      }
+      if (row.keyMod === "Unique") {
+        unique = true;
+      }
+
       script += `${(row.nullable ? "NULL" : "NOT NULL")}`;
 
       if(primary_key){
-        script += " AUTO_INCREMENT";
+        script += " AUTO_INCREMENT PRIMARY KEY";
         primary_key = false;
-        auto_increment_added = true;
       }
+      if(index) {
+        script += `,\n\tINDEX \`index_key_${row.name}\` (\`${row.name}\`)`
+        index = false;
+      }
+      if(unique) {
+        script += `,\n\tUNIQUE KEY \`unique_key_${row.name}\` (\`${row.name}\`)`
+        unique = false;
+      }
+
       script+= ",\n\t"
+      if(row.connectedTo.length > 0 )
+      {
+        row.connectedTo.forEach(function (element) {
+          foreignKeys.table = table.name;
+          foreignKeys.rowName = row.name;
+          foreignKeys.targetTableName = element.targetTableName;
+          foreignKeys.targetRowName = element.targetRowName;
+          foreignKeysArray.push(foreignKeys);
+        });
+      }
     })
+    script = script.slice(0, -3); //cutting the last not needed comma
+    script+= "\n\t"
     script += ");\n"
-    //setting primary key
-    if(auto_increment_added) {
-      script += `ALTER TABLE\n\t \`${table.name}\` ADD PRIMARY KEY \`${table.name}_${primary_key_name}_primary\` `;
-      script += `(\`${primary_key_name}\`);\n`
-      auto_increment_added = false;
-      primary_key = false
-    }
+
   })
+  foreignKeysArray.forEach(function (element)
+  {
+    script += `ALTER TABLE \`${foreignKeys.table}\``;
+    script += ` ADD CONSTRAINT \`${foreignKeys.table}_${foreignKeys.rowName}_foreign\``;
+    script += ` FOREIGN KEY (\`${foreignKeys.rowName}\`)`;
+    script += ` REFERENCES \`${foreignKeys.targetTableName}\`(\`${foreignKeys.targetRowName}\`);\n`
+  });
 
   console.log(script);
   console.log(data);
+  console.log(foreignKeysArray)
   // try {
   //   const response = await axios.post('http://127.0.0.1:8000/api/mysql/save', data);
   //   console.log(response.data);
@@ -175,7 +221,6 @@ const loadElementsFromLocalStorage = () => {
 }
 
 const toggleOptionsModal = (id) => {
-  console.log(elements.value)
   const row = elements.value.find(el => el.id === id);
   const offsetX = 350;
 
