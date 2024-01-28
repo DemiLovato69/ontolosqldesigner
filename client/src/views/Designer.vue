@@ -174,7 +174,8 @@ const loadElementsFromLocalStorage = () => {
   }
 }
 
-const toggleOptionsModal = (id, event) => {
+const toggleOptionsModal = (id) => {
+  console.log(elements.value)
   const row = elements.value.find(el => el.id === id);
   const offsetX = 350;
 
@@ -182,12 +183,15 @@ const toggleOptionsModal = (id, event) => {
   const documentY = row.position.y;
 
   const rowHeight = 60;
-  const rowIndex = elements.value.findIndex(el => el.id === id);
+  const rowIndex = elements.value.find(el => el.id === id);
   const offsetY = rowIndex * (rowHeight-20);
 
   row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
   row.data.showOptionsModal = !row.data.showOptionsModal;
 };
+
+
+
 const toggleUnsigned = (id) => {
   const element = elements.value.find(el => el.id === id);
   if (element) {
@@ -197,14 +201,14 @@ const toggleUnsigned = (id) => {
 
 
 
-onBeforeMount(() => {
-  loadElementsFromLocalStorage();
-})
-onMounted(() => {
-  setInterval(() => {
-    localStorage.setItem('elements', JSON.stringify(elements.value));
-  }, 5000);
-})
+// onBeforeMount(() => {
+//   loadElementsFromLocalStorage();
+// })
+// onMounted(() => {
+//   setInterval(() => {
+//     localStorage.setItem('elements', JSON.stringify(elements.value));
+//   }, 5000);
+// })
 
 provide('saveElementsToLocalStorage', saveElementsToLocalStorage);
 provide('loadElementsFromLocalStorage', loadElementsFromLocalStorage);
