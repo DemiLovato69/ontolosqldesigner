@@ -1,24 +1,30 @@
 <template>
-
   <div class="header">
-    <div class="logo">Your App Name</div>
+
     <div class="buttons">
-      <button @click="exportData">Export</button>
-      <button @click="importData">Import</button>
+      <button @click="openExportModal">Export</button>
+      <button @click="openImportModal">Import</button>
+      <button @click="addTable">Add Table</button>
+    </div>
+
+    <div class="auth-buttons">
+      <button @click="exportData">Register</button>
+      <button @click="importData">Login</button>
     </div>
   </div>
+
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { defineProps } from 'vue';
+
+const { addTable, openExportModal, openImportModal} = defineProps(['addTable', 'openExportModal', 'openImportModal']);
 
 const exportData = () => {
-  // Implement your export logic here
   console.log('Export data logic');
 };
 
 const importData = () => {
-  // Implement your import logic here
   console.log('Import data logic');
 };
 </script>
@@ -27,17 +33,19 @@ const importData = () => {
 .header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
   padding: 1rem;
   background-color: #007BFF;
   color: white;
 }
-
-.logo {
-  font-size: 1.5rem;
+.buttons,
+.auth-buttons {
+  display: flex;
+  align-items: center;
 }
 
-.buttons button {
+.buttons button,
+.auth-buttons button {
   margin-left: 1rem;
   padding: 0.5rem 1rem;
   background-color: #fff;

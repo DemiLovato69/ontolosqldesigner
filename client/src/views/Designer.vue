@@ -4,12 +4,18 @@ import { Background, BackgroundVariant } from '@vue-flow/background'
 import { ref, provide,computed, onMounted, onBeforeMount} from 'vue'
 const { updateEdge, addEdges } = useVueFlow();
 import ChickenFootEdge from '../components/ChickenFootEdge.vue';
-import { addRowS, addTableS, updateConnectionLineTypeS, deleteNodeS, deleteEdgeS } from '../services/TableActions.js';
 import Header from "../components/Header.vue";
+import  { TableActions } from '../services/TableActions.js';
+import { ParseSql } from "../services/ParseSql.js";
 
 const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
 const showRelationshipModal = ref(false);
+
+const showExportModal = ref(false);
+const exportContent = ref('');
+const showImportModal = ref(false);
+const importContent = ref('');
 
 const TableStyle = {
   display: 'flex',
@@ -36,35 +42,32 @@ const elements = ref([
 ])
 
 const addTable = () => {
-  addTableS(elements, TableStyle);
+  TableActions.addTable(elements, TableStyle);
 }
 const addRow = (nodeProps) => {
-  addRowS(elements, nodeProps);
+  TableActions.addRow(elements, nodeProps);
 };
 const deleteEdge = () => {
-  deleteEdgeS(elements, selectedEdge);
+  TableActions.deleteEdge(elements, selectedEdge);
 };
 const deleteNode = (nodeId) => {
-  deleteNodeS(elements, nodeId);
+  TableActions.deleteNode(elements, nodeId);
 };
 const updateConnectionLineType = (relationshipType) => {
-  updateConnectionLineTypeS(elements, selectedEdge, relationshipType);
+  TableActions.updateConnectionLineType(elements, selectedEdge, relationshipType);
 };
-
 const updateLabel = (id, newLabel) => {
   const element = elements.value.find(el => el.id === id);
   if (element) {
     element.label = newLabel;
   }
 }
-
 const updateKeyMod = (id, keyMod) => {
   const element = elements.value.find(el => el.id === id);
   if (element) {
     element.data.keyMod = keyMod;
   }
 }
-
 const toggleNullable = (id) => {
   const element = elements.value.find(el => el.id=== id);
   if (element) {
@@ -126,128 +129,37 @@ const loadElementsFromLocalStorage = () => {
   }
 }
 
+onBeforeMount(() => {
+  loadElementsFromLocalStorage();
+})
+onMounted(() => {
+
+  setInterval(() => {
+    localStorage.setItem('elements', JSON.stringify(elements.value));
+  }, 5000);
+})
+
+const openExportModal = async () => {
+  showExportModal.value = true;
+  exportContent.value = await ParseSql.exportToSql(elements);
+};
+
+const closeExportModal = () => {
+  showExportModal.value = false;
+};
+const openImportModal = async () => {
+  showImportModal.value = true;
+  // importContent.value = await ParseSql.exportToSql(elements);
+};
+
+const closeImportModal = () => {
+  showImportModal.value = false;
+};
 
 
+provide('openExportModal', openExportModal);
 
 
-
-const exportData = async () => {
-  //formatting chaotic elements array to a more civilised data array
-  const connections = elements.value.filter(el => el.type === 'chickenFoot');
-  const tables = elements.value.filter(elem => elem.type === 'table');
-  const data = tables.map(table => {
-    const rows = elements.value.filter(row => row.parentNode === table.id);
-    return {
-      name: table.label,
-      position: table.position,
-      rows: rows.map(row => {
-        const connectedTo = connections
-            .filter(connection => connection.source === row.id)
-            .map(connection => {
-              const targetRow = elements.value.find(el => el.id === connection.target);
-              const targetTable = tables.find(table => table.id === targetRow.parentNode);
-              return {
-                targetId: connection.target,
-                targetRowName: targetRow.label,
-                targetTableName: targetTable.label,
-                relationshipType: connection.data.relationshipType
-              };
-            });
-
-        return {
-          id: row.id,
-          name: row.label,
-          position: row.position,
-          keyMod: row.data.keyMod,
-          sqlType: row.data.sqlType,
-          nullable: row.data.nullable,
-          unsigned: row.data.unsigned,
-          connectedTo: connectedTo
-        };
-      }),
-    };
-  });
-  //this part forms the sql script string from formatted array
-  let script = '';
-  let primary_key = false;
-  let index = false;
-  let unique = false;
-  const foreignKeys = {
-    targetTableName: "",
-    targetRowName: "",
-    rowName: "",
-    table: ""
-  };
-  const foreignKeysArray= [];
-
-  data.forEach((table)=>{
-    script += `CREATE TABLE \`${table.name}\`( \n\t`;
-    table.rows.forEach((row)=>{
-      script += `\`${row.name}\` ${row.sqlType} `
-      //setting modifies that persist with primary keys
-      if (row.keyMod === "Primary") {
-        primary_key = true;
-        script += "UNSIGNED ";
-      }
-      if (row.keyMod === "Index") {
-        index = true;
-      }
-      if (row.keyMod === "Unique") {
-        unique = true;
-      }
-
-      script += `${(row.nullable ? "NULL" : "NOT NULL")}`;
-
-      if(primary_key){
-        script += " AUTO_INCREMENT PRIMARY KEY";
-        primary_key = false;
-      }
-      if(index) {
-        script += `,\n\tINDEX \`index_key_${row.name}\` (\`${row.name}\`)`
-        index = false;
-      }
-      if(unique) {
-        script += `,\n\tUNIQUE KEY \`unique_key_${row.name}\` (\`${row.name}\`)`
-        unique = false;
-      }
-
-      script+= ",\n\t"
-      if(row.connectedTo.length > 0 )
-      {
-        row.connectedTo.forEach(function (element) {
-          foreignKeys.table = table.name;
-          foreignKeys.rowName = row.name;
-          foreignKeys.targetTableName = element.targetTableName;
-          foreignKeys.targetRowName = element.targetRowName;
-          foreignKeysArray.push(foreignKeys);
-        });
-      }
-    })
-    script = script.slice(0, -3); //cutting the last not needed comma
-    script+= "\n\t"
-    script += ");\n"
-
-  })
-  foreignKeysArray.forEach(function (element)
-  {
-    script += `ALTER TABLE \`${foreignKeys.table}\``;
-    script += ` ADD CONSTRAINT \`${foreignKeys.table}_${foreignKeys.rowName}_foreign\``;
-    script += ` FOREIGN KEY (\`${foreignKeys.rowName}\`)`;
-    script += ` REFERENCES \`${foreignKeys.targetTableName}\`(\`${foreignKeys.targetRowName}\`);\n`
-  });
-
-  console.log(script);
-  console.log(data);
-  console.log(foreignKeysArray)
-}
-// onBeforeMount(() => {
-//   loadElementsFromLocalStorage();
-// })
-// onMounted(() => {
-//   setInterval(() => {
-//     localStorage.setItem('elements', JSON.stringify(elements.value));
-//   }, 5000);
-// })
 
 provide('saveElementsToLocalStorage', saveElementsToLocalStorage);
 provide('loadElementsFromLocalStorage', loadElementsFromLocalStorage);
@@ -261,10 +173,8 @@ provide('addTable', addTable)
 </script>
 
 <template>
+  <Header :addTable="addTable" :openExportModal="openExportModal" />
 
-<!--  <button @mousedown.stop @click="exportData">Collect Data</button>-->
-<!--  <button @mousedown.stop @click="addTable">Add Table</button>-->
-  <Header />
   <VueFlow
       :default-edge-options="{ type:'chickenFoot' }"
       @edge-update="onEdgeUpdate"
@@ -273,16 +183,9 @@ provide('addTable', addTable)
       v-model="elements"
       fit-view-on-init
       :zoomOnDoubleClick = false
-
       :controlled = false
-
       class=".vue-flow"
-
   >
-
-
-
-
     <!--Chicken foot custom edge component -->
     <template #edge-chickenFoot="props">
       <ChickenFootEdge v-bind="props" />
@@ -326,8 +229,6 @@ provide('addTable', addTable)
         </select>
       </div>
 
-
-
       <!--Options-->
       <button class="table_button" @mousedown.stop @click="toggleOptionsModal(id, $event)">
         <img class="table_icon" src="../components/icons/dots.svg" alt="More options">
@@ -366,15 +267,48 @@ provide('addTable', addTable)
     <button @click="deleteEdge">Delete</button>
     <button @click="showRelationshipModal = false">Close</button>
   </div>
+  <!--Export modal -->
+  <div v-if="showExportModal" class="sql_modal">
+    <div class="sql_modal_content">
+      <textarea class="sql_textarea" v-model="exportContent"></textarea>
+      <button @click="closeExportModal">Close</button>
+    </div>
+  </div>
+  <div v-if="showImportModal" class="sql_modal">
+    <div class="sql_modal_content">
+      <textarea class="sql_textarea" v-model="importContent"></textarea>
+      <button @click="closeImportModal">Close</button>
+    </div>
+  </div>
+
 
 </template>
 
 <style scoped>
-
-.vue-flow-basic-example {
+.sql_modal {
+  position: fixed;
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100vh;
-  background-color: #f0f0f0;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.sql_modal_content {
+  background: white;
+  padding: 20px;
+  border-radius: 5px;
+  height: 500px;
+  width: 500px;
+}
+
+.sql_textarea {
+  width: 100%;
+  height: 500px;
+  margin-bottom: 10px;
 }
 .table_button {
   width: 15%;

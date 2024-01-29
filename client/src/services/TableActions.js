@@ -1,6 +1,7 @@
 import {Position} from "@vue-flow/core";
+export const TableActions = {
 
-export function addTableS(elementsRef, TableStyle) {
+    addTable(elementsRef, TableStyle){
     const elements = elementsRef.value;
 
     elementsRef.value = [
@@ -13,12 +14,13 @@ export function addTableS(elementsRef, TableStyle) {
                 toolbarPosition: Position.Top,
                 toolbarVisible: true
             },
-            position: { x: 0, y: 0 },
+            position: {x: 0, y: 0},
             style: TableStyle,
         }
     ];
-}
-export function addRowS(elementsRef, nodeProps) {
+},
+
+  addRow(elementsRef, nodeProps) {
     const elements = elementsRef.value;
     const RowStyle = {
         display: 'flex',
@@ -33,7 +35,7 @@ export function addRowS(elementsRef, nodeProps) {
         justifyContent: 'space-between',
     }
     const existingRows = elements.filter(el => el.parentNode === nodeProps.id);
-    const position = nodeProps.data.position || { x: 0, y: 0 };
+    const position = nodeProps.data.position || {x: 0, y: 0};
 
     elementsRef.value = [
         ...elements,
@@ -41,7 +43,7 @@ export function addRowS(elementsRef, nodeProps) {
             id: Date.now().toString(),
             type: 'row',
             label: 'New Row',
-            position: { x: position.x, y: position.y + 40 + 40 * existingRows.length },
+            position: {x: position.x, y: position.y + 40 + 40 * existingRows.length},
             style: RowStyle,
             draggable: false,
             parentNode: nodeProps.id,
@@ -56,8 +58,9 @@ export function addRowS(elementsRef, nodeProps) {
             },
         },
     ];
-}
-export function updateConnectionLineTypeS(elementsRef, selectedEdgeRef, relationshipType) {
+},
+
+  updateConnectionLineType(elementsRef, selectedEdgeRef, relationshipType) {
     const elements = elementsRef.value;
     const selectedEdge = selectedEdgeRef.value;
 
@@ -76,15 +79,16 @@ export function updateConnectionLineTypeS(elementsRef, selectedEdgeRef, relation
             elements[edgeIndex].data.markerEnd = 'url(#chickenFoot)';
         }
     }
-}
-export function deleteEdgeS(elementsRef, selectedEdgeRef) {
+},
+
+  deleteEdge(elementsRef, selectedEdgeRef) {
     const elements = elementsRef.value;
     const selectedEdge = selectedEdgeRef.value;
 
     elementsRef.value = elements.filter(el => el.id !== selectedEdge.id);
-}
+},
 
-export function deleteNodeS(elementsRef, nodeId) {
+  deleteNode(elementsRef, nodeId) {
     const elements = elementsRef.value;
     const nodeToDelete = elements.find(el => el.id === nodeId);
 
@@ -102,4 +106,5 @@ export function deleteNodeS(elementsRef, nodeId) {
             row.position.y = nodeToDelete.position.y + 40 * index;
         });
     }
+}
 }
