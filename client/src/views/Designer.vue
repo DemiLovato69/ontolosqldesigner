@@ -149,7 +149,7 @@ const closeExportModal = () => {
 };
 const openImportModal = async () => {
   showImportModal.value = true;
-  // importContent.value = await ParseSql.exportToSql(elements);
+  // importContent.value = await ParseSql.importSql(elements);
 };
 
 const closeImportModal = () => {
@@ -158,9 +158,7 @@ const closeImportModal = () => {
 
 
 provide('openExportModal', openExportModal);
-
-
-
+provide('openImportModal', openImportModal);
 provide('saveElementsToLocalStorage', saveElementsToLocalStorage);
 provide('loadElementsFromLocalStorage', loadElementsFromLocalStorage);
 provide('toggleOptionsModal', toggleOptionsModal);
@@ -173,7 +171,7 @@ provide('addTable', addTable)
 </script>
 
 <template>
-  <Header :addTable="addTable" :openExportModal="openExportModal" />
+  <Header :addTable="addTable" :openExportModal="openExportModal" :openImportModal="openImportModal" />
 
   <VueFlow
       :default-edge-options="{ type:'chickenFoot' }"
@@ -223,7 +221,7 @@ provide('addTable', addTable)
       <div>
         <select v-model="data.sqlType">
           <option selected="selected" value="INT">INT</option>
-          <option value="VARCHAR">VARCHAR</option>
+          <option value="VARCHAR(255)">VARCHAR</option>
           <option value="TEXT">TEXT</option>
           <option value="DATE">DATE</option>
         </select>
@@ -302,7 +300,7 @@ provide('addTable', addTable)
   padding: 20px;
   border-radius: 5px;
   height: 500px;
-  width: 500px;
+  width: 700px;
 }
 
 .sql_textarea {

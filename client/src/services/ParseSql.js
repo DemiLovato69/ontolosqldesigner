@@ -9,19 +9,18 @@ export const ParseSql = {
                 name: table.label,
                 position: table.position,
                 rows: rows.map(row => {
-                    const connectedTo = connections
-                        .filter(connection => connection.source === row.id)
+                    const connectedBy = connections
+                        .filter(connection => connection.target === row.id)
                         .map(connection => {
-                            const targetRow = elements.value.find(el => el.id === connection.target);
-                            const targetTable = tables.find(table => table.id === targetRow.parentNode);
+                            const sourceRow = elements.value.find(el => el.id === connection.source);
+                            const sourceTable = tables.find(table => table.id === sourceRow.parentNode);
                             return {
-                                targetId: connection.target,
-                                targetRowName: targetRow.label,
-                                targetTableName: targetTable.label,
+                                sourceId: connection.source,
+                                sourceRowName: sourceRow.label,
+                                sourceTableName: sourceTable.label,
                                 relationshipType: connection.data.relationshipType
                             };
                         });
-
                     return {
                         id: row.id,
                         name: row.label,
@@ -30,7 +29,7 @@ export const ParseSql = {
                         sqlType: row.data.sqlType,
                         nullable: row.data.nullable,
                         unsigned: row.data.unsigned,
-                        connectedTo: connectedTo
+                        connectedBy: connectedBy
                     };
                 }),
             };
@@ -49,14 +48,13 @@ export const ParseSql = {
         const foreignKeysArray = [];
 
         data.forEach((table) => {
-            script += `CREATE TABLE \`${table.name}\`
-            (     `;
+            script += `CREATE TABLE \`${table.name}\`(\n\t`;
             table.rows.forEach((row) => {
-                script += `\`${row.name}\` ${row.sqlType} `
+                script += `\`${row.name}\` ${row.sqlType}`
                 //setting modifies that persist with primary keys
                 if (row.keyMod === "Primary") {
                     primary_key = true;
-                    script += "UNSIGNED ";
+                    script += ' UNSIGNED ';
                 }
                 if (row.keyMod === "Index") {
                     index = true;
@@ -65,10 +63,9 @@ export const ParseSql = {
                     unique = true;
                 }
 
-                script += `${(row.nullable ? "NULL" : "NOT NULL")}`;
 
                 if (primary_key) {
-                    script += " AUTO_INCREMENT PRIMARY KEY";
+                    script += "AUTO_INCREMENT PRIMARY KEY";
                     primary_key = false;
                 }
                 if (index) {
@@ -79,28 +76,33 @@ export const ParseSql = {
                     script += `,\n\tUNIQUE KEY \`unique_key_${row.name}\` (\`${row.name}\`)`
                     unique = false;
                 }
-
-                script += ",\n\t"
-                if (row.connectedTo.length > 0) {
-                    row.connectedTo.forEach(function (element) {
-                        foreignKeys.table = table.name;
-                        foreignKeys.rowName = row.name;
-                        foreignKeys.targetTableName = element.targetTableName;
-                        foreignKeys.targetRowName = element.targetRowName;
+                if (row.connectedBy.length > 0) {
+                    row.connectedBy.forEach(function (element) {
+                        foreignKeys.table = element.sourceTableName;
+                        foreignKeys.rowName = element.sourceRowName;
+                        foreignKeys.targetTableName = table.name;
+                        foreignKeys.targetRowName = row.name;
                         foreignKeysArray.push(foreignKeys);
+                        script += ' UNSIGNED';
                     });
                 }
+                script += `${(row.nullable ? " NULL" : " NOT NULL")}`;
+
+                script += ",\n\t"
+
             })
+
             script = script.slice(0, -3); //cutting the last not needed comma
             script += "\n\t"
             script += ");\n"
 
         })
         foreignKeysArray.forEach(function (element) {
-            script += `ALTER TABLE \`${foreignKeys.table}\``;
-            script += ` ADD CONSTRAINT \`${foreignKeys.table}_${foreignKeys.rowName}_foreign\``;
-            script += ` FOREIGN KEY (\`${foreignKeys.rowName}\`)`;
-            script += ` REFERENCES \`${foreignKeys.targetTableName}\`(\`${foreignKeys.targetRowName}\`);\n`
+
+            script += `ALTER TABLE \`${foreignKeys.targetTableName}\``;
+            script += ` ADD CONSTRAINT \`${foreignKeys.targetTableName}_${foreignKeys.targetRowName}_foreign\``;
+            script += ` FOREIGN KEY (\`${foreignKeys.targetRowName}\`)`;
+            script += ` REFERENCES \`${foreignKeys.table}\`(\`${foreignKeys.rowName}\`);\n`
         });
 
        return script;
