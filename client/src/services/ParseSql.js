@@ -1,4 +1,8 @@
+import {ref} from "vue";
+import  { TableActions } from './TableActions.js';
+import {Position} from "@vue-flow/core";
 export const ParseSql = {
+
      async exportToSql(elements) {
         //formatting chaotic elements array to a more civilised data array
         const connections = elements.value.filter(el => el.type === 'chickenFoot');
@@ -48,7 +52,7 @@ export const ParseSql = {
         const foreignKeysArray = [];
 
         data.forEach((table) => {
-            script += `CREATE TABLE \`${table.name}\`(\n\t`;
+            script += `CREATE TABLE \`${table.name}\` (\n\t`;
             table.rows.forEach((row) => {
                 script += `\`${row.name}\` ${row.sqlType}`
                 //setting modifies that persist with primary keys
@@ -107,4 +111,87 @@ export const ParseSql = {
 
        return script;
     },
+    async importSql(sqlScript) {
+        const TableStyle = {
+            display: 'flex',
+            border: '1px solid #10b981',
+            background: '#007BFF',
+            borderColor: '#007BFF',
+            color: 'white',
+            borderRadius: '5px',
+            width: '350px',
+            height: '40px',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+        }
+
+        const elements = ref([
+            {
+            },
+        ])
+        let nodeProps = {};
+        const rowProps = {
+            rowName: '',
+            keyMod: '',
+            sqlType: '',
+            nullable: false,
+            unsigned: false
+        }
+
+
+        let statements = sqlScript.split(";");
+        statements = statements.map(function (statement) {
+            return statement.replace(/\n/g, '').replace(/\t/g, '').replace(/`/g,'').toLowerCase();
+        });
+        statements.forEach(function (statement) {
+            if (statement.trim().startsWith("create table")) {
+                const createTableMatch = statement.match(/^create table (\w+) \(([^]*)\)$/);
+                if (createTableMatch && createTableMatch[1] && createTableMatch[2]) {
+                    const tableName = createTableMatch[1];
+                    const tableId = TableActions.addTable(elements, TableStyle, tableName);
+                     nodeProps = {
+                         id: tableId,
+                         label: tableName,
+                        data: {
+
+                            toolbarPosition: 'top',
+                            toolbarVisible: true,
+                            // position: {x: 0, y: 0},
+                        },
+
+                    }
+                }
+                const inBrackets = statement.match(/\(([^]*?)\)$/);
+
+                if (inBrackets && inBrackets[1]) {
+                    let rows = inBrackets[1].split(',');
+
+                    rows.forEach(function (element){
+
+                        const rowElements = element.split(' ');
+
+                        if (rowElements[0] !== 'index' && rowElements[0] !== 'unique' )
+                            rowProps.rowName = rowElements[0];
+                            rowProps.sqlType = rowElements[1].toUpperCase();
+                            rowElements.shift(); //removing row name from array, to avoid errors
+                            rowElements.includes('not') ? rowProps.nullable = false  : true ;
+                            rowElements.includes('unsigned') ? rowProps.unsigned = true : false;
+                            rowElements.includes('primary') ? rowProps.keyMod = 'Primary' :  rowProps.keyMod = 'None';
+                            rowElements.includes('index') ? rowProps.keyMod = 'Index' :  rowProps.keyMod = 'None';
+                            rowElements.includes('unique') ? rowProps.keyMod = 'Unique' :  rowProps.keyMod = 'None';
+                            console.log(rowProps)
+                            console.log(nodeProps)
+                            TableActions.addRow(elements, nodeProps, rowProps);
+
+
+                    });
+                }
+            }
+        });
+
+
+
+        return elements.value;
+    },
+
 }

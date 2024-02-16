@@ -42,10 +42,17 @@ const elements = ref([
 ])
 
 const addTable = () => {
-  TableActions.addTable(elements, TableStyle);
+  TableActions.addTable(elements, TableStyle, 'new_table');
 }
 const addRow = (nodeProps) => {
-  TableActions.addRow(elements, nodeProps);
+  console.log(nodeProps);
+  TableActions.addRow(elements, nodeProps, {
+    rowName: 'new_row',
+    keyMod: 'None',
+    sqlType: 'INT',
+    nullable: false,
+    unsigned: false
+  });
 };
 const deleteEdge = () => {
   TableActions.deleteEdge(elements, selectedEdge);
@@ -149,14 +156,17 @@ const closeExportModal = () => {
 };
 const openImportModal = async () => {
   showImportModal.value = true;
-  // importContent.value = await ParseSql.importSql(elements);
 };
+const importSql = async () => {
 
+  // console.log( await ParseSql.importSql(importContent.value));
+  elements.value = await ParseSql.importSql(importContent.value);
+};
 const closeImportModal = () => {
   showImportModal.value = false;
 };
 
-
+provide('importSql', importSql);
 provide('openExportModal', openExportModal);
 provide('openImportModal', openImportModal);
 provide('saveElementsToLocalStorage', saveElementsToLocalStorage);
@@ -275,6 +285,7 @@ provide('addTable', addTable)
   <div v-if="showImportModal" class="sql_modal">
     <div class="sql_modal_content">
       <textarea class="sql_textarea" v-model="importContent"></textarea>
+      <button @click="importSql">Import</button>
       <button @click="closeImportModal">Close</button>
     </div>
   </div>

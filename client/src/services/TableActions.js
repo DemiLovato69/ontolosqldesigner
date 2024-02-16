@@ -1,15 +1,15 @@
 import {Position} from "@vue-flow/core";
 export const TableActions = {
 
-    addTable(elementsRef, TableStyle){
+    addTable(elementsRef, TableStyle, name){
     const elements = elementsRef.value;
-
+    const tableId = Math.random().toString();
     elementsRef.value = [
         ...elements,
         {
-            id: Math.random().toString(),
+            id: tableId,
             type: 'table',
-            label: 'new table',
+            label: name,
             data: {
                 toolbarPosition: Position.Top,
                 toolbarVisible: true
@@ -18,9 +18,11 @@ export const TableActions = {
             style: TableStyle,
         }
     ];
+    return tableId;
 },
 
-  addRow(elementsRef, nodeProps) {
+  addRow(elementsRef, nodeProps, rowProps) {
+
     const elements = elementsRef.value;
     const RowStyle = {
         display: 'flex',
@@ -35,14 +37,15 @@ export const TableActions = {
         justifyContent: 'space-between',
     }
     const existingRows = elements.filter(el => el.parentNode === nodeProps.id);
-    const position = nodeProps.data.position || {x: 0, y: 0};
+    // const position = nodeProps.data.position || {x: 0, y: 0};
+      const position =  {x: 0, y: 0};
 
     elementsRef.value = [
         ...elements,
         {
             id: Date.now().toString(),
             type: 'row',
-            label: 'New Row',
+            label: rowProps.rowName,
             position: {x: position.x, y: position.y + 40 + 40 * existingRows.length},
             style: RowStyle,
             draggable: false,
@@ -51,10 +54,10 @@ export const TableActions = {
                 editing: false,
                 showModal: false,
                 showOptionsModal: false,
-                keyMod: 'None',
-                sqlType: 'INT',
-                nullable: false,
-                unsigned: false,
+                keyMod: rowProps.keyMod,
+                sqlType: rowProps.sqlType,
+                nullable: rowProps.nullable,
+                unsigned: rowProps.unsigned,
             },
         },
     ];
