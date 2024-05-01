@@ -4,6 +4,7 @@ import {Position} from "@vue-flow/core";
 export const ParseSql = {
 
      async exportToSql(elements) {
+         console.log(elements.value)
         //formatting chaotic elements array to a more civilised data array
         const connections = elements.value.filter(el => el.type === 'chickenFoot');
         const tables = elements.value.filter(elem => elem.type === 'table');
@@ -13,15 +14,15 @@ export const ParseSql = {
                 name: table.label,
                 position: table.position,
                 rows: rows.map(row => {
-                    const connectedBy = connections
-                        .filter(connection => connection.target === row.id)
+                    const connectedTo = connections
+                        .filter(connection => connection.source === row.id)
                         .map(connection => {
-                            const sourceRow = elements.value.find(el => el.id === connection.source);
-                            const sourceTable = tables.find(table => table.id === sourceRow.parentNode);
+                            const targetRow = elements.value.find(el => el.id === connection.target);
+                            const targetTable = tables.find(table => table.id === targetRow.parentNode);
                             return {
                                 sourceId: connection.source,
-                                sourceRowName: sourceRow.label,
-                                sourceTableName: sourceTable.label,
+                                targetRowName: targetRow.label,
+                                targetTableName: targetTable.label,
                                 relationshipType: connection.data.relationshipType
                             };
                         });
@@ -33,7 +34,7 @@ export const ParseSql = {
                         sqlType: row.data.sqlType,
                         nullable: row.data.nullable,
                         unsigned: row.data.unsigned,
-                        connectedBy: connectedBy
+                        connectedTo: connectedTo
                     };
                 }),
             };
@@ -66,61 +67,59 @@ export const ParseSql = {
                 }
                 if (row.keyMod === "Unique") {
                     unique = true;
-
                 }
 
+                if (row.connectedTo.length > 0) {
+                    row.connectedTo.forEach(function (element) {
+                        foreignKeys.table = table.name;
+                        foreignKeys.rowName = row.name;
+                        foreignKeys.targetTableName = element.targetTableName;
+                        foreignKeys.targetRowName = element.targetRowName;
+                        foreignKeysArray.push(foreignKeys);
+                    });
+                }
 
                 if (index) {
                     script += `,\n\tINDEX \`index_key_${row.name}\` (\`${row.name}\`)`
-                    index = false;
                 }
                 if (unique) {
                     script += `,\n\tUNIQUE KEY \`unique_key_${row.name}\` (\`${row.name}\`)`
-                    unique = false;
                 }
-                if (row.connectedBy.length > 0) {
-                    row.connectedBy.forEach(function (element) {
-                        foreignKeys.table = element.sourceTableName;
-                        foreignKeys.rowName = element.sourceRowName;
-                        foreignKeys.targetTableName = table.name;
-                        foreignKeys.targetRowName = row.name;
-                        foreignKeysArray.push(foreignKeys);
-                        script += ' UNSIGNED';
-                    });
-                }
-                if(!index && !unique)
-                {
+
+                if(!index && !unique) {
                     script += `${(row.nullable ? " NULL" : " NOT NULL")}`;
                     script += `${(row.unsigned ? " UNSIGNED" : "")}`;
                 }
+                index = false;
+                unique = false;
 
-                script += ",\n\t"
+                script += ",\n\t";
 
             })
-            if (primary_key)
-            {
+            if (primary_key) {
                 script += `CONSTRAINT PK_${primary_key_field} PRIMARY KEY (${primary_key_field}),`
                 primary_key = false;
                 script += "\n\t"
             }
-            foreignKeysArray.forEach(function (element) {
-                script += `CONSTRAINT \`FK_${foreignKeys.targetTableName}_${foreignKeys.targetRowName}\``;
-                script += ` FOREIGN KEY (\`${foreignKeys.targetRowName}\`)`;
-                script += ` REFERENCES \`${foreignKeys.table}\`(\`${foreignKeys.rowName}\`)\n`
-                script += "\n\t"
-            });
-            foreignKeysArray =[];
-
-                script = script.slice(0, -3);
-                script += "\n"
 
             //cutting the last not needed comma
+            script = script.slice(0, -3);
+            script += "\n"
+
+
 
 
             script += ");\n"
 
         })
 
+         foreignKeysArray.forEach(function (element) {
+             script += `ALTER TABLE \`${foreignKeys.table}\``;
+             script += `ADD CONSTRAINT \`FK_${foreignKeys.targetTableName}_${foreignKeys.targetRowName}\``;
+             script += ` FOREIGN KEY (\`${foreignKeys.rowName}\`)`;
+             script += ` REFERENCES \`${foreignKeys.targetTableName}\`(\`${foreignKeys.targetRowName}\`)\n`
+             script += "\n\t"
+         });
 
        return script;
     },
@@ -327,13 +326,7 @@ export const ParseSql = {
                          }
                      });
                 }
-
             }
-
-
-
-
-
         });
 
         foreignKeysArray.forEach(function (foreignKey) {
