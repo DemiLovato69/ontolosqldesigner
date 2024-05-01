@@ -41,54 +41,78 @@ export const ParseSql = {
         });
         //this part forms the sql script string from formatted array
         let script = '';
-        let primary_key = false;
-        let primary_key_field = '';
         let index = false;
         let unique = false;
-        const foreignKeys = {
+
+        let tableNames = [];
+
+        let primaryKeysArray = [];
+        let primaryKeys = {
+            table: '',
+            rowName: ''
+        }
+        let uniqueKeysArray = [];
+        let uniqueKeys = {
+            table: '',
+            rowName: ''
+        }
+
+         let indexKeysArray = [];
+         let indexKeys = {
+             table: '',
+             rowName: ''
+         }
+
+        let foreignKeysArray = [];
+        let foreignKeys = {
             targetTableName: "",
             targetRowName: "",
             rowName: "",
             table: ""
         };
-        let foreignKeysArray = [];
 
         data.forEach((table) => {
+
+            tableNames.push(table.name);
             script += `CREATE TABLE \`${table.name}\` (\n\t`;
+
             table.rows.forEach((row) => {
                 script += `\`${row.name}\` ${row.sqlType}`
 
                 if (row.keyMod === "Primary") {
-                    primary_key_field = row.name;
-                    primary_key = true;
-                }
-                if (row.keyMod === "Index") {
-                    index = true;
+                    script += ' UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY';
+                    primaryKeys.table = table.name;
+                    primaryKeys.rowName = row.name;
+                    primaryKeysArray.push(primaryKeys);
+                    primaryKeys = [];
                 }
                 if (row.keyMod === "Unique") {
-                    unique = true;
+                    uniqueKeys.table = table.name;
+                    uniqueKeys.rowName = row.name;
+                    uniqueKeysArray.push(uniqueKeys);
+                    uniqueKeys = [];
                 }
-
+                if (row.keyMod === "Index") {
+                    indexKeys.table = table.name;
+                    indexKeys.rowName = row.name;
+                    indexKeysArray.push(indexKeys);
+                    indexKeys = [];
+                }
                 if (row.connectedTo.length > 0) {
                     row.connectedTo.forEach(function (element) {
+                        script += ' UNSIGNED';
                         foreignKeys.table = table.name;
                         foreignKeys.rowName = row.name;
                         foreignKeys.targetTableName = element.targetTableName;
                         foreignKeys.targetRowName = element.targetRowName;
                         foreignKeysArray.push(foreignKeys);
+                        foreignKeys = [];
                     });
                 }
 
-                if (index) {
-                    script += `,\n\tINDEX \`index_key_${row.name}\` (\`${row.name}\`)`
-                }
-                if (unique) {
-                    script += `,\n\tUNIQUE KEY \`unique_key_${row.name}\` (\`${row.name}\`)`
-                }
 
                 if(!index && !unique) {
                     script += `${(row.nullable ? " NULL" : " NOT NULL")}`;
-                    script += `${(row.unsigned ? " UNSIGNED" : "")}`;
                 }
                 index = false;
                 unique = false;
@@ -96,33 +120,56 @@ export const ParseSql = {
                 script += ",\n\t";
 
             })
-            if (primary_key) {
-                script += `CONSTRAINT PK_${primary_key_field} PRIMARY KEY (${primary_key_field}),`
-                primary_key = false;
-                script += "\n\t"
-            }
 
-            //cutting the last not needed comma
-            script = script.slice(0, -3);
+            script = script.slice(0, -3);  //cutting the last not needed comma
             script += "\n"
-
-
-
 
             script += ");\n"
 
         })
 
-         foreignKeysArray.forEach(function (element) {
-             script += `ALTER TABLE \`${foreignKeys.table}\``;
-             script += `ADD CONSTRAINT \`FK_${foreignKeys.targetTableName}_${foreignKeys.targetRowName}\``;
-             script += ` FOREIGN KEY (\`${foreignKeys.rowName}\`)`;
-             script += ` REFERENCES \`${foreignKeys.targetTableName}\`(\`${foreignKeys.targetRowName}\`)\n`
+         tableNames.forEach(function (table) {
+            if (uniqueKeysArray.length > 0 || indexKeysArray.length > 0) {
+             script += `ALTER TABLE ${table}`;
+             script += "\n"
+
+                 uniqueKeysArray.forEach(function (uniqueKey) {
+                     if (uniqueKey.table === table) {
+                         script += `\tADD UNIQUE KEY \`unique_key_${uniqueKey.rowName}\` (\`${uniqueKey.rowName}\`),`;
+                         uniqueKeysArray.shift();
+                         script += "\n"
+                     }
+
+                 })
+
+
+                 indexKeysArray.forEach(function (indexKey) {
+                     if (indexKey.table === table) {
+                         script += `\tADD KEY (\`${indexKey.rowName}\`),`;
+                         indexKeysArray.shift();
+                         script += "\n"
+                     }
+                 })
+
+
+             script = script.slice(0, -2);
+             script += ';\n'
+             }
+         });
+
+         script += "\n"
+
+         foreignKeysArray.forEach(function (foreignKey) {
+             script += `ALTER TABLE \`${foreignKey.table}\` `;
+             script += `ADD CONSTRAINT \`FK_${foreignKey.targetTableName}_${foreignKey.targetRowName}\``;
+             script += ` FOREIGN KEY (\`${foreignKey.rowName}\`)`;
+             script += ` REFERENCES \`${foreignKey.targetTableName}\`(\`${foreignKey.targetRowName}\`)\n`
              script += "\n\t"
          });
 
        return script;
     },
+
     async importSql(sqlScript) {
         const TableStyle = {
             display: 'flex',
