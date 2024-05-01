@@ -45,7 +45,6 @@ const addTable = () => {
   TableActions.addTable(elements, TableStyle, 'new_table');
 }
 const addRow = (nodeProps) => {
-  console.log(nodeProps);
   TableActions.addRow(elements, nodeProps, {
     rowName: 'new_row',
     keyMod: 'None',
@@ -230,7 +229,7 @@ provide('addTable', addTable)
       <!--SQL Type-->
       <div>
         <select v-model="data.sqlType">
-          <option selected="selected" value="INT">INT</option>
+          <option selected="selected" value="INT(11)">INT</option>
           <option value="VARCHAR(255)">VARCHAR</option>
           <option value="TEXT">TEXT</option>
           <option value="DATE">DATE</option>

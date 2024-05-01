@@ -37,13 +37,12 @@ export const TableActions = {
         justifyContent: 'space-between',
     }
     const existingRows = elements.filter(el => el.parentNode === nodeProps.id);
-    // const position = nodeProps.data.position || {x: 0, y: 0};
-      const position =  {x: 0, y: 0};
+    const position = nodeProps.data.position || {x: 0, y: 0};
 
     elementsRef.value = [
         ...elements,
         {
-            id: Date.now().toString(),
+            id: Math. floor(Math. random() * 100).toString(),
             type: 'row',
             label: rowProps.rowName,
             position: {x: position.x, y: position.y + 40 + 40 * existingRows.length},
@@ -61,6 +60,7 @@ export const TableActions = {
             },
         },
     ];
+    console.log(elementsRef.value)
 },
 
   updateConnectionLineType(elementsRef, selectedEdgeRef, relationshipType) {

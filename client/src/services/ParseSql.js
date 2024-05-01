@@ -41,6 +41,7 @@ export const ParseSql = {
         //this part forms the sql script string from formatted array
         let script = '';
         let primary_key = false;
+        let primary_key_field = '';
         let index = false;
         let unique = false;
         const foreignKeys = {
@@ -49,29 +50,26 @@ export const ParseSql = {
             rowName: "",
             table: ""
         };
-        const foreignKeysArray = [];
+        let foreignKeysArray = [];
 
         data.forEach((table) => {
             script += `CREATE TABLE \`${table.name}\` (\n\t`;
             table.rows.forEach((row) => {
                 script += `\`${row.name}\` ${row.sqlType}`
-                //setting modifies that persist with primary keys
+
                 if (row.keyMod === "Primary") {
+                    primary_key_field = row.name;
                     primary_key = true;
-                    script += ' UNSIGNED ';
                 }
                 if (row.keyMod === "Index") {
                     index = true;
                 }
                 if (row.keyMod === "Unique") {
                     unique = true;
+
                 }
 
 
-                if (primary_key) {
-                    script += "AUTO_INCREMENT PRIMARY KEY";
-                    primary_key = false;
-                }
                 if (index) {
                     script += `,\n\tINDEX \`index_key_${row.name}\` (\`${row.name}\`)`
                     index = false;
@@ -90,24 +88,39 @@ export const ParseSql = {
                         script += ' UNSIGNED';
                     });
                 }
-                script += `${(row.nullable ? " NULL" : " NOT NULL")}`;
+                if(!index && !unique)
+                {
+                    script += `${(row.nullable ? " NULL" : " NOT NULL")}`;
+                    script += `${(row.unsigned ? " UNSIGNED" : "")}`;
+                }
 
                 script += ",\n\t"
 
             })
+            if (primary_key)
+            {
+                script += `CONSTRAINT PK_${primary_key_field} PRIMARY KEY (${primary_key_field}),`
+                primary_key = false;
+                script += "\n\t"
+            }
+            foreignKeysArray.forEach(function (element) {
+                script += `CONSTRAINT \`FK_${foreignKeys.targetTableName}_${foreignKeys.targetRowName}\``;
+                script += ` FOREIGN KEY (\`${foreignKeys.targetRowName}\`)`;
+                script += ` REFERENCES \`${foreignKeys.table}\`(\`${foreignKeys.rowName}\`)\n`
+                script += "\n\t"
+            });
+            foreignKeysArray =[];
 
-            script = script.slice(0, -3); //cutting the last not needed comma
-            script += "\n\t"
+                script = script.slice(0, -3);
+                script += "\n"
+
+            //cutting the last not needed comma
+
+
             script += ");\n"
 
         })
-        foreignKeysArray.forEach(function (element) {
 
-            script += `ALTER TABLE \`${foreignKeys.targetTableName}\``;
-            script += ` ADD CONSTRAINT \`${foreignKeys.targetTableName}_${foreignKeys.targetRowName}_foreign\``;
-            script += ` FOREIGN KEY (\`${foreignKeys.targetRowName}\`)`;
-            script += ` REFERENCES \`${foreignKeys.table}\`(\`${foreignKeys.rowName}\`);\n`
-        });
 
        return script;
     },
@@ -130,7 +143,7 @@ export const ParseSql = {
             },
         ])
         let nodeProps = {};
-        const rowProps = {
+        let rowProps = {
             rowName: '',
             keyMod: '',
             sqlType: '',
@@ -139,59 +152,172 @@ export const ParseSql = {
         }
 
 
-        let statements = sqlScript.split(";");
+        let statements = sqlScript.split("\n");
         statements = statements.map(function (statement) {
-            return statement.replace(/\n/g, '').replace(/\t/g, '').replace(/`/g,'').toLowerCase();
+            statement = statement.toLowerCase()
+            return statement.replace(/\n/g, '').replace(/\t/g, '').replace(/`/g,'') //cutting spaces and line ends
+                .replace(/--.+/, '').replace(/\/\*.+/, '').replace('--', '') //cutting comments
+                .replace(/^set.+/, '').replace('commit;', '').replace('start transaction;', '');
         });
+        statements = statements.join("");
+        statements = statements.split(";");
+
+        const alterTableElements = [];
+        const createTableElements = [];
+        statements.forEach(statement => {
+            statement.trim().toLowerCase().startsWith("alter table")
+                ? alterTableElements.push(statement)
+                : createTableElements.push(statement);
+            });
+        statements = alterTableElements.concat(createTableElements)
+
+
+        let primaryKeysArray = []
+        let uniqueKeysArray = []
+        let indexesArray = []
+        let foreignKeysArray = []
+        let primaryKeys = {
+            table: '',
+            rowName: ''
+        }
+        let uniqueKeys = {
+            table: '',
+            rowName: ''
+        }
+        let indexes = [{
+            table: '',
+            rowName: ''
+        }]
+        let foreignKeys = {
+            table: '',
+            rowName: '',
+            targetRowName: '',
+            targetTableName: '',
+            foreignKeyName: ''
+        }
+        let currentTable = '';
         statements.forEach(function (statement) {
-            if (statement.trim().startsWith("create table")) {
-                const createTableMatch = statement.match(/^create table (\w+) \(([^]*)\)$/);
-                if (createTableMatch && createTableMatch[1] && createTableMatch[2]) {
-                    const tableName = createTableMatch[1];
-                    const tableId = TableActions.addTable(elements, TableStyle, tableName);
-                     nodeProps = {
-                         id: tableId,
-                         label: tableName,
-                        data: {
 
-                            toolbarPosition: 'top',
-                            toolbarVisible: true,
-                            // position: {x: 0, y: 0},
-                        },
+            if (statement.trim().startsWith("alter table")) {
 
+                let alterTableStatements = statement.split(',');
+                alterTableStatements.forEach(function (alterTableStatement) {
+
+                    console.log(alterTableStatement)
+
+                    let alterTableMatch = alterTableStatement.match(/alter\s+table\s+(.+\s+)+add/);
+                    if (alterTableMatch){
+                        currentTable = alterTableMatch[1].trim();
                     }
+
+                    let primaryKeyMatch = alterTableStatement.match(/add\s+primary\s+key\s+\((.+)\)/);
+                    if (primaryKeyMatch){
+                        primaryKeys.table = currentTable.trim();
+                        primaryKeys.rowName = primaryKeyMatch[1].trim();
+                        primaryKeysArray.push(primaryKeys)
+                        primaryKeys = {};
+                    }
+
+                    let uniqueMatch = alterTableStatement.match(/add\s+unique\s+key\s+.+\((.+)\)/);
+                    if (uniqueMatch) {
+                        uniqueKeys.table = currentTable.trim();
+                        uniqueKeys.rowName = uniqueMatch[1].trim();
+                        uniqueKeysArray.push(uniqueKeys)
+                        uniqueKeys = {};
+                    }
+
+                    let foreignKeyMatch = alterTableStatement.match(/alter\s+table\s+(.+\s+)+add\s+constraint\s+(.+)foreign\s+key\s+\((.+)\)\s+references\s+(.+)\s+\((.+)\)/);
+                    if (foreignKeyMatch) {
+                        foreignKeys.table = currentTable.trim();
+                        foreignKeys.foreignKeyName = foreignKeyMatch[2].trim();
+                        foreignKeys.rowName = foreignKeyMatch[3].trim();
+                        foreignKeys.targetTableName = foreignKeyMatch[4].trim();
+                        foreignKeys.targetRowName = foreignKeyMatch[5].trim();
+                        foreignKeysArray.push(foreignKeys)
+                        foreignKeys = {};
+                    }
+
+                    let indexMatch = alterTableStatement.match(/add\s+key\s+.+\((.+)\)/);
+                    if (indexMatch) {
+                        indexes.table = currentTable.trim();
+                        indexes.rowName = indexMatch[1];
+                        indexesArray.push(indexes)
+                        indexes = {};
+                    }
+
+                });
+            }
+
+            console.log(foreignKeysArray)
+            if (statement.trim().startsWith("create table")) {
+
+
+                const tableName = statement.match(/create\s+table\s+(.+\s+)+\(/)[1].trim();
+                const tableId = TableActions.addTable(elements, TableStyle, tableName);
+                nodeProps = {
+                    id: tableId,
+                    label: tableName,
+                    data: {
+
+                        toolbarPosition: 'top',
+                        toolbarVisible: true,
+                        position: {x: 0, y: 0},
+                    },
+
                 }
-                const inBrackets = statement.match(/\(([^]*?)\)$/);
+
+
+                const inBrackets = statement.match(/\((.+)\)/);
 
                 if (inBrackets && inBrackets[1]) {
                     let rows = inBrackets[1].split(',');
+                    //console.log(rows)
+                     rows.forEach(function (element) {
 
-                    rows.forEach(function (element){
+                         let rowElements = element.split(' ');
+                         rowElements = rowElements.filter(item => item !== ""); //removing empty elements
+                         rowProps.rowName = rowElements[0];
+                         rowProps.sqlType = rowElements[1].toUpperCase();
+                         rowProps.nullable = !rowElements.includes('not');
+                         rowProps.unsigned = rowElements.includes('unsigned');
+                         rowElements.includes('primary') ? rowProps.keyMod = 'Primary' :  rowProps.keyMod = 'None';
+                         console.log(rowProps)
 
-                        const rowElements = element.split(' ');
+                         primaryKeysArray.forEach(function (primaryKey) {
+                             if (primaryKey.table === tableName && primaryKey.rowName === rowProps.rowName) {
+                                 rowProps.keyMod = 'Primary';
+                             }
+                         })
+                         indexesArray.forEach(function (index) {
+                             if (index.table === tableName && index.rowName === rowProps.rowName) {
+                                 rowProps.keyMod = 'Index';
+                             }
+                         })
+                         uniqueKeysArray.forEach(function (unique) {
+                             if (unique.table === tableName && unique.rowName === rowProps.rowName) {
+                                 rowProps.keyMod = 'Unique';
+                             }
+                         })
 
-                        if (rowElements[0] !== 'index' && rowElements[0] !== 'unique' )
-                            rowProps.rowName = rowElements[0];
-                            rowProps.sqlType = rowElements[1].toUpperCase();
-                            rowElements.shift(); //removing row name from array, to avoid errors
-                            rowElements.includes('not') ? rowProps.nullable = false  : true ;
-                            rowElements.includes('unsigned') ? rowProps.unsigned = true : false;
-                            rowElements.includes('primary') ? rowProps.keyMod = 'Primary' :  rowProps.keyMod = 'None';
-                            rowElements.includes('index') ? rowProps.keyMod = 'Index' :  rowProps.keyMod = 'None';
-                            rowElements.includes('unique') ? rowProps.keyMod = 'Unique' :  rowProps.keyMod = 'None';
-                            console.log(rowProps)
-                            console.log(nodeProps)
-                            TableActions.addRow(elements, nodeProps, rowProps);
-
-
-                    });
+                         TableActions.addRow(elements, nodeProps, rowProps);
+                         rowProps = {
+                             rowName: '',
+                             keyMod: '',
+                             sqlType: '',
+                             nullable: false,
+                             unsigned: false
+                         }
+                        // console.log(rowProps)
+                     });
                 }
             }
+
+
+
+
+
         });
-
-
 
         return elements.value;
     },
-
 }
