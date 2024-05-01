@@ -193,7 +193,9 @@ export const ParseSql = {
             rowName: '',
             targetRowName: '',
             targetTableName: '',
-            foreignKeyName: ''
+            foreignKeyName: '',
+            sourceId: '',
+            targetId: ''
         }
         let currentTable = '';
         statements.forEach(function (statement) {
@@ -202,8 +204,6 @@ export const ParseSql = {
 
                 let alterTableStatements = statement.split(',');
                 alterTableStatements.forEach(function (alterTableStatement) {
-
-                    console.log(alterTableStatement)
 
                     let alterTableMatch = alterTableStatement.match(/alter\s+table\s+(.+\s+)+add/);
                     if (alterTableMatch){
@@ -248,7 +248,7 @@ export const ParseSql = {
                 });
             }
 
-            console.log(foreignKeysArray)
+
             if (statement.trim().startsWith("create table")) {
 
 
@@ -271,7 +271,7 @@ export const ParseSql = {
 
                 if (inBrackets && inBrackets[1]) {
                     let rows = inBrackets[1].split(',');
-                    //console.log(rows)
+
                      rows.forEach(function (element) {
 
                          let rowElements = element.split(' ');
@@ -280,12 +280,19 @@ export const ParseSql = {
                          rowProps.sqlType = rowElements[1].toUpperCase();
                          rowProps.nullable = !rowElements.includes('not');
                          rowProps.unsigned = rowElements.includes('unsigned');
-                         rowElements.includes('primary') ? rowProps.keyMod = 'Primary' :  rowProps.keyMod = 'None';
-                         console.log(rowProps)
+
+                         if (rowElements.includes('primary')) {
+                             rowProps.keyMod = 'Primary';
+                             rowProps.unsigned = true;
+                         }
+                         else {
+                             rowProps.keyMod = 'None';
+                         }
 
                          primaryKeysArray.forEach(function (primaryKey) {
                              if (primaryKey.table === tableName && primaryKey.rowName === rowProps.rowName) {
                                  rowProps.keyMod = 'Primary';
+                                 rowProps.unsigned = true;
                              }
                          })
                          indexesArray.forEach(function (index) {
@@ -299,7 +306,18 @@ export const ParseSql = {
                              }
                          })
 
-                         TableActions.addRow(elements, nodeProps, rowProps);
+                         let rowId = TableActions.addRow(elements, nodeProps, rowProps);
+                         foreignKeysArray.forEach(function (foreignKey){
+
+                             if (foreignKey.rowName === rowProps.rowName) {
+
+                                 foreignKey.sourceId = rowId;
+
+                             }
+                             if (foreignKey.targetRowName === rowProps.rowName) {
+                                 foreignKey.targetId = rowId;
+                             }
+                         })
                          rowProps = {
                              rowName: '',
                              keyMod: '',
@@ -307,9 +325,9 @@ export const ParseSql = {
                              nullable: false,
                              unsigned: false
                          }
-                        // console.log(rowProps)
                      });
                 }
+
             }
 
 
@@ -318,6 +336,9 @@ export const ParseSql = {
 
         });
 
+        foreignKeysArray.forEach(function (foreignKey) {
+            TableActions.addEdge(elements, foreignKey.sourceId, foreignKey.targetId)
+        })
         return elements.value;
     },
 }

@@ -19,7 +19,7 @@ export const TableActions = {
         }
     ];
     return tableId;
-},
+    },
 
   addRow(elementsRef, nodeProps, rowProps) {
 
@@ -39,10 +39,12 @@ export const TableActions = {
     const existingRows = elements.filter(el => el.parentNode === nodeProps.id);
     const position = nodeProps.data.position || {x: 0, y: 0};
 
+    const id =  Math. floor(Math. random() * 100000).toString();
+
     elementsRef.value = [
         ...elements,
         {
-            id: Math. floor(Math. random() * 100).toString(),
+            id: id,
             type: 'row',
             label: rowProps.rowName,
             position: {x: position.x, y: position.y + 40 + 40 * existingRows.length},
@@ -60,8 +62,8 @@ export const TableActions = {
             },
         },
     ];
-    console.log(elementsRef.value)
-},
+    return id;
+    },
 
   updateConnectionLineType(elementsRef, selectedEdgeRef, relationshipType) {
     const elements = elementsRef.value;
@@ -82,16 +84,26 @@ export const TableActions = {
             elements[edgeIndex].data.markerEnd = 'url(#chickenFoot)';
         }
     }
-},
+    },
+    addEdge(elementsRef, sourceId, targetId) {
 
-  deleteEdge(elementsRef, selectedEdgeRef) {
+        elementsRef.value.push({
+            id: Math. floor(Math. random() * 100).toString(),
+            type: 'chickenFoot',
+            source: sourceId,
+            target: targetId,
+        })
+    },
+
+    deleteEdge(elementsRef, selectedEdgeRef) {
     const elements = elementsRef.value;
     const selectedEdge = selectedEdgeRef.value;
 
     elementsRef.value = elements.filter(el => el.id !== selectedEdge.id);
-},
+    },
 
-  deleteNode(elementsRef, nodeId) {
+    deleteNode(elementsRef, nodeId) {
+
     const elements = elementsRef.value;
     const nodeToDelete = elements.find(el => el.id === nodeId);
 
@@ -109,5 +121,5 @@ export const TableActions = {
             row.position.y = nodeToDelete.position.y + 40 * index;
         });
     }
-}
+    }
 }
