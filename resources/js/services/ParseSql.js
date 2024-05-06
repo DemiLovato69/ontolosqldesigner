@@ -260,7 +260,7 @@ export const ParseSql = {
 
 
             if (statement.trim().startsWith("alter table")) {
-
+                console.log(statement)
                 let alterTableStatements = statement.split(',');
                 alterTableStatements.forEach(function (alterTableStatement) {
 
@@ -285,8 +285,9 @@ export const ParseSql = {
                         uniqueKeys = {};
                     }
 
-                    let foreignKeyMatch = alterTableStatement.match(/alter\s+table\s+(.+\s+)+add\s+constraint\s+(.+)foreign\s+key\s+\((.+)\)\s+references\s+(.+)\s+\((.+)\)/);
+                    let foreignKeyMatch = alterTableStatement.match(/alter\s+table\s+(.+\s+)+add\s+constraint\s+(.+)foreign\s+key\s*\((.+)\)\s*references\s+(.+)\s*\((.+)\)/);
                     if (foreignKeyMatch) {
+
                         foreignKeys.table = currentTable.trim();
                         foreignKeys.foreignKeyName = foreignKeyMatch[2].trim();
                         foreignKeys.rowName = foreignKeyMatch[3].trim();
@@ -310,21 +311,19 @@ export const ParseSql = {
 
             if (statement.trim().startsWith("create table")) {
 
-
-                const tableName = statement.match(/create\s+table\s+(.+\s+)+\(/)[1].trim();
+                console.log(statement)
+                const tableName = statement.match(/create\s+table\s+([a-zA-Z0-9_]+)/)[1].trim();
                 const tableId = TableActions.addTable(elements, TableStyle, tableName);
                 nodeProps = {
                     id: tableId,
                     label: tableName,
                     data: {
-
                         toolbarPosition: 'top',
                         toolbarVisible: true,
                         position: {x: 0, y: 0},
                     },
 
                 }
-
 
                 const inBrackets = statement.match(/\((.+)\)/);
 
