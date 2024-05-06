@@ -41,6 +41,7 @@ export const ParseSql = {
         });
         //this part forms the sql script string from formatted array
         let script = '';
+        let primary = false;
         let index = false;
         let unique = false;
 
@@ -85,6 +86,7 @@ export const ParseSql = {
                     primaryKeys.rowName = row.name;
                     primaryKeysArray.push(primaryKeys);
                     primaryKeys = [];
+                    primary = true;
                 }
                 if (row.keyMod === "Unique") {
                     uniqueKeys.table = table.name;
@@ -111,12 +113,12 @@ export const ParseSql = {
                 }
 
 
-                if(!index && !unique) {
+                if(!index && !unique && !primary) {
                     script += `${(row.nullable ? " NULL" : " NOT NULL")}`;
                 }
                 index = false;
                 unique = false;
-
+                primary = false;
                 script += ",\n\t";
 
             })
@@ -201,10 +203,20 @@ export const ParseSql = {
         let statements = sqlScript.split("\n");
         statements = statements.map(function (statement) {
             statement = statement.toLowerCase()
-            return statement.replace(/\n/g, '').replace(/\t/g, '').replace(/`/g,'') //cutting spaces and line ends
-                .replace(/--.+/, '').replace(/\/\*.+/, '').replace('--', '') //cutting comments
-                .replace(/^set.+/, '').replace('commit;', '').replace('start transaction;', '');
+
+            return statement
+                .replace(/\n/g, '')
+                .replace(/\t/g, '')
+                .replace(/`/g,'')
+                .replace(/--.+/, '').replace(/\/\*.+/, '')
+                .replace('--', '')
+                .replace(/^set.+/, '').replace('commit;', '')
+                .replace('start transaction;', '')
+                .replace(/modify\s+.+/, '')
+                .replace(/\s+default\s+.+/, ',')
+                .replace(/engine.+/, ';');
         });
+        console.log(statements)
         statements = statements.join("");
         statements = statements.split(";");
 
@@ -245,6 +257,7 @@ export const ParseSql = {
         }
         let currentTable = '';
         statements.forEach(function (statement) {
+
 
             if (statement.trim().startsWith("alter table")) {
 
