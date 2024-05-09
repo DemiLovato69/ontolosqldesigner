@@ -26,7 +26,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'User Created Successfully'
+                'message' => 'Registered successfully'
             ], 200);
 
         } catch (\Throwable $th) {
@@ -56,7 +56,7 @@ class UserController extends Controller
 
             return response()->json([
                 'status' => true,
-                'message' => 'User Logged In Successfully',
+                'message' => 'Logged in successfully',
                 'token' => substr($user->createToken("API TOKEN")->plainTextToken,2) //removing the token_id from response
             ], 200);
 
