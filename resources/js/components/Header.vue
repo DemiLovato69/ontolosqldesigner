@@ -9,7 +9,7 @@
 
     <div class="auth-buttons">
         <register-component></register-component>
-        <button class="btn btn-primary" @click="importData">Login</button>
+        <button class="btn btn-primary" @click="">Login</button>
     </div>
 
   </div>
