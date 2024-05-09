@@ -25,7 +25,6 @@ body,
     text-align: center;
     color: #2c3e50;
 }
-
 .flex-centered {
     display: flex;
     justify-content: center;
@@ -33,6 +32,7 @@ body,
 }
 /*buttons*/
 .btn {
+    margin-left: 1rem;
     padding: 0.5rem 1rem;
     border: none;
     border-radius: 5px;

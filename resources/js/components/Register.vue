@@ -11,7 +11,7 @@
             <div class="flex-centered modal-header">
 
                 <div class="modal-title">
-                    <h5 >Register</h5>
+                    <h5>Register</h5>
                 </div>
 
                 <div class="close-button">

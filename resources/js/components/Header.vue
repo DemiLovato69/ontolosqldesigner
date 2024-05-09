@@ -7,9 +7,10 @@
         <button class="btn btn-primary" @click="addTable">Add Table</button>
     </div>
 
-    <div class="auth-buttons">
+    <div class="buttons ">
         <register-component></register-component>
-        <button class="btn btn-primary" @click="">Login</button>
+
+        <login-component></login-component>
     </div>
 
   </div>
