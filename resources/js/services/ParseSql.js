@@ -3,8 +3,7 @@ import  { TableActions } from './TableActions.js';
 import {Position} from "@vue-flow/core";
 export const ParseSql = {
 
-     async exportToSql(elements) {
-         console.log(elements.value)
+     async exportSql(elements) {
         //formatting chaotic elements array to a more civilised data array
         const connections = elements.value.filter(el => el.type === 'chickenFoot');
         const tables = elements.value.filter(elem => elem.type === 'table');
