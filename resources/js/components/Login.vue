@@ -47,17 +47,20 @@
 <script setup>
 import {ref} from "vue";
 import {Auth} from "../services/Auth";
+import { useStore } from 'vuex';
+
 
 const open = ref(false);
+const store = useStore();
 
 const userData = {
     email: '',
     password: ''
 }
 const login = async () => {
-    Auth.login(userData);
+    await Auth.login(userData, store);
+    open.value = false;
 };
-
 </script>
 
 <style scoped>

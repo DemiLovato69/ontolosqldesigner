@@ -7,10 +7,18 @@
         <button class="btn btn-primary" @click="addTable">Add Table</button>
     </div>
 
-    <div class="buttons ">
-        <register-component></register-component>
+    <div class="buttons">
+        <button class="btn btn-primary" @click="openDiagramsModal">Diagrams</button>
 
-        <login-component></login-component>
+        <div v-if="loggedIn">
+            <button class="btn btn-primary" @click="logout()">Log out</button>
+        </div>
+
+        <div v-else>
+            <register-component></register-component>
+            <login-component></login-component>
+        </div>
+
     </div>
 
   </div>
@@ -18,7 +26,29 @@
 </template>
 
 <script setup>
-const { addTable, openExportModal, openImportModal} = defineProps(['addTable', 'openExportModal', 'openImportModal']);
+import {Auth} from "../services/Auth";
+import {computed} from "vue";
+import { useStore } from 'vuex';
+
+const store = useStore();
+
+
+const loggedIn = computed(() => store.getters.loggedIn);
+const logout = () => {
+    Auth.logout(store);
+}
+const {
+    addTable,
+    openExportModal,
+    openImportModal,
+    openDiagramsModal
+}
+= defineProps([
+    'addTable',
+    'openExportModal',
+    'openImportModal',
+    'openDiagramsModal'
+]);
 </script>
 
 <style scoped>

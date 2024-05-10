@@ -1,8 +1,8 @@
 import axios from "axios";
-import {useToast} from 'vue-toast-notification';
-import 'vue-toast-notification/dist/theme-sugar.css';
+import { useToast } from 'vue-toast-notification';
 
 const $toast = useToast();
+
 export const Auth = {
 
     async register(userData) {
@@ -23,13 +23,13 @@ export const Auth = {
         }
     },
 
-    async login(userData) {
+    async login(userData, store) {
         try {
             const response = await axios.post('/api/auth/login', {
                 email: userData.email,
                 password: userData.password
             });
-            localStorage.setItem('auth_token', JSON.stringify(response.data.token));
+            store.commit('setAuthToken', response.data.token);
             $toast.success(response.data.message)
         }
         catch (error) {
@@ -37,10 +37,14 @@ export const Auth = {
                 $toast.error(error.response.data.message);
             }
             else {
+                console.log(error)
                 $toast.error('Something went wrong!')
             }
         }
-    }
+    },
+    logout(store) {
+        store.commit('clearAuthToken');
+    },
 }
 
 

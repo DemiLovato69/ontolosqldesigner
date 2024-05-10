@@ -2,14 +2,15 @@ import './bootstrap';
 
 import { createApp } from 'vue/dist/vue.esm-bundler.js';
 import ToastPlugin from 'vue-toast-notification';
-import 'vue-toast-notification/dist/theme-bootstrap.css';
+import 'vue-toast-notification/dist/theme-sugar.css';
+import store from './store'; // import the store
 
 
 const app = createApp({});
 app.use(ToastPlugin, {
     position: 'top-right'
 })
-
+app.use(store)
 import Designer from "./components/Designer.vue";
 import Header from "./components/Header.vue";
 import ChickenFootEdge from "./components/ChickenFootEdge.vue";
