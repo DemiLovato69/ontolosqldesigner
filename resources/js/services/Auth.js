@@ -1,6 +1,6 @@
 import axios from "axios";
-import { useToast } from 'vue-toast-notification';
 
+import { useToast } from 'vue-toast-notification';
 const $toast = useToast();
 
 export const Auth = {
@@ -37,13 +37,14 @@ export const Auth = {
                 $toast.error(error.response.data.message);
             }
             else {
-                console.log(error)
                 $toast.error('Something went wrong!')
             }
         }
     },
     logout(store) {
         store.commit('clearAuthToken');
+        store.commit('clearCurrentDiagramId');
+        store.commit('clearCurrentDiagramName');
     },
 }
 

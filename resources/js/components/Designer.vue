@@ -3,6 +3,8 @@
         :addTable="addTable"
         :openImportModal="openImportModal"
         :openExportModal="openExportModal"
+        :openDiagramsModal="openDiagramsModal"
+        :saveDiagram="saveDiagram"
     >
     </header-component>
 
@@ -11,7 +13,7 @@
         @edge-update="onEdgeUpdate"
         @edge-click="openRelationshipModal"
         @connect="onConnect"
-        v-model="elements"
+        v-model="diagram"
         fit-view-on-init
         :zoomOnDoubleClick = false
         :controlled = false
@@ -105,7 +107,7 @@
         <button @click="deleteEdge">Delete</button>
         <button @click="showRelationshipModal = false">Close</button>
     </div>
-    <!--Import modal -->
+    <!--Import modal-->
     <div v-if="showImportModal" class="modal flex-centered">
         <div class="sql_modal_content">
             <textarea class="sql_textarea" v-model="importContent"></textarea>
@@ -113,7 +115,7 @@
             <button @click="showImportModal = false">Close</button>
         </div>
     </div>
-    <!--Export modal -->
+    <!--Export modal-->
     <div v-if="showExportModal" class="modal sql_modal flex-centered">
         <div class="sql_modal_content">
             <textarea class="sql_textarea" v-model="exportContent"></textarea>
@@ -121,15 +123,37 @@
             <button class="btn btn-primary" @click="showExportModal = false">Close</button>
         </div>
     </div>
+    <!--Diagrams modal-->
+    <div v-if="showDiagramsModal" class="modal sql_modal flex-centered">
+        <div class="sql_modal_content">
+
+            <input v-model="diagramName">
+            <button class="btn btn-primary" @mousedown.stop @click="addDiagram">Add</button>
+
+            <div v-for="(diagram, index) in diagrams" :key="index">
+                <p @click="selectDiagram(diagram.id, diagram.name)">Name: {{ diagram.name }}</p>
+            </div>
+
+            <button class="btn btn-primary" @click="showDiagramsModal = false">Close</button>
+        </div>
+    </div>
+
 </template>
 
 <script setup>
 import { Handle, Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
-import { ref, provide,computed, onMounted, onBeforeMount} from 'vue'
+import {ref, onMounted, onBeforeMount, computed} from 'vue'
+
+import { useStore } from 'vuex';
+import { useToast } from 'vue-toast-notification';
+const $toast = useToast();
+const store = useStore();
+
 const { updateEdge, addEdges } = useVueFlow();
 import  { TableActions } from '../services/TableActions.js';
 import { ParseSql } from "../services/ParseSql.js";
+import {Diagram} from "../services/Diagram";
 
 const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
@@ -141,6 +165,13 @@ const importContent = ref('');
 const showExportModal = ref(false);
 const exportContent = ref('');
 
+const showDiagramsModal = ref(false);
+
+const loggedIn = computed(() => store.getters.loggedIn);
+const currentDiagramId = computed(() => store.state.current_diagram_id);
+
+const diagrams = ref([]);
+const diagramName = ref('');
 
 const TableStyle = {
   display: 'flex',
@@ -155,7 +186,7 @@ const TableStyle = {
   justifyContent: 'space-between',
 }
 
-const elements = ref([
+const diagram = ref([
   {
     id: '1',
     type: 'table',
@@ -167,10 +198,10 @@ const elements = ref([
 ])
 
 const addTable = () => {
-  TableActions.addTable(elements, TableStyle, 'new_table');
+  TableActions.addTable(diagram, TableStyle, 'new_table');
 }
 const addRow = (nodeProps) => {
-  TableActions.addRow(elements, nodeProps, {
+  TableActions.addRow(diagram, nodeProps, {
     rowName: 'new_row',
     keyMod: 'None',
     sqlType: 'INT(11)',
@@ -179,12 +210,32 @@ const addRow = (nodeProps) => {
   });
 };
 const deleteEdge = () => {
-  TableActions.deleteEdge(elements, selectedEdge);
+  TableActions.deleteEdge(diagram, selectedEdge);
 };
 const deleteNode = (nodeId) => {
-  TableActions.deleteNode(elements, nodeId);
+  TableActions.deleteNode(diagram, nodeId);
 };
 
+const openDiagramsModal = async () => {
+    if (loggedIn.value) {
+        diagrams.value = await Diagram.getDiagrams();
+        showDiagramsModal.value = true
+    }
+    else {
+        $toast.warning('You must login to access diagrams.')
+    }
+};
+const addDiagram = () => {
+    Diagram.addDiagram(diagramName.value)
+}
+const saveDiagram = () => {
+    loggedIn.value ? Diagram.saveDiagram(currentDiagramId.value, diagram.value) : $toast.warning('You must login to save diagrams');
+}
+const selectDiagram = async (id, name) => {
+    let selectedDiagram =  await Diagram.selectDiagram(id, name, store);
+    console.log(selectedDiagram)
+    diagram.value = JSON.parse(selectedDiagram[0].diagram);
+}
 
 function onConnect(params) {
     params.updatable = true;
@@ -195,18 +246,18 @@ function onEdgeUpdate({ edge, connection }) {
     return updateEdge(edge, connection)
 }
 const updateConnectionLineType = (relationshipType) => {
-  TableActions.updateConnectionLineType(elements, selectedEdge, relationshipType);
+  TableActions.updateConnectionLineType(diagram, selectedEdge, relationshipType);
 };
 
 
 const updateLabel = (id, newLabel) => {
-  const element = elements.value.find(el => el.id === id);
+  const element = diagram.value.find(el => el.id === id);
   if (element) {
     element.label = newLabel;
   }
 }
 const updateKeyMod = (id, keyMod) => {
-  const element = elements.value.find(el => el.id === id);
+  const element = diagram.value.find(el => el.id === id);
   if (element) {
     element.data.keyMod = keyMod;
   }
@@ -214,13 +265,13 @@ const updateKeyMod = (id, keyMod) => {
 
 
 const toggleNullable = (id) => {
-  const element = elements.value.find(el => el.id=== id);
+  const element = diagram.value.find(el => el.id=== id);
   if (element) {
     element.data.nullable = !element.data.nullable;
   }
 }
 const toggleUnsigned = (id) => {
-  const element = elements.value.find(el => el.id === id);
+  const element = diagram.value.find(el => el.id === id);
   if (element) {
     element.data.unsigned = !element.data.unsigned;
   }
@@ -228,14 +279,14 @@ const toggleUnsigned = (id) => {
 
 
 const toggleOptionsModal = (id) => {
-  const row = elements.value.find(el => el.id === id);
+  const row = diagram.value.find(el => el.id === id);
   const offsetX = 350;
 
   const documentX = row.position.x;
   const documentY = row.position.y;
 
   const rowHeight = 60;
-  const rowIndex = elements.value.find(el => el.id === id);
+  const rowIndex = diagram.value.find(el => el.id === id);
   const offsetY = rowIndex * (rowHeight-20);
 
   row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
@@ -259,7 +310,7 @@ const openImportModal = () => {
     showImportModal.value = true;
 };
 const importSql = async () => {
-    elements.value = await ParseSql.importSql(importContent.value);
+    diagram.value = await ParseSql.importSql(importContent.value);
 };
 
 
@@ -267,23 +318,21 @@ const openExportModal = () => {
     showExportModal.value = true;
 };
 const exportSql = async  () => {
-    exportContent.value = await ParseSql.exportSql(elements)
+    exportContent.value = await ParseSql.exportSql(diagram)
 }
 
-
 const loadElementsFromLocalStorage = () => {
-    const storedElements = localStorage.getItem('elements');
+    const storedElements = localStorage.getItem('diagram');
     if (storedElements) {
-        elements.value = JSON.parse(storedElements);
+        diagram.value = JSON.parse(storedElements);
     }
 }
 onBeforeMount(() => {
     loadElementsFromLocalStorage();
 })
 onMounted(() => {
-
   setInterval(() => {
-    localStorage.setItem('elements', JSON.stringify(elements.value));
+    localStorage.setItem('diagram', JSON.stringify(diagram.value));
   }, 5000);
 })
 </script>

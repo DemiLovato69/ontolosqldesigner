@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Diagram;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -20,9 +21,18 @@ class UserController extends Controller
             $user = new User([
                 'email' => $request->email,
                 'password' =>bcrypt($request->password),
+                'current_diagram_id' => NULL
             ]);
-            $user->save();
 
+            $user->save();
+            $diagram = Diagram::create([
+                'name' => 'Default',
+                'diagram' => NULL,
+                'user_id' => $user->id
+            ]);
+            $user->current_diagram_id = $diagram->id;
+
+            $user->save();
 
             return response()->json([
                 'status' => true,
@@ -54,11 +64,12 @@ class UserController extends Controller
 
             $user = User::where('email', $request->email)->first();
 
+            $token = preg_replace('/(\d\|)(.+)/', '$2', $user->createToken("API TOKEN")->plainTextToken);
             return response()->json([
                 'status' => true,
                 'message' => 'Logged in successfully',
-                'token' => substr($user->createToken("API TOKEN")->plainTextToken,2) //removing the token_id from response
-            ], 200);
+                'token' => $token
+            ]);
 
         } catch (\Throwable $th) {
             return response()->json([

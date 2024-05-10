@@ -14,7 +14,8 @@ return new class extends Migration
         Schema::create('diagrams', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->json('elements')->nullable();
+            $table->json('diagram')->nullable();
+            $table->foreignId('user_id');
             $table->timestamps();
         });
     }

@@ -59,7 +59,6 @@ const userData = {
 }
 const login = async () => {
     await Auth.login(userData, store);
-    open.value = false;
 };
 </script>
 
