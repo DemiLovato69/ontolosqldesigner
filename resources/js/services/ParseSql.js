@@ -128,11 +128,20 @@ export const ParseSql = {
             script += ");\n"
 
         })
-
+        console.log(primaryKeysArray)
          tableNames.forEach(function (table) {
-            if (uniqueKeysArray.length > 0 || indexKeysArray.length > 0) {
+            if (uniqueKeysArray.length > 0 || indexKeysArray.length > 0 || primaryKeysArray.length > 0) {
              script += `ALTER TABLE ${table}`;
              script += "\n"
+
+                primaryKeysArray.forEach(function (primaryKey) {
+                    if (primaryKey.table === table) {
+                        script += `\tADD PRIMARY KEY (\`${primaryKey.rowName}\`),`;
+                        primaryKeysArray.shift();
+                        script += "\n"
+                    }
+
+                })
 
                  uniqueKeysArray.forEach(function (uniqueKey) {
                      if (uniqueKey.table === table) {
@@ -212,10 +221,9 @@ export const ParseSql = {
                 .replace(/^set.+/, '').replace('commit;', '')
                 .replace('start transaction;', '')
                 .replace(/modify\s+.+/, '')
-                .replace(/\s+default\s+.+/, ',')
+                .replace(/\s+default\s+[a-z]*/, '')
                 .replace(/engine.+/, ';');
         });
-        console.log(statements)
         statements = statements.join("");
         statements = statements.split(";");
 
@@ -259,7 +267,6 @@ export const ParseSql = {
 
 
             if (statement.trim().startsWith("alter table")) {
-                console.log(statement)
                 let alterTableStatements = statement.split(',');
                 alterTableStatements.forEach(function (alterTableStatement) {
 
@@ -310,7 +317,6 @@ export const ParseSql = {
 
             if (statement.trim().startsWith("create table")) {
 
-                console.log(statement)
                 const tableName = statement.match(/create\s+table\s+([a-zA-Z0-9_]+)/)[1].trim();
                 const tableId = TableActions.addTable(elements, TableStyle, tableName);
                 nodeProps = {
@@ -325,15 +331,21 @@ export const ParseSql = {
                 }
 
                 const inBrackets = statement.match(/\((.+)\)/);
-
+                console.log(inBrackets)
                 if (inBrackets && inBrackets[1]) {
-                    let rows = inBrackets[1].split(',');
+                    let rows = inBrackets[1].split(/,[^']/);
 
                      rows.forEach(function (element) {
 
                          let rowElements = element.split(' ');
+
                          rowElements = rowElements.filter(item => item !== ""); //removing empty elements
+                         console.log(rowElements)
+                         if (rowElements.length === 0) {
+                            return;
+                         }
                          rowProps.rowName = rowElements[0];
+                         //if (rowElements[1].match()
                          rowProps.sqlType = rowElements[1].toUpperCase();
                          rowProps.nullable = !rowElements.includes('not');
                          rowProps.unsigned = rowElements.includes('unsigned');

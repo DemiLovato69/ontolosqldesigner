@@ -55,7 +55,7 @@
             <!--SQL Type-->
             <div>
                 <select v-model="data.sqlType">
-                    <option selected="selected" value="INT(11)">INT</option>
+                    <option selected="selected" value="INT(10)">INT</option>
                     <option value="TINYINT(1)">TINYINT</option>
                     <option value="BIGINT">BIGINT</option>
                     <option value="CHAR(255)">CHAR</option>
@@ -65,7 +65,7 @@
                     <option value="DATETIME">DATETIME</option>
                     <option value="TIME">TIME</option>
                     <option value="TIMESTAMP">TIMESTAMP</option>
-
+                    <option v-bind:value="data.sqlType">{{ data.sqlType }}</option>
                 </select>
             </div>
 
