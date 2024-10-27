@@ -7,7 +7,7 @@
 </head>
 <body>
 <div id="app">
-    <designer-component></designer-component>
+    @yield('content')
 </div>
 </body>
 </html>

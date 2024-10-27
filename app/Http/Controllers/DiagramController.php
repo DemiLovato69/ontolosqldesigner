@@ -4,11 +4,24 @@ namespace App\Http\Controllers;
 
 use App\Models\Diagram;
 use App\Models\User;
+use App\Services\DiagramService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
 class DiagramController extends Controller
 {
+    public function index()
+    {
+//        $diagrams = $request->user()->diagrams()->get();
+        $diagrams = Diagram::all();
+        return view('diagrams.index', ['diagrams' => $diagrams]);
+    }
+    public function show($id)
+    {
+        $diagram = DiagramService::getDiagramById($id);
+        return view('diagrams.show', ['diagram' => $diagram]);
+    }
+
     public function addDiagram(Request $request)
     {
         Diagram::create([
@@ -38,4 +51,5 @@ class DiagramController extends Controller
             'message' => 'Diagram saved!'
         ]);
     }
+
 }

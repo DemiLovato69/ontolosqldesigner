@@ -153,7 +153,13 @@ const store = useStore();
 const { updateEdge, addEdges } = useVueFlow();
 import  { TableActions } from '../services/TableActions.js';
 import { ParseSql } from "../services/ParseSql.js";
-import {Diagram} from "../services/Diagram";
+import { Diagram } from "../services/Diagram";
+
+const props = defineProps({
+    diagram: {
+        type: Object,
+    },
+});
 
 const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
@@ -321,14 +327,18 @@ const exportSql = async  () => {
     exportContent.value = await ParseSql.exportSql(diagram)
 }
 
-const loadElementsFromLocalStorage = () => {
+const getDiagram = () => {
+
     const storedElements = localStorage.getItem('diagram');
-    if (storedElements) {
+    if (props.diagram) {
+        diagram.value = JSON.parse(props.diagram.diagram);
+    }
+    else if (storedElements) {
         diagram.value = JSON.parse(storedElements);
     }
 }
 onBeforeMount(() => {
-    loadElementsFromLocalStorage();
+    getDiagram();
 })
 onMounted(() => {
   setInterval(() => {
