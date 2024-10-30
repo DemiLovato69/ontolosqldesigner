@@ -7,7 +7,7 @@ export const Auth = {
 
     async register(userData) {
         try {
-            const response = await axios.post('/api/auth/register', {
+            const response = await axios.post('/api/register', {
                 email: userData.email,
                 password: userData.password
             });
@@ -25,22 +25,28 @@ export const Auth = {
 
     async login(userData, store) {
         try {
-            const response = await axios.post('/api/auth/login', {
+
+            await axios.get('/sanctum/csrf-cookie');
+
+            const response = await axios.post('/api/login', {
                 email: userData.email,
                 password: userData.password
             });
             store.commit('setAuthToken', response.data.token);
-            $toast.success(response.data.message)
+            $toast.success(response.data.message);
+
+            setTimeout(() => window.location.href = `/diagrams`, 500);
         }
         catch (error) {
+
             if (error.response) {
                 $toast.error(error.response.data.message);
-            }
-            else {
-                $toast.error('Something went wrong!')
+            } else {
+                $toast.error('Something went wrong!');
             }
         }
     },
+
     logout(store) {
         store.commit('clearAuthToken');
         store.commit('clearCurrentDiagramId');

@@ -1,67 +1,51 @@
 <template>
+    <div class="centered-container">
+        <div class="form-container">
+            <h2 class="form-title">Login</h2>
 
-    <button class="btn btn-primary" @click="open = true">Login</button>
-
-    <Teleport to="#app">
-
-        <div class="modal flex-centered" v-if="open">
-
-            <div class="modal-content">
-
-                <div class="flex-centered modal-header">
-
-                    <div class="modal-title">
-                        <h5>Login</h5>
-                    </div>
-
-                    <div class="close-button">
-                        <button type="button"  @click="open = false">
-                            <span aria-hidden="true">&times;</span>
-                        </button>
-                    </div>
-
+            <form @submit.prevent="login">
+                <div class="form-group">
+                    <label for="email" class="form-label">Email</label>
+                    <input
+                        type="email"
+                        class="form-control"
+                        id="email"
+                        v-model="userData.email"
+                        required
+                    />
                 </div>
 
-                <div class="modal-body">
-
-                    <form @submit.prevent="login">
-
-                        <div class="form-group">
-                            <input type="email" class="form-control" id="email" v-model="userData.email">
-                        </div>
-
-                        <div class="form-group">
-                            <input type="password" class="form-control" id="password" v-model="userData.password">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary">Submit</button>
-
-                    </form>
-
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <input
+                        type="password"
+                        class="form-control"
+                        id="password"
+                        v-model="userData.password"
+                        required
+                    />
                 </div>
-            </div>
+
+                <button type="submit" class="button button-primary">Submit</button>
+            </form>
         </div>
-    </Teleport>
+    </div>
 </template>
 
 <script setup>
-import {ref} from "vue";
-import {Auth} from "../services/Auth";
+import { ref } from "vue";
+import { Auth } from "../services/Auth";
 import { useStore } from 'vuex';
 
 
-const open = ref(false);
 const store = useStore();
 
-const userData = {
+const userData = ref({
     email: '',
     password: ''
-}
+});
+
 const login = async () => {
-    await Auth.login(userData, store);
+    await Auth.login(userData.value, store);
 };
 </script>
-
-<style scoped>
-
-</style>

@@ -239,7 +239,6 @@ const saveDiagram = () => {
 }
 const selectDiagram = async (id, name) => {
     let selectedDiagram =  await Diagram.selectDiagram(id, name, store);
-    console.log(selectedDiagram)
     diagram.value = JSON.parse(selectedDiagram[0].diagram);
 }
 

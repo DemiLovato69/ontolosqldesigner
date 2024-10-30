@@ -1,6 +1,17 @@
 <template>
     <div class="diagram-window">
         <h2 class="diagram-title">Diagrams</h2>
+
+        <div class="add-diagram">
+            <input
+                type="text"
+                v-model="newDiagramName"
+                placeholder="Enter diagram name"
+                class="diagram-input"
+            />
+            <button @click="addDiagram" class="add-diagram-button">Add Diagram</button>
+        </div>
+
         <ul class="diagram-list">
             <li v-for="diagram in diagrams" :key="diagram.id" class="diagram-item">
                 <a @click.prevent="viewDiagram(diagram.id)">{{ diagram.name }}</a>
@@ -20,12 +31,31 @@ export default {
     data() {
         return {
             diagrams: this.diagrams,
+            newDiagramName: '',
         };
     },
     methods: {
         viewDiagram(id) {
-
             window.location.href = `/diagrams/${id}`;
+        },
+        addDiagram() {
+
+            if (!this.newDiagramName.trim()) return;
+
+            fetch('/api/diagrams', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                body: JSON.stringify({ name: this.newDiagramName })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    this.diagrams.push(data);
+                    this.newDiagramName = '';
+                })
+                .catch(error => console.error('Error adding diagram:', error));
         },
     },
 };

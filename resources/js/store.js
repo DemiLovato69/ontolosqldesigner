@@ -10,6 +10,7 @@ export default createStore({
         setAuthToken(state, token) {
             state.auth_token = token;
             localStorage.setItem('auth_token', token);
+            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
         },
         clearAuthToken(state) {
             state.auth_token = null;

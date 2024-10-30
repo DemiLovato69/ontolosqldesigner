@@ -33,23 +33,6 @@ body,
     justify-content: center;
     align-items: center;
 }
-/*buttons*/
-.btn {
-    margin-left: 1rem;
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-}
-.btn-primary {
-    background-color: #fff;
-    color: #007BFF;
-}
-.close-button {
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
-}
 /*modal*/
 .modal {
     position: fixed;
@@ -72,3 +55,84 @@ body,
 .modal-body {
     justify-content: flex-end;
 }
+/* Centering container for both registration and login */
+.centered-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+}
+/* General body styling */
+.full-height {
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    font-family: 'JetBrains Mono', monospace;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-align: center;
+    color: #2c3e50;
+}
+/* Container for forms like registration and login */
+.form-container {
+    background-color: rgba(0, 123, 255, 0.1);
+    border-radius: 10px;
+    padding: 2rem;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.form-title {
+    color: #007BFF;
+    margin-bottom: 1rem;
+}
+
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.form-control {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+/*buttons*/
+.btn {
+    margin-left: 1rem;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.btn-primary {
+    background-color: #fff;
+    color: #007BFF;
+}
+.close-button {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+}
+.button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.button-primary {
+    background-color: #007BFF;
+    color: #fff;
+}
+
+
+

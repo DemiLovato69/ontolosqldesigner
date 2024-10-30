@@ -128,7 +128,6 @@ export const ParseSql = {
             script += ");\n"
 
         })
-        console.log(primaryKeysArray)
          tableNames.forEach(function (table) {
             if (uniqueKeysArray.length > 0 || indexKeysArray.length > 0 || primaryKeysArray.length > 0) {
              script += `ALTER TABLE ${table}`;
@@ -331,7 +330,7 @@ export const ParseSql = {
                 }
 
                 const inBrackets = statement.match(/\((.+)\)/);
-                console.log(inBrackets)
+
                 if (inBrackets && inBrackets[1]) {
                     let rows = inBrackets[1].split(/,[^']/);
 
@@ -340,7 +339,7 @@ export const ParseSql = {
                          let rowElements = element.split(' ');
 
                          rowElements = rowElements.filter(item => item !== ""); //removing empty elements
-                         console.log(rowElements)
+
                          if (rowElements.length === 0) {
                             return;
                          }

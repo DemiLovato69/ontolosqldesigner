@@ -24,7 +24,7 @@ app.component('diagram-list', DiagramList);
 app.component('diagram', Diagram);
 app.component("header-component", Header)
 app.component("chicken-foot-edge-component", ChickenFootEdge)
-app.component("register-component", Register)
-app.component('login-component', Login)
+app.component("register", Register)
+app.component('login', Login)
 
 app.mount('#app')

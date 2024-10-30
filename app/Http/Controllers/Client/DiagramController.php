@@ -1,19 +1,17 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Client;
 
+use App\Http\Controllers\Controller;
 use App\Models\Diagram;
-use App\Models\User;
 use App\Services\DiagramService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 
 class DiagramController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-//        $diagrams = $request->user()->diagrams()->get();
-        $diagrams = Diagram::all();
+        $diagrams = $request->user()->diagrams()->get();
         return view('diagrams.index', ['diagrams' => $diagrams]);
     }
     public function show($id)
