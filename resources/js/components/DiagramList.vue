@@ -14,54 +14,111 @@
 
         <ul class="diagram-list">
             <li v-for="diagram in diagrams" :key="diagram.id" class="diagram-item">
-                <a @click.prevent="viewDiagram(diagram.id)">{{ diagram.name }}</a>
+
+                <span @click="viewDiagram(diagram.id)" class="icon view-icon">📄</span>
+
+                <input
+                    type="text"
+                    v-model="diagram.name"
+                    @focus="backupName(diagram)"
+                    @change="updateDiagram(diagram)"
+                    class="diagram-name-input"
+                />
+
+                <span @click="deleteDiagram(diagram.id)" class="icon delete-icon">🗑️</span>
             </li>
         </ul>
     </div>
 </template>
 
 <script>
+import axios from "axios";
+import {useToast} from "vue-toast-notification";
+
+const $toast = useToast();
+
 export default {
-    props: {
-        diagrams: {
-            type: Array,
-            default: () => [],
-        },
-    },
+
     data() {
         return {
-            diagrams: this.diagrams,
+            diagrams: [],
             newDiagramName: '',
+            originalName: null,
         };
     },
     methods: {
         viewDiagram(id) {
             window.location.href = `/diagrams/${id}`;
         },
-        addDiagram() {
-
-            if (!this.newDiagramName.trim()) return;
-
-            fetch('/api/diagrams', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                },
-                body: JSON.stringify({ name: this.newDiagramName })
-            })
-                .then(response => response.json())
-                .then(data => {
-                    this.diagrams.push(data);
-                    this.newDiagramName = '';
-                })
-                .catch(error => console.error('Error adding diagram:', error));
+        async addDiagram() {
+            try {
+                const response = await axios.post('/api/diagrams', {
+                    name: this.newDiagramName
+                });
+                this.newDiagramName = '';
+                await this.fetchDiagrams();
+                $toast.success(response.data.message);
+            } catch (error) {
+                if (error.response) {
+                    $toast.error(error.response.data.message);
+                } else {
+                    $toast.error('Something went wrong!');
+                }
+            }
+        },
+        async updateDiagram(diagram) {
+            try {
+                await axios.put(`/api/diagrams/${diagram.id}`, {name: diagram.name});
+                await this.fetchDiagrams();
+                $toast.success('Diagram name updated successfully');
+            } catch (error) {
+                if (error.response) {
+                    $toast.error(error.response.data.message);
+                } else {
+                    $toast.error('Something went wrong!');
+                }
+                diagram.name = this.originalName;
+            } finally {
+                this.originalName = null;
+            }
+        },
+        async deleteDiagram(id) {
+            try {
+                await axios.delete(`/api/diagrams/${id}`);
+                await this.fetchDiagrams();
+                $toast.success('Diagram deleted successfully');
+            } catch (error) {
+                if (error.response) {
+                    $toast.error(error.response.data.message);
+                } else {
+                    $toast.error('Something went wrong!');
+                }
+            }
+        },
+        backupName(diagram) {
+            this.originalName = diagram.name;
+        },
+        async fetchDiagrams() {
+            try {
+                const response = await axios.get(`/api/diagrams`);
+                this.diagrams = response.data;
+            } catch (error) {
+                if (error.response) {
+                    $toast.error(error.response.data.message);
+                } else {
+                    $toast.error('Something went wrong!');
+                }
+            }
         },
     },
+    created() {
+        this.fetchDiagrams();
+    }
 };
 </script>
 
 <style scoped>
+
 .diagram-window {
     background-color: #f9f9f9;
     border: 1px solid #ccc;
@@ -83,16 +140,48 @@ export default {
 }
 
 .diagram-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     margin: 10px 0;
 }
 
-.diagram-item a {
-    text-decoration: none;
+.icon {
+    cursor: pointer;
+    margin: 0 8px;
+    font-size: 20px;
+}
+
+.view-icon {
     color: #007bff;
     transition: color 0.3s;
 }
 
-.diagram-item a:hover {
+.view-icon:hover {
     color: #0056b3;
 }
+
+.delete-icon {
+    color: #dc3545;
+    transition: color 0.3s;
+}
+
+.delete-icon:hover {
+    color: #c82333;
+}
+
+.diagram-name-input {
+    flex-grow: 1;
+    border: none;
+    background-color: transparent;
+    font-size: 16px;
+    color: #333;
+    padding: 4px 0;
+}
+
+.diagram-name-input:focus {
+    outline: none;
+    border-bottom: 1px solid #007bff;
+}
 </style>
+When I change someting in the list e.g delete a diagram, the whole list dissapear and then updates. How do I make it look normal

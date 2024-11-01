@@ -174,7 +174,7 @@ const exportContent = ref('');
 const showDiagramsModal = ref(false);
 
 const loggedIn = computed(() => store.getters.loggedIn);
-const currentDiagramId = computed(() => store.state.current_diagram_id);
+const currentDiagramId = computed(() => store.state.current_diagram_id); //TODO this thing ruines diagram saving in designer, change it
 
 const diagrams = ref([]);
 const diagramName = ref('');
@@ -192,16 +192,7 @@ const TableStyle = {
   justifyContent: 'space-between',
 }
 
-const diagram = ref([
-  {
-    id: '1',
-    type: 'table',
-    label: 'First table',
-    data: { toolbarPosition: Position.Top, toolbarVisible: true },
-    position: { x: 0, y: -100 },
-    style: TableStyle,
-  },
-])
+const diagram = ref()
 
 const addTable = () => {
   TableActions.addTable(diagram, TableStyle, 'new_table');
@@ -237,7 +228,7 @@ const addDiagram = () => {
 const saveDiagram = () => {
     loggedIn.value ? Diagram.saveDiagram(currentDiagramId.value, diagram.value) : $toast.warning('You must login to save diagrams');
 }
-const selectDiagram = async (id, name) => {
+const selectDiagram = async (id, name) => { //TODO this is also an abomination
     let selectedDiagram =  await Diagram.selectDiagram(id, name, store);
     diagram.value = JSON.parse(selectedDiagram[0].diagram);
 }
@@ -253,7 +244,6 @@ function onEdgeUpdate({ edge, connection }) {
 const updateConnectionLineType = (relationshipType) => {
   TableActions.updateConnectionLineType(diagram, selectedEdge, relationshipType);
 };
-
 
 const updateLabel = (id, newLabel) => {
   const element = diagram.value.find(el => el.id === id);
@@ -303,7 +293,6 @@ const openRelationshipModal = (params) => {
   const edgeElement = document.querySelector(`[id="${params.edge.id}"]`);
   const edgeRect = edgeElement.getBoundingClientRect();
   modalPosition.value = {
-    // Calculate the midpoint of the edge
     x: edgeRect.left + window.scrollX + edgeRect.width / 2,
     y: edgeRect.top + window.scrollY + edgeRect.height / 2
   };
@@ -334,6 +323,18 @@ const getDiagram = () => {
     }
     else if (storedElements) {
         diagram.value = JSON.parse(storedElements);
+    }
+    if (diagram.value == null) {
+        diagram.value = [
+            {
+                id: '1',
+                type: 'table',
+                label: 'First table',
+                data: { toolbarPosition: Position.Top, toolbarVisible: true },
+                position: { x: 0, y: -100 },
+                style: TableStyle,
+            },
+        ]
     }
 }
 onBeforeMount(() => {

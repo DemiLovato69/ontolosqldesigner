@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\DiagramRequest;
 use App\Models\Diagram;
 use App\Services\DiagramService;
 use Illuminate\Http\Request;
 
-class DiagramController extends Controller
+class DiagramController extends Controller  //TODO add a policy for this thing
 {
     public function index(Request $request)
     {
@@ -19,35 +20,4 @@ class DiagramController extends Controller
         $diagram = DiagramService::getDiagramById($id);
         return view('diagrams.show', ['diagram' => $diagram]);
     }
-
-    public function addDiagram(Request $request)
-    {
-        Diagram::create([
-           'name' => $request->name,
-           'diagram' => NULL,
-           'user_id' =>  $request->user()->id
-        ]);
-        return response()->json([
-            'message' => 'Diagram created!'
-        ]);
-    }
-    public function selectDiagram(Request $request)
-    {
-        return Diagram::where('id', $request->id)->get();
-    }
-    public function getDiagrams(Request $request)
-    {
-        return $request->user()->diagrams()->get();
-    }
-    public function saveDiagram(Request $request)
-    {
-        $diagram = Diagram::find($request->id);
-        $diagram->update([
-           'diagram' => $request->diagram
-        ]);
-        return response()->json([
-            'message' => 'Diagram saved!'
-        ]);
-    }
-
 }

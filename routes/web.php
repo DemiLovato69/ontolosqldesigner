@@ -11,6 +11,9 @@ Route::get('/register', [AuthController::class, 'register'])->name('register');
 Route::get('/login', [AuthController::class, 'login'])->name('login');
 
 Route::middleware(['auth:sanctum'])->group(function () {
-    Route::get('/diagrams', [DiagramController::class, 'index'])->name('diagrams.index');
-    Route::get('/diagrams/{id}', [DiagramController::class, 'show'])->name('diagrams.show');
+    Route::group(["prefix" => "diagrams", "as" => "dashboard."], function () {
+        Route::get('/', [DiagramController::class, 'index']);
+        Route::get('/{id}', [DiagramController::class, 'show']);
+    });
 });
+

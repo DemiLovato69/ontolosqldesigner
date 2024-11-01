@@ -1,5 +1,5 @@
 @extends('layouts.app')
 
 @section('content')
-    <diagram-list :diagrams='{{ $diagrams }}'></diagram-list>
+    <diagram-list></diagram-list>
 @endsection

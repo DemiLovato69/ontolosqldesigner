@@ -4,19 +4,12 @@ import {computed} from "vue";
 import store from "../store";
 const $toast = useToast();
 
-const token = computed(() => store.state.auth_token);
-// axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
-
 export const Diagram = {
 
     async addDiagram(diagramName) {
         try {
             const response = await axios.post('/api/add-diagram', {
                 name: diagramName
-            },{
-                headers: {
-                    'Authorization': `Bearer ${token.value}`
-                }
             });
             $toast.success(response.data.message);
         }
@@ -32,10 +25,6 @@ export const Diagram = {
         try {
             const response = await axios.post('/api/select-diagram', {
                 id: id
-            },{
-                headers: {
-                    'Authorization': `Bearer ${token.value}`
-                }
             });
             store.commit('setCurrentDiagramId', id);
             store.commit('setCurrentDiagramName', name);
@@ -52,11 +41,7 @@ export const Diagram = {
 
     async getDiagrams() {
         try {
-            const response = await axios.get('/api/get-diagrams', {
-                headers: {
-                    'Authorization': `Bearer ${token.value}`
-                }
-            });
+            const response = await axios.get('/api/get-diagrams');
             return response.data;
         }
         catch (error) {
@@ -70,13 +55,9 @@ export const Diagram = {
     },
     async saveDiagram(id, diagram) {
         try {
-            const response = await axios.post('/api/save-diagram', {
+            const response = await axios.put(`/api/diagrams/${id}`, {
                 id: id,
                 diagram: diagram
-            }, {
-                headers: {
-                    'Authorization': `Bearer ${token.value}`
-                }
             });
             $toast.success(response.data.message)
         } catch (error) {
