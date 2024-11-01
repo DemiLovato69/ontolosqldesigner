@@ -12,7 +12,7 @@ class DiagramController extends Controller  //TODO add a policy for this thing
 {
     public function index(Request $request)
     {
-        $diagrams = $request->user()->diagrams()->get();
+        $diagrams = DiagramService::getUserDiagrams($request);
         return view('diagrams.index', ['diagrams' => $diagrams]);
     }
     public function show($id)

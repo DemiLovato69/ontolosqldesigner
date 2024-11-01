@@ -84,9 +84,9 @@ export default {
         },
         async deleteDiagram(id) {
             try {
-                await axios.delete(`/api/diagrams/${id}`);
+                const response = await axios.delete(`/api/diagrams/${id}`);
                 await this.fetchDiagrams();
-                $toast.success('Diagram deleted successfully');
+                $toast.success(response.data.message);
             } catch (error) {
                 if (error.response) {
                     $toast.error(error.response.data.message);

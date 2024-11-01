@@ -3,7 +3,6 @@
         :addTable="addTable"
         :openImportModal="openImportModal"
         :openExportModal="openExportModal"
-        :openDiagramsModal="openDiagramsModal"
         :saveDiagram="saveDiagram"
     >
     </header-component>
@@ -173,7 +172,6 @@ const exportContent = ref('');
 
 const showDiagramsModal = ref(false);
 
-const loggedIn = computed(() => store.getters.loggedIn);
 const currentDiagramId = computed(() => store.state.current_diagram_id); //TODO this thing ruines diagram saving in designer, change it
 
 const diagrams = ref([]);
@@ -212,21 +210,8 @@ const deleteEdge = () => {
 const deleteNode = (nodeId) => {
   TableActions.deleteNode(diagram, nodeId);
 };
-
-const openDiagramsModal = async () => {
-    if (loggedIn.value) {
-        diagrams.value = await Diagram.getDiagrams();
-        showDiagramsModal.value = true
-    }
-    else {
-        $toast.warning('You must login to access diagrams.')
-    }
-};
-const addDiagram = () => {
-    Diagram.addDiagram(diagramName.value)
-}
 const saveDiagram = () => {
-    loggedIn.value ? Diagram.saveDiagram(currentDiagramId.value, diagram.value) : $toast.warning('You must login to save diagrams');
+    Diagram.save(currentDiagramId.value, diagram.value);
 }
 const selectDiagram = async (id, name) => { //TODO this is also an abomination
     let selectedDiagram =  await Diagram.selectDiagram(id, name, store);

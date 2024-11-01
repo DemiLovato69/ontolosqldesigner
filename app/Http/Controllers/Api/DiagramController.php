@@ -13,12 +13,11 @@ class DiagramController extends Controller  //TODO add a policy for this thing
 {
     public function index(Request $request)
     {
-        return $request->user()->diagrams()->get();
+        return DiagramService::getUserDiagrams($request);
     }
     public function show($id)
     {
-        $diagram = DiagramService::getDiagramById($id);
-        return view('diagrams.show', ['diagram' => $diagram]);
+        return DiagramService::getDiagramById($id);
     }
     public function store(DiagramRequest $request): JsonResponse
     {
@@ -33,7 +32,7 @@ class DiagramController extends Controller  //TODO add a policy for this thing
     }
     public function update(DiagramRequest $request, $id): JsonResponse
     {
-        $diagram = Diagram::find($id);
+        $diagram = DiagramService::getDiagramById($id);
         $diagram->update($request->all());
         return response()->json([
             'message' => 'Diagram updated!'
