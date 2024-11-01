@@ -2,6 +2,7 @@
   <div class="header">
 
       <div class="buttons">
+          <a href="/">Home</a>
         <button class="btn btn-primary" @click="openExportModal">Export</button>
         <button class="btn btn-primary" @click="openImportModal">Import</button>
         <button class="btn btn-primary" @click="addTable">Add Table</button>
@@ -9,19 +10,8 @@
 
       <h1 class="marginless">{{currentDiagramName}}</h1>
 
-      <div class="buttons">
-          <button class="btn btn-primary" @click="saveDiagram">Save</button>
-          <button class="btn btn-primary" @click="openDiagramsModal">Diagrams</button>
-          <div v-if="loggedIn">
-              <button class="btn btn-primary" @click="logout()">Log out</button>
-          </div>
-          <div v-else>
-              <register-component></register-component>
-              <login-component></login-component>
-          </div>
-
-    </div>
-
+      <button class="btn btn-primary" @click="saveDiagram">Save</button>
+      <button class="btn btn-primary" @click="logout">Log out</button>
   </div>
 
 </template>
@@ -35,7 +25,6 @@ const store = useStore();
 
 const currentDiagramName = computed(() => store.state.current_diagram_name);
 
-const loggedIn = computed(() => store.getters.loggedIn);
 const logout = () => {
     Auth.logout(store);
 }
@@ -44,14 +33,12 @@ const {
     addTable,
     openExportModal,
     openImportModal,
-    openDiagramsModal,
     saveDiagram
 }
 = defineProps([
     'addTable',
     'openExportModal',
     'openImportModal',
-    'openDiagramsModal',
     'saveDiagram'
 ]);
 </script>

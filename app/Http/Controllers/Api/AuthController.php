@@ -8,10 +8,10 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
-
+use \Illuminate\Http\JsonResponse;
 class AuthController extends Controller
 {
-    public function register(Request $request)
+    public function register(Request $request): JsonResponse
     {
         try {
             $request->validate([
@@ -47,7 +47,7 @@ class AuthController extends Controller
         }
     }
 
-    public function login(Request $request)
+    public function login(Request $request): JsonResponse
     {
         try {
             $credentials = $request->validate([
@@ -77,5 +77,14 @@ class AuthController extends Controller
                 'message' => $th->getMessage()
             ], 500);
         }
+    }
+
+    public function logout(Request $request): JsonResponse
+    {
+        $request->user()->tokens()->delete();
+        Auth::guard('web')->logout();
+
+        return response()->json(['message' => 'Logged out successfully']);
+
     }
 }

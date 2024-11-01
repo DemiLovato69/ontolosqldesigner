@@ -25,7 +25,6 @@ export const Auth = {
 
     async login(userData, store) {
         try {
-
             await axios.get('/sanctum/csrf-cookie');
 
             const response = await axios.post('/api/login', {
@@ -47,10 +46,21 @@ export const Auth = {
         }
     },
 
-    logout(store) {
+    async logout(store) {
         store.commit('clearAuthToken');
         store.commit('clearCurrentDiagramId');
         store.commit('clearCurrentDiagramName');
+        try {
+            const response = await axios.post('/api/logout',);
+            $toast.success(response.data.message);
+            setTimeout(() => window.location.href = '/', 500);
+        } catch (error) {
+            if (error.response) {
+                $toast.error(error.response.data.message);
+            } else {
+                $toast.error('Something went wrong!');
+            }
+        }
     },
 }
 

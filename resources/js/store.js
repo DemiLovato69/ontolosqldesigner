@@ -15,6 +15,7 @@ export default createStore({
         clearAuthToken(state) {
             state.auth_token = null;
             localStorage.removeItem('auth_token');
+            delete axios.defaults.headers.common["Authorization"];
         },
         setCurrentDiagramName(state, diagram) {
             state.current_diagram_name = diagram;
@@ -34,9 +35,6 @@ export default createStore({
         },
     },
     getters: {
-        loggedIn(state) {
-            return state.auth_token !== null;
-        },
         authToken(state) {
             return state.auth_token;
         }
