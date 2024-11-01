@@ -23,7 +23,7 @@ class DiagramController extends Controller  //TODO add a policy for this thing
     {
         Diagram::create([
             'name' => $request->name,
-            'diagram' => NULL,
+            'schema' => NULL,
             'user_id' =>  $request->user()->id
         ]);
         return response()->json([

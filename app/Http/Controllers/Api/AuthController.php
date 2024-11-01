@@ -21,17 +21,7 @@ class AuthController extends Controller
             $user = new User([
                 'email' => $request->email,
                 'password' =>bcrypt($request->password),
-                'current_diagram_id' => NULL
             ]);
-
-            $user->save();
-            $diagram = Diagram::create([
-                'name' => 'Default',
-                'diagram' => NULL,
-                'user_id' => $user->id
-            ]);
-            $user->current_diagram_id = $diagram->id;
-
             $user->save();
 
             return response()->json([

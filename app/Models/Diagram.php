@@ -12,7 +12,7 @@ class Diagram extends Model
 
     protected $fillable = [
         'name',
-        'diagram',
+        'schema',
         'user_id'
     ];
     public function user(): BelongsTo

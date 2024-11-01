@@ -12,7 +12,7 @@
         @edge-update="onEdgeUpdate"
         @edge-click="openRelationshipModal"
         @connect="onConnect"
-        v-model="diagram"
+        v-model="schema"
         fit-view-on-init
         :zoomOnDoubleClick = false
         :controlled = false
@@ -122,20 +122,6 @@
             <button class="btn btn-primary" @click="showExportModal = false">Close</button>
         </div>
     </div>
-    <!--Diagrams modal-->
-    <div v-if="showDiagramsModal" class="modal sql_modal flex-centered">
-        <div class="sql_modal_content">
-
-            <input v-model="diagramName">
-            <button class="btn btn-primary" @mousedown.stop @click="addDiagram">Add</button>
-
-            <div v-for="(diagram, index) in diagrams" :key="index">
-                <p @click="selectDiagram(diagram.id, diagram.name)">Name: {{ diagram.name }}</p>
-            </div>
-
-            <button class="btn btn-primary" @click="showDiagramsModal = false">Close</button>
-        </div>
-    </div>
 
 </template>
 
@@ -156,10 +142,9 @@ import { Diagram } from "../services/Diagram";
 
 const props = defineProps({
     diagram: {
-        type: Object,
+        type: String,
     },
 });
-
 const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
 const showRelationshipModal = ref(false);
@@ -169,13 +154,6 @@ const importContent = ref('');
 
 const showExportModal = ref(false);
 const exportContent = ref('');
-
-const showDiagramsModal = ref(false);
-
-const currentDiagramId = computed(() => store.state.current_diagram_id); //TODO this thing ruines diagram saving in designer, change it
-
-const diagrams = ref([]);
-const diagramName = ref('');
 
 const TableStyle = {
   display: 'flex',
@@ -189,14 +167,14 @@ const TableStyle = {
   alignItems: 'center',
   justifyContent: 'space-between',
 }
-
-const diagram = ref()
+const diagramId = ref();
+const schema = ref();
 
 const addTable = () => {
-  TableActions.addTable(diagram, TableStyle, 'new_table');
+  TableActions.addTable(schema, TableStyle, 'new_table');
 }
 const addRow = (nodeProps) => {
-  TableActions.addRow(diagram, nodeProps, {
+  TableActions.addRow(schema, nodeProps, {
     rowName: 'new_row',
     keyMod: 'None',
     sqlType: 'INT(11)',
@@ -205,18 +183,11 @@ const addRow = (nodeProps) => {
   });
 };
 const deleteEdge = () => {
-  TableActions.deleteEdge(diagram, selectedEdge);
+  TableActions.deleteEdge(schema, selectedEdge);
 };
 const deleteNode = (nodeId) => {
-  TableActions.deleteNode(diagram, nodeId);
+  TableActions.deleteNode(schema, nodeId);
 };
-const saveDiagram = () => {
-    Diagram.save(currentDiagramId.value, diagram.value);
-}
-const selectDiagram = async (id, name) => { //TODO this is also an abomination
-    let selectedDiagram =  await Diagram.selectDiagram(id, name, store);
-    diagram.value = JSON.parse(selectedDiagram[0].diagram);
-}
 
 function onConnect(params) {
     params.updatable = true;
@@ -227,46 +198,42 @@ function onEdgeUpdate({ edge, connection }) {
     return updateEdge(edge, connection)
 }
 const updateConnectionLineType = (relationshipType) => {
-  TableActions.updateConnectionLineType(diagram, selectedEdge, relationshipType);
+  TableActions.updateConnectionLineType(schema, selectedEdge, relationshipType);
 };
 
 const updateLabel = (id, newLabel) => {
-  const element = diagram.value.find(el => el.id === id);
+  const element = schema.value.find(el => el.id === id);
   if (element) {
     element.label = newLabel;
   }
 }
 const updateKeyMod = (id, keyMod) => {
-  const element = diagram.value.find(el => el.id === id);
+  const element = schema.value.find(el => el.id === id);
   if (element) {
     element.data.keyMod = keyMod;
   }
 }
-
-
 const toggleNullable = (id) => {
-  const element = diagram.value.find(el => el.id=== id);
+  const element = schema.value.find(el => el.id=== id);
   if (element) {
     element.data.nullable = !element.data.nullable;
   }
 }
 const toggleUnsigned = (id) => {
-  const element = diagram.value.find(el => el.id === id);
+  const element = schema.value.find(el => el.id === id);
   if (element) {
     element.data.unsigned = !element.data.unsigned;
   }
 };
-
-
 const toggleOptionsModal = (id) => {
-  const row = diagram.value.find(el => el.id === id);
+  const row = schema.value.find(el => el.id === id);
   const offsetX = 350;
 
   const documentX = row.position.x;
   const documentY = row.position.y;
 
   const rowHeight = 60;
-  const rowIndex = diagram.value.find(el => el.id === id);
+  const rowIndex = schema.value.find(el => el.id === id);
   const offsetY = rowIndex * (rowHeight-20);
 
   row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
@@ -274,43 +241,37 @@ const toggleOptionsModal = (id) => {
 };
 
 const openRelationshipModal = (params) => {
-  selectedEdge.value = params.edge;
-  const edgeElement = document.querySelector(`[id="${params.edge.id}"]`);
-  const edgeRect = edgeElement.getBoundingClientRect();
-  modalPosition.value = {
-    x: edgeRect.left + window.scrollX + edgeRect.width / 2,
-    y: edgeRect.top + window.scrollY + edgeRect.height / 2
-  };
-  showRelationshipModal.value = true;
+    selectedEdge.value = params.edge;
+    const edgeElement = document.querySelector(`[id="${params.edge.id}"]`);
+    const edgeRect = edgeElement.getBoundingClientRect();
+    modalPosition.value = {
+        x: edgeRect.left + window.scrollX + edgeRect.width / 2,
+        y: edgeRect.top + window.scrollY + edgeRect.height / 2
+    };
+    showRelationshipModal.value = true;
 };
-
-
 const openImportModal = () => {
     showImportModal.value = true;
 };
 const importSql = async () => {
-    diagram.value = await ParseSql.importSql(importContent.value);
+    schema.value = await ParseSql.importSql(importContent.value);
 };
-
-
 const openExportModal = () => {
     showExportModal.value = true;
 };
 const exportSql = async  () => {
-    exportContent.value = await ParseSql.exportSql(diagram)
+    exportContent.value = await ParseSql.exportSql(schema)
 }
-
+const saveDiagram = () => {
+    Diagram.save(diagramId.value, schema.value);
+}
 const getDiagram = () => {
-
-    const storedElements = localStorage.getItem('diagram');
-    if (props.diagram) {
-        diagram.value = JSON.parse(props.diagram.diagram);
-    }
-    else if (storedElements) {
-        diagram.value = JSON.parse(storedElements);
-    }
-    if (diagram.value == null) {
-        diagram.value = [
+   const parsedDiagram = JSON.parse(props.diagram);
+   diagramId.value = parsedDiagram.id;
+   store.commit('setCurrentDiagramName', parsedDiagram.name)
+   schema.value = JSON.parse(parsedDiagram.schema);
+    if (schema.value == null) {
+        schema.value = [
             {
                 id: '1',
                 type: 'table',
@@ -326,9 +287,9 @@ onBeforeMount(() => {
     getDiagram();
 })
 onMounted(() => {
-  setInterval(() => {
-    localStorage.setItem('diagram', JSON.stringify(diagram.value));
-  }, 5000);
+    setInterval(() => {
+        Diagram.save(diagramId.value, schema.value)
+    }, 60000);
 })
 </script>
 

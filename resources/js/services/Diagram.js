@@ -4,13 +4,11 @@ const $toast = useToast();
 
 export const Diagram = {
 
-    async selectDiagram (id, name, store) {
+    async get (id) {
         try {
-            const response = await axios.post('/api/select-diagram', {
+            const response = await axios.post(`/api/diagrams/${id}`, {
                 id: id
             });
-            store.commit('setCurrentDiagramId', id);
-            store.commit('setCurrentDiagramName', name);
             return response.data;
         }
         catch (error) {
@@ -21,11 +19,13 @@ export const Diagram = {
             }
         }
     },
-    async save(id, diagram) {
+
+    async save(id, schema) {
+
         try {
             const response = await axios.put(`/api/diagrams/${id}`, {
                 id: id,
-                diagram: diagram
+                schema: JSON.stringify(schema)
             });
             $toast.success(response.data.message)
         } catch (error) {
