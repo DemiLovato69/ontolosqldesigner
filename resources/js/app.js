@@ -1,30 +1,18 @@
 import './bootstrap';
 
+import 'vue-toast-notification/dist/theme-sugar.css';
 import { createApp } from 'vue/dist/vue.esm-bundler.js';
 import ToastPlugin from 'vue-toast-notification';
-import 'vue-toast-notification/dist/theme-sugar.css';
+
 import store from './store';
+import router from './router';
+import App from './App.vue';
 
 
-const app = createApp({});
+const app = createApp(App).use(router).mount('#app');
 app.use(ToastPlugin, {
     position: 'top-right'
 })
 app.use(store)
-import DiagramList from "./components/DiagramList.vue";
-import Diagram from "./components/Diagram.vue";
-import Header from "./components/Header.vue";
-import ChickenFootEdge from "./components/ChickenFootEdge.vue";
+app.use(router);
 
-import Register from "./components/Register.vue";
-import Login from "./components/Login.vue"
-
-
-app.component('diagram-list', DiagramList);
-app.component('diagram', Diagram);
-app.component("header-component", Header)
-app.component("chicken-foot-edge-component", ChickenFootEdge)
-app.component("register", Register)
-app.component('login', Login)
-
-app.mount('#app')

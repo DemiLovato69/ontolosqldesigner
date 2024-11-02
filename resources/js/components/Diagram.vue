@@ -1,11 +1,11 @@
 <template>
-    <header-component
+    <Header
         :addTable="addTable"
         :openImportModal="openImportModal"
         :openExportModal="openExportModal"
         :saveDiagram="saveDiagram"
     >
-    </header-component>
+    </Header>
 
     <VueFlow
         :default-edge-options="{ type:'chickenFoot' }"
@@ -20,7 +20,7 @@
     >
         <!--Chicken foot custom edge component -->
         <template #edge-chickenFoot="props">
-            <chicken-foot-edge-component v-bind="props"></chicken-foot-edge-component>
+            <ChickenFootEdge v-bind="props"></ChickenFootEdge>
         </template>
 
         <Background :variant="BackgroundVariant.Lines" />
@@ -128,7 +128,7 @@
 <script setup>
 import { Handle, Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
-import {ref, onMounted, onBeforeMount, computed} from 'vue'
+import {ref, onMounted, onBeforeMount} from 'vue'
 
 import { useStore } from 'vuex';
 import { useToast } from 'vue-toast-notification';
@@ -139,12 +139,13 @@ const { updateEdge, addEdges } = useVueFlow();
 import  { TableActions } from '../services/TableActions.js';
 import { ParseSql } from "../services/ParseSql.js";
 import { Diagram } from "../services/Diagram";
+import axios from "axios";
+import {useRoute} from "vue-router";
+import Header from "../components/Header.vue";
+import ChickenFootEdge from "../components/ChickenFootEdge.vue";
+const route = useRoute();
+const diagramId = route.params.id;
 
-const props = defineProps({
-    diagram: {
-        type: String,
-    },
-});
 const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
 const showRelationshipModal = ref(false);
@@ -167,7 +168,6 @@ const TableStyle = {
   alignItems: 'center',
   justifyContent: 'space-between',
 }
-const diagramId = ref();
 const schema = ref();
 
 const addTable = () => {
@@ -263,32 +263,29 @@ const exportSql = async  () => {
     exportContent.value = await ParseSql.exportSql(schema)
 }
 const saveDiagram = () => {
-    Diagram.save(diagramId.value, schema.value);
+    Diagram.save(diagramId, schema.value);
 }
-const getDiagram = () => {
-   const parsedDiagram = JSON.parse(props.diagram);
-   diagramId.value = parsedDiagram.id;
-   store.commit('setCurrentDiagramName', parsedDiagram.name)
-   schema.value = JSON.parse(parsedDiagram.schema);
+const getDiagram = async (diagramId) => {
+    schema.value = JSON.parse(await Diagram.get(diagramId)); //TODO JSON parse work in the function
     if (schema.value == null) {
         schema.value = [
             {
                 id: '1',
                 type: 'table',
                 label: 'First table',
-                data: { toolbarPosition: Position.Top, toolbarVisible: true },
-                position: { x: 0, y: -100 },
+                data: {toolbarPosition: Position.Top, toolbarVisible: true},
+                position: {x: 0, y: -100},
                 style: TableStyle,
             },
         ]
     }
 }
 onBeforeMount(() => {
-    getDiagram();
+    getDiagram(diagramId);
 })
 onMounted(() => {
     setInterval(() => {
-        Diagram.save(diagramId.value, schema.value)
+        Diagram.save(diagramId, schema.value)
     }, 60000);
 })
 </script>

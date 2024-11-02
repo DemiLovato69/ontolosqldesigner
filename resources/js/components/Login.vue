@@ -35,10 +35,7 @@
 <script setup>
 import { ref } from "vue";
 import { Auth } from "../services/Auth";
-import { useStore } from 'vuex';
-
-
-const store = useStore();
+import store from '../store.js';
 
 const userData = ref({
     email: '',

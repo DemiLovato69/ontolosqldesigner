@@ -1,6 +1,7 @@
 import axios from "axios";
-
 import { useToast } from 'vue-toast-notification';
+import router from '../router';
+
 const $toast = useToast();
 
 export const Auth = {
@@ -11,33 +12,34 @@ export const Auth = {
                 email: userData.email,
                 password: userData.password
             });
-            $toast.success(response.data.message)
-        }
-        catch (error) {
+            $toast.success(response.data.message);
+        } catch (error) {
             if (error.response) {
                 $toast.error(error.response.data.message);
-            }
-            else {
-                $toast.error('Something went wrong!')
+            } else {
+                $toast.error('Something went wrong!');
             }
         }
     },
 
     async login(userData, store) {
         try {
+
             await axios.get('/sanctum/csrf-cookie');
+
 
             const response = await axios.post('/api/login', {
                 email: userData.email,
                 password: userData.password
             });
+
+
             store.commit('setAuthToken', response.data.token);
+
             $toast.success(response.data.message);
-
-            setTimeout(() => window.location.href = `/diagrams`, 500);
-        }
-        catch (error) {
-
+            await router.push({name: 'diagrams'});
+        } catch (error) {
+            console.log(error)
             if (error.response) {
                 $toast.error(error.response.data.message);
             } else {
@@ -47,25 +49,22 @@ export const Auth = {
     },
 
     async logout(store) {
-        store.commit('clearAuthToken');
-        store.commit('clearCurrentDiagramId');
-        store.commit('clearCurrentDiagramName');
         try {
-            const response = await axios.post('/api/logout',);
+
+            const response = await axios.post('/api/logout');
+
+            store.commit('clearAuthToken');
+
             $toast.success(response.data.message);
-            setTimeout(() => window.location.href = '/', 500);
+            await router.push({path: '/'});
         } catch (error) {
+
             if (error.response) {
                 $toast.error(error.response.data.message);
             } else {
+
                 $toast.error('Something went wrong!');
             }
         }
     },
-}
-
-
-
-
-
-
+};

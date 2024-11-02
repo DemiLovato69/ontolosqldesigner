@@ -6,10 +6,25 @@ export const Diagram = {
 
     async get (id) {
         try {
-            const response = await axios.post(`/api/diagrams/${id}`, {
-                id: id
+            const response = await axios.get(`/api/diagrams/${id}`);
+            return response.data.schema;
+        } catch (error) {
+            if (error.response) {
+                $toast.error(error.response.data.message);
+            } else {
+                $toast.error('Something went wrong!');
+            }
+        }
+    },
+
+    async save(id, schema){
+
+        try {
+            const response = await axios.put(`/api/diagrams/${id}`, {
+                id: id,
+                schema: JSON.stringify(schema)
             });
-            return response.data;
+            $toast.success(response.data.message)
         }
         catch (error) {
             if (error.response) {
@@ -18,25 +33,5 @@ export const Diagram = {
                 $toast.error('Something went wrong!')
             }
         }
-    },
-
-    async save(id, schema) {
-
-        try {
-            const response = await axios.put(`/api/diagrams/${id}`, {
-                id: id,
-                schema: JSON.stringify(schema)
-            });
-            $toast.success(response.data.message)
-        } catch (error) {
-            if (error.response) {
-                $toast.error(error.response.data.message);
-            } else {
-                $toast.error('Something went wrong!')
-            }
-        }
     }
-
-
-
 }

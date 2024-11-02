@@ -3,7 +3,7 @@ import { createStore } from 'vuex';
 export default createStore({
     state: {
         auth_token: localStorage.getItem('auth_token'),
-        current_diagram_name: localStorage.getItem('current_diagram') || 'demo',
+        user: null,
     },
     mutations: {
         setAuthToken(state, token) {
@@ -15,14 +15,6 @@ export default createStore({
             state.auth_token = null;
             localStorage.removeItem('auth_token');
             delete axios.defaults.headers.common["Authorization"];
-        },
-        setCurrentDiagramName(state, diagram) {
-            state.current_diagram_name = diagram;
-            localStorage.setItem('current_diagram_name', diagram);
-        },
-        clearCurrentDiagramName(state) {
-            state.current_diagram_name = 'demo';
-            localStorage.removeItem('current_diagram_name');
         },
     },
     getters: {

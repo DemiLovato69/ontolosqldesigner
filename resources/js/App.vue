@@ -9,7 +9,17 @@
             </nav>
         </header>
 
-        <!-- This renders the component matching the current route -->
-        <router-view></router-view>
+
+        <router-view />
     </div>
 </template>
+
+<script>
+export default {
+    name: "App",
+};
+</script>
+
+<style scoped>
+/* Optional styling */
+</style>

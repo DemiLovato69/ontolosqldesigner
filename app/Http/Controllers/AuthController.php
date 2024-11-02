@@ -1,17 +1,16 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Http\Controllers;
 
-use App\Http\Controllers\Controller;
-use App\Models\Diagram;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rules\Password;
-use \Illuminate\Http\JsonResponse;
+
 class AuthController extends Controller
 {
-    public function register(Request $request): JsonResponse
+    public function register(Request $request): JsonResponse //TODO create a request
     {
         try {
             $request->validate([
@@ -31,7 +30,6 @@ class AuthController extends Controller
 
         } catch (\Throwable $th) {
             return response()->json([
-                'status' => false,
                 'message' => $th->getMessage()
             ], 500);
         }
@@ -56,14 +54,12 @@ class AuthController extends Controller
 
             $token = preg_replace('/(\d\|)(.+)/', '$2', $user->createToken("API TOKEN")->plainTextToken);
             return response()->json([
-                'status' => true,
                 'message' => 'Logged in successfully',
                 'token' => $token
             ]);
 
         } catch (\Throwable $th) {
             return response()->json([
-                'status' => false,
                 'message' => $th->getMessage()
             ], 500);
         }

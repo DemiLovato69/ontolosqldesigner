@@ -3,27 +3,27 @@
 @import 'https://cdn.jsdelivr.net/npm/@vue-flow/controls@latest/dist/style.css';
 @import 'https://cdn.jsdelivr.net/npm/@vue-flow/minimap@latest/dist/style.css';
 @import 'https://cdn.jsdelivr.net/npm/@vue-flow/node-resizer@latest/dist/style.css';
-/* these are necessary styles for vue flow */
-@import 'node_modules/@vue-flow/core/dist/style.css';
 
-/* this contains the default theme, these are optional styles */
-@import 'node_modules/@vue-flow/core/dist/theme-default.css';
+@import '../../node_modules/@vue-flow/core/dist/style.css';
+@import '../../node_modules/@vue-flow/core/dist/theme-default.css';
 html,
 body,
 #app {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
     margin: 0;
     display: flex;
     flex-direction: column;
-    height: 100vh;
-}
-
-#app {
     text-transform: uppercase;
     font-family: 'JetBrains Mono', monospace;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-align: center;
     color: #2c3e50;
+}
+.vue-flow {
+    position: absolute;
 }
 .marginless {
     margin: 0;
@@ -88,8 +88,6 @@ body,
     color: #007BFF;
     margin-bottom: 1rem;
 }
-
-
 .form-group {
     margin-bottom: 1rem;
 }

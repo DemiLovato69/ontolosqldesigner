@@ -9,7 +9,6 @@
                     <input
                         type="email"
                         class="form-control"
-                        id="email"
                         v-model="userData.email"
                         required
                     />
@@ -20,7 +19,6 @@
                     <input
                         type="password"
                         class="form-control"
-                        id="password"
                         v-model="userData.password"
                         required
                     />

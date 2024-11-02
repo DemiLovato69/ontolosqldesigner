@@ -34,6 +34,7 @@
 <script>
 import axios from "axios";
 import {useToast} from "vue-toast-notification";
+import router from "../router/index.js";
 
 const $toast = useToast();
 
@@ -48,7 +49,7 @@ export default {
     },
     methods: {
         viewDiagram(id) {
-            window.location.href = `/diagrams/${id}`;
+            router.push({path:`/diagrams/${id}`});
         },
         async addDiagram() {
             try {
@@ -184,4 +185,3 @@ export default {
     border-bottom: 1px solid #007bff;
 }
 </style>
-When I change someting in the list e.g delete a diagram, the whole list dissapear and then updates. How do I make it look normal
