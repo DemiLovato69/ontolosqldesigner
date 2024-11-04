@@ -1,4 +1,4 @@
-name: Deploy to Production
+name: Deploy
 
 on:
   push:
@@ -6,42 +6,29 @@ on:
       - master
 
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      # Step 1: Check out the code
-      - name: Check out the code
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
-      # Step 2: Set up Node.js
       - name: Set up Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
-          node-version: '22'  
+          node-version: '18' 
 
-      # Step 3: Install dependencies and build the project
       - name: Install dependencies
         run: npm install
 
-      - name: Build the project
+      - name: Run build script
         run: npm run build
 
-      # Step 4: Start ssh-agent and add the SSH key
-      - name: Add SSH key
-        uses: webfactory/ssh-agent@v0.5.3
-        with:
-          ssh-private-key: ${{ secrets.SSH_KEY }} 
-
-      # Step 5: SSH into the server and deploy
       - name: Deploy to server
         env:
-          SERVER_USER: ${{ secrets.SERVER_USER }} 
-          SERVER_IP: ${{ secrets.SERVER_IP }}      
-          PROJECT_PATH: ${{ secrets.PROJECT_PATH }} 
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          PROJECT_PATH: ${{ secrets.PROJECT_PATH }}
         run: |
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
-            cd $PROJECT_PATH
-            git pull origin main
-            npm install
-            npm run build
-          EOF
+          ssh-agent bash -c 'ssh-add <(echo "${{ secrets.SSH_KEY }}"); ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "cd $PROJECT_PATH && git pull origin master && npm install && npm run build"'
+
