@@ -8,7 +8,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       # Step 1: Check out the code
       - name: Check out the code
@@ -18,7 +17,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '16'  # Adjust this version to match your project's Node.js version
+          node-version: '22'  
 
       # Step 3: Install dependencies and build the project
       - name: Install dependencies
@@ -31,14 +30,14 @@ jobs:
       - name: Add SSH key
         uses: webfactory/ssh-agent@v0.5.3
         with:
-          ssh-private-key: ${{ secrets.SSH_KEY }}  # Uses the private key from your GitHub secrets
+          ssh-private-key: ${{ secrets.SSH_KEY }} 
 
       # Step 5: SSH into the server and deploy
       - name: Deploy to server
         env:
-          SERVER_USER: ${{ secrets.SERVER_USER }}  # e.g., 'ubuntu' or 'deploy'
-          SERVER_IP: ${{ secrets.SERVER_IP }}        # IP address of your server
-          PROJECT_PATH: ${{ secrets.PROJECT_PATH }}  # Path to your project directory on the server
+          SERVER_USER: ${{ secrets.SERVER_USER }} 
+          SERVER_IP: ${{ secrets.SERVER_IP }}      
+          PROJECT_PATH: ${{ secrets.PROJECT_PATH }} 
         run: |
           ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
             cd $PROJECT_PATH
