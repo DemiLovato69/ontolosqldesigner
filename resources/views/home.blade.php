@@ -8,7 +8,7 @@
 </head>
 <body>
 <header class="header">
-<h1 class="no-margin text-center">Welcome to SnyDiagram</h1>
+<h1 class="no-margin text-center">Welcome to SnyDiagram </h1>
 </header>
 
 <div class="box">

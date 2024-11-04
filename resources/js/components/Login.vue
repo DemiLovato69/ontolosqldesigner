@@ -23,7 +23,7 @@
                         required
                     />
                 </div>
-                <button type="submit" class="button button-primary">Submit</button>
+                <button type="submit" class="btn primary">Submit</button>
             </form>
         </div>
     </div>
