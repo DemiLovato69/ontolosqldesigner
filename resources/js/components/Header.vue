@@ -16,7 +16,6 @@
 
 <script setup>
 import {Auth} from "../services/Auth";
-import {computed} from "vue";
 import { useStore } from 'vuex';
 
 const store = useStore();

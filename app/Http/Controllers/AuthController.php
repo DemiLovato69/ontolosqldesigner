@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\LoginRequest;
+use App\Http\Requests\RegisterRequest;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -12,14 +14,9 @@ use Throwable;
 
 class AuthController extends Controller
 {
-    public function register(Request $request): JsonResponse //TODO create a request
+    public function register(RegisterRequest $request): JsonResponse
     {
         try {
-            $request->validate([
-                'email' => 'required|string|email|max:255|unique:users',
-                'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()]
-            ]);
-
             $user = new User([
                 'email' => $request->email,
                 'password' => Hash::make($request->password),
@@ -38,15 +35,10 @@ class AuthController extends Controller
         }
     }
 
-    public function login(Request $request): JsonResponse
+    public function login(LoginRequest $request): JsonResponse
     {
         try {
-            $credentials = $request->validate([
-                'email' => 'required|string|email',
-                'password' => 'required|string',
-            ]);
-
-            if(!Auth::attempt($credentials)){
+            if(!Auth::attempt($request->only(['email', 'password']))) {
                 return response()->json([
                     'status' => false,
                     'message' => 'Wrong email or password',
