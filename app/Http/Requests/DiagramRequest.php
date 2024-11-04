@@ -22,7 +22,7 @@ class DiagramRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'string|max:255|unique:diagrams,name', //TODO make proper name update in designer and return required
+            'name' => 'string|max:255|unique:diagrams,name', //TODO Make it unique for one user
         ];
     }
 }
