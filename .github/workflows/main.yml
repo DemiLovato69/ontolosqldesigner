@@ -25,11 +25,10 @@ jobs:
         run: npm run build
 
       - name: Deploy to server
-        if: success()  # Only run this if the build succeeds
-        run: |
-          ssh-agent bash -c 'ssh-add <(echo "${{ secrets.SSH_KEY }}"); cd $PROJECT_PATH; git pull origin master; npm install; npm run build'
-          
         env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SERVER_HOST: ${{ secrets.SERVER_HOST }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          PROJECT_PATH: ${{ secrets.PROJECT_PATH }}
+          run: |
+            ssh-agent bash -c 'ssh-add <(echo "${{ secrets.SSH_KEY }}"); ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "cd $PROJECT_PATH && git pull origin master && npm install && npm run build"'
+
