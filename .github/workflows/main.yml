@@ -35,7 +35,8 @@ jobs:
       # Step 5: SSH into the server and deploy
       - name: Deploy to server
         run: |
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_PASS << 'EOF'
+            ssh $SERVER_USER@$SERVER_IP
+            SERVER_PASS
             cd $PROJECT_PATH
             git pull origin main
             npm install
