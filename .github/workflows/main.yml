@@ -1,0 +1,41 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out the code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: '22.11.0' 
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the project
+        run: npm run build
+
+      - name: Deploy to server
+        env:
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SERVER_USER: ${{ secrets.SERVER_USER }}
+          SERVER_IP: ${{ secrets.SERVER_IP }}
+          PROJECT_PATH: ${{ secrets.PROJECT_PATH }}
+        run: |
+          echo "${SSH_KEY}" > deploy_key.pem
+          chmod 600 deploy_key.pem
+          ssh -o StrictHostKeyChecking=no -i deploy_key.pem $SERVER_USER@$SERVER_IP << 'EOF'
+            cd $PROJECT_PATH
+            git pull origin main
+            npm install
+            npm run build
+          EOF
