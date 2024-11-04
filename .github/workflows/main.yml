@@ -34,12 +34,8 @@ jobs:
 
       # Step 5: SSH into the server and deploy
       - name: Deploy to server
-        env:
-          SERVER_USER: ${{ secrets.SERVER_USER }} 
-          SERVER_IP: ${{ secrets.SERVER_IP }}      
-          PROJECT_PATH: ${{ secrets.PROJECT_PATH }} 
         run: |
-          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP << 'EOF'
+          ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_PASS << 'EOF'
             cd $PROJECT_PATH
             git pull origin main
             npm install
