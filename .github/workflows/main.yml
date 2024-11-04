@@ -29,6 +29,6 @@ jobs:
           SERVER_USER: ${{ secrets.SERVER_USER }}
           SERVER_IP: ${{ secrets.SERVER_IP }}
           PROJECT_PATH: ${{ secrets.PROJECT_PATH }}
-          run: |
-            ssh-agent bash -c 'ssh-add <(echo "${{ secrets.SSH_KEY }}"); ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "cd $PROJECT_PATH && git pull origin master && npm install && npm run build"'
+        run: |
+          ssh-agent bash -c 'ssh-add <(echo "${{ secrets.SSH_KEY }}"); ssh -o StrictHostKeyChecking=no $SERVER_USER@$SERVER_IP "cd $PROJECT_PATH && git pull origin master && npm install && npm run build"'
 
