@@ -8,11 +8,13 @@ import store from './store';
 import router from './router';
 import App from './App.vue';
 
+const app = createApp(App);
 
-const app = createApp(App).use(router).mount('#app');
+
+app.use(router);
+app.use(store);
 app.use(ToastPlugin, {
     position: 'top-right'
-})
-app.use(store)
-app.use(router);
+});
 
+app.mount('#app');

@@ -7,10 +7,20 @@ import store from '../store.js';
 
 function requireAuth(to, from, next) {
     if (!store.state.auth_token) {
-        console.log(store.state.auth_token)
         next({ name: 'login' });
     } else {
-        next();
+        axios.get('/api/user', {
+            headers: {
+                Authorization: `Bearer ${store.state.auth_token}`
+            }
+        })
+            .then(() => {
+                next();
+            })
+            .catch(() => {
+                store.commit('logout');
+                next({ name: 'login' });
+            });
     }
 }
 

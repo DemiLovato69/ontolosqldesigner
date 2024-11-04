@@ -6,7 +6,9 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
+use Throwable;
 
 class AuthController extends Controller
 {
@@ -17,18 +19,19 @@ class AuthController extends Controller
                 'email' => 'required|string|email|max:255|unique:users',
                 'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()]
             ]);
+
             $user = new User([
                 'email' => $request->email,
-                'password' =>bcrypt($request->password),
+                'password' => Hash::make($request->password),
             ]);
             $user->save();
 
             return response()->json([
                 'status' => true,
                 'message' => 'Registered successfully'
-            ], 200);
+            ]);
 
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             return response()->json([
                 'message' => $th->getMessage()
             ], 500);
@@ -51,14 +54,13 @@ class AuthController extends Controller
             }
 
             $user = User::where('email', $request->email)->first();
-
             $token = preg_replace('/(\d\|)(.+)/', '$2', $user->createToken("API TOKEN")->plainTextToken);
+
             return response()->json([
                 'message' => 'Logged in successfully',
                 'token' => $token
             ]);
-
-        } catch (\Throwable $th) {
+        } catch (Throwable $th) {
             return response()->json([
                 'message' => $th->getMessage()
             ], 500);
@@ -69,8 +71,6 @@ class AuthController extends Controller
     {
         $request->user()->tokens()->delete();
         Auth::guard('web')->logout();
-
         return response()->json(['message' => 'Logged out successfully']);
-
     }
 }

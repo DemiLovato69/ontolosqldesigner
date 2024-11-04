@@ -1,4 +1,3 @@
-import axios from "axios";
 import { useToast } from 'vue-toast-notification';
 import router from '../router';
 
@@ -8,6 +7,7 @@ export const Auth = {
 
     async register(userData) {
         try {
+            await axios.get('/sanctum/csrf-cookie');
             const response = await axios.post('/api/register', {
                 email: userData.email,
                 password: userData.password
@@ -24,22 +24,15 @@ export const Auth = {
 
     async login(userData, store) {
         try {
-
             await axios.get('/sanctum/csrf-cookie');
-
-
             const response = await axios.post('/api/login', {
                 email: userData.email,
                 password: userData.password
             });
-
-
-            store.commit('setAuthToken', response.data.token);
-
+            store.commit('login', response.data.token);
             $toast.success(response.data.message);
-            await router.push({name: 'diagrams'});
+            await router.push({ name: 'diagrams' });
         } catch (error) {
-            console.log(error)
             if (error.response) {
                 $toast.error(error.response.data.message);
             } else {
@@ -48,21 +41,17 @@ export const Auth = {
         }
     },
 
+
     async logout(store) {
         try {
-
             const response = await axios.post('/api/logout');
-
-            store.commit('clearAuthToken');
-
+            store.commit('logout');
             $toast.success(response.data.message);
             await router.push({path: '/'});
         } catch (error) {
-
             if (error.response) {
                 $toast.error(error.response.data.message);
             } else {
-
                 $toast.error('Something went wrong!');
             }
         }
