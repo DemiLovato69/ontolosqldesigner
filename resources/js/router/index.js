@@ -1,9 +1,9 @@
-import { createRouter, createWebHistory } from 'vue-router';
 import Register from '../components/Register.vue';
 import Login from '../components/Login.vue';
 import DiagramList from '../components/DiagramList.vue';
 import Diagram from '../components/Diagram.vue';
 import store from '../store.js';
+import { createRouter, createWebHistory } from 'vue-router';
 
 function requireAuth(to, from, next) {
     if (!store.state.auth_token) {

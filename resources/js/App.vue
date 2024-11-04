@@ -9,7 +9,6 @@
             </nav>
         </header>
 
-
         <router-view />
     </div>
 </template>
@@ -21,5 +20,5 @@ export default {
 </script>
 
 <style scoped>
-/* Optional styling */
+
 </style>

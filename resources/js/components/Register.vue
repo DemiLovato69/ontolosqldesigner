@@ -2,7 +2,6 @@
     <div class="centered-container">
         <div class="form-container">
             <h2 class="form-title">Register</h2>
-
             <form @submit.prevent="register">
                 <div class="form-group">
                     <label for="email" class="form-label">Email</label>
@@ -13,7 +12,6 @@
                         required
                     />
                 </div>
-
                 <div class="form-group">
                     <label for="password" class="form-label">Password</label>
                     <input
@@ -23,7 +21,6 @@
                         required
                     />
                 </div>
-
                 <button type="submit" class="button button-primary">Submit</button>
             </form>
         </div>

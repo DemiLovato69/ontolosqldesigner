@@ -1,5 +1,6 @@
 import axios from "axios";
 import {useToast} from 'vue-toast-notification';
+
 const $toast = useToast();
 
 export const Diagram = {

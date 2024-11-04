@@ -126,23 +126,22 @@
 </template>
 
 <script setup>
+import {ref, onMounted, onBeforeMount} from 'vue'
 import { Handle, Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
-import {ref, onMounted, onBeforeMount} from 'vue'
 
-import { useStore } from 'vuex';
-import { useToast } from 'vue-toast-notification';
-const $toast = useToast();
-const store = useStore();
-
-const { updateEdge, addEdges } = useVueFlow();
 import  { TableActions } from '../services/TableActions.js';
 import { ParseSql } from "../services/ParseSql.js";
 import { Diagram } from "../services/Diagram";
-import axios from "axios";
-import {useRoute} from "vue-router";
+
 import Header from "../components/Header.vue";
 import ChickenFootEdge from "../components/ChickenFootEdge.vue";
+
+import { useRoute } from "vue-router";
+import { useStore } from 'vuex';
+
+const store = useStore();
+const { updateEdge, addEdges } = useVueFlow();
 const route = useRoute();
 const diagramId = route.params.id;
 
@@ -156,37 +155,39 @@ const importContent = ref('');
 const showExportModal = ref(false);
 const exportContent = ref('');
 
-const TableStyle = {
-  display: 'flex',
-  border: '1px solid #10b981',
-  background: '#007BFF',
-  borderColor: '#007BFF',
-  color: 'white',
-  borderRadius: '5px',
-  width: '350px',
-  height: '40px',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-}
 const schema = ref();
 
+const TableStyle = {
+    display: 'flex',
+    border: '1px solid #10b981',
+    background: '#007BFF',
+    borderColor: '#007BFF',
+    color: 'white',
+    borderRadius: '5px',
+    width: '350px',
+    height: '40px',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+}
+
+
 const addTable = () => {
-  TableActions.addTable(schema, TableStyle, 'new_table');
+    TableActions.addTable(schema, TableStyle, 'new_table');
 }
 const addRow = (nodeProps) => {
-  TableActions.addRow(schema, nodeProps, {
-    rowName: 'new_row',
-    keyMod: 'None',
-    sqlType: 'INT(11)',
-    nullable: false,
-    unsigned: false
-  });
+    TableActions.addRow(schema, nodeProps, {
+        rowName: 'new_row',
+        keyMod: 'None',
+        sqlType: 'INT(11)',
+        nullable: false,
+        unsigned: false
+    });
 };
 const deleteEdge = () => {
-  TableActions.deleteEdge(schema, selectedEdge);
+    TableActions.deleteEdge(schema, selectedEdge);
 };
 const deleteNode = (nodeId) => {
-  TableActions.deleteNode(schema, nodeId);
+    TableActions.deleteNode(schema, nodeId);
 };
 
 function onConnect(params) {
@@ -198,48 +199,47 @@ function onEdgeUpdate({ edge, connection }) {
     return updateEdge(edge, connection)
 }
 const updateConnectionLineType = (relationshipType) => {
-  TableActions.updateConnectionLineType(schema, selectedEdge, relationshipType);
+    TableActions.updateConnectionLineType(schema, selectedEdge, relationshipType);
 };
 
 const updateLabel = (id, newLabel) => {
-  const element = schema.value.find(el => el.id === id);
-  if (element) {
-    element.label = newLabel;
-  }
+    const element = schema.value.find(el => el.id === id);
+    if (element) {
+        element.label = newLabel;
+    }
 }
 const updateKeyMod = (id, keyMod) => {
-  const element = schema.value.find(el => el.id === id);
-  if (element) {
-    element.data.keyMod = keyMod;
-  }
+    const element = schema.value.find(el => el.id === id);
+    if (element) {
+        element.data.keyMod = keyMod;
+    }
 }
 const toggleNullable = (id) => {
-  const element = schema.value.find(el => el.id=== id);
-  if (element) {
-    element.data.nullable = !element.data.nullable;
-  }
+    const element = schema.value.find(el => el.id=== id);
+    if (element) {
+        element.data.nullable = !element.data.nullable;
+    }
 }
 const toggleUnsigned = (id) => {
-  const element = schema.value.find(el => el.id === id);
-  if (element) {
-    element.data.unsigned = !element.data.unsigned;
-  }
+    const element = schema.value.find(el => el.id === id);
+    if (element) {
+        element.data.unsigned = !element.data.unsigned;
+    }
 };
 const toggleOptionsModal = (id) => {
-  const row = schema.value.find(el => el.id === id);
-  const offsetX = 350;
+    const row = schema.value.find(el => el.id === id);
+    const offsetX = 350;
 
-  const documentX = row.position.x;
-  const documentY = row.position.y;
+    const documentX = row.position.x;
+    const documentY = row.position.y;
 
-  const rowHeight = 60;
-  const rowIndex = schema.value.find(el => el.id === id);
-  const offsetY = rowIndex * (rowHeight-20);
+    const rowHeight = 60;
+    const rowIndex = schema.value.find(el => el.id === id);
+    const offsetY = rowIndex * (rowHeight-20);
 
-  row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
-  row.data.showOptionsModal = !row.data.showOptionsModal;
+    row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
+    row.data.showOptionsModal = !row.data.showOptionsModal;
 };
-
 const openRelationshipModal = (params) => {
     selectedEdge.value = params.edge;
     const edgeElement = document.querySelector(`[id="${params.edge.id}"]`);
@@ -253,14 +253,14 @@ const openRelationshipModal = (params) => {
 const openImportModal = () => {
     showImportModal.value = true;
 };
-const importSql = async () => {
-    schema.value = await ParseSql.importSql(importContent.value);
+const importSql = () => {
+    schema.value =  ParseSql.importSql(importContent.value);
 };
 const openExportModal = () => {
     showExportModal.value = true;
 };
-const exportSql = async  () => {
-    exportContent.value = await ParseSql.exportSql(schema)
+const exportSql = () => {
+    exportContent.value = ParseSql.exportSql(schema)
 }
 const saveDiagram = () => {
     Diagram.save(diagramId, schema.value);
@@ -292,93 +292,93 @@ onMounted(() => {
 
 <style scoped>
 .sql_modal_content {
-  background: white;
-  padding: 20px;
-  border-radius: 5px;
-  height: 500px;
-  width: 700px;
+    background: white;
+    padding: 20px;
+    border-radius: 5px;
+    height: 500px;
+    width: 700px;
 }
 
 .sql_textarea {
-  width: 100%;
-  height: 500px;
-  margin-bottom: 10px;
+    width: 100%;
+    height: 500px;
+    margin-bottom: 10px;
 }
 .table_button {
-  width: 15%;
-  height: 80%;
-  margin-top: 5px;
-  padding: 0;
-  border: none;
-  background: none;
+    width: 15%;
+    height: 80%;
+    margin-top: 5px;
+    padding: 0;
+    border: none;
+    background: none;
 }
 .table_icon {
-  width: 70%;
-  height: 70%;
-  color: white;
+    width: 70%;
+    height: 70%;
+    color: white;
 }
 .row_text{
-  width: 150px;
+    width: 150px;
 }
 .row_input{
-  width: 126px;
-  height: 5px;
-  padding: 10px;
+    width: 126px;
+    height: 5px;
+    padding: 10px;
 }
 .table_input{
-  width: 80%;
-  padding: 10px;
+    width: 80%;
+    padding: 10px;
 }
 .relationship_modal {
-  position: absolute;
-  width: 200px;
-  padding: 20px;
-  background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+    position: absolute;
+    width: 200px;
+    padding: 20px;
+    background-color: #fff;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 .relationship_modal button {
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
-  background-color: #007BFF;
-  color: #fff;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007BFF;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 .relationship_modal button:hover {
-  background-color: #0056b3;
+    background-color: #0056b3;
 }
 select {
-  padding: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #f9f9f9;
-  color: #333;
-  cursor: pointer;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    color: #333;
+    cursor: pointer;
 
 }
 select:hover {
-  background-color: #f0f0f0;
+    background-color: #f0f0f0;
 }
 input{
-  margin :0;
+    margin :0;
 }
 .options_modal{
-  position: absolute;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border: 1px solid #007BFF;
-  border-radius: 5px;
-  width: 300px;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid #007BFF;
+    border-radius: 5px;
+    width: 300px;
 }
 .modal_text{
-  margin : 0;
-  font-size: 15px;
+    margin : 0;
+    font-size: 15px;
 
 }
 </style>

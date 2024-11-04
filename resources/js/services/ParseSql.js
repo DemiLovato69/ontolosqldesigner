@@ -3,7 +3,7 @@ import  { TableActions } from './TableActions.js';
 import {Position} from "@vue-flow/core";
 export const ParseSql = {
 
-     async exportSql(elements) {
+    exportSql(elements) {
         //formatting chaotic elements array to a more civilised data array
         const connections = elements.value.filter(el => el.type === 'chickenFoot');
         const tables = elements.value.filter(elem => elem.type === 'table');
@@ -151,7 +151,6 @@ export const ParseSql = {
 
                  })
 
-
                  indexKeysArray.forEach(function (indexKey) {
                      if (indexKey.table === table) {
                          script += `\tADD KEY (\`${indexKey.rowName}\`),`;
@@ -159,7 +158,6 @@ export const ParseSql = {
                          script += "\n"
                      }
                  })
-
 
              script = script.slice(0, -2);
              script += ';\n'
@@ -179,7 +177,7 @@ export const ParseSql = {
        return script;
     },
 
-    async importSql(sqlScript) {
+    importSql(sqlScript) {
         const TableStyle = {
             display: 'flex',
             border: '1px solid #10b981',
@@ -193,10 +191,7 @@ export const ParseSql = {
             justifyContent: 'space-between',
         }
 
-        const elements = ref([
-            {
-            },
-        ])
+        const elements = ref([{}])
         let nodeProps = {};
         let rowProps = {
             rowName: '',
@@ -309,13 +304,11 @@ export const ParseSql = {
                         indexesArray.push(indexes)
                         indexes = {};
                     }
-
                 });
             }
 
 
             if (statement.trim().startsWith("create table")) {
-
                 const tableName = statement.match(/create\s+table\s+([a-zA-Z0-9_]+)/)[1].trim();
                 const tableId = TableActions.addTable(elements, TableStyle, tableName);
                 nodeProps = {
@@ -344,7 +337,6 @@ export const ParseSql = {
                             return;
                          }
                          rowProps.rowName = rowElements[0];
-                         //if (rowElements[1].match()
                          rowProps.sqlType = rowElements[1].toUpperCase();
                          rowProps.nullable = !rowElements.includes('not');
                          rowProps.unsigned = rowElements.includes('unsigned');

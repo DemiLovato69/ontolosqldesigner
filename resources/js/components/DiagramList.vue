@@ -1,7 +1,6 @@
 <template>
     <div class="diagram-window">
         <h2 class="diagram-title">Diagrams</h2>
-
         <div class="add-diagram">
             <input
                 type="text"
@@ -11,12 +10,9 @@
             />
             <button @click="addDiagram" class="add-diagram-button">Add Diagram</button>
         </div>
-
         <ul class="diagram-list">
             <li v-for="diagram in diagrams" :key="diagram.id" class="diagram-item">
-
                 <span @click="viewDiagram(diagram.id)" class="icon view-icon">📄</span>
-
                 <input
                     type="text"
                     v-model="diagram.name"
@@ -24,7 +20,6 @@
                     @change="updateDiagram(diagram)"
                     class="diagram-name-input"
                 />
-
                 <span @click="deleteDiagram(diagram.id)" class="icon delete-icon">🗑️</span>
             </li>
         </ul>
@@ -33,8 +28,8 @@
 
 <script>
 import axios from "axios";
-import {useToast} from "vue-toast-notification";
 import router from "../router/index.js";
+import {useToast} from "vue-toast-notification";
 
 const $toast = useToast();
 
@@ -119,7 +114,6 @@ export default {
 </script>
 
 <style scoped>
-
 .diagram-window {
     background-color: #f9f9f9;
     border: 1px solid #ccc;
@@ -129,48 +123,39 @@ export default {
     max-width: 600px;
     margin: 20px auto;
 }
-
 .diagram-title {
     font-size: 24px;
     margin-bottom: 15px;
 }
-
 .diagram-list {
     list-style-type: none;
     padding: 0;
 }
-
 .diagram-item {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin: 10px 0;
 }
-
 .icon {
     cursor: pointer;
     margin: 0 8px;
     font-size: 20px;
 }
-
 .view-icon {
     color: #007bff;
     transition: color 0.3s;
 }
-
 .view-icon:hover {
     color: #0056b3;
 }
-
 .delete-icon {
     color: #dc3545;
     transition: color 0.3s;
 }
-
 .delete-icon:hover {
     color: #c82333;
 }
-
 .diagram-name-input {
     flex-grow: 1;
     border: none;
@@ -179,7 +164,6 @@ export default {
     color: #333;
     padding: 4px 0;
 }
-
 .diagram-name-input:focus {
     outline: none;
     border-bottom: 1px solid #007bff;

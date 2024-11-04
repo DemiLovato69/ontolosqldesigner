@@ -9,7 +9,6 @@
             </nav>
         </header>
 
-        <!-- This renders the component matching the current route -->
         <router-view></router-view>
     </div>
 </template>

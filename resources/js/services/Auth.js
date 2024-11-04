@@ -1,11 +1,12 @@
 import { useToast } from 'vue-toast-notification';
 import router from '../router';
+import store from '../store.js';
 
 const $toast = useToast();
 
 export const Auth = {
 
-    async register(userData) {
+    async register(userData) {//TODO add mail verification
         try {
             await axios.get('/sanctum/csrf-cookie');
             const response = await axios.post('/api/register', {
@@ -22,7 +23,7 @@ export const Auth = {
         }
     },
 
-    async login(userData, store) {
+    async login(userData) {
         try {
             await axios.get('/sanctum/csrf-cookie');
             const response = await axios.post('/api/login', {
@@ -41,8 +42,7 @@ export const Auth = {
         }
     },
 
-
-    async logout(store) {
+    async logout() {
         try {
             const response = await axios.post('/api/logout');
             store.commit('logout');

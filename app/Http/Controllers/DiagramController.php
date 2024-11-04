@@ -7,6 +7,7 @@ use App\Models\Diagram;
 use App\Services\DiagramService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Controller;
 
 class DiagramController extends Controller  //TODO add a policy for this thing
 {

@@ -2,7 +2,6 @@
     <div class="centered-container">
         <div class="form-container">
             <h2 class="form-title">Login</h2>
-
             <form @submit.prevent="login">
                 <div class="form-group">
                     <label for="email" class="form-label">Email</label>
@@ -14,7 +13,6 @@
                         required
                     />
                 </div>
-
                 <div class="form-group">
                     <label for="password" class="form-label">Password</label>
                     <input
@@ -25,7 +23,6 @@
                         required
                     />
                 </div>
-
                 <button type="submit" class="button button-primary">Submit</button>
             </form>
         </div>
@@ -35,7 +32,6 @@
 <script setup>
 import { ref } from "vue";
 import { Auth } from "../services/Auth";
-import store from '../store.js';
 
 const userData = ref({
     email: '',
@@ -43,6 +39,6 @@ const userData = ref({
 });
 
 const login = async () => {
-    await Auth.login(userData.value, store);
+    await Auth.login(userData.value);
 };
 </script>
