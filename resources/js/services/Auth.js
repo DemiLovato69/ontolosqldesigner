@@ -14,6 +14,7 @@ export const Auth = {
                 password: userData.password
             });
             $toast.success(response.data.message);
+            await router.push({ name: 'register' });
         } catch (error) {
             if (error.response) {
                 $toast.error(error.response.data.message);
@@ -47,7 +48,7 @@ export const Auth = {
             const response = await axios.post('/api/logout');
             store.commit('logout');
             $toast.success(response.data.message);
-            await router.push({path: '/'});
+            await router.push({ name: 'login' });
         } catch (error) {
             if (error.response) {
                 $toast.error(error.response.data.message);

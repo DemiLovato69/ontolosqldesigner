@@ -22,13 +22,25 @@ body,
     text-align: center;
     color: #2c3e50;
 }
-/* Header Styles */
-.header {
-    background-color: #ff6029;
-    color: #fff;
-    padding: 1em;
+a {
+    color: inherit;
+    text-decoration: inherit;
 }
-/* Main Container */
+input{
+    margin :0;
+}
+.vue-flow {
+    position: absolute;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1rem;
+    background-color: #ff6029;
+    color: white;
+}
 .box {
     background-color: #dfdfdf;
     max-width: 900px;
@@ -37,37 +49,15 @@ body,
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
-
-
-
-
-/* CTA Buttons */
-.cta-buttons {
+.centered-container {
     display: flex;
+    align-items: center;
     justify-content: center;
-    gap: 1em;
-    margin-top: 1.5em;
+    height: 100vh;
 }
 
-.cta-button {
-    padding: 0.5em 1em;
-    text-decoration: none;
-    background-color: #007bff;
-    color: white;
-    border-radius: 5px;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
+/*Modals*/
 
-.cta-button:hover {
-    background-color: #0056b3;
-}
-
-.vue-flow {
-    position: absolute;
-}
-
-/*modal*/
 .modal {
     position: fixed;
     top: 0;
@@ -81,45 +71,21 @@ body,
     border-radius: 5px;
     width: 50%;
     height: 20%;
-    background: rgba(0, 123, 255, 1);
+    background: #fd7b4d;
 }
-.modal-header {
 
-}
-.modal-body {
-    justify-content: flex-end;
-}
-/* Centering container for both registration and login */
-.centered-container {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-}
-/* General body styling */
-.full-height {
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    font-family: 'JetBrains Mono', monospace;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
-    text-align: center;
-    color: #2c3e50;
-}
-/* Container for forms like registration and login */
+/*Forms*/
+
 .form-container {
-    background-color: rgba(0, 123, 255, 0.1);
+    background-color: #eaeaea;
     border-radius: 10px;
     padding: 2rem;
-    max-width: 400px;
+    max-width: 600px;
     width: 100%;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
-
 .form-title {
-    color: #007BFF;
+    color: #ff6029;
     margin-bottom: 1rem;
 }
 .form-group {
@@ -131,34 +97,79 @@ body,
     margin-bottom: 0.5rem;
 }
 
-.form-control {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #ccc;
-    border-radius: 5px;
+/*Buttons*/
+
+.button-group {
+    display: inherit;
+    gap: 1rem;
 }
-/*buttons*/
 .btn {
-    padding: 0.5rem 1rem;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+    padding: 0.5em 1em;
     text-decoration: none;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.3s;
+    border: none;
+    cursor: pointer;
+}
+.btn-primary {
+    background-color: #ff6029;
+    color: #fff;
+}
+.btn-secondary {
+    background-color: #fff;
+    color: #ff6029;
 }
 .close-button {
     position: absolute;
     right: 1rem;
     top: 1rem;
 }
-.primary {
-    background-color: #ff6029;
-    color: #fff;
+/*Inputs*/
 
+.input {
+    flex-grow: 1;
+    background-color: transparent;
+    font-size: 16px;
+    color: #000000;
+    padding: 0.5rem;
+    border: none;
+    width: 100%;
 }
-.secondary {
-    background-color: #fff;
-    color: #ff6029;
+.input:focus {
+    outline: none;
+    border-bottom: 1px solid #ff6029;
 }
+.input_designer_table{
+    color: white;
+    width: 80%;
+    padding: 10px;
+}
+.input_designer_row{
+    width: 126px;
+    height: 5px;
+    padding: 10px;
+}
+
+/*Lists*/
+
+.list {
+    list-style-type: none;
+    padding: 0;
+}
+.list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 10px 0;
+}
+
+.icon {
+    cursor: pointer;
+    margin: 0 8px;
+    font-size: 20px;
+}
+
 /*universal styles*/
 .no-margin {
     margin: 0;
@@ -171,4 +182,3 @@ body,
     justify-content: center;
     align-items: center;
 }
-

@@ -26,32 +26,35 @@
         <Background :variant="BackgroundVariant.Lines" />
         <!-- Table -->
         <template #node-table="{ id, data, label }">
-
             <button class="table_button" @mousedown.stop @click="addRow({ id, data, label })">
                 <img class="table_icon" src="../../icons/plus.svg" alt="Add row">
             </button>
 
-            <input class="table_input" v-if="data.editing" :value="label" @input="updateLabel(id, $event.target.value)" @blur="data.editing = false">
-            <span class="table_input"  v-else @click="data.editing = true">{{ label }}</span>
+            <input
+                class="input input_designer_table"
+                :value="label"
+                @click="data.editing = true"
+                @blur="() => { data.editing = false; updateLabel(id, label); }"
+                @input="updateLabel(id, $event.target.value)"
+                :readonly="!data.editing"
+            />
 
-            <button class="table_button" @mousedown.stop  @click="deleteNode(id)">
+            <button class="table_button" @mousedown.stop @click="deleteNode(id)">
                 <img class="table_icon" src="../../icons/cancel.svg" alt="Cancel">
             </button>
-
         </template>
         <!-- Row -->
         <template #node-row="{ id, data, label }">
             <input
-                class="row_input"
-                v-if="data.editing"
+                class="input input_designer_row"
                 :value="label"
+                @click="data.editing = true"
+                @blur="() => { data.editing = false; updateLabel(id, label); }"
                 @input="updateLabel(id, $event.target.value)"
-                @blur="data.editing = false"
-                @keyup.enter="data.editing = false"
+                :readonly="!data.editing"
             />
 
-            <span class="row_text" v-else @click="data.editing = true">{{ label }}</span>
-            <!--SQL Type-->
+            <!-- SQL Type -->
             <div>
                 <select v-model="data.sqlType">
                     <option selected="selected" value="INT(10)">INT</option>
@@ -68,14 +71,13 @@
                 </select>
             </div>
 
-            <!--Options-->
+            <!-- Options -->
             <button class="table_button" @mousedown.stop @click="toggleOptionsModal(id, $event)">
                 <img class="table_icon" src="../../icons/dots.svg" alt="More options">
             </button>
 
             <!-- Options modal -->
             <div v-if="data.showOptionsModal" class="options_modal" :style="{ left: `${data.modalPosition.x}px`, top: `${data.modalPosition.y}px` }">
-                <!--Key mod-->
                 <select v-model="data.keyMod" @change="updateKeyMod(id, data.keyMod)">
                     <option selected="selected" value="None">None</option>
                     <option value="Primary">Primary</option>
@@ -83,18 +85,18 @@
                     <option value="Index">Index</option>
                 </select>
                 <p class="modal_text">Unsigned</p>
-                <input type="checkbox"  @mousedown.stop :checked="data.unsigned" @change="toggleUnsigned(id)">
+                <input type="checkbox" @mousedown.stop :checked="data.unsigned" @change="toggleUnsigned(id)">
                 <p class="modal_text">Nullable</p>
                 <input type="checkbox" @mousedown.stop :checked="data.nullable" @change="toggleNullable(id)">
             </div>
-            <!--Delete row-->
-            <button class ="table_button" @mousedown.stop  @click="deleteNode(id)">
+
+            <!-- Delete row -->
+            <button class="table_button" @mousedown.stop @click="deleteNode(id)">
                 <img class="table_icon" src="../../icons/cancel.svg" alt="Cancel">
             </button>
 
             <Handle type="source" position="right" />
             <Handle type="source" position="left" />
-
         </template>
 
     </VueFlow>
@@ -122,15 +124,14 @@
             <button class="btn btn-primary" @click="showExportModal = false">Close</button>
         </div>
     </div>
-
 </template>
 
 <script setup>
-import {ref, onMounted, onBeforeMount} from 'vue'
+import { ref, onMounted, onBeforeMount } from 'vue'
 import { Handle, Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
 
-import  { TableActions } from '../services/TableActions.js';
+import { TableActions } from '../services/TableActions.js';
 import { ParseSql } from "../services/ParseSql.js";
 import { Diagram } from "../services/Diagram";
 
@@ -160,8 +161,8 @@ const schema = ref();
 const TableStyle = {
     display: 'flex',
     border: '1px solid #10b981',
-    background: '#007BFF',
-    borderColor: '#007BFF',
+    background: '#ff6029',
+    borderColor: '#ff6029',
     color: 'white',
     borderRadius: '5px',
     width: '350px',
@@ -169,7 +170,6 @@ const TableStyle = {
     alignItems: 'center',
     justifyContent: 'space-between',
 }
-
 
 const addTable = () => {
     TableActions.addTable(schema, TableStyle, 'new_table');
@@ -272,7 +272,7 @@ const getDiagram = async (diagramId) => {
             {
                 id: '1',
                 type: 'table',
-                label: 'First table',
+                label: 'first_table',
                 data: {toolbarPosition: Position.Top, toolbarVisible: true},
                 position: {x: 0, y: -100},
                 style: TableStyle,
@@ -320,15 +320,7 @@ onMounted(() => {
 .row_text{
     width: 150px;
 }
-.row_input{
-    width: 126px;
-    height: 5px;
-    padding: 10px;
-}
-.table_input{
-    width: 80%;
-    padding: 10px;
-}
+
 .relationship_modal {
     position: absolute;
     width: 200px;
@@ -363,9 +355,6 @@ select {
 }
 select:hover {
     background-color: #f0f0f0;
-}
-input{
-    margin :0;
 }
 .options_modal{
     position: absolute;

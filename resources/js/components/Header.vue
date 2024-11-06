@@ -1,18 +1,20 @@
 <template>
-    <div class="header">
-        <div class="buttons">
-            <router-link to="/">Home</router-link>
-            <button class="btn btn-primary" @click="openExportModal">Export</button>
-            <button class="btn btn-primary" @click="openImportModal">Import</button>
-            <button class="btn btn-primary" @click="addTable">Add Table</button>
+    <header class="header">
+        <div class="button-group">
+            <button class="btn btn-secondary"><a href="/">Home</a></button>
+            <button class="btn btn-secondary" @click="openExportModal">Export</button>
+            <button class="btn btn-secondary" @click="openImportModal">Import</button>
+            <button class="btn btn-secondary" @click="addTable">Add Table</button>
         </div>
-        <button class="btn btn-primary" @click="saveDiagram">Save</button>
-        <button class="btn btn-primary" @click="logout">Log out</button>
-    </div>
+        <div class="button-group">
+            <button class="btn btn-secondary" @click="saveDiagram">Save</button>
+            <button class="btn btn-secondary" @click="logout">Log out</button>
+        </div>
+    </header>
 </template>
 
 <script setup>
-import {Auth} from "../services/Auth";
+import { Auth } from "../services/Auth";
 import { useStore } from 'vuex';
 
 const store = useStore();
@@ -27,21 +29,10 @@ const {
     openImportModal,
     saveDiagram
 }
-    = defineProps([
+= defineProps([
     'addTable',
     'openExportModal',
     'openImportModal',
     'saveDiagram'
 ]);
 </script>
-
-<style scoped>
-.header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    padding: 1rem;
-    background-color: #007BFF;
-    color: white;
-}
-</style>

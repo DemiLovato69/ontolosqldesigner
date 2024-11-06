@@ -7,7 +7,7 @@
                     <label for="email" class="form-label">Email</label>
                     <input
                         type="email"
-                        class="form-control"
+                        class="input"
                         id="email"
                         v-model="userData.email"
                         required
@@ -17,13 +17,13 @@
                     <label for="password" class="form-label">Password</label>
                     <input
                         type="password"
-                        class="form-control"
+                        class="input"
                         id="password"
                         v-model="userData.password"
                         required
                     />
                 </div>
-                <button type="submit" class="btn primary">Submit</button>
+                <button type="submit" class="btn btn-primary">Submit</button>
             </form>
         </div>
     </div>
