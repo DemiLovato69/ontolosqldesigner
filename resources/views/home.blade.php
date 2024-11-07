@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MySQL Schema Designer</title>
+    <meta name="yandex-verification" content="f1dc63d6385660f1"/>
+    <title>Snydiagram</title>
     @vite(['resources/css/app.css'])
 </head>
 <body>
 <header class="header">
-    <h1 class="no-margin text-center"> SnyDiagram </h1>
+    <img class="logo" src="/logo.png" alt="logo">
     <div class="button-group">
         <a class="btn btn-secondary" href="/register">Register</a>
         <a class="btn btn-secondary" href="/login">Login</a>
