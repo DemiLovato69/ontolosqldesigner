@@ -1,13 +1,14 @@
 <template>
     <div class="centered-container">
         <div class="form-container">
+            <a href="/"  class="btn btn-primary float-left">Home</a>
             <h2 class="form-title">Login</h2>
             <form @submit.prevent="login">
                 <div class="form-group">
                     <label for="email" class="form-label">Email</label>
                     <input
                         type="email"
-                        class="input"
+                        class="input input-underline"
                         id="email"
                         v-model="userData.email"
                         required
@@ -17,7 +18,7 @@
                     <label for="password" class="form-label">Password</label>
                     <input
                         type="password"
-                        class="input"
+                        class="input input-underline"
                         id="password"
                         v-model="userData.password"
                         required

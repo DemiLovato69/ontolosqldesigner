@@ -114,13 +114,13 @@
     <div v-if="showImportModal" class="modal flex-centered">
         <div class="sql_modal_content">
             <textarea class="sql_textarea" v-model="importContent"></textarea>
-            <button @click="importSql">Import</button>
-            <button @click="showImportModal = false">Close</button>
+            <button class="btn btn-primary" @click="importSql">Import</button>
+            <button class="btn btn-primary" @click="showImportModal = false">Close</button>
         </div>
     </div>
     <!--Export modal-->
     <div v-if="showExportModal" class="modal sql_modal flex-centered">
-        <div class="sql_modal_content">
+        <div class="sql_modal_content ">
             <textarea class="sql_textarea" v-model="exportContent"></textarea>
             <button class="btn btn-primary" @click="exportSql">Export</button>
             <button class="btn btn-primary" @click="showExportModal = false">Close</button>
@@ -270,7 +270,7 @@ const saveDiagram = () => {
     Diagram.save(diagramId, schema.value);
 }
 const getDiagram = async (diagramId) => {
-    schema.value = await Diagram.get(diagramId); //TODO JSON parse work in the function
+    schema.value = await Diagram.get(diagramId);
     console.log(schema.value)
     if (schema.value == null) {
         schema.value = [
@@ -325,10 +325,6 @@ onMounted(() => {
     color: white;
 }
 
-.row_text {
-    width: 150px;
-}
-
 .relationship_modal {
     position: absolute;
     width: 200px;
@@ -362,7 +358,6 @@ select {
     background-color: #f9f9f9;
     color: #333;
     cursor: pointer;
-
 }
 
 select:hover {
@@ -382,6 +377,5 @@ select:hover {
 .modal_text {
     margin: 0;
     font-size: 15px;
-
 }
 </style>

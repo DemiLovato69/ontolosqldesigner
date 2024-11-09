@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 class DiagramRequest extends FormRequest
 {
@@ -22,7 +23,14 @@ class DiagramRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => 'string|max:255|unique:diagrams,name', //TODO Make it unique for one user
+            'name' => [
+                'string',
+                'max:255',
+                Rule::unique('diagrams')->where(function ($query) {
+                    return $query->where('user_id', auth()->id());
+                })
+            ],
+
         ];
     }
 }

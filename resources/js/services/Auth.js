@@ -14,7 +14,7 @@ export const Auth = {
                 password: userData.password
             });
             $toast.success(response.data.message);
-            await router.push({ name: 'register' });
+            await router.push({ name: 'login' });
         } catch (error) {
             if (error.response) {
                 $toast.error(error.response.data.message);

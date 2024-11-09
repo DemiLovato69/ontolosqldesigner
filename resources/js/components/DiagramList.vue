@@ -1,7 +1,7 @@
 <template>
     <div class="centered-container">
         <div class="form-container">
-            <a href="/"  class="btn btn-primary">Home</a>
+            <a href="/"  class="btn btn-primary float-left">Home</a>
             <h2 class="form-title">Diagrams</h2>
             <div class="flex-centered">
                 <button @click="addDiagram" class="btn btn-primary">Add</button>
@@ -9,7 +9,7 @@
                         type="text"
                         v-model="newDiagramName"
                         placeholder="Enter diagram name"
-                        class="input"
+                        class="input input-underline"
                     />
             </div>
             <br>
@@ -21,7 +21,7 @@
                         v-model="diagram.name"
                         @focus="backupName(diagram)"
                         @change="updateDiagram(diagram)"
-                        class="input"
+                        class="input input-underline"
                     />
                     <span @click="deleteDiagram(diagram.id)" class="icon">🗑️</span>
                 </li>
@@ -48,7 +48,7 @@ export default {
     },
     methods: {
         viewDiagram(id) {
-            router.push({path:`/diagrams/${id}`});
+            router.push({ path:`/diagrams/${id}` });
         },
         async addDiagram() {
             try {

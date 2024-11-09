@@ -143,6 +143,10 @@ input{
     outline: none;
     border-bottom: 1px solid #ff6029;
 }
+.input-underline {
+    outline: none;
+    border-bottom: 1px solid #ff6029;
+}
 .input_designer_table{
     color: white;
     width: 80%;
@@ -184,4 +188,7 @@ input{
     display: flex;
     justify-content: center;
     align-items: center;
+}
+.float-left {
+    float: left;
 }
