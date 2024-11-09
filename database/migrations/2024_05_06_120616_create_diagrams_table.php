@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->json('schema')->nullable();
+            $table->json('script')->nullable();
             $table->foreignId('user_id');
             $table->timestamps();
         });

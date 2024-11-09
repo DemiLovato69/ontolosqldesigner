@@ -13,8 +13,10 @@ class Diagram extends Model
     protected $fillable = [
         'name',
         'schema',
+        'scirpt',
         'user_id'
     ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

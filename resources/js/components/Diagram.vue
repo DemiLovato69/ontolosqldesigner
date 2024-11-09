@@ -14,8 +14,8 @@
         @connect="onConnect"
         v-model="schema"
         fit-view-on-init
-        :zoomOnDoubleClick = false
-        :controlled = false
+        :zoomOnDoubleClick=false
+        :controlled=false
         class=".vue-flow"
     >
         <!--Chicken foot custom edge component -->
@@ -23,7 +23,7 @@
             <ChickenFootEdge v-bind="props"></ChickenFootEdge>
         </template>
 
-        <Background :variant="BackgroundVariant.Lines" />
+        <Background :variant="BackgroundVariant.Lines"/>
         <!-- Table -->
         <template #node-table="{ id, data, label }">
             <button class="table_button" @mousedown.stop @click="addRow({ id, data, label })">
@@ -77,12 +77,13 @@
             </button>
 
             <!-- Options modal -->
-            <div v-if="data.showOptionsModal" class="options_modal" :style="{ left: `${data.modalPosition.x}px`, top: `${data.modalPosition.y}px` }">
+            <div v-if="data.showOptionsModal" class="options_modal"
+                 :style="{ left: `${data.modalPosition.x}px`, top: `${data.modalPosition.y}px` }">
                 <select v-model="data.keyMod" @change="updateKeyMod(id, data.keyMod)">
                     <option selected="selected" value="None">None</option>
-                    <option value="Primary">Primary</option>
-                    <option value="Unique">Unique</option>
-                    <option value="Index">Index</option>
+                    <option value="PRIMARY KEY">Primary</option>
+                    <option value="UNIQUE">Unique</option>
+                    <option value="INDEX">Index</option>
                 </select>
                 <p class="modal_text">Unsigned</p>
                 <input type="checkbox" @mousedown.stop :checked="data.unsigned" @change="toggleUnsigned(id)">
@@ -95,13 +96,14 @@
                 <img class="table_icon" src="../../icons/cancel.svg" alt="Cancel">
             </button>
 
-            <Handle type="source" position="right" />
-            <Handle type="source" position="left" />
+            <Handle type="source" position="right"/>
+            <Handle type="source" position="left"/>
         </template>
 
     </VueFlow>
     <!--Relationship modal-->
-    <div v-if="showRelationshipModal" class="relationship_modal" :style="{ left: `${modalPosition.x}px`, top: `${modalPosition.y}px` }">
+    <div v-if="showRelationshipModal" class="relationship_modal"
+         :style="{ left: `${modalPosition.x}px`, top: `${modalPosition.y}px` }">
         <button @click="updateConnectionLineType('one-to-one')">One to One</button>
         <button @click="updateConnectionLineType('one-to-many')">One to Many</button>
         <button @click="updateConnectionLineType('many-to-many')">Many to Many</button>
@@ -132,21 +134,22 @@ import { Handle, Position, VueFlow, useVueFlow } from '@vue-flow/core'
 import { Background, BackgroundVariant } from '@vue-flow/background'
 
 import { TableActions } from '../services/TableActions.js';
-import { ParseSql } from "../services/ParseSql.js";
 import { Diagram } from "../services/Diagram";
 
 import Header from "../components/Header.vue";
 import ChickenFootEdge from "../components/ChickenFootEdge.vue";
 
+const { updateEdge, addEdges } = useVueFlow();
+
 import { useRoute } from "vue-router";
 import { useStore } from 'vuex';
 
 const store = useStore();
-const { updateEdge, addEdges } = useVueFlow();
+store.dispatch('initializeAuth');
 const route = useRoute();
 const diagramId = route.params.id;
 
-const modalPosition = ref({ x: 0, y: 0 });
+const modalPosition = ref({x: 0, y: 0});
 const selectedEdge = ref(null);
 const showRelationshipModal = ref(false);
 
@@ -195,9 +198,10 @@ function onConnect(params) {
     return addEdges([params])
 }
 
-function onEdgeUpdate({ edge, connection }) {
+function onEdgeUpdate({edge, connection}) {
     return updateEdge(edge, connection)
 }
+
 const updateConnectionLineType = (relationshipType) => {
     TableActions.updateConnectionLineType(schema, selectedEdge, relationshipType);
 };
@@ -215,7 +219,7 @@ const updateKeyMod = (id, keyMod) => {
     }
 }
 const toggleNullable = (id) => {
-    const element = schema.value.find(el => el.id=== id);
+    const element = schema.value.find(el => el.id === id);
     if (element) {
         element.data.nullable = !element.data.nullable;
     }
@@ -235,9 +239,9 @@ const toggleOptionsModal = (id) => {
 
     const rowHeight = 60;
     const rowIndex = schema.value.find(el => el.id === id);
-    const offsetY = rowIndex * (rowHeight-20);
+    const offsetY = rowIndex * (rowHeight - 20);
 
-    row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
+    row.data.modalPosition = {x: documentX + offsetX, y: documentY - offsetY};
     row.data.showOptionsModal = !row.data.showOptionsModal;
 };
 const openRelationshipModal = (params) => {
@@ -254,19 +258,20 @@ const openImportModal = () => {
     showImportModal.value = true;
 };
 const importSql = () => {
-    schema.value =  ParseSql.importSql(importContent.value);
+    schema.value = Diagram.import(importContent.value);
 };
 const openExportModal = () => {
     showExportModal.value = true;
 };
-const exportSql = () => {
-    exportContent.value = ParseSql.exportSql(schema)
+const exportSql = async () => {
+    exportContent.value = await Diagram.export(diagramId)
 }
 const saveDiagram = () => {
     Diagram.save(diagramId, schema.value);
 }
 const getDiagram = async (diagramId) => {
-    schema.value = JSON.parse(await Diagram.get(diagramId)); //TODO JSON parse work in the function
+    schema.value = await Diagram.get(diagramId); //TODO JSON parse work in the function
+    console.log(schema.value)
     if (schema.value == null) {
         schema.value = [
             {
@@ -304,6 +309,7 @@ onMounted(() => {
     height: 500px;
     margin-bottom: 10px;
 }
+
 .table_button {
     width: 15%;
     height: 80%;
@@ -312,12 +318,14 @@ onMounted(() => {
     border: none;
     background: none;
 }
+
 .table_icon {
     width: 70%;
     height: 70%;
     color: white;
 }
-.row_text{
+
+.row_text {
     width: 150px;
 }
 
@@ -332,6 +340,7 @@ onMounted(() => {
     flex-direction: column;
     gap: 10px;
 }
+
 .relationship_modal button {
     padding: 10px;
     border: none;
@@ -341,9 +350,11 @@ onMounted(() => {
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
+
 .relationship_modal button:hover {
     background-color: #0056b3;
 }
+
 select {
     padding: 5px;
     border: 1px solid #ccc;
@@ -353,10 +364,12 @@ select {
     cursor: pointer;
 
 }
+
 select:hover {
     background-color: #f0f0f0;
 }
-.options_modal{
+
+.options_modal {
     position: absolute;
     display: flex;
     align-items: center;
@@ -365,8 +378,9 @@ select:hover {
     border-radius: 5px;
     width: 300px;
 }
-.modal_text{
-    margin : 0;
+
+.modal_text {
+    margin: 0;
     font-size: 15px;
 
 }

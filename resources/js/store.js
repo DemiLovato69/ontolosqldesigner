@@ -1,4 +1,13 @@
 import { createStore } from 'vuex';
+import axios from 'axios';
+
+function initializeAxiosHeaders(token) {
+    if (token) {
+        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+        delete axios.defaults.headers.common['Authorization'];
+    }
+}
 
 export default createStore({
     state: {
@@ -9,12 +18,12 @@ export default createStore({
         login(state, token) {
             state.auth_token = token;
             localStorage.setItem('auth_token', token);
-            axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+            initializeAxiosHeaders(token);
         },
         logout(state) {
             state.auth_token = null;
             localStorage.removeItem('auth_token');
-            delete axios.defaults.headers.common["Authorization"];
+            initializeAxiosHeaders(null);
         },
     },
     getters: {
@@ -22,4 +31,9 @@ export default createStore({
             return state.auth_token;
         }
     },
+    actions: {
+        initializeAuth({state}) {
+            initializeAxiosHeaders(state.auth_token);
+        }
+    }
 });
