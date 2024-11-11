@@ -1,29 +1,34 @@
 <template>
     <div class="centered-container">
         <div class="form-container">
-            <a href="/"  class="btn btn-primary float-left">Home</a>
+            <a href="/"  class="btn btn-secondary float-left">Home</a>
+            <br>
             <h2 class="form-title">Diagrams</h2>
-            <div class="flex-centered">
-                <button @click="addDiagram" class="btn btn-primary">Add</button>
+
+            <div class="flex-centered flex-items">
+                <img @click="addDiagram" src="../../icons/checkmark.svg" class="icon" alt="checkmark">
                     <input
                         type="text"
                         v-model="newDiagramName"
                         placeholder="Enter diagram name"
                         class="input input-underline"
                     />
+                <img @click="this.newDiagramName = ''" src="../../icons/cancel-colored.svg" class="icon" alt="cancel-colored">
             </div>
             <br>
             <ul class="list">
-                <li v-for="diagram in diagrams" :key="diagram.id" class="list-item">
-                    <span @click="viewDiagram(diagram.id)" class="icon">📄</span>
-                    <input
-                        type="text"
-                        v-model="diagram.name"
-                        @focus="backupName(diagram)"
-                        @change="updateDiagram(diagram)"
-                        class="input input-underline"
-                    />
-                    <span @click="deleteDiagram(diagram.id)" class="icon">🗑️</span>
+                <li v-for="diagram in diagrams" :key="diagram.id">
+                    <div class="flex-centered flex-items mt-10">
+                        <img @click="viewDiagram(diagram.id)" src="../../icons/eye.svg" class="icon" alt="eye">
+                        <input
+                            type="text"
+                            v-model="diagram.name"
+                            @focus="backupName(diagram)"
+                            @change="updateDiagram(diagram)"
+                            class="input input-underline"
+                        />
+                        <img @click="deleteDiagram(diagram.id)" src="../../icons/cancel-colored.svg" class="icon" alt="cancel-colored">
+                    </div>
                 </li>
             </ul>
         </div>

@@ -57,7 +57,6 @@
             <!-- SQL Type -->
             <div>
                 <select v-model="data.sqlType">
-                    <option selected="selected" value="INT(10)">INT</option>
                     <option value="TINYINT(1)">TINYINT</option>
                     <option value="BIGINT">BIGINT</option>
                     <option value="CHAR(255)">CHAR</option>

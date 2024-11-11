@@ -10,7 +10,7 @@
 <body>
 <header class="header">
     <img class="logo" src="/logo.png" alt="logo">
-    <div class="button-group">
+    <div class="flex-items">
         <a class="btn btn-secondary" href="/register">Register</a>
         <a class="btn btn-secondary" href="/login">Login</a>
         <a class="btn btn-secondary" href="/diagrams">View Diagrams</a>
