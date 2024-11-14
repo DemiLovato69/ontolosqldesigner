@@ -72,8 +72,8 @@ class DiagramService
             $script .= ");\n\n";
         }
         foreach ($connections as $connection) {
-            $sourceRow = $rows->where('id', $connection['source_id'])->first();
-            $targetRow = $rows->where('id', $connection['target_id'])->first();
+            $sourceRow = $rows->where('id', $connection['target_id'])->first();
+            $targetRow = $rows->where('id', $connection['source_id'])->first();
 
             $tableName = $tables->where('id', $sourceRow['table_id'])->value('name');
             $targetTableName = $tables->where('id', $targetRow['table_id'])->value('name');
