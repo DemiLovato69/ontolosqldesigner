@@ -46,7 +46,7 @@
         <!-- Row -->
         <template #node-row="{ id, data, label }">
             <input
-                class="input input_designer_row"
+                class="input input_designer_row ml-5 mr-5"
                 :value="label"
                 @click="data.editing = true"
                 @blur="() => { data.editing = false; updateLabel(id, label); }"
@@ -270,7 +270,6 @@ const saveDiagram = () => {
 }
 const getDiagram = async (diagramId) => {
     schema.value = await Diagram.get(diagramId);
-    console.log(schema.value)
     if (schema.value == null) {
         schema.value = [
             {
@@ -340,14 +339,14 @@ onMounted(() => {
     padding: 10px;
     border: none;
     border-radius: 5px;
-    background-color: #007BFF;
+    background-color: #ff6029;
     color: #fff;
     cursor: pointer;
     transition: background-color 0.3s ease;
 }
 
 .relationship_modal button:hover {
-    background-color: #0056b3;
+    background-color: #ff6029;
 }
 
 select {
@@ -368,7 +367,7 @@ select:hover {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border: 1px solid #007BFF;
+    border: 1px solid #ff6029;
     border-radius: 5px;
     width: 300px;
 }

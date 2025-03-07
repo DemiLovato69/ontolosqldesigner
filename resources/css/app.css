@@ -33,6 +33,10 @@ input {
     margin: 0;
 }
 
+select:focus {
+    outline: none;
+}
+
 .vue-flow {
     position: absolute;
 }
@@ -163,19 +167,22 @@ input {
 
 .input-underline {
     outline: none;
-    border-bottom: 1px solid #ff6029;
+    border-bottom: 1px solid white;
 }
 
 .input_designer_table {
+    text-align: center;
     color: white;
-    width: 80%;
+    width: 30%;
+    max-width: 30%;
     padding: 10px;
 }
 
 .input_designer_row {
     width: 126px;
     height: 5px;
-    padding: 10px;
+    padding-top: 10px;
+    padding-bottom: 10px;
 }
 
 /*Lists*/
@@ -218,4 +225,20 @@ input {
 
 .mt-10 {
     margin-top: 10px;
+}
+
+.ml-5 {
+    margin-left: 5px;
+}
+
+.mr-5 {
+    margin-right: 5px
+}
+
+.ml-10 {
+    margin-left: 10px;
+}
+
+.mr-10 {
+    margin-right: 10px
 }
