@@ -1,7 +1,7 @@
 import axios from "axios";
-import {useToast} from 'vue-toast-notification';
+import { useToast } from 'vue-toast-notification';
 import store from "../store.js";
-import {TableActions} from "../services/TableActions.js";
+import { TableActions } from "../services/TableActions.js";
 
 const $toast = useToast();
 store.dispatch('initializeAuth');
@@ -10,7 +10,7 @@ export const Diagram = {
     async get(id) {
         try {
             const response = await axios.get(`/api/diagrams/${id}`);
-            return response.data.schema;
+            return JSON.parse(response.data.schema);
         } catch (error) {
             if (error.response) {
                 $toast.error(error.response.data.message);
@@ -159,7 +159,7 @@ export const Diagram = {
                     data: {
                         toolbarPosition: 'top',
                         toolbarVisible: true,
-                        position: {x: 0, y: 0},
+                        position: { x: 0, y: 0 },
                     },
 
                 }
