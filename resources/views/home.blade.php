@@ -11,9 +11,13 @@
 <header class="header">
     <img class="logo" src="/logo.png" alt="logo">
     <div class="flex-items">
-        <a class="btn btn-secondary" href="/register">Register</a>
-        <a class="btn btn-secondary" href="/login">Login</a>
-        <a class="btn btn-secondary" href="/diagrams">View Diagrams</a>
+        @if(Auth::check())
+            <a class="btn btn-secondary" href="/diagrams">View Diagrams</a>
+            <a class="btn btn-secondary" href="/logout">Logout</a>
+        @else
+            <a class="btn btn-secondary" href="/register">Register</a>
+            <a class="btn btn-secondary" href="/login">Login</a>
+        @endif
     </div>
 </header>
 

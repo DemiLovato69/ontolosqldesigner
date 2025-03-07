@@ -148,7 +148,7 @@ store.dispatch('initializeAuth');
 const route = useRoute();
 const diagramId = route.params.id;
 
-const modalPosition = ref({x: 0, y: 0});
+const modalPosition = ref({ x: 0, y: 0 });
 const selectedEdge = ref(null);
 const showRelationshipModal = ref(false);
 
@@ -197,7 +197,7 @@ function onConnect(params) {
     return addEdges([params])
 }
 
-function onEdgeUpdate({edge, connection}) {
+function onEdgeUpdate({ edge, connection }) {
     return updateEdge(edge, connection)
 }
 
@@ -240,7 +240,7 @@ const toggleOptionsModal = (id) => {
     const rowIndex = schema.value.find(el => el.id === id);
     const offsetY = rowIndex * (rowHeight - 20);
 
-    row.data.modalPosition = {x: documentX + offsetX, y: documentY - offsetY};
+    row.data.modalPosition = { x: documentX + offsetX, y: documentY - offsetY };
     row.data.showOptionsModal = !row.data.showOptionsModal;
 };
 const openRelationshipModal = (params) => {
@@ -277,8 +277,8 @@ const getDiagram = async (diagramId) => {
                 id: '1',
                 type: 'table',
                 label: 'first_table',
-                data: {toolbarPosition: Position.Top, toolbarVisible: true},
-                position: {x: 0, y: -100},
+                data: { toolbarPosition: Position.Top, toolbarVisible: true },
+                position: { x: 0, y: -100 },
                 style: TableStyle,
             },
         ]

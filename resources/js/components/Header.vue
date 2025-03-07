@@ -5,7 +5,7 @@
                 <a href="/">Home</a>
             </button>
             <button class="btn btn-secondary" @click="openExportModal">Export</button>
-<!--            <button class="btn btn-secondary" @click="openImportModal">Import</button>-->
+            <!--            <button class="btn btn-secondary" @click="openImportModal">Import</button>-->
             <button class="btn btn-secondary" @click="addTable">Add Table</button>
         </div>
         <div class="flex-items">
@@ -31,7 +31,7 @@ const {
     openImportModal,
     saveDiagram
 }
-= defineProps([
+    = defineProps([
     'addTable',
     'openExportModal',
     'openImportModal',

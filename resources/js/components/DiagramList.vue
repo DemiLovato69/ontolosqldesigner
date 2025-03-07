@@ -1,19 +1,20 @@
 <template>
     <div class="centered-container">
         <div class="form-container">
-            <a href="/"  class="btn btn-secondary float-left">Home</a>
+            <a href="/" class="btn btn-secondary float-left">Home</a>
             <br>
             <h2 class="form-title">Diagrams</h2>
 
             <div class="flex-centered flex-items">
                 <img @click="addDiagram" src="../../icons/checkmark.svg" class="icon" alt="checkmark">
-                    <input
-                        type="text"
-                        v-model="newDiagramName"
-                        placeholder="Enter diagram name"
-                        class="input input-underline"
-                    />
-                <img @click="this.newDiagramName = ''" src="../../icons/cancel-colored.svg" class="icon" alt="cancel-colored">
+                <input
+                    type="text"
+                    v-model="newDiagramName"
+                    placeholder="Enter diagram name"
+                    class="input input-underline"
+                />
+                <img @click="this.newDiagramName = ''" src="../../icons/cancel-colored.svg" class="icon"
+                     alt="cancel-colored">
             </div>
             <br>
             <ul class="list">
@@ -27,7 +28,8 @@
                             @change="updateDiagram(diagram)"
                             class="input input-underline"
                         />
-                        <img @click="deleteDiagram(diagram.id)" src="../../icons/cancel-colored.svg" class="icon" alt="cancel-colored">
+                        <img @click="deleteDiagram(diagram.id)" src="../../icons/cancel-colored.svg" class="icon"
+                             alt="cancel-colored">
                     </div>
                 </li>
             </ul>
@@ -53,7 +55,7 @@ export default {
     },
     methods: {
         viewDiagram(id) {
-            router.push({ path:`/diagrams/${id}` });
+            router.push({ path: `/diagrams/${id}` });
         },
         async addDiagram() {
             try {

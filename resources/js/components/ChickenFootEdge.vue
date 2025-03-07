@@ -13,7 +13,7 @@
     </svg>
 
     <BaseEdge :id="id" :style="style" :path="path[0]"
-              :marker-start="data.markerStart || 'none'" :marker-end="data.markerEnd || 'none'" />
+              :marker-start="data.markerStart || 'none'" :marker-end="data.markerEnd || 'none'"/>
 </template>
 
 <script setup>

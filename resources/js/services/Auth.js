@@ -48,7 +48,7 @@ export const Auth = {
             const response = await axios.post('/api/logout');
             store.commit('logout');
             $toast.success(response.data.message);
-            await router.push({ name: 'login' });
+            window.location.href = '/'; //TODO potentially will prevent SSR in the future and gives 1 sec of white screen
         } catch (error) {
             if (error.response) {
                 $toast.error(error.response.data.message);

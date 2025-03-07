@@ -32,7 +32,7 @@ export default createStore({
         }
     },
     actions: {
-        initializeAuth({state}) {
+        initializeAuth({ state }) {
             initializeAxiosHeaders(state.auth_token);
         }
     }
