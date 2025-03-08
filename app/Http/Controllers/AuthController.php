@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\LoginRequest;
 use App\Http\Requests\RegisterRequest;
+use App\Mail\Admin\NewUserRegistrationMail;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Throwable;
 
 class AuthController extends Controller
@@ -22,7 +24,7 @@ class AuthController extends Controller
                 'password' => Hash::make($request->password),
             ]);
             $user->save();
-
+            Mail::to(config('mail.from.address'))->send(new NewUserRegistrationMail($request->email)); //TODO add this to queue, so the is no load time on register
             return response()->json([
                 'status' => true,
                 'message' => 'Registered successfully'
