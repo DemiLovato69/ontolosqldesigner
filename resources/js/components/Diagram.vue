@@ -203,12 +203,13 @@ function onEdgeUpdate({ edge, connection }) {
 
 const updateConnectionLineType = (relationshipType) => {
     TableActions.updateConnectionLineType(schema, selectedEdge, relationshipType);
+    showRelationshipModal.value = false;
 };
 
 const updateLabel = (id, newLabel) => {
     const element = schema.value.find(el => el.id === id);
     if (element) {
-        element.label = newLabel;
+        element.label = newLabel.replace(' ', '_');
     }
 }
 const updateKeyMod = (id, keyMod) => {
@@ -263,6 +264,7 @@ const openExportModal = () => {
     showExportModal.value = true;
 };
 const exportSql = async () => {
+    await Diagram.save(diagramId, schema.value);
     exportContent.value = await Diagram.export(diagramId)
 }
 const saveDiagram = () => {

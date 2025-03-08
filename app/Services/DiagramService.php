@@ -6,17 +6,26 @@ use App\Models\Diagram;
 
 class DiagramService
 {
-    public static function getUserDiagrams($request)
+    public function getUserDiagrams($request)
     {
         return $request->user()->diagrams()->get();
     }
 
-    public static function getDiagramById($id)
+    public function getDiagramById($id)
     {
         return Diagram::find($id);
     }
 
-    public static function createScript($schema): string
+    public function createDiagram($request): void
+    {
+        Diagram::create([
+            'name' => $request->name,
+            'schema' => NULL,
+            'user_id' => $request->user()->id
+        ]);
+    }
+
+    public function createScript($schema): string
     {
         $script = '';
         $schema = json_decode($schema);
@@ -64,7 +73,7 @@ class DiagramService
                 $script .= " $row[nullable],\n";
 
                 if ($row['key_mod']) {
-                    $script .= "\t\t$row[key_mod] (`$row[name]`),\n";
+                    $script .= "\t$row[key_mod] (`$row[name]`),\n";
                 }
             }
             $script = rtrim($script, "\n,");

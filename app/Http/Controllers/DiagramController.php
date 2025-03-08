@@ -11,27 +11,29 @@ use Illuminate\Routing\Controller;
 
 class DiagramController extends Controller  //TODO add a policy for this thing
 {
+    protected DiagramService $diagramService;
+
+    public function __construct(DiagramService $diagramService)
+    {
+        $this->diagramService = $diagramService;
+    }
     public function index(Request $request): JsonResponse
     {
-        $diagrams = DiagramService::getUserDiagrams($request);
+        $diagrams = $this->diagramService->getUserDiagrams($request);
 
         return response()->json($diagrams);
     }
 
     public function show($id): JsonResponse
     {
-        $diagram = DiagramService::getDiagramById($id);
+        $diagram = $this->diagramService->getDiagramById($id);
 
         return response()->json($diagram);
     }
 
     public function store(DiagramRequest $request): JsonResponse
     {
-        Diagram::create([
-            'name' => $request->name,
-            'schema' => NULL,
-            'user_id' => $request->user()->id
-        ]);
+        $this->diagramService->createDiagram($request);
 
         return response()->json([
             'message' => 'Diagram created!'
@@ -40,7 +42,7 @@ class DiagramController extends Controller  //TODO add a policy for this thing
 
     public function update(DiagramRequest $request, $id): JsonResponse
     {
-        $diagram = DiagramService::getDiagramById($id);
+        $diagram = $this->diagramService->getDiagramById($id);
         $diagram->update($request->all());
 
         return response()->json([
@@ -67,8 +69,8 @@ class DiagramController extends Controller  //TODO add a policy for this thing
 
     public function export($id): JsonResponse
     {
-        $diagram = DiagramService::getDiagramById($id);
-        $diagram->script = json_encode(DiagramService::createScript($diagram->schema));
+        $diagram = $this->diagramService->getDiagramById($id);
+        $diagram->script = json_encode($this->diagramService->createScript($diagram->schema));
         $diagram->save();
 
         return response()->json($diagram->script);
