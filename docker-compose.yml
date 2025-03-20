@@ -1,0 +1,70 @@
+services:
+    php:
+        build:
+            context: .
+            dockerfile: .docker/php/Dockerfile
+        container_name: php
+        volumes:
+            - .:/var/www/html
+        networks:
+            - snydiagram_network
+
+    node:
+        build:
+            context: .
+            dockerfile: .docker/node/Dockerfile
+        container_name: node
+        volumes:
+            - .:/var/www/html
+            - /var/www/html/node_modules
+        working_dir: /var/www/html
+        ports:
+            - "5173:5173"
+        networks:
+            - snydiagram_network
+
+    nginx:
+        image: nginx:alpine
+        container_name: nginx
+        ports:
+            - "8080:80"
+        volumes:
+            - .:/var/www/html
+            - ./.docker/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+        depends_on:
+            - php
+            - node
+        networks:
+            - snydiagram_network
+
+    mysql:
+        image: mysql:8.0
+        container_name: mysql
+        environment:
+            MYSQL_DATABASE: ${DB_DATABASE}
+            MYSQL_PASSWORD: ${DB_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - dbdata:/var/lib/mysql
+        networks:
+            - snydiagram_network
+
+    phpmyadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        ports:
+            - "8081:80"
+        environment:
+            PMA_HOST: mysql
+            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+        depends_on:
+            - mysql
+        networks:
+            - snydiagram_network
+
+volumes:
+    dbdata:
+
+networks:
+    snydiagram_network:
+        driver: bridge
