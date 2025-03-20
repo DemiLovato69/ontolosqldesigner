@@ -4,36 +4,36 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\DiagramRequest;
 use App\Models\Diagram;
-use App\Services\DiagramService;
+use App\Repositories\DiagramRepository;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 class DiagramController extends Controller  //TODO add a policy for this thing
 {
-    protected DiagramService $diagramService;
+    protected DiagramRepository $diagramRepository;
 
-    public function __construct(DiagramService $diagramService)
+    public function __construct(DiagramRepository $diagramService)
     {
-        $this->diagramService = $diagramService;
+        $this->diagramRepository = $diagramService;
     }
     public function index(Request $request): JsonResponse
     {
-        $diagrams = $this->diagramService->getUserDiagrams($request);
+        $diagrams = $this->diagramRepository->getUserDiagrams($request);
 
         return response()->json($diagrams);
     }
 
     public function show($id): JsonResponse
     {
-        $diagram = $this->diagramService->getDiagramById($id);
+        $diagram = $this->diagramRepository->getDiagramById($id);
 
         return response()->json($diagram);
     }
 
     public function store(DiagramRequest $request): JsonResponse
     {
-        $this->diagramService->createDiagram($request);
+        $this->diagramRepository->createDiagram($request);
 
         return response()->json([
             'message' => 'Diagram created!'
@@ -42,7 +42,7 @@ class DiagramController extends Controller  //TODO add a policy for this thing
 
     public function update(DiagramRequest $request, $id): JsonResponse
     {
-        $diagram = $this->diagramService->getDiagramById($id);
+        $diagram = $this->diagramRepository->getDiagramById($id);
         $diagram->update($request->all());
 
         return response()->json([
@@ -62,15 +62,15 @@ class DiagramController extends Controller  //TODO add a policy for this thing
 //    public function import($id, Request $request)
 //    {
 //        $script = $request->input("script");
-//        $diagram = DiagramService::getDiagramById($id);
-//        $diagram->schema = json_encode(DiagramService::createSchemaFromScript(json_decode($script)));
+//        $diagram = DiagramRepository::getDiagramById($id);
+//        $diagram->schema = json_encode(DiagramRepository::createSchemaFromScript(json_decode($script)));
 //        $diagram->save();
 //    }
 
     public function export($id): JsonResponse
     {
-        $diagram = $this->diagramService->getDiagramById($id);
-        $diagram->script = json_encode($this->diagramService->createScript($diagram->schema));
+        $diagram = $this->diagramRepository->getDiagramById($id);
+        $diagram->script = json_encode($this->diagramRepository->createScript($diagram->schema));
         $diagram->save();
 
         return response()->json($diagram->script);

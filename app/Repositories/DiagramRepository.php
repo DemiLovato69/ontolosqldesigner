@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Services;
+namespace App\Repositories;
 
 use App\Models\Diagram;
 
-class DiagramService
+class DiagramRepository
 {
     public function getUserDiagrams($request)
     {
