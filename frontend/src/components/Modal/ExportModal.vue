@@ -161,7 +161,7 @@ const isExporting  = ref(false)
 const activeExport = ref(null)
 const sqlCache     = ref(null)
 
-const reviewDismissed = ref(false)
+const reviewDismissed = ref(true)
 const reviewSubmitted = ref(false)
 const reviewLoading   = ref(false)
 const selectedStars   = ref(0)
@@ -171,9 +171,9 @@ const reviewMessage   = ref('')
 onMounted(async () => {
     try {
         const { data } = await axios.get('/api/review')
-        if (data.reviewed) reviewDismissed.value = true
+        if (!data.reviewed) reviewDismissed.value = false
     } catch {
-        // silently skip
+        // silently skip — keep hidden on error
     }
 })
 
