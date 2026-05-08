@@ -57,6 +57,7 @@ Route::prefix('/admin')->group(function () {
 
     Route::middleware('admin')->group(function () {
         Route::get('/', [AdminController::class, 'showDashboard'])->name('admin.dashboard');
+        Route::get('/reviews', [AdminController::class, 'showReviews'])->name('admin.reviews');
         Route::post('/impersonate/{user}', [AdminController::class, 'impersonate'])->name('admin.impersonate');
         Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('admin.users.destroy');
         Route::post('/diagrams/{diagram}/feature', [AdminController::class, 'featureDiagram'])->name('admin.diagrams.feature');

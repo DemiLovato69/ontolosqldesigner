@@ -77,11 +77,66 @@
                     <span class="export-card__desc">Migration files (.zip)</span>
                 </button>
             </div>
+
+            <div v-if="!reviewDismissed" class="review-section">
+                <template v-if="!reviewSubmitted">
+                    <div class="review-section__header">
+                        <span class="review-section__label">Enjoying sql-designer.com?</span>
+                        <button class="review-section__dismiss" @click="reviewDismissed = true" aria-label="Dismiss">
+                            <img src="../../icons/close.svg" alt="Close">
+                        </button>
+                    </div>
+                    <div class="review-section__stars" @mouseleave="hoveredStars = 0">
+                        <button
+                            v-for="n in 5"
+                            :key="n"
+                            class="star-btn"
+                            @click="selectedStars = n"
+                            @mouseenter="hoveredStars = n"
+                            :aria-label="`${n} star`"
+                        >
+                            <svg viewBox="0 0 24 24" width="28" height="28">
+                                <polygon
+                                    points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
+                                    :fill="n <= (hoveredStars || selectedStars) ? 'var(--color-primary)' : 'none'"
+                                    :stroke="n <= (hoveredStars || selectedStars) ? 'var(--color-primary)' : 'var(--border-color)'"
+                                    stroke-width="1.5"
+                                    stroke-linejoin="round"
+                                />
+                            </svg>
+                        </button>
+                    </div>
+                    <div v-if="selectedStars > 0" class="review-section__message-wrap">
+                        <textarea
+                            v-model="reviewMessage"
+                            class="review-section__textarea"
+                            placeholder="Optional message..."
+                            rows="2"
+                            maxlength="1000"
+                        ></textarea>
+                    </div>
+                    <div v-if="selectedStars > 0" class="review-section__actions">
+                        <button
+                            class="review-section__submit"
+                            :disabled="reviewLoading"
+                            @click="submitReview"
+                        >{{ reviewLoading ? 'Sending…' : 'Submit' }}</button>
+                        <button class="review-section__skip" @click="reviewDismissed = true">Maybe later</button>
+                    </div>
+                </template>
+                <template v-else>
+                    <div class="review-section__thanks">
+                        Thank you for your feedback!
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
+import { ref, onMounted } from 'vue'
+import axios from '@/axios.js'
 import { useToast } from 'vue-toast-notification'
 import { Diagram } from '@/services/Diagram.js'
 
@@ -95,6 +150,37 @@ const props = defineProps({
 })
 
 defineEmits(['close', 'capture-png'])
+
+const reviewDismissed = ref(false)
+const reviewSubmitted = ref(false)
+const reviewLoading   = ref(false)
+const selectedStars   = ref(0)
+const hoveredStars    = ref(0)
+const reviewMessage   = ref('')
+
+onMounted(async () => {
+    try {
+        const { data } = await axios.get('/api/review')
+        if (data.reviewed) reviewDismissed.value = true
+    } catch {
+        // silently skip — don't block the export modal
+    }
+})
+
+const submitReview = async () => {
+    reviewLoading.value = true
+    try {
+        await axios.post('/api/review', {
+            stars:   selectedStars.value,
+            message: reviewMessage.value || null,
+        })
+        reviewSubmitted.value = true
+    } catch {
+        $toast.error('Failed to submit review')
+    } finally {
+        reviewLoading.value = false
+    }
+}
 
 const copyText = async () => {
     await navigator.clipboard.writeText(props.sqlContent)
@@ -263,5 +349,152 @@ const downloadLaravelMigrations = async () => {
     font-size: 10px;
     color: var(--text-secondary);
     line-height: 1.3;
+}
+
+/* Review section */
+.review-section {
+    border-top: 1px solid var(--border-color);
+    padding: 16px 24px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+.review-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    width: 100%;
+}
+
+.review-section__label {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.review-section__dismiss {
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.5;
+    transition: opacity 0.15s, background 0.15s;
+}
+
+.review-section__dismiss:hover {
+    opacity: 1;
+    background: var(--bg-surface-alt);
+}
+
+.review-section__dismiss img {
+    width: 12px;
+    height: 12px;
+    filter: brightness(0) invert(1);
+}
+
+.review-section__stars {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.star-btn {
+    background: none;
+    border: none;
+    padding: 2px;
+    cursor: pointer;
+    border-radius: 4px;
+    display: flex;
+    transition: transform 0.1s;
+}
+
+.star-btn:hover {
+    transform: scale(1.15);
+}
+
+.review-section__message-wrap {
+    margin-top: 10px;
+    width: 100%;
+}
+
+.review-section__textarea {
+    width: 100%;
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 12px;
+    padding: 8px 10px;
+    resize: none;
+    box-sizing: border-box;
+    transition: border-color 0.15s;
+    font-family: inherit;
+}
+
+.review-section__textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+.review-section__actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 10px;
+}
+
+.review-section__submit {
+    padding: 6px 18px;
+    background: var(--color-primary);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.review-section__submit:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.review-section__submit:not(:disabled):hover {
+    opacity: 0.85;
+}
+
+.review-section__skip {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.review-section__skip:hover {
+    color: var(--text-primary);
+}
+
+.review-section__thanks {
+    font-size: 13px;
+    color: var(--color-primary);
+    font-weight: 500;
+    text-align: center;
+    padding: 4px 0;
 }
 </style>

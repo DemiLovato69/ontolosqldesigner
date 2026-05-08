@@ -8,6 +8,7 @@ use App\Http\Requests\Auth\AdminLoginRequest;
 use App\Jobs\SendAdminBulkEmail;
 use App\Mail\AdminEmailMail;
 use App\Models\Diagram;
+use App\Models\Review;
 use App\Models\User;
 use App\Services\AdminService;
 use Illuminate\Contracts\View\Factory;
@@ -96,6 +97,13 @@ class AdminController extends Controller
         Mail::to($user->email)->send(new AdminEmailMail($request->input('subject'), $request->input('body')));
 
         return response()->json(['ok' => true]);
+    }
+
+    public function showReviews(): Factory|View
+    {
+        $reviews = Review::with('user')->latest()->get();
+
+        return view('admin.reviews', compact('reviews'));
     }
 
     public function logout(): Redirector|RedirectResponse
