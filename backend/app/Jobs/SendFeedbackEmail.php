@@ -27,6 +27,6 @@ class SendFeedbackEmail implements ShouldQueue
 
     public function handle(): void
     {
-        Mail::to(config('mail.smtp.username'))->send(new FeedbackMail($this->body, $this->senderEmail));
+        Mail::to(config('mail.mailers.smtp.username'))->send(new FeedbackMail($this->body, $this->senderEmail));
     }
 }
