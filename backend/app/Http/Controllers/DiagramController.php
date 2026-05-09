@@ -9,6 +9,7 @@ use App\Http\Resources\DiagramVisitorResource;
 use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
 use App\Models\Diagram;
+use App\Models\DiagramChangelog;
 use App\Models\DiagramVisitor;
 use App\Services\DiagramCrudService;
 use App\Services\DiagramSharingService;
@@ -106,6 +107,16 @@ class DiagramController extends Controller
 
         ImportDiagramSchemaJob::dispatch($diagram);
         broadcast(new SchemaImported($diagram->share_token, $diagram->schema, (string) auth()->id()));
+
+        $user = auth()->user();
+        DiagramChangelog::create([
+            'diagram_id' => $diagram->id,
+            'user_id'    => $user->id,
+            'user_name'  => $user->email,
+            'action'     => 'import_sql',
+            'details'    => null,
+        ]);
+
         return response()->json(['status' => 'pending'], 202);
     }
 
@@ -137,6 +148,15 @@ class DiagramController extends Controller
         $diagram->save();
 
         ExportDiagramJob::dispatch($diagram);
+
+        $user = auth()->user();
+        DiagramChangelog::create([
+            'diagram_id' => $diagram->id,
+            'user_id'    => $user->id,
+            'user_name'  => $user->email,
+            'action'     => 'export_sql',
+            'details'    => null,
+        ]);
 
         return response()->json(['status' => 'pending'], 202);
     }

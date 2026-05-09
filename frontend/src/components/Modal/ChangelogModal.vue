@@ -79,6 +79,8 @@ const ACTION_LABELS = {
         if (d?.table_name) return `Deleted column from "${d.table_name}"`
         return 'Deleted column'
     },
+    import_sql: () => 'Imported SQL',
+    export_sql: () => 'Exported SQL',
 }
 
 const ACTION_COLORS = {
@@ -90,6 +92,8 @@ const ACTION_COLORS = {
     column_deleted: '#ef4444',
     connection_deleted: '#ef4444',
     relationship_changed: '#f97316',
+    import_sql: '#3b82f6',
+    export_sql: '#3b82f6',
 }
 
 const labelFor = (action, details) => {
