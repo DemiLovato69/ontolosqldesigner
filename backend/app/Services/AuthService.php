@@ -2,7 +2,6 @@
 
 namespace App\Services;
 
-use App\Jobs\SendNewUserRegistrationEmail;
 use App\Jobs\SendVerificationEmail;
 use App\Models\User;
 use App\Repositories\AuthRepository;
@@ -21,7 +20,6 @@ class AuthService
     public function register(array $data): ?string
     {
         $this->authRepository->createNewUser($data);
-        SendNewUserRegistrationEmail::dispatch($data['email']);
 
         if (!Auth::attempt(['email' => $data['email'], 'password' => $data['password']])) {
             return null;
@@ -61,7 +59,6 @@ class AuthService
                 'password' => null,
                 'email_verified_at' => now(),
             ]);
-            SendNewUserRegistrationEmail::dispatch($user->email);
         }
 
         return $user->createToken('API TOKEN')->plainTextToken;
