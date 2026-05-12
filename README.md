@@ -1,8 +1,25 @@
 # SQL Designer
 
-**SQL Designer** is a free, web-based visual database schema designer. Build and manage your database schemas through an intuitive drag-and-drop interface — no SQL expertise required.
+[![License](https://img.shields.io/badge/license-source--available-blue)](./LICENSE)
+[![Website](https://img.shields.io/website?url=https%3A%2F%2Fsql-designer.com)](https://sql-designer.com)
 
-🌐 **Website:** [sql-designer.com](https://sql-designer.com)
+**SQL Designer** is a free, web-based visual database schema designer. Design and manage your database schemas through an intuitive drag-and-drop interface — no SQL expertise required.
+
+🌐 **Live app:** [sql-designer.com](https://sql-designer.com)
+
+![SQL Designer — visual database schema editor](backend/public/images/designer_screenshot.png)
+
+---
+
+## Why SQL Designer?
+
+Most database design tools are either expensive, desktop-only, or require an account just to get started. SQL Designer runs in your browser, free, and gets you from idea to schema in seconds.
+
+- **No install** — runs entirely in the browser
+- **Visual-first** — drag, drop, and connect tables without writing SQL
+- **Bidirectional SQL** — import existing SQL to visualize it, or export clean `CREATE` statements from your diagram
+- **MySQL & PostgreSQL** — full support for both dialects
+- **Open source** — read the code, report bugs, suggest features
 
 ---
 
@@ -13,49 +30,36 @@
 - **Relationship visualization** — connect tables with relationship lines using crow's foot notation
 - **MySQL & PostgreSQL support** — choose your target database type per diagram
 - **SQL import & export** — generate SQL `CREATE` statements from your diagram, or import existing SQL to auto-build a diagram
-- **Save & manage diagrams** — store multiple diagrams per account with auto-save indication
+- **Save & manage diagrams** — store multiple diagrams per account with auto-save
 - **User accounts** — register and log in to keep your diagrams private and persistent
+
+---
 
 ## Stack
 
-- **Frontend:** Vue 3, Vue Flow
-- **Backend:** Laravel 11 (PHP)
-- **Database:** PostgreSQL
+| Layer    | Technology             |
+|----------|------------------------|
+| Frontend | Vue 3, Pinia, Vue Flow |
+| Backend  | Laravel 11 (PHP)       |
+| Database | PostgreSQL             |
+| Infra    | Docker, Nginx          |
+
+---
+
+## Contributing
+
+Contributions are welcome. Please open an issue first to discuss what you'd like to change.
+
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes
+4. Open a pull request
+
+---
 
 ## License
 
 This project is source-available. See [LICENSE](./LICENSE) for details.
-Author: Snyatkov Dmitriy Andreevich. Feel free to message me any questions and suggestions about this project on dmitriy@sql-designer.com
 
----
-
----
-
-# SQL Designer (на русском)
-
-**SQL Designer** — бесплатный веб-инструмент для визуального проектирования схем баз данных. Создавайте и управляйте структурой БД через интуитивный интерфейс с перетаскиванием — без глубоких знаний SQL.
-
-🌐 **Сайт:** [sql-designer.com](https://sql-designer.com)
-
----
-
-## Возможности
-
-- **Визуальный редактор диаграмм** — проектируйте схемы на интерактивном холсте с поддержкой drag-and-drop
-- **Управление таблицами и столбцами** — создавайте, переименовывайте и удаляйте таблицы и колонки прямо на холсте
-- **Визуализация связей** — соединяйте таблицы линиями с нотацией "куриная лапка" (crow's foot)
-- **Поддержка MySQL и PostgreSQL** — выбирайте целевую СУБД для каждой диаграммы
-- **Импорт и экспорт SQL** — генерируйте SQL-скрипты `CREATE` из диаграммы или импортируйте готовый SQL для автоматического построения схемы
-- **Сохранение диаграмм** — храните несколько диаграмм в аккаунте с индикатором автосохранения
-- **Аккаунты пользователей** — регистрация и вход для приватного хранения диаграмм
-
-## Стек технологий
-
-- **Фронтенд:** Vue 3, Vue Flow
-- **Бэкенд:** Laravel 11 (PHP)
-- **База данных:** PostgreSQL
-
-## Лицензия
-
-Исходный код проекта открыт для просмотра. Подробности — в файле [LICENSE](./LICENSE).
-Автор: Снятков Дмитрий Андреевич. По любым вопросам и предложениям относительно проекта, пишите на мою почту - dmitriy@sql-designer.com
+**Author:** Snyatkov Dmitriy Andreevich
+**Contact:** dmitriy@sql-designer.com
