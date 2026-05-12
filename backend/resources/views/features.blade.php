@@ -1,14 +1,14 @@
 @extends('layouts.main')
 
-@section('title', 'Features — Visual MySQL & PostgreSQL ERD Tool | SQL Designer')
+@section('title', 'Features — Multi-Dialect ERD Tool for MySQL, PostgreSQL, SQLite, Oracle & More | SQL Designer')
 
 @section('head')
-    <meta name="description" content="Every feature in SQL Designer: drag-and-drop canvas, MySQL and PostgreSQL export, foreign keys, constraints, SQL import, auto-save, sharing.">
+    <meta name="description" content="Every feature in SQL Designer: drag-and-drop canvas, SQL export for MySQL, PostgreSQL, SQLite, Oracle, SQL Server and MS Access, foreign keys, constraints, SQL import, auto-save, sharing.">
     <meta name="author" content="SQL Designer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/features">
-    <meta property="og:title" content="Features — Visual MySQL &amp; PostgreSQL ERD Tool | SQL Designer">
-    <meta property="og:description" content="Every feature in SQL Designer: drag-and-drop canvas, MySQL and PostgreSQL export, foreign keys, constraints, SQL import, auto-save, sharing.">
+    <meta property="og:title" content="Features — Multi-Dialect ERD Tool for MySQL, PostgreSQL, SQLite, Oracle &amp; More | SQL Designer">
+    <meta property="og:description" content="Every feature in SQL Designer: drag-and-drop canvas, SQL export for MySQL, PostgreSQL, SQLite, Oracle, SQL Server and MS Access, foreign keys, constraints, SQL import, auto-save, sharing.">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:locale" content="en_US">
@@ -18,10 +18,10 @@
     <meta property="og:image:height" content="1269">
     <meta property="og:image:alt" content="SQL Designer — full feature list for the free database designer and ERD tool">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Features — Visual MySQL &amp; PostgreSQL ERD Tool | SQL Designer">
-    <meta name="twitter:description" content="Every feature in SQL Designer: drag-and-drop canvas, MySQL and PostgreSQL export, foreign keys, constraints, SQL import, auto-save, sharing.">
+    <meta name="twitter:title" content="Features — Multi-Dialect ERD Tool for MySQL, PostgreSQL, SQLite, Oracle &amp; More | SQL Designer">
+    <meta name="twitter:description" content="Every feature in SQL Designer: drag-and-drop canvas, SQL export for MySQL, PostgreSQL, SQLite, Oracle, SQL Server and MS Access, foreign keys, constraints, SQL import, auto-save, sharing.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta name="keywords" content="ERD tool, database designer, MySQL schema designer, PostgreSQL schema designer, entity relationship diagram, visual SQL tool, foreign key diagram, CREATE TABLE generator, SQL import, free ERD tool, crow's foot notation, database diagram online">
+    <meta name="keywords" content="ERD tool, database designer, MySQL schema designer, PostgreSQL schema designer, SQLite schema designer, Oracle schema designer, SQL Server schema designer, MS Access schema designer, entity relationship diagram, visual SQL tool, foreign key diagram, CREATE TABLE generator, SQL import, free ERD tool, crow's foot notation, database diagram online, multi-dialect SQL export">
     <script type="application/ld+json">
     @verbatim
     [
@@ -47,6 +47,10 @@
             "Drag-and-drop ERD canvas",
             "MySQL SQL export",
             "PostgreSQL SQL export",
+            "SQLite SQL export",
+            "Oracle SQL export",
+            "SQL Server SQL export",
+            "MS Access SQL export",
             "SQL import — reverse-engineer existing schemas",
             "Foreign key relationships with crow's foot notation",
             "PRIMARY KEY, UNIQUE, NOT NULL constraints",
@@ -66,7 +70,7 @@
         "name": "Features — SQL Designer",
         "url": "https://sql-designer.com/features",
         "dateModified": "2026-04-27",
-        "description": "Every feature in SQL Designer: drag-and-drop canvas, MySQL and PostgreSQL export, foreign keys, constraints, SQL import, auto-save, sharing.",
+        "description": "Every feature in SQL Designer: drag-and-drop canvas, SQL export for MySQL, PostgreSQL, SQLite, Oracle, SQL Server and MS Access, foreign keys, constraints, SQL import, auto-save, sharing.",
         "isPartOf": { "@type": "WebSite", "url": "https://sql-designer.com" },
         "about": {
             "@type": "SoftwareApplication",
@@ -86,12 +90,16 @@
                 { "@type": "ListItem", "position": 7,  "name": "UNIQUE & NOT NULL constraints" },
                 { "@type": "ListItem", "position": 8,  "name": "MySQL SQL Export" },
                 { "@type": "ListItem", "position": 9,  "name": "PostgreSQL SQL Export" },
-                { "@type": "ListItem", "position": 10, "name": "SQL Import" },
-                { "@type": "ListItem", "position": 11, "name": "One-Click Copy" },
-                { "@type": "ListItem", "position": 12, "name": "Share Links" },
-                { "@type": "ListItem", "position": 13, "name": "Embeds" },
-                { "@type": "ListItem", "position": 14, "name": "Multiple Diagrams" },
-                { "@type": "ListItem", "position": 15, "name": "Browser-Based, Nothing to Install" }
+                { "@type": "ListItem", "position": 10, "name": "SQLite SQL Export" },
+                { "@type": "ListItem", "position": 11, "name": "Oracle SQL Export" },
+                { "@type": "ListItem", "position": 12, "name": "SQL Server SQL Export" },
+                { "@type": "ListItem", "position": 13, "name": "MS Access SQL Export" },
+                { "@type": "ListItem", "position": 14, "name": "SQL Import" },
+                { "@type": "ListItem", "position": 15, "name": "One-Click Copy" },
+                { "@type": "ListItem", "position": 16, "name": "Share Links" },
+                { "@type": "ListItem", "position": 17, "name": "Embeds" },
+                { "@type": "ListItem", "position": 18, "name": "Multiple Diagrams" },
+                { "@type": "ListItem", "position": 19, "name": "Browser-Based, Nothing to Install" }
             ]
         }
     }
@@ -109,7 +117,7 @@
                 "name": "Is SQL Designer free to use?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes. SQL Designer is completely free — no credit card required, no subscription, no document limits. You can create unlimited diagrams, export SQL for MySQL and PostgreSQL, and share diagrams with others at no cost."
+                    "text": "Yes. SQL Designer is completely free — no credit card required, no subscription, no document limits. You can create unlimited diagrams, export SQL for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access, and share diagrams with others at no cost."
                 }
             },
             {
@@ -122,10 +130,10 @@
             },
             {
                 "@type": "Question",
-                "name": "Can SQL Designer export SQL for both MySQL and PostgreSQL?",
+                "name": "Which SQL dialects does SQL Designer support for export?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes. SQL Designer can generate CREATE TABLE scripts for both MySQL and PostgreSQL. Switch between dialects and copy the generated DDL to your clipboard with one click."
+                    "text": "SQL Designer can generate CREATE TABLE scripts for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access. Switch between dialects per diagram and copy the generated DDL to your clipboard with one click."
                 }
             },
             {
@@ -428,7 +436,7 @@
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><span>Features</span></p>
         <h1 class="page-h1">Everything an <em>ERD tool</em> should do.</h1>
-        <p class="page-sub">A visual database designer for MySQL and PostgreSQL. Drag-and-drop canvas, foreign keys with crow's foot notation, SQL import and export — all in the browser.</p>
+        <p class="page-sub">A visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag-and-drop canvas, foreign keys with crow's foot notation, SQL import and export — all in the browser.</p>
     </div>
 </section>
 
@@ -461,6 +469,10 @@
                 <ul class="sidebar-sub">
                     <li><a href="#mysql-export">MySQL export</a></li>
                     <li><a href="#postgres-export">PostgreSQL export</a></li>
+                    <li><a href="#sqlite-export">SQLite export</a></li>
+                    <li><a href="#oracle-export">Oracle export</a></li>
+                    <li><a href="#sqlserver-export">SQL Server export</a></li>
+                    <li><a href="#msaccess-export">MS Access export</a></li>
                     <li><a href="#sql-import">SQL import</a></li>
                     <li><a href="#one-click-copy">One-click copy</a></li>
                 </ul>
@@ -510,7 +522,7 @@
                     <div class="feat-glyph">T</div>
                     <div class="feat-body">
                         <h3>Data types</h3>
-                        <p>Common MySQL and PostgreSQL types: <code>INT</code>, <code>BIGINT</code>, <code>VARCHAR</code>, <code>TEXT</code>, <code>BOOLEAN</code>, <code>DATE</code>, <code>TIMESTAMP</code>, <code>UUID</code>, <code>DECIMAL</code>, <code>JSON</code>.</p>
+                        <p>Each dialect gets its own type list — MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access all show only the types they actually support. Common examples: <code>INT</code>, <code>BIGINT</code>, <code>VARCHAR</code>, <code>TEXT</code>, <code>BOOLEAN</code>, <code>DATE</code>, <code>TIMESTAMP</code>, <code>UUID</code>, <code>DECIMAL</code>, <code>JSON</code>.</p>
                     </div>
                 </div>
 
@@ -563,7 +575,7 @@
             <div class="feat-list">
 
                 <div class="feat" id="mysql-export">
-                    <div class="feat-glyph">My</div>
+                    <div class="feat-glyph"><img src="/images/db-mysql.svg" alt="MySQL" width="28" height="28"></div>
                     <div class="feat-body">
                         <h3>MySQL export</h3>
                         <p>A complete MySQL <code>CREATE TABLE</code> script — types, constraints, foreign keys. Paste into MySQL Workbench, DBeaver, or a terminal and run.</p>
@@ -571,10 +583,42 @@
                 </div>
 
                 <div class="feat" id="postgres-export">
-                    <div class="feat-glyph">Pg</div>
+                    <div class="feat-glyph"><img src="/images/db-postgresql.svg" alt="PostgreSQL" width="28" height="28"></div>
                     <div class="feat-body">
                         <h3>PostgreSQL export</h3>
                         <p>Switch dialects and the same diagram comes out as Postgres-compatible DDL — works with <code>psql</code>, pgAdmin, Supabase, anything that speaks Postgres.</p>
+                    </div>
+                </div>
+
+                <div class="feat" id="sqlite-export">
+                    <div class="feat-glyph"><img src="/images/db-sqlite.svg" alt="SQLite" width="28" height="28"></div>
+                    <div class="feat-body">
+                        <h3>SQLite export</h3>
+                        <p>Generates SQLite-compatible DDL with foreign key constraints declared inline inside <code>CREATE TABLE</code> — the only syntax SQLite accepts.</p>
+                    </div>
+                </div>
+
+                <div class="feat" id="oracle-export">
+                    <div class="feat-glyph"><img src="/images/db-oracle.svg" alt="Oracle" width="28" height="28"></div>
+                    <div class="feat-body">
+                        <h3>Oracle export</h3>
+                        <p>Outputs Oracle DDL using double-quoted identifiers and Oracle-native types like <code>NUMBER</code>, <code>VARCHAR2</code>, and <code>CLOB</code>. Compatible with SQL*Plus and Oracle SQL Developer.</p>
+                    </div>
+                </div>
+
+                <div class="feat" id="sqlserver-export">
+                    <div class="feat-glyph"><img src="/images/db-sqlserver.svg" alt="SQL Server" width="28" height="28"></div>
+                    <div class="feat-body">
+                        <h3>SQL Server export</h3>
+                        <p>Generates T-SQL with bracket-quoted identifiers and SQL Server types like <code>NVARCHAR</code>, <code>DATETIME2</code>, and <code>UNIQUEIDENTIFIER</code>. Ready to run in SSMS or Azure Data Studio.</p>
+                    </div>
+                </div>
+
+                <div class="feat" id="msaccess-export">
+                    <div class="feat-glyph"><img src="/images/db-msaccess.svg" alt="MS Access" width="28" height="28"></div>
+                    <div class="feat-body">
+                        <h3>MS Access export</h3>
+                        <p>Exports bracket-quoted DDL with Access-specific types like <code>AUTOINCREMENT</code>, <code>MEMO</code>, and <code>YESNO</code>. Compatible with the Access SQL view and DAO.</p>
                     </div>
                 </div>
 

@@ -1,26 +1,26 @@
 @extends('layouts.main')
 
-@section('title', 'SQL Designer — Free MySQL & PostgreSQL Database Designer')
+@section('title', 'SQL Designer — Free Database Designer for MySQL, PostgreSQL, SQLite, Oracle & More')
 
 @section('head')
-    <meta name="description" content="Free visual MySQL designer and PostgreSQL database designer. Drag-and-drop tables, define relationships, and export SQL scripts in seconds.">
-    <meta name="keywords" content="mysql designer, mysql database designer, mysql db designer, visual sql designer, visual database designer, database designer for postgresql, ERD tool, online ERD tool, MySQL schema designer, PostgreSQL schema designer, postgres schema designer, postgres db designer, postgres database designer, database diagram tool, SQL schema visualizer, ER diagram, entity relationship diagram, database design tool, free database designer, open source database designer, open source ERD tool, MySQL workbench alternative, pgAdmin alternative, free postgres designer">
+    <meta name="description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag-and-drop tables, define relationships, and export SQL scripts in seconds.">
+    <meta name="keywords" content="mysql designer, mysql database designer, mysql db designer, visual sql designer, visual database designer, database designer for postgresql, ERD tool, online ERD tool, MySQL schema designer, PostgreSQL schema designer, postgres schema designer, postgres db designer, postgres database designer, SQLite designer, Oracle schema designer, SQL Server database designer, MS Access designer, database diagram tool, SQL schema visualizer, ER diagram, entity relationship diagram, database design tool, free database designer, open source database designer, open source ERD tool, MySQL workbench alternative, pgAdmin alternative, free postgres designer">
     <meta name="robots" content="index, follow">
     <meta name="author" content="SQL Designer">
     <meta name="theme-color" content="#c05252">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:locale" content="en_US">
-    <meta property="og:title" content="SQL Designer — Free MySQL & PostgreSQL Database Designer">
-    <meta property="og:description" content="Free visual MySQL designer and database designer for PostgreSQL. Drag-and-drop schema editor with SQL export. No install, no subscription.">
+    <meta property="og:title" content="SQL Designer — Free Database Designer for MySQL, PostgreSQL, SQLite, Oracle & More">
+    <meta property="og:description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag-and-drop schema editor with SQL export. No install, no subscription.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sql-designer.com/">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2555">
     <meta property="og:image:height" content="1267">
-    <meta property="og:image:alt" content="SQL Designer — visual MySQL and PostgreSQL schema editor">
+    <meta property="og:image:alt" content="SQL Designer — visual database schema editor for MySQL, PostgreSQL, SQLite, Oracle and more">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SQL Designer — Free MySQL Designer & PostgreSQL Database Designer | ERD Tool">
-    <meta name="twitter:description" content="Free visual MySQL designer and database designer for PostgreSQL. Design schemas online and export SQL. No install, no subscription.">
+    <meta name="twitter:title" content="SQL Designer — Free Database Designer for MySQL, PostgreSQL, SQLite, Oracle & More | ERD Tool">
+    <meta name="twitter:description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Design schemas online and export SQL. No install, no subscription.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <link rel="canonical" href="https://sql-designer.com/">
     <link rel="preload" as="image" type="image/webp" fetchpriority="high"
@@ -35,7 +35,7 @@
                 "@type": "WebApplication",
                 "name": "SQL Designer",
                 "url": "https://sql-designer.com",
-                "description": "Free visual MySQL and PostgreSQL database designer. Drag-and-drop tables, define relationships, and export SQL scripts. No install, no subscription.",
+                "description": "Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag-and-drop tables, define relationships, and export SQL scripts. No install, no subscription.",
                 "applicationCategory": "DeveloperApplication",
                 "operatingSystem": "Any",
                 "browserRequirements": "Requires a modern browser with JavaScript enabled",
@@ -48,6 +48,10 @@
                     "Drag-and-drop canvas",
                     "MySQL support",
                     "PostgreSQL support",
+                    "SQLite support",
+                    "Oracle support",
+                    "SQL Server support",
+                    "MS Access support",
                     "Foreign key relationships",
                     "Crow's foot notation",
                     "PRIMARY and UNIQUE constraints",
@@ -83,7 +87,7 @@
                         "name": "What SQL dialects are supported?",
                         "acceptedAnswer": {
                             "@type": "Answer",
-                            "text": "MySQL and PostgreSQL, with more coming soon."
+                            "text": "MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access."
                         }
                     },
                     {
@@ -133,7 +137,7 @@
                 "name": "SQL Designer",
                 "url": "https://sql-designer.com",
                 "logo": "https://sql-designer.com/images/logo.svg",
-                "description": "Free online visual database designer for MySQL and PostgreSQL.",
+                "description": "Free online visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access.",
                 "sameAs": [
                     "https://github.com/Snydi/sqldesigner",
                     "https://alternativeto.net/software/sql-designer/"
@@ -331,13 +335,13 @@
 <!-- ── Hero ─────────────────────────────────────────────── -->
 <section class="hero" aria-labelledby="hero-h1">
     <div class="hero-inner">
-        <span class="eyebrow"><span class="dot"></span> Free ERD tool · MySQL &amp; PostgreSQL</span>
+        <span class="eyebrow"><span class="dot"></span> Free ERD tool · MySQL · PostgreSQL · SQLite · Oracle · SQL Server · MS Access</span>
         <h1 class="hero-h1" id="hero-h1">
             Design database schemas <em>visually</em>.
             Export clean SQL.
         </h1>
         <p class="hero-sub">
-            A browser-based database design tool for MySQL and PostgreSQL. Drag tables, draw relations, ship a CREATE TABLE script.
+            A browser-based database design tool for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag tables, draw relations, ship a CREATE TABLE script.
         </p>
         <div class="hero-actions">
             <a id="hero-btn-authed" class="btn btn-solid btn-lg" href="/diagrams" style="display:none">Open My Diagrams</a>
@@ -402,7 +406,7 @@
                 <h2 class="section-h2" id="features-h2">Features</h2>
                 <ul class="features-list" aria-label="Feature list">
                     <li>Drag-and-drop canvas</li>
-                    <li>MySQL &amp; PostgreSQL support</li>
+                    <li>MySQL, PostgreSQL, SQLite, Oracle, SQL Server &amp; MS Access</li>
                     <li>Foreign key relationships</li>
                     <li>Crow's foot notation</li>
                     <li>PRIMARY and UNIQUE constraints</li>
@@ -436,7 +440,7 @@
             </details></li>
             <li class="faq-item"><details>
                 <summary>What SQL dialects are supported?</summary>
-                <p>MySQL and PostgreSQL, with more coming soon</p>
+                <p>MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access.</p>
             </details></li>
             <li class="faq-item"><details>
                 <summary>Do I need to know SQL?</summary>
