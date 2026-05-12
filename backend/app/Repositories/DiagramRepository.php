@@ -21,10 +21,12 @@ class DiagramRepository implements DiagramRepositoryInterface
     public function create(array $data): Diagram
     {
         return Diagram::create([
-            'name' => $data['name'],
-            'db_type' => $data['db_type'] ?? 'mysql',
-            'schema' => NULL,
-            'user_id' => $data['user_id'],
+            'name'         => $data['name'],
+            'db_type'      => $data['db_type'] ?? 'mysql',
+            'schema'       => null,
+            'user_id'      => $data['user_id'],
+            'share_access' => $data['share_access'] ?? null,
+            'library'      => $data['library'] ?? false,
         ]);
     }
 

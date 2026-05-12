@@ -63,75 +63,76 @@
         <!-- New Diagram Modal -->
         <div v-if="showNewForm" class="create-modal-overlay" @click.self="showNewForm = false">
             <div class="create-modal">
-                <h3 class="create-modal__title">New Diagram</h3>
-                <input
-                    ref="newNameInput"
-                    v-model="newDiagramName"
-                    class="create-modal__input"
-                    placeholder="Diagram name"
-                    @keyup.enter="addDiagram"
-                    @keyup.escape="showNewForm = false"
-                />
-                <div class="create-modal__db-label">Database</div>
-                <div class="create-modal__db-options">
-                    <button
-                        class="db-option"
-                        :class="{ 'db-option--active': newDiagramDbType === 'mysql' }"
-                        @click="newDiagramDbType = 'mysql'"
-                        title="MySQL"
-                    >
-                        <img src="../icons/mysql.svg" alt="MySQL" />
-                        <span>MySQL</span>
-                    </button>
-                    <button
-                        class="db-option"
-                        :class="{ 'db-option--active': newDiagramDbType === 'postgresql' }"
-                        @click="newDiagramDbType = 'postgresql'"
-                        title="PostgreSQL"
-                    >
-                        <img src="../icons/postgresql.svg" alt="PostgreSQL" />
-                        <span>PostgreSQL</span>
-                    </button>
-                    <button
-                        class="db-option"
-                        :class="{ 'db-option--active': newDiagramDbType === 'sqlite' }"
-                        @click="newDiagramDbType = 'sqlite'"
-                        title="SQLite"
-                    >
-                        <img src="../icons/sqlite.svg" alt="SQLite" />
-                        <span>SQLite</span>
-                    </button>
-                    <button
-                        class="db-option"
-                        :class="{ 'db-option--active': newDiagramDbType === 'oracle' }"
-                        @click="newDiagramDbType = 'oracle'"
-                        title="Oracle"
-                    >
-                        <img src="../icons/oracle.svg" alt="Oracle" />
-                        <span>Oracle</span>
-                    </button>
-                    <button
-                        class="db-option"
-                        :class="{ 'db-option--active': newDiagramDbType === 'sqlserver' }"
-                        @click="newDiagramDbType = 'sqlserver'"
-                        title="SQL Server"
-                    >
-                        <img src="../icons/sqlserver.svg" alt="SQL Server" />
-                        <span>SQL Server</span>
-                    </button>
-                    <button
-                        class="db-option"
-                        :class="{ 'db-option--active': newDiagramDbType === 'msaccess' }"
-                        @click="newDiagramDbType = 'msaccess'"
-                        title="MS Access"
-                    >
-                        <img src="../icons/msaccess.svg" alt="MS Access" />
-                        <span>MS Access</span>
+
+                <div class="create-modal__header">
+                    <span class="create-modal__title">New Diagram</span>
+                    <button class="create-modal__close" @click="showNewForm = false" title="Close">
+                        <SvgIcon name="close" :size="14" />
                     </button>
                 </div>
-                <div class="create-modal__actions">
-                    <button class="btn btn-secondary" @click="showNewForm = false">Cancel</button>
-                    <button class="btn btn-primary" @click="addDiagram">Create</button>
+
+                <div class="create-modal__body">
+                    <div class="create-modal__field">
+                        <span class="create-modal__label">Name</span>
+                        <input
+                            ref="newNameInput"
+                            v-model="newDiagramName"
+                            class="create-modal__input"
+                            placeholder="My diagram"
+                            @keyup.enter="addDiagram"
+                            @keyup.escape="showNewForm = false"
+                        />
+                    </div>
+
+                    <div class="create-modal__field">
+                        <span class="create-modal__label">Database</span>
+                        <div class="create-modal__db-options">
+                            <button
+                                v-for="db in dbOptions"
+                                :key="db.type"
+                                class="db-option"
+                                :class="{ 'db-option--active': newDiagramDbType === db.type }"
+                                @click="newDiagramDbType = db.type"
+                                :title="db.label"
+                            >
+                                <img :src="dbIcons[db.type]" :alt="db.label" />
+                                <span>{{ db.label }}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="create-modal__field">
+                        <span class="create-modal__label">Visibility</span>
+                        <div class="create-modal__vis-row">
+                            <div class="create-modal__vis-chips">
+                                <button
+                                    class="create-modal__vis-btn"
+                                    :class="{ 'create-modal__vis-btn--active': newDiagramPublic }"
+                                    @click="newDiagramPublic = true"
+                                >Public</button>
+                                <button
+                                    class="create-modal__vis-btn"
+                                    :class="{ 'create-modal__vis-btn--active': !newDiagramPublic }"
+                                    @click="newDiagramPublic = false"
+                                >Private</button>
+                            </div>
+                            <template v-if="newDiagramPublic">
+                                <label class="create-modal__checkbox-label">
+                                    <input type="checkbox" class="create-modal__checkbox" v-model="newDiagramInLibrary" />
+                                    <span>Add to Library</span>
+                                </label>
+                                <span class="create-modal__help-icon">
+                                    ?
+                                    <span class="create-modal__tooltip">When enabled, this diagram appears in read-only mode in the public <a href="/library" target="_blank" style="color: var(--color-primary-text); cursor: pointer; text-decoration: underline;">Schema Library</a> for anyone to browse.</span>
+                                </span>
+                            </template>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="create-modal__footer">
+                    <button class="create-modal__btn create-modal__btn--cancel" @click="showNewForm = false">Cancel</button>
+                    <button class="create-modal__btn create-modal__btn--create" @click="addDiagram">Create</button>
                 </div>
             </div>
         </div>
@@ -160,10 +161,20 @@ export default {
             diagrams: [],
             newDiagramName: '',
             newDiagramDbType: 'mysql',
+            newDiagramPublic: true,
+            newDiagramInLibrary: true,
             showNewForm: false,
             renamingId: null,
             originalName: null,
-            dbIcons: { mysql: mysqlIcon, postgresql: postgresqlIcon, sqlite: sqliteIcon, oracle: oracleIcon, sqlserver: sqlserverIcon, msaccess: msaccessIcon }
+            dbIcons: { mysql: mysqlIcon, postgresql: postgresqlIcon, sqlite: sqliteIcon, oracle: oracleIcon, sqlserver: sqlserverIcon, msaccess: msaccessIcon },
+            dbOptions: [
+                { type: 'mysql', label: 'MySQL' },
+                { type: 'postgresql', label: 'PostgreSQL' },
+                { type: 'sqlite', label: 'SQLite' },
+                { type: 'oracle', label: 'Oracle' },
+                { type: 'sqlserver', label: 'SQL Server' },
+                { type: 'msaccess', label: 'MS Access' },
+            ]
         }
     },
     methods: {
@@ -175,16 +186,32 @@ export default {
             this.$nextTick(() => this.$refs.newNameInput?.focus())
         },
         async addDiagram() {
-            if (!this.newDiagramName.trim()) return
-            const response = await axios.post('/api/diagrams', {
-                name: this.newDiagramName,
-                db_type: this.newDiagramDbType
-            })
-            this.newDiagramName = ''
-            this.newDiagramDbType = 'mysql'
-            this.showNewForm = false
-            await this.fetchDiagrams()
-            response.status ? $toast.success(response.data.message) : $toast.error(response.data.message)
+            if (!this.newDiagramName.trim()) {
+                $toast.error('Diagram name cannot be empty.')
+                return
+            }
+            try {
+                const response = await axios.post('/api/diagrams', {
+                    name: this.newDiagramName,
+                    db_type: this.newDiagramDbType,
+                    share_access: this.newDiagramPublic ? 'read' : null,
+                    library: this.newDiagramPublic ? this.newDiagramInLibrary : false
+                })
+                this.newDiagramName = ''
+                this.newDiagramDbType = 'mysql'
+                this.newDiagramPublic = true
+                this.newDiagramInLibrary = true
+                this.showNewForm = false
+                await this.fetchDiagrams()
+                $toast.success(response.data.message)
+            } catch (error) {
+                const errors = error.response?.data?.errors
+                if (errors?.name) {
+                    $toast.error(`A diagram named "${this.newDiagramName}" already exists.`)
+                } else {
+                    $toast.error(error.response?.data?.message ?? 'Something went wrong!')
+                }
+            }
         },
         async updateDiagram(diagram) {
             const response = await axios.put(`/api/diagrams/${diagram.id}`, { name: diagram.name })
@@ -423,7 +450,7 @@ export default {
 .create-modal-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0, 0, 0, 0.55);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -432,35 +459,88 @@ export default {
 
 .create-modal {
     background: var(--bg-surface);
-    border-radius: 10px;
-    padding: 2rem;
-    width: 340px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    width: 400px;
     max-width: calc(100vw - 2rem);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    overflow: hidden;
+}
+
+/* Header */
+.create-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
 }
 
 .create-modal__title {
-    margin: 0;
-    color: var(--color-primary-text);
-    font-size: 0.9rem;
-    letter-spacing: 1px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-secondary);
+}
+
+.create-modal__close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    background: none;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: color 0.12s, background 0.12s;
+}
+
+.create-modal__close:hover {
+    color: var(--text-secondary);
+    background: var(--hover-bg);
+}
+
+/* Body */
+.create-modal__body {
+    padding: 20px 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.create-modal__field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.create-modal__label {
+    font-family: ui-monospace, monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
 }
 
 .create-modal__input {
     width: 100%;
-    padding: 0.6rem 0.75rem;
+    padding: 9px 12px;
     background: var(--bg-surface-alt);
     border: 1px solid var(--border-color);
-    border-radius: 6px;
-    font-size: 0.9rem;
+    border-radius: 7px;
+    font-size: 0.88rem;
     font-family: inherit;
     color: var(--text-primary);
     outline: none;
     box-sizing: border-box;
-    transition: border-color 0.15s;
+    transition: border-color 0.12s;
 }
 
 .create-modal__input::placeholder {
@@ -468,66 +548,213 @@ export default {
 }
 
 .create-modal__input:focus {
-    border-color: var(--color-primary);
+    border-color: var(--color-primary-text);
 }
 
-.create-modal__db-label {
-    font-size: 0.875rem;
-    color: var(--text-muted);
-    letter-spacing: 0.5px;
-    margin-bottom: 0.25rem;
-}
-
+/* DB chips */
 .create-modal__db-options {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.75rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
 }
 
 .db-option {
-    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.75rem 0.5rem;
-    border: 2px solid var(--border-color);
+    gap: 6px;
+    padding: 10px 12px 8px;
+    border: 1.5px solid var(--border-color);
     border-radius: 8px;
-    background: var(--bg-surface);
+    background: transparent;
     cursor: pointer;
-    transition: border-color 0.15s, background 0.15s;
+    transition: border-color 0.12s, background 0.12s;
 }
 
 .db-option img {
-    width: 32px;
-    height: 32px;
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
 }
 
 .db-option span {
-    font-size: 0.875rem;
-    color: var(--text-subtle);
-    font-family: inherit;
+    font-family: ui-monospace, monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    transition: color 0.12s;
 }
 
-.db-option:hover:not(:disabled) {
+.db-option:hover:not(.db-option--active) {
     border-color: var(--border-strong);
     background: var(--bg-surface-alt);
 }
 
 .db-option--active {
-    border-color: var(--color-primary-text) !important;
-    background: var(--bg-elevated) !important;
+    border-color: var(--color-primary-text);
+    background: rgba(93, 181, 131, 0.1);
 }
 
 .db-option--active span {
     color: var(--color-primary-text);
 }
 
-.create-modal__actions {
+/* Visibility row */
+.create-modal__vis-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.create-modal__vis-chips {
+    display: flex;
+    gap: 6px;
+}
+
+.create-modal__vis-btn {
+    padding: 6px 14px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1.5px solid var(--border-color);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s, color 0.12s;
+    white-space: nowrap;
+}
+
+.create-modal__vis-btn:hover:not(.create-modal__vis-btn--active) {
+    border-color: var(--border-strong);
+    background: var(--bg-surface-alt);
+    color: var(--text-subtle);
+}
+
+.create-modal__vis-btn--active {
+    border-color: var(--color-primary-text);
+    background: rgba(93, 181, 131, 0.1);
+    color: var(--color-primary-text);
+}
+
+/* Library checkbox */
+.create-modal__checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.create-modal__checkbox {
+    accent-color: var(--color-primary-text);
+    width: 15px;
+    height: 15px;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Help icon + tooltip */
+.create-modal__help-icon {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    font-size: 0.65rem;
+    color: var(--text-muted);
+    cursor: default;
+    flex-shrink: 0;
+}
+
+.create-modal__help-icon:hover .create-modal__tooltip,
+.create-modal__tooltip:hover {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.create-modal__tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    right: 0;
+    width: 220px;
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 0.5rem 0.65rem;
+    font-size: 0.72rem;
+    font-family: inherit;
+    color: var(--text-subtle);
+    line-height: 1.45;
+    text-transform: none;
+    letter-spacing: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Footer */
+.create-modal__footer {
     display: flex;
     justify-content: flex-end;
-    gap: 0.75rem;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 20px;
+    margin-top: 20px;
+    border-top: 1px solid var(--border-color);
+}
+
+.create-modal__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 14px;
+    border-radius: 7px;
+    font-family: ui-monospace, monospace;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+    white-space: nowrap;
+}
+
+.create-modal__btn--cancel {
+    border: 1px solid var(--border-color);
+    background: var(--bg-surface-alt);
+    color: var(--text-secondary);
+}
+
+.create-modal__btn--cancel:hover {
+    border-color: var(--border-strong);
+    background: var(--hover-bg-alt);
+}
+
+.create-modal__btn--create {
+    border: none;
+    background: var(--color-primary-text);
+    color: #0c1f15;
+}
+
+.create-modal__btn--create:hover {
+    background: #6ec994;
 }
 </style>

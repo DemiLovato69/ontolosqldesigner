@@ -21,6 +21,8 @@ class DiagramRequest extends FormRequest
                 })
             ],
             'db_type' => ['sometimes', 'string', 'in:mysql,postgresql,sqlite,oracle,sqlserver,msaccess'],
+            'share_access' => ['nullable', 'string', 'in:read,write,per_user'],
+            'library' => ['sometimes', 'boolean'],
         ];
     }
 }
