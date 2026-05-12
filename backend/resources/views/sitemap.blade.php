@@ -84,6 +84,10 @@
                 <span class="desc">Crow's foot symbols for one-to-one, one-to-many, and many-to-many relationships, and how they map to real foreign key constraints.</span>
             </li>
             <li>
+                <a href="/blog/best-free-erd-tools">10 Best Free ERD Tools in 2026 — Tested and Compared</a>
+                <span class="desc">We tested 10 free ERD tools — SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver — with honest strengths, real limits, and use-case guidance.</span>
+            </li>
+            <li>
                 <a href="/blog/best-erd-tools">Best Free ERD Tools in 2026 — Honest Comparison</a>
                 <span class="desc">Honest comparison of 7 ERD tools with real strengths, real weaknesses, and clear use-case guidance.</span>
             </li>

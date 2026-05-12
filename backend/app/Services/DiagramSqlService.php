@@ -2,13 +2,51 @@
 
 namespace App\Services;
 
+use App\Events\SchemaImported;
+use App\Jobs\ExportDiagramJob;
+use App\Jobs\ImportDiagramSchemaJob;
 use App\Models\Diagram;
-use Exception;
-use Illuminate\Support\Facades\DB;
-use Throwable;
+use App\Models\DiagramChangelog;
+use Illuminate\Contracts\Auth\Authenticatable;
 
 class DiagramSqlService
 {
+    public function startImport(Diagram $diagram, string $script, Authenticatable $user): void
+    {
+        $diagram->script        = $script;
+        $diagram->import_status = 'pending';
+        $diagram->import_error  = null;
+        $diagram->save();
+
+        ImportDiagramSchemaJob::dispatch($diagram);
+        broadcast(new SchemaImported($diagram->share_token, $diagram->schema, (string) $user->id));
+
+        DiagramChangelog::create([
+            'diagram_id' => $diagram->id,
+            'user_id'    => $user->id,
+            'user_name'  => $user->email,
+            'action'     => 'import_sql',
+            'details'    => null,
+        ]);
+    }
+
+    public function startExport(Diagram $diagram, Authenticatable $user): void
+    {
+        $diagram->export_status = 'pending';
+        $diagram->export_error  = null;
+        $diagram->save();
+
+        ExportDiagramJob::dispatch($diagram);
+
+        DiagramChangelog::create([
+            'diagram_id' => $diagram->id,
+            'user_id'    => $user->id,
+            'user_name'  => $user->email,
+            'action'     => 'export_sql',
+            'details'    => null,
+        ]);
+    }
+
     public function importSchema(Diagram $diagram, string $script): string
     {
         $diagram->schema = $this->createSchema(json_decode($script));

@@ -163,6 +163,11 @@
         <h2>Crow&rsquo;s Foot Notation — ER Diagram Cardinality Explained</h2>
         <p>Learn the crow's foot symbols for one-to-one, one-to-many, and many-to-many relationships, how optionality works, and how the notation maps to real foreign key constraints.</p>
     </a>
+    <a class="post-card" href="/blog/best-free-erd-tools">
+        <p class="card-meta">May 2026 · 10 min read</p>
+        <h2>10 Best Free ERD Tools in 2026 — Tested and Compared</h2>
+        <p>We tested 10 free ERD tools: SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver — with honest strengths, real limits, pricing, and use-case guidance.</p>
+    </a>
     <a class="post-card" href="/blog/best-erd-tools">
         <p class="card-meta">April 2026 · 9 min read</p>
         <h2>Best Free ERD Tools in 2026 — Honest Comparison</h2>
