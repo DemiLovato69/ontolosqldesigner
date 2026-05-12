@@ -46,9 +46,10 @@ class AdminController extends Controller
 
     public function showDashboard(): Factory|View
     {
-        ['users' => $users, 'libraryDiagrams' => $libraryDiagrams, 'registrationsByDay' => $registrationsByDay] = $this->adminService->getDashboardData();
+        $sort = in_array(request('sort'), ['registered', 'last_action']) ? request('sort') : 'registered';
+        ['users' => $users, 'libraryDiagrams' => $libraryDiagrams, 'registrationsByDay' => $registrationsByDay, 'activityByDay' => $activityByDay] = $this->adminService->getDashboardData($sort);
 
-        return view('admin.dashboard', compact('users', 'libraryDiagrams', 'registrationsByDay'));
+        return view('admin.dashboard', compact('users', 'libraryDiagrams', 'registrationsByDay', 'activityByDay', 'sort'));
     }
 
     public function featureDiagram(Diagram $diagram, FeatureDiagramRequest $request): JsonResponse

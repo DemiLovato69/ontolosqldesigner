@@ -83,6 +83,19 @@
         }
         .user-meta .verified { color: #2e7d52; }
         .user-meta .unverified { color: #a05020; }
+        .auth-icon {
+            display: inline-block;
+            vertical-align: middle;
+            width: 13px;
+            height: 13px;
+            margin-right: 1px;
+        }
+        .auth-at {
+            font-size: 12px;
+            font-weight: 600;
+            color: #888;
+            vertical-align: middle;
+        }
         .impersonate-btn {
             background: #8f2f2f;
             color: #fff;
@@ -138,11 +151,14 @@
             padding: 3px 9px;
             font-size: 11px;
             color: #2c3e50;
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
-        .diagram-tag .db-type {
-            color: #8f2f2f;
-            margin-left: 5px;
-            font-size: 10px;
+        .diagram-tag .db-icon {
+            width: 14px;
+            height: 14px;
+            flex-shrink: 0;
         }
         .no-diagrams { font-size: 11px; color: #ccc; }
         .toast {
@@ -369,6 +385,27 @@
         }
         .modal-send:hover { background: #7a2222; }
         .modal-send:disabled { background: #ccc; cursor: default; }
+        .sort-toggle {
+            display: flex;
+            gap: 4px;
+        }
+        .sort-btn {
+            background: none;
+            border: 1px solid #e0dede;
+            border-radius: 4px;
+            color: #999;
+            padding: 4px 10px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            cursor: pointer;
+            text-decoration: none;
+            transition: border-color .2s, color .2s;
+        }
+        .sort-btn:hover { border-color: #aaa; color: #555; }
+        .sort-btn.active { border-color: #8f2f2f; color: #8f2f2f; background: #fff5f5; }
         .chart-card {
             background: #fff;
             border-radius: 4px;
@@ -410,6 +447,13 @@
             </div>
         </div>
 
+        <div class="chart-card">
+            <div class="chart-title">Active Users — Last 60 Days</div>
+            <div class="chart-canvas-wrap">
+                <canvas id="activityChart"></canvas>
+            </div>
+        </div>
+
         <div class="section-heading">Library — {{ $libraryDiagrams->count() }} diagrams</div>
 
         @forelse ($libraryDiagrams as $diagram)
@@ -447,9 +491,15 @@
             <p class="empty">No diagrams in the library yet.</p>
         @endforelse
 
-        <div class="section-heading" style="display:flex;align-items:center;justify-content:space-between;">
+        <div class="section-heading" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
             <span>Users — {{ $users->count() }}</span>
-            <button class="feature-btn" style="font-size:10px;padding:5px 12px;" onclick="openBulkEmailModal()">Email All</button>
+            <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+                <div class="sort-toggle">
+                    <a href="?sort=registered" class="sort-btn {{ $sort === 'registered' ? 'active' : '' }}">Registered</a>
+                    <a href="?sort=last_action" class="sort-btn {{ $sort === 'last_action' ? 'active' : '' }}">Last Action</a>
+                </div>
+                <button class="feature-btn" style="font-size:10px;padding:5px 12px;" onclick="openBulkEmailModal()">Email All</button>
+            </div>
         </div>
 
         @forelse ($users as $user)
@@ -459,13 +509,23 @@
                         <div class="user-email">{{ $user->email }}</div>
                         <div class="user-meta">
                             ID: {{ $user->id }} &nbsp;&middot;&nbsp;
+                            @if ($user->github_id)
+                                <img class="auth-icon" src="/images/auth-github.svg" alt="GitHub" title="Registered via GitHub">
+                            @elseif ($user->gitlab_id)
+                                <img class="auth-icon" src="/images/auth-gitlab.svg" alt="GitLab" title="Registered via GitLab">
+                            @elseif ($user->google_id)
+                                <img class="auth-icon" src="/images/auth-google.svg" alt="Google" title="Registered via Google">
+                            @else
+                                <span class="auth-at" title="Registered via email">@</span>
+                            @endif
+                            &nbsp;&middot;&nbsp;
                             @if ($user->email_verified_at)
                                 <span class="verified">Verified</span>
                             @else
                                 <span class="unverified">Unverified</span>
                             @endif
                             &nbsp;&middot;&nbsp;
-                            Registered: {{ $user->created_at->format('d M Y H:i') }}
+                            Registered: {{ $user->created_at->setTimezone('Europe/Moscow')->format('d M Y H:i') }} MSK
                             &nbsp;&middot;&nbsp;
                             Diagrams: {{ $user->diagrams->count() }}
                         </div>
@@ -500,8 +560,8 @@
                         <div class="diagram-list">
                             @foreach ($user->diagrams as $diagram)
                                 <span class="diagram-tag">
+                                    <img class="db-icon" src="/images/db-{{ $diagram->db_type }}.svg" alt="{{ $diagram->db_type }}" title="{{ $diagram->db_type }}">
                                     {{ $diagram->name }}
-                                    <span class="db-type">{{ $diagram->db_type }}</span>
                                 </span>
                             @endforeach
                         </div>
@@ -543,23 +603,15 @@
 
     <script>
         (function () {
-            const labels = @json(array_keys($registrationsByDay));
-            const data   = @json(array_values($registrationsByDay));
-
-            const shortLabels = labels.map(d => {
-                const [, m, day] = d.split('-');
-                return `${day}/${m}`;
-            });
-
-            new Chart(document.getElementById('regChart'), {
+            const makeChart = (id, labels, shortLabels, data, color) => new Chart(document.getElementById(id), {
                 type: 'line',
                 data: {
                     labels: shortLabels,
                     datasets: [{
                         data,
-                        borderColor: 'rgba(143,47,47,0.85)',
+                        borderColor: color,
                         borderWidth: 2,
-                        pointBackgroundColor: 'rgba(143,47,47,0.85)',
+                        pointBackgroundColor: color,
                         pointRadius: 3,
                         pointHoverRadius: 5,
                         fill: false,
@@ -601,6 +653,14 @@
                     }
                 }
             });
+
+            const regLabels = @json(array_keys($registrationsByDay));
+            const regShort  = regLabels.map(d => { const [,m,day] = d.split('-'); return `${day}/${m}`; });
+            makeChart('regChart', regLabels, regShort, @json(array_values($registrationsByDay)), 'rgba(143,47,47,0.85)');
+
+            const actLabels = @json(array_keys($activityByDay));
+            const actShort  = actLabels.map(d => { const [,m,day] = d.split('-'); return `${day}/${m}`; });
+            makeChart('activityChart', actLabels, actShort, @json(array_values($activityByDay)), 'rgba(46,125,82,0.85)');
         })();
     </script>
 
