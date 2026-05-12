@@ -138,7 +138,7 @@
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><span>Blog</span></p>
         <h1 class="page-h1">Blog</h1>
-        <p class="page-sub">Guides and tutorials on MySQL and PostgreSQL schema design, ER diagrams, and database modelling.</p>
+        <p class="page-sub">Guides and tutorials on MySQL and PostgreSQL schema design, ER diagrams, and database modelling. Written by the team behind SQL Designer — a free, open-source database design tool.</p>
     </div>
 </section>
 

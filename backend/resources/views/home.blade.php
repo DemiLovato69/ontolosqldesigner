@@ -4,7 +4,7 @@
 
 @section('head')
     <meta name="description" content="Free visual MySQL designer and PostgreSQL database designer. Drag-and-drop tables, define relationships, and export SQL scripts in seconds.">
-    <meta name="keywords" content="mysql designer, mysql database designer, mysql db designer, visual sql designer, visual database designer, database designer for postgresql, ERD tool, online ERD tool, MySQL schema designer, PostgreSQL schema designer, postgres schema designer, postgres db designer, postgres database designer, database diagram tool, SQL schema visualizer, ER diagram, entity relationship diagram, database design tool, free database designer, MySQL workbench alternative, pgAdmin alternative, free postgres designer">
+    <meta name="keywords" content="mysql designer, mysql database designer, mysql db designer, visual sql designer, visual database designer, database designer for postgresql, ERD tool, online ERD tool, MySQL schema designer, PostgreSQL schema designer, postgres schema designer, postgres db designer, postgres database designer, database diagram tool, SQL schema visualizer, ER diagram, entity relationship diagram, database design tool, free database designer, open source database designer, open source ERD tool, MySQL workbench alternative, pgAdmin alternative, free postgres designer">
     <meta name="robots" content="index, follow">
     <meta name="author" content="SQL Designer">
     <meta name="theme-color" content="#c05252">
@@ -117,6 +117,14 @@
                             "@type": "Answer",
                             "text": "There is no limit. Create as many diagrams as you need."
                         }
+                    },
+                    {
+                        "@type": "Question",
+                        "name": "Is SQL Designer open source?",
+                        "acceptedAnswer": {
+                            "@type": "Answer",
+                            "text": "Yes. The source code is publicly available on GitHub at https://github.com/Snydi/sqldesigner."
+                        }
                     }
                 ]
             },
@@ -127,6 +135,7 @@
                 "logo": "https://sql-designer.com/images/logo.svg",
                 "description": "Free online visual database designer for MySQL and PostgreSQL.",
                 "sameAs": [
+                    "https://github.com/Snydi/sqldesigner",
                     "https://alternativeto.net/software/sql-designer/"
                 ]
             }
@@ -339,6 +348,7 @@
             <span><span class="tick">✓</span> No install</span>
             <span><span class="tick">✓</span> Auto-save</span>
             <span><span class="tick">✓</span> Free</span>
+            <span><span class="tick">✓</span> Open source</span>
         </div>
     </div>
     <div class="hero-screenshot">
@@ -443,6 +453,10 @@
             <li class="faq-item"><details>
                 <summary>How many diagrams can I create?</summary>
                 <p>There is no limit. Create as many diagrams as you need.</p>
+            </details></li>
+            <li class="faq-item"><details>
+                <summary>Is SQL Designer open source?</summary>
+                <p>Yes. The full source code is available on <a href="https://github.com/Snydi/sqldesigner" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary-text)">GitHub</a>. You can inspect it, report issues, or contribute.</p>
             </details></li>
         </ul>
     </div>
