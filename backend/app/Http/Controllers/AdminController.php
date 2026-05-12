@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Admin\AdminSendEmailRequest;
 use App\Http\Requests\Admin\FeatureDiagramRequest;
 use App\Http\Requests\Auth\AdminLoginRequest;
-use App\Jobs\SendAdminBulkEmail;
+use App\Jobs\SendAdminBulkEmailBatch;
 use App\Mail\AdminEmailMail;
 use App\Models\Diagram;
 use App\Models\Review;
@@ -82,14 +82,10 @@ class AdminController extends Controller
         $subject = $request->input('subject');
         $body    = $request->input('body');
 
-        $emails = User::pluck('email');
+        $count = User::count();
+        SendAdminBulkEmailBatch::dispatch($subject, $body);
 
-        foreach ($emails as $index => $email) {
-            SendAdminBulkEmail::dispatch($email, $subject, $body)
-                ->delay(now()->addSeconds($index * 2));
-        }
-
-        return response()->json(['queued' => $emails->count()]);
+        return response()->json(['queued' => $count]);
     }
 
     public function sendEmail(User $user, AdminSendEmailRequest $request): JsonResponse
