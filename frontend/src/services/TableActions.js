@@ -32,6 +32,14 @@ const MARKER = {
     'many-to-many': { markerStart: 'url(#chickenFoot)', markerEnd: 'url(#chickenFoot)' },
 }
 
+export function defaultIntType(dbType) {
+    if (dbType === 'postgresql' || dbType === 'sqlite') return 'INTEGER'
+    if (dbType === 'oracle') return 'NUMBER'
+    if (dbType === 'sqlserver') return 'INT'
+    if (dbType === 'msaccess') return 'LONG'
+    return 'INT(11)'
+}
+
 function uniqueName(name, existingNames) {
     if (!existingNames.includes(name)) return name
 
@@ -100,7 +108,7 @@ export const TableActions = {
         return newTableId
     },
 
-    addTable(schemaRef, name, position) {
+    addTable(schemaRef, name, position, dbType = 'mysql') {
         const schema = schemaRef.value
         const tableId = Math.random().toString()
         const existingTables = schema.filter(el => el.type === 'table')
@@ -121,7 +129,7 @@ export const TableActions = {
         this.addRow(schemaRef, { id: tableId, data: {} }, {
             rowName: 'id',
             keyMod: 'PRIMARY KEY',
-            sqlType: 'INT(11)',
+            sqlType: defaultIntType(dbType),
             nullable: false,
             unsigned: false
         })
@@ -170,7 +178,7 @@ export const TableActions = {
         return id
     },
 
-    createPivotTable(schemaRef, edge) {
+    createPivotTable(schemaRef, edge, dbType = 'mysql') {
         const schema = schemaRef.value
 
         const sourceRow = schema.find(el => el.id === edge.source)
@@ -187,12 +195,12 @@ export const TableActions = {
         }
 
         const pivotName = `${sourceTable.label}_${targetTable.label}`
-        const pivotTableId = this.addTable(schemaRef, pivotName, position)
+        const pivotTableId = this.addTable(schemaRef, pivotName, position, dbType)
 
         const sourceFkRowId = this.addRow(schemaRef, { id: pivotTableId, data: {} }, {
             rowName: `${sourceTable.label}_id`,
             keyMod: 'FOREIGN KEY',
-            sqlType: 'INT(11)',
+            sqlType: defaultIntType(dbType),
             nullable: false,
             unsigned: false
         })
@@ -200,7 +208,7 @@ export const TableActions = {
         const targetFkRowId = this.addRow(schemaRef, { id: pivotTableId, data: {} }, {
             rowName: `${targetTable.label}_id`,
             keyMod: 'FOREIGN KEY',
-            sqlType: 'INT(11)',
+            sqlType: defaultIntType(dbType),
             nullable: false,
             unsigned: false
         })

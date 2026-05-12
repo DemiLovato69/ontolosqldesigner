@@ -1,5 +1,5 @@
 import { ref, nextTick } from 'vue'
-import { TableActions } from '@/services/TableActions.js'
+import { TableActions, defaultIntType } from '@/services/TableActions.js'
 
 export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, snapshot, logAction = () => {} }) {
     const isPlacingTable = ref(false)
@@ -33,7 +33,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
             tableId = TableActions.copyTable(schema, sourceTableId, position)
             copyingTableId.value = null
         } else {
-            tableId = TableActions.addTable(schema, 'new_table', position)
+            tableId = TableActions.addTable(schema, 'new_table', position, diagramDbType.value)
         }
         isSaved.value = false
         if (sourceTableId) {
@@ -54,7 +54,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         const rowId = TableActions.addRow(schema, nodeProps, {
             rowName: 'new_row',
             keyMod: 'None',
-            sqlType: diagramDbType.value === 'postgresql' ? 'INTEGER' : 'INT(11)',
+            sqlType: defaultIntType(diagramDbType.value),
             nullable: false,
             unsigned: false,
         })
@@ -152,7 +152,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
     const updateConnectionLineType = (relationshipType) => {
         snapshot()
         if (relationshipType === 'many-to-many') {
-            const result = TableActions.createPivotTable(schema, selectedEdge.value)
+            const result = TableActions.createPivotTable(schema, selectedEdge.value, diagramDbType.value)
             showRelationshipModal.value = false
             isSaved.value = false
             if (result) {

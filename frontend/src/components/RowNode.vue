@@ -182,7 +182,127 @@ const POSTGRESQL_TYPES = {
     ],
 }
 
-const typeGroups = computed(() => props.dbType === 'postgresql' ? POSTGRESQL_TYPES : MYSQL_TYPES)
+const MSACCESS_TYPES = {
+    'Numeric': [
+        { value: 'BYTE', label: 'BYTE' },
+        { value: 'SHORT', label: 'SHORT' },
+        { value: 'LONG', label: 'LONG' },
+        { value: 'SINGLE', label: 'SINGLE' },
+        { value: 'DOUBLE', label: 'DOUBLE' },
+        { value: 'CURRENCY', label: 'CURRENCY' },
+        { value: 'DECIMAL(10,2)', label: 'DECIMAL' },
+        { value: 'AUTOINCREMENT', label: 'AUTOINCREMENT' },
+    ],
+    'String': [
+        { value: 'TEXT(255)', label: 'TEXT' },
+        { value: 'CHAR(255)', label: 'CHAR' },
+        { value: 'VARCHAR(255)', label: 'VARCHAR' },
+        { value: 'MEMO', label: 'MEMO' },
+    ],
+    'Date & Time': [
+        { value: 'DATETIME', label: 'DATETIME' },
+        { value: 'DATE', label: 'DATE' },
+    ],
+    'Other': [
+        { value: 'YESNO', label: 'YESNO' },
+        { value: 'OLEOBJECT', label: 'OLEOBJECT' },
+        { value: 'GUID', label: 'GUID' },
+    ],
+}
+
+const SQLSERVER_TYPES = {
+    'Numeric': [
+        { value: 'TINYINT', label: 'TINYINT' },
+        { value: 'SMALLINT', label: 'SMALLINT' },
+        { value: 'INT', label: 'INT' },
+        { value: 'BIGINT', label: 'BIGINT' },
+        { value: 'DECIMAL(10,2)', label: 'DECIMAL' },
+        { value: 'FLOAT', label: 'FLOAT' },
+        { value: 'REAL', label: 'REAL' },
+        { value: 'MONEY', label: 'MONEY' },
+        { value: 'SMALLMONEY', label: 'SMALLMONEY' },
+    ],
+    'String': [
+        { value: 'NVARCHAR(255)', label: 'NVARCHAR' },
+        { value: 'VARCHAR(255)', label: 'VARCHAR' },
+        { value: 'NCHAR(255)', label: 'NCHAR' },
+        { value: 'CHAR(255)', label: 'CHAR' },
+        { value: 'NVARCHAR(MAX)', label: 'NVARCHAR(MAX)' },
+        { value: 'VARCHAR(MAX)', label: 'VARCHAR(MAX)' },
+    ],
+    'Date & Time': [
+        { value: 'DATE', label: 'DATE' },
+        { value: 'TIME', label: 'TIME' },
+        { value: 'DATETIME2', label: 'DATETIME2' },
+        { value: 'DATETIME', label: 'DATETIME' },
+        { value: 'SMALLDATETIME', label: 'SMALLDATETIME' },
+        { value: 'DATETIMEOFFSET', label: 'DATETIMEOFFSET' },
+    ],
+    'Other': [
+        { value: 'BIT', label: 'BIT' },
+        { value: 'UNIQUEIDENTIFIER', label: 'UNIQUEIDENTIFIER' },
+        { value: 'VARBINARY(MAX)', label: 'VARBINARY(MAX)' },
+        { value: 'XML', label: 'XML' },
+    ],
+}
+
+const ORACLE_TYPES = {
+    'Numeric': [
+        { value: 'NUMBER', label: 'NUMBER' },
+        { value: 'NUMBER(10,2)', label: 'NUMBER(p,s)' },
+        { value: 'FLOAT', label: 'FLOAT' },
+        { value: 'BINARY_FLOAT', label: 'BINARY_FLOAT' },
+        { value: 'BINARY_DOUBLE', label: 'BINARY_DOUBLE' },
+    ],
+    'String': [
+        { value: 'VARCHAR2(255)', label: 'VARCHAR2' },
+        { value: 'CHAR(255)', label: 'CHAR' },
+        { value: 'NVARCHAR2(255)', label: 'NVARCHAR2' },
+        { value: 'NCHAR(255)', label: 'NCHAR' },
+        { value: 'CLOB', label: 'CLOB' },
+        { value: 'NCLOB', label: 'NCLOB' },
+    ],
+    'Date & Time': [
+        { value: 'DATE', label: 'DATE' },
+        { value: 'TIMESTAMP', label: 'TIMESTAMP' },
+        { value: 'TIMESTAMP WITH TIME ZONE', label: 'TIMESTAMP WITH TZ' },
+        { value: 'INTERVAL YEAR TO MONTH', label: 'INTERVAL YEAR TO MONTH' },
+        { value: 'INTERVAL DAY TO SECOND', label: 'INTERVAL DAY TO SECOND' },
+    ],
+    'Other': [
+        { value: 'BLOB', label: 'BLOB' },
+        { value: 'RAW(255)', label: 'RAW' },
+        { value: 'XMLTYPE', label: 'XMLTYPE' },
+    ],
+}
+
+const SQLITE_TYPES = {
+    'Numeric': [
+        { value: 'INTEGER', label: 'INTEGER' },
+        { value: 'REAL', label: 'REAL' },
+        { value: 'NUMERIC(10,2)', label: 'NUMERIC' },
+    ],
+    'String': [
+        { value: 'TEXT', label: 'TEXT' },
+        { value: 'BLOB', label: 'BLOB' },
+    ],
+    'Date & Time': [
+        { value: 'TEXT', label: 'TEXT (ISO 8601)' },
+        { value: 'NUMERIC', label: 'NUMERIC (epoch)' },
+    ],
+    'Other': [
+        { value: 'INTEGER', label: 'BOOLEAN' },
+    ],
+}
+
+const typeGroups = computed(() => {
+    if (props.dbType === 'postgresql') return POSTGRESQL_TYPES
+    if (props.dbType === 'sqlite') return SQLITE_TYPES
+    if (props.dbType === 'oracle') return ORACLE_TYPES
+    if (props.dbType === 'sqlserver') return SQLSERVER_TYPES
+    if (props.dbType === 'msaccess') return MSACCESS_TYPES
+    return MYSQL_TYPES
+})
 
 const isEnum = computed(() => /^ENUM\(/i.test(props.data.sqlType))
 
