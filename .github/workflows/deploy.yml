@@ -15,7 +15,10 @@ jobs:
           SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           eval $(ssh-agent -s)
-          echo "$SSH_PRIVATE_KEY" | ssh-add -
+          echo "$SSH_PRIVATE_KEY" > /tmp/deploy_key
+          chmod 600 /tmp/deploy_key
+          ssh-add /tmp/deploy_key
+          rm /tmp/deploy_key
           mkdir -p ~/.ssh && chmod 700 ~/.ssh
           echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
           chmod 644 ~/.ssh/known_hosts
