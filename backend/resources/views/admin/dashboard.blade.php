@@ -421,6 +421,8 @@
             margin-bottom: 14px;
         }
         .chart-canvas-wrap { position: relative; height: 180px; }
+        .modal-subtitle { font-size: 11px; color: #888; letter-spacing: .04em; }
+        .modal-subtitle strong { color: #2c3e50; text-transform: none; }
     </style>
 </head>
 <body>
@@ -544,6 +546,13 @@
                             Email
                         </button>
                         <button
+                            class="email-btn"
+                            style="border-color:#b0d0b0;color:#2c6e2c;"
+                            onclick="openActivityModal({{ $user->id }}, '{{ addslashes($user->email) }}')"
+                        >
+                            Activity
+                        </button>
+                        <button
                             class="delete-btn"
                             onclick="deleteUser({{ $user->id }}, '{{ addslashes($user->email) }}', this)"
                         >
@@ -584,6 +593,19 @@
             <div class="modal-actions">
                 <button class="modal-cancel" onclick="closeBulkEmailModal()">Cancel</button>
                 <button class="modal-send" id="bulkEmailSendBtn" onclick="sendEmailToAll()">Send to All</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="activityModalOverlay">
+        <div class="modal" style="width:640px;max-width:96vw;">
+            <div class="modal-title">User Activity — Last 60 Days</div>
+            <div class="modal-subtitle"><strong id="activityModalEmail"></strong></div>
+            <div style="position:relative;height:200px;">
+                <canvas id="activityUserChart"></canvas>
+            </div>
+            <div class="modal-actions">
+                <button class="modal-cancel" onclick="closeActivityModal()">Close</button>
             </div>
         </div>
     </div>
@@ -801,6 +823,79 @@
                 showToast('Error: ' + e.message, true);
                 btn.disabled = false;
                 btn.textContent = 'Send to All';
+            }
+        }
+
+        let userActivityChart = null;
+
+        document.getElementById('activityModalOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closeActivityModal();
+        });
+
+        function closeActivityModal() {
+            document.getElementById('activityModalOverlay').classList.remove('show');
+        }
+
+        async function openActivityModal(userId, email) {
+            document.getElementById('activityModalEmail').textContent = email;
+            document.getElementById('activityModalOverlay').classList.add('show');
+
+            if (userActivityChart) { userActivityChart.destroy(); userActivityChart = null; }
+
+            try {
+                const res = await fetch(`/admin/users/${userId}/activity`, {
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                });
+                if (!res.ok) throw new Error('Server error');
+                const data = await res.json();
+
+                const labels    = Object.keys(data);
+                const shortLabels = labels.map(d => { const [,m,day] = d.split('-'); return `${day}/${m}`; });
+                const values    = Object.values(data);
+
+                userActivityChart = new Chart(document.getElementById('activityUserChart'), {
+                    type: 'line',
+                    data: {
+                        labels: shortLabels,
+                        datasets: [{
+                            data: values,
+                            borderColor: 'rgba(46,125,82,0.85)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(46,125,82,0.85)',
+                            pointRadius: 3,
+                            pointHoverRadius: 5,
+                            fill: false,
+                            tension: 0.3,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    title: (items) => labels[items[0].dataIndex],
+                                    label: (item) => ` ${item.raw} action${item.raw !== 1 ? 's' : ''}`,
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                ticks: { font: { family: "'JetBrains Mono', monospace", size: 9 }, color: '#aaa', maxRotation: 0, autoSkip: true, maxTicksLimit: 20 },
+                                grid: { display: false },
+                            },
+                            y: {
+                                beginAtZero: true,
+                                ticks: { font: { family: "'JetBrains Mono', monospace", size: 9 }, color: '#aaa', precision: 0 },
+                                grid: { color: '#f0eded' },
+                            }
+                        }
+                    }
+                });
+            } catch (err) {
+                showToast('Error loading activity', true);
+                closeActivityModal();
             }
         }
 

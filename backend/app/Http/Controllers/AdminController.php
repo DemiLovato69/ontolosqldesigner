@@ -96,6 +96,26 @@ class AdminController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    public function userActivity(User $user): JsonResponse
+    {
+        $rows = \DB::table('diagram_changelog')
+            ->selectRaw("DATE(created_at) as day, COUNT(*) as count")
+            ->where('user_id', $user->id)
+            ->where('created_at', '>=', now()->subDays(59)->startOfDay())
+            ->groupByRaw("DATE(created_at)")
+            ->orderBy('day')
+            ->get()
+            ->keyBy('day');
+
+        $days = [];
+        for ($i = 59; $i >= 0; $i--) {
+            $date = now()->subDays($i)->format('Y-m-d');
+            $days[$date] = $rows->has($date) ? (int) $rows[$date]->count : 0;
+        }
+
+        return response()->json($days);
+    }
+
     public function showReviews(): Factory|View
     {
         $reviews = Review::with('user')->latest()->get();

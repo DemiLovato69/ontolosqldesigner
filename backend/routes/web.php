@@ -64,6 +64,7 @@ Route::prefix('/admin')->group(function () {
         Route::post('/diagrams/{diagram}/feature', [AdminController::class, 'featureDiagram'])->name('admin.diagrams.feature');
         Route::delete('/diagrams/{diagram}/feature', [AdminController::class, 'unfeatureDiagram'])->name('admin.diagrams.unfeature');
         Route::post('/users/{user}/email', [AdminController::class, 'sendEmail'])->name('admin.users.email');
+        Route::get('/users/{user}/activity', [AdminController::class, 'userActivity'])->name('admin.users.activity');
         Route::post('/email-all', [AdminController::class, 'sendEmailToAll'])->name('admin.email-all');
         Route::post('/logout', [AdminController::class, 'logout'])->name('admin.logout');
     });
