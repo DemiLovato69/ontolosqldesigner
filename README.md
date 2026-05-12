@@ -28,7 +28,7 @@ Most database design tools are either expensive, desktop-only, or require an acc
 - **Visual diagram editor** — design schemas on an interactive canvas with drag-and-drop support
 - **Table & column management** — create, rename, and delete tables and columns inline
 - **Relationship visualization** — connect tables with relationship lines using crow's foot notation
-- **MySQL & PostgreSQL support** — choose your target database type per diagram
+- **Support for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access** — choose your target database type per diagram
 - **SQL import & export** — generate SQL `CREATE` statements from your diagram, or import existing SQL to auto-build a diagram
 - **Save & manage diagrams** — store multiple diagrams per account with auto-save
 - **User accounts** — register and log in to keep your diagrams private and persistent
