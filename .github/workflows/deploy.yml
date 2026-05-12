@@ -9,14 +9,12 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Deploy via SSH
-        env:
-          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
-        run: |
-          eval $(ssh-agent -s)
-          echo "$SSH_PRIVATE_KEY" | base64 -d | ssh-add -
-          mkdir -p ~/.ssh && chmod 700 ~/.ssh
-          echo "$SSH_KNOWN_HOSTS" >> ~/.ssh/known_hosts
-          chmod 644 ~/.ssh/known_hosts
-          ssh root@194.67.66.107 "cd /home/sql_designer && make deploy"
+      - uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      - name: Add known hosts
+        run: echo "${{ secrets.SSH_KNOWN_HOSTS }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy
+        run: ssh root@194.67.66.107 "cd /home/sql_designer && make deploy"
