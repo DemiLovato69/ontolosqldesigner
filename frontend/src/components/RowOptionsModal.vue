@@ -13,7 +13,7 @@
                 <option value="INDEX">Index</option>
             </select>
         </div>
-        <label v-if="dbType !== 'postgresql'" class="options_modal_row" @mousedown.stop>
+        <label v-if="dbType === 'mysql'" class="options_modal_row" @mousedown.stop>
             <p class="modal_text">Unsigned</p>
             <input type="checkbox" :checked="data.unsigned" @change="toggleUnsigned">
         </label>
@@ -25,7 +25,7 @@
             <p class="modal_text">Default</p>
             <input type="text" class="modal_text_input" @mousedown.stop v-model="data.defaultValue" @change="$emit('change')" placeholder="NULL">
         </div>
-        <div v-if="dbType !== 'postgresql'" class="options_modal_row">
+        <div v-if="dbType === 'mysql'" class="options_modal_row">
             <p class="modal_text">Comment</p>
             <input type="text" class="modal_text_input" @mousedown.stop v-model="data.comment" @change="$emit('change')" placeholder="">
         </div>
@@ -58,7 +58,7 @@
         <button v-else class="uq_add_toggle_btn" @click="showAddPicker = true">+ Add constraint</button>
 
         <!-- Fulltext Indexes section (MySQL only) -->
-        <template v-if="dbType !== 'postgresql'">
+        <template v-if="dbType === 'mysql'">
             <div class="options_modal_divider"></div>
             <p class="options_modal_section_label">Fulltext Indexes</p>
             <div v-for="(ftIndex, idx) in tableFulltextIndexes" :key="idx" class="uq_constraint_row">

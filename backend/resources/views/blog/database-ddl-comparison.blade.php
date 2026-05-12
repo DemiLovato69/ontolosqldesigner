@@ -776,7 +776,7 @@ ALTER TABLE users DROP COLUMN phone;
             <li><strong>Timestamp defaults</strong> — <code>CURRENT_TIMESTAMP</code> works in MySQL and SQLite; PostgreSQL prefers <code>NOW()</code>; Oracle uses <code>SYSTIMESTAMP</code>; SQL Server uses <code>GETDATE()</code> or <code>SYSDATETIME()</code>.</li>
         </ul>
         <p>
-            Whichever database you're targeting, modelling your schema visually before writing DDL makes it easier to catch type mismatches and missing constraints early. SQL Designer supports both MySQL and PostgreSQL dialects and exports ready-to-run <code>CREATE TABLE</code> scripts — <a href="/demo">try the demo</a> with your own schema.
+            Whichever database you're targeting, modelling your schema visually before writing DDL makes it easier to catch type mismatches and missing constraints early. SQL Designer supports MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access dialects and exports ready-to-run <code>CREATE TABLE</code> scripts — <a href="/demo">try the demo</a> with your own schema.
         </p>
 
         <nav class="related-nav" aria-label="Related articles">

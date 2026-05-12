@@ -66,43 +66,63 @@ class DiagramSqlService
 
     public function createScript(string $schema, string $dbType = 'mysql', int $chunkSize = 50): string
     {
-        $isPg = $dbType === 'postgresql';
-        $q    = $isPg ? '"' : '`';
+        $isMysql     = $dbType === 'mysql';
+        $isSqlite    = $dbType === 'sqlite';
+        $isOracle    = $dbType === 'oracle';
+        $isSqlserver = $dbType === 'sqlserver';
+        $isMsaccess  = $dbType === 'msaccess';
+
+        // SQL Server and MS Access use [name], MySQL uses `name`, everything else uses "name"
+        if ($isSqlserver || $isMsaccess) {
+            $qOpen  = '[';
+            $qClose = ']';
+        } elseif ($isMysql) {
+            $qOpen = $qClose = '`';
+        } else {
+            $qOpen = $qClose = '"';
+        }
+
+        $qi = fn(string $name) => "{$qOpen}{$name}{$qClose}";
 
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
         $tablesById = $tables->keyBy('id');
         $rowsById   = $rows->keyBy('id');
         $script     = '';
 
+        // SQLite requires FK constraints inline in CREATE TABLE; pre-group by the FK-bearing table.
+        $sqliteFksByTable = $isSqlite
+            ? $connections->groupBy(fn($c) => $rowsById->get($c['target_id'])['table_id'] ?? null)
+            : collect();
+
         foreach (array_chunk($tables->all(), $chunkSize) as $tableChunk) {
             foreach ($tableChunk as $table) {
                 $tableRows        = $rows->where('table_id', $table['id']);
                 $tableColumnNames = $tableRows->pluck('name')->all();
 
-                $allDefs = $tableRows->map(function ($row) use ($isPg, $q) {
+                $allDefs = $tableRows->map(function ($row) use ($isMysql, $qi) {
                     $typeWord = strtoupper(preg_replace('/[\s(].*/', '', $row['sql_type']));
                     if (in_array($typeWord, ['INDEX', 'KEY', 'CONSTRAINT', 'FOREIGN', 'CHECK', 'PRIMARY', 'UNIQUE'])) return null;
-                    $parts = ["  {$q}{$row['name']}{$q} {$row['sql_type']}"];
-                    if (!$isPg && $row['unsigned']) $parts[] = 'UNSIGNED';
+                    $parts = ['  ' . $qi($row['name']) . " {$row['sql_type']}"];
+                    if ($isMysql && $row['unsigned']) $parts[] = 'UNSIGNED';
                     $parts[] = $row['nullable'] ? 'NULL' : 'NOT NULL';
                     if ($row['key_mod'] && $row['key_mod'] !== 'FOREIGN KEY') $parts[] = $row['key_mod'];
                     if ($row['default_value'] !== null && $row['default_value'] !== '') $parts[] = "DEFAULT '{$row['default_value']}'";
-                    if (!$isPg && $row['comment'] !== null && $row['comment'] !== '') $parts[] = "COMMENT '{$row['comment']}'";
+                    if ($isMysql && $row['comment'] !== null && $row['comment'] !== '') $parts[] = "COMMENT '{$row['comment']}'";
                     return implode(' ', array_filter($parts));
                 })->filter()->values()->all();
 
                 foreach ($table['unique_together'] as $constraintCols) {
                     $validCols = array_values(array_filter($constraintCols, fn($c) => in_array($c, $tableColumnNames)));
                     if (count($validCols) >= 2) {
-                        $quotedCols     = implode(', ', array_map(fn($c) => "{$q}{$c}{$q}", $validCols));
+                        $quotedCols     = implode(', ', array_map($qi, $validCols));
                         $constraintName = 'uq_' . $table['name'] . '_' . implode('_', $validCols);
-                        $allDefs[]      = $isPg
-                            ? "  CONSTRAINT {$q}{$constraintName}{$q} UNIQUE ({$quotedCols})"
-                            : "  UNIQUE KEY {$q}{$constraintName}{$q} ({$quotedCols})";
+                        $allDefs[]      = $isMysql
+                            ? '  UNIQUE KEY ' . $qi($constraintName) . " ({$quotedCols})"
+                            : '  CONSTRAINT ' . $qi($constraintName) . " UNIQUE ({$quotedCols})";
                     }
                 }
 
-                if (!$isPg) {
+                if ($isMysql) {
                     foreach ($table['fulltext_indexes'] as $ftCols) {
                         $validCols = array_values(array_filter($ftCols, fn($c) => in_array($c, $tableColumnNames)));
                         if (count($validCols) >= 1) {
@@ -113,23 +133,37 @@ class DiagramSqlService
                     }
                 }
 
-                $script .= "CREATE TABLE IF NOT EXISTS {$q}{$table['name']}{$q} (\n";
+                if ($isSqlite) {
+                    foreach ($sqliteFksByTable->get($table['id'], collect()) as $connection) {
+                        $sourceRow = $rowsById->get($connection['source_id']);
+                        $targetRow = $rowsById->get($connection['target_id']);
+                        if (!$sourceRow || !$targetRow) continue;
+                        $referencedTable = $tablesById->get($sourceRow['table_id'])['name'];
+                        $allDefs[] = '  FOREIGN KEY (' . $qi($targetRow['name']) . ') REFERENCES ' . $qi($referencedTable) . '(' . $qi($sourceRow['name']) . ')';
+                    }
+                }
+
+                // Oracle, SQL Server, and MS Access don't support IF NOT EXISTS
+                $ifNotExists = ($isOracle || $isSqlserver || $isMsaccess) ? '' : 'IF NOT EXISTS ';
+                $script .= 'CREATE TABLE ' . $ifNotExists . $qi($table['name']) . " (\n";
                 $script .= implode(",\n", $allDefs) . "\n";
                 $script .= ");\n\n";
             }
             gc_collect_cycles();
         }
 
-        foreach (array_chunk($connections->all(), $chunkSize) as $connectionChunk) {
-            foreach ($connectionChunk as $connection) {
-                $sourceRow = $rowsById->get($connection['source_id']);
-                $targetRow = $rowsById->get($connection['target_id']);
-                if (!$sourceRow || !$targetRow) continue;
-                $tableName       = $tablesById->get($sourceRow['table_id'])['name'];
-                $targetTableName = $tablesById->get($targetRow['table_id'])['name'];
-                $script .= "ALTER TABLE {$q}$targetTableName{$q}\nADD FOREIGN KEY ({$q}{$targetRow['name']}{$q}) REFERENCES {$q}$tableName{$q}({$q}{$sourceRow['name']}{$q});\n\n";
+        if (!$isSqlite) {
+            foreach (array_chunk($connections->all(), $chunkSize) as $connectionChunk) {
+                foreach ($connectionChunk as $connection) {
+                    $sourceRow = $rowsById->get($connection['source_id']);
+                    $targetRow = $rowsById->get($connection['target_id']);
+                    if (!$sourceRow || !$targetRow) continue;
+                    $tableName       = $tablesById->get($sourceRow['table_id'])['name'];
+                    $targetTableName = $tablesById->get($targetRow['table_id'])['name'];
+                    $script .= 'ALTER TABLE ' . $qi($targetTableName) . "\nADD FOREIGN KEY (" . $qi($targetRow['name']) . ') REFERENCES ' . $qi($tableName) . '(' . $qi($sourceRow['name']) . ");\n\n";
+                }
+                gc_collect_cycles();
             }
-            gc_collect_cycles();
         }
 
         return $script;
