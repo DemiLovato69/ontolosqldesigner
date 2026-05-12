@@ -35,7 +35,7 @@
                     </div>
                     <div class="diagram-card__footer">
                         <img
-                            :src="diagram.db_type === 'postgresql' ? postgresqlIcon : mysqlIcon"
+                            :src="dbIcons[diagram.db_type] || dbIcons.mysql"
                             :alt="diagram.db_type"
                             class="diagram-card__db-icon"
                         />
@@ -92,6 +92,42 @@
                         <img src="../icons/postgresql.svg" alt="PostgreSQL" />
                         <span>PostgreSQL</span>
                     </button>
+                    <button
+                        class="db-option"
+                        :class="{ 'db-option--active': newDiagramDbType === 'sqlite' }"
+                        @click="newDiagramDbType = 'sqlite'"
+                        title="SQLite"
+                    >
+                        <img src="../icons/sqlite.svg" alt="SQLite" />
+                        <span>SQLite</span>
+                    </button>
+                    <button
+                        class="db-option"
+                        :class="{ 'db-option--active': newDiagramDbType === 'oracle' }"
+                        @click="newDiagramDbType = 'oracle'"
+                        title="Oracle"
+                    >
+                        <img src="../icons/oracle.svg" alt="Oracle" />
+                        <span>Oracle</span>
+                    </button>
+                    <button
+                        class="db-option"
+                        :class="{ 'db-option--active': newDiagramDbType === 'sqlserver' }"
+                        @click="newDiagramDbType = 'sqlserver'"
+                        title="SQL Server"
+                    >
+                        <img src="../icons/sqlserver.svg" alt="SQL Server" />
+                        <span>SQL Server</span>
+                    </button>
+                    <button
+                        class="db-option"
+                        :class="{ 'db-option--active': newDiagramDbType === 'msaccess' }"
+                        @click="newDiagramDbType = 'msaccess'"
+                        title="MS Access"
+                    >
+                        <img src="../icons/msaccess.svg" alt="MS Access" />
+                        <span>MS Access</span>
+                    </button>
                 </div>
                 <div class="create-modal__actions">
                     <button class="btn btn-secondary" @click="showNewForm = false">Cancel</button>
@@ -110,6 +146,10 @@ import DiagramPreview from './Diagram/DiagramPreview.vue'
 import SvgIcon from './SvgIcon.vue'
 import mysqlIcon from '../icons/mysql.svg'
 import postgresqlIcon from '../icons/postgresql.svg'
+import sqliteIcon from '../icons/sqlite.svg'
+import oracleIcon from '../icons/oracle.svg'
+import sqlserverIcon from '../icons/sqlserver.svg'
+import msaccessIcon from '../icons/msaccess.svg'
 
 const $toast = useToast()
 
@@ -123,8 +163,7 @@ export default {
             showNewForm: false,
             renamingId: null,
             originalName: null,
-            mysqlIcon,
-            postgresqlIcon
+            dbIcons: { mysql: mysqlIcon, postgresql: postgresqlIcon, sqlite: sqliteIcon, oracle: oracleIcon, sqlserver: sqlserverIcon, msaccess: msaccessIcon }
         }
     },
     methods: {
@@ -440,7 +479,8 @@ export default {
 }
 
 .create-modal__db-options {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
 }
 
