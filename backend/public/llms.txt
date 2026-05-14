@@ -93,7 +93,6 @@ It exports standard CREATE TABLE DDL scripts for MySQL and PostgreSQL, including
 - https://sql-designer.com/blog/how-to-draw-er-diagram — How to draw an ER diagram step by step
 - https://sql-designer.com/blog/free-erd-tool — Overview of free ERD tools with a visual, browser-based editor
 - https://sql-designer.com/blog/erd-maker — How to create ER diagrams online without installing software
-- https://sql-designer.com/blog/best-erd-tools — Honest comparison of the best free ERD tools in 2026
 - https://sql-designer.com/blog/database-designer — What a visual database designer is and how to use one online
 - https://sql-designer.com/blog/mysql-db-designer — Free visual MySQL database designer, browser-based
 - https://sql-designer.com/blog/postgres-db-designer — Free visual PostgreSQL database designer, browser-based

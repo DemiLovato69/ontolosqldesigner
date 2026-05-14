@@ -168,11 +168,6 @@
         <h2>10 Best Free ERD Tools in 2026 — Tested and Compared</h2>
         <p>We tested 10 free ERD tools: SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver — with honest strengths, real limits, pricing, and use-case guidance.</p>
     </a>
-    <a class="post-card" href="/blog/best-erd-tools">
-        <p class="card-meta">April 2026 · 9 min read</p>
-        <h2>Best Free ERD Tools in 2026 — Honest Comparison</h2>
-        <p>Honest comparison of 7 ERD tools: SQL Designer, DrawSQL, dbdiagram.io, draw.io, DB Designer, DBeaver, and ChartDB — with real strengths, real weaknesses, and clear use-case guidance.</p>
-    </a>
     <a class="post-card" href="/blog/share-database-diagram">
         <p class="card-meta">April 2026 · 5 min read</p>
         <h2>How to Share a Database Diagram Online — Shareable Links &amp; Embeds</h2>

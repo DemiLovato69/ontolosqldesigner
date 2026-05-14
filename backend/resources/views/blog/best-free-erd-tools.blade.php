@@ -838,7 +838,6 @@
         <nav aria-label="Related articles" style="margin-top:3rem; padding-top:2rem; border-top:1px solid var(--border-color);">
             <p style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin:0 0 0.8rem;">Related Articles</p>
             <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
-                <li><a href="/blog/best-erd-tools" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Best Free ERD Tools — Honest Comparison &rarr;</a></li>
                 <li><a href="/blog/free-erd-tool" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Free ERD Tool Online — Visual Entity Relationship Diagram Editor &rarr;</a></li>
                 <li><a href="/blog/er-diagram-tool-online" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Free ER Diagram Tool Online for MySQL &rarr;</a></li>
                 <li><a href="/blog/how-to-draw-er-diagram" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">How to Draw an ER Diagram Step by Step &rarr;</a></li>

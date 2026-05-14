@@ -430,7 +430,7 @@
             <p style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.06em; color:#767676; margin:0 0 0.8rem;">
                 Related Articles</p>
             <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
-                <li><a href="/blog/best-erd-tools"
+                <li><a href="/blog/best-free-erd-tools"
                        style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Best Free ERD Tools Online — Compared &rarr;</a></li>
                 <li><a href="/blog/database-designer"
                        style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free Online Database Designer — Visual Schema Builder &rarr;</a></li>
