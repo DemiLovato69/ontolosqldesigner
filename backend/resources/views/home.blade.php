@@ -3,7 +3,7 @@
 @section('title', 'SQL Designer — Free Database Designer for MySQL, PostgreSQL, SQLite, Oracle & More')
 
 @section('head')
-    <meta name="description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag-and-drop tables, define relationships, and export SQL scripts in seconds.">
+    <meta name="description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, and SQL Server. Drag-and-drop tables, define relationships, and export SQL in seconds.">
     <meta name="keywords" content="mysql designer, mysql database designer, mysql db designer, visual sql designer, visual database designer, database designer for postgresql, ERD tool, online ERD tool, MySQL schema designer, PostgreSQL schema designer, postgres schema designer, postgres db designer, postgres database designer, SQLite designer, Oracle schema designer, SQL Server database designer, MS Access designer, database diagram tool, SQL schema visualizer, ER diagram, entity relationship diagram, database design tool, free database designer, open source database designer, open source ERD tool, MySQL workbench alternative, pgAdmin alternative, free postgres designer">
     <meta name="robots" content="index, follow">
     <meta name="author" content="SQL Designer">
@@ -345,8 +345,8 @@
         </p>
         <div class="hero-actions">
             <a id="hero-btn-authed" class="btn btn-solid btn-lg" href="/diagrams" style="display:none">Open My Diagrams</a>
-            <a id="hero-btn-register" class="btn btn-solid btn-lg" href="/register">Start designing</a>
-            <a class="btn btn-outline btn-lg" href="/demo">Open demo →</a>
+            <a id="hero-btn-register" class="btn btn-outline btn-lg" href="/register">Sign up free</a>
+            <a class="btn btn-solid btn-lg" href="/demo">Try it free — no signup →</a>
         </div>
         <div class="hero-meta">
             <span><span class="tick">✓</span> No install</span>
@@ -387,7 +387,7 @@
             </div>
             <div class="how-step">
                 <span class="num">02 / DESIGN</span>
-                <h3>Creates tables, draw relations</h3>
+                <h3>Create tables, draw relations</h3>
                 <p>Press a few buttons to create tables and columns. Draw relations with your mouse.</p>
             </div>
             <div class="how-step">

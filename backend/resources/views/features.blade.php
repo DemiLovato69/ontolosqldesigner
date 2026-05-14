@@ -3,7 +3,7 @@
 @section('title', 'Features — Multi-Dialect ERD Tool for MySQL, PostgreSQL, SQLite, Oracle & More | SQL Designer')
 
 @section('head')
-    <meta name="description" content="Every feature in SQL Designer: drag-and-drop canvas, SQL export for MySQL, PostgreSQL, SQLite, Oracle, SQL Server and MS Access, foreign keys, constraints, SQL import, auto-save, sharing.">
+    <meta name="description" content="All SQL Designer features: drag-and-drop canvas, SQL export for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, foreign keys, SQL import, and auto-save.">
     <meta name="author" content="SQL Designer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/features">
@@ -60,7 +60,7 @@
             "Unlimited diagrams"
         ],
         "sameAs": [
-            "https://gitlab.com/Snydi/sql-designer",
+            "https://github.com/Snydi/sqldesigner",
             "https://discord.gg/vFwgX7qKqA"
         ]
     },

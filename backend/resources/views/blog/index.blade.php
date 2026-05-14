@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Blog — SQL Designer')
+@section('title', 'SQL Designer Blog — Database Design Guides')
 
 @section('head')
     <meta name="description" content="Tutorials and guides on MySQL database design, ER diagrams, and schema best practices. Written by the SQL Designer team.">
@@ -137,7 +137,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><span>Blog</span></p>
-        <h1 class="page-h1">Blog</h1>
+        <h1 class="page-h1">Database Design Blog</h1>
         <p class="page-sub">Guides and tutorials on MySQL and PostgreSQL schema design, ER diagrams, and database modelling. Written by the team behind SQL Designer — a free, open-source database design tool.</p>
     </div>
 </section>
@@ -207,11 +207,6 @@
         <p class="card-meta">March 2026 · 5 min read</p>
         <h2>Free ER Diagram Tool Online for MySQL — No Download Required</h2>
         <p>What entity-relationship diagrams are, why they matter, and how to create one for your MySQL database entirely in the browser — for free.</p>
-    </a>
-    <a class="post-card" href="/blog/mysql-workbench-alternative">
-        <p class="card-meta">March 2026 · 5 min read</p>
-        <h2>MySQL Workbench Alternative Online — Free &amp; No Install Required</h2>
-        <p>MySQL Workbench is powerful but heavy. If you need to design a schema quickly without installing anything, here are your options — including a fully free browser-based tool.</p>
     </a>
     <a class="post-card" href="/blog/mysql-foreign-key">
         <p class="card-meta">March 2026 · 6 min read</p>
