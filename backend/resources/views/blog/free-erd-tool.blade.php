@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Free ERD Tool Online — Visual Entity Relationship Diagram Editor')
+@section('title', 'Free ERD Tool — Visual Entity Relationship Diagram')
 
 @section('head')
     <meta name="description"
@@ -41,9 +41,10 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/free-erd-tool",
             "datePublished": "2026-04-09",
-            "dateModified": "2026-04-09",
-            "author": { "@type": "Organization", "name": "SQL Designer" },
-            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+            "dateModified": "2026-05-14",
+            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
         {
             "@context": "https://schema.org",
@@ -75,6 +76,17 @@
                     "acceptedAnswer": { "@type": "Answer", "text": "A dedicated ERD tool keeps the visual diagram and the SQL schema in sync — every column has a real data type and every relationship is a real foreign key. draw.io produces a picture of a schema but cannot validate constraints or export executable SQL." }
                 }
             ]
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "SQL Designer",
+            "url": "https://sql-designer.com",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "description": "Free browser-based ERD tool for designing MySQL and PostgreSQL database schemas visually. Features drag-and-drop table editing, crow's foot notation, foreign key relationship drawing, SQL export, SQL import, real-time collaboration, and shareable diagram links — with no table limits or diagram limits on the free tier.",
+            "featureList": ["Visual drag-and-drop ERD editor", "MySQL and PostgreSQL support", "CREATE TABLE SQL export", "SQL script import", "Crow's foot notation", "Real-time multiplayer collaboration", "Shareable diagram links", "Embeddable iframe", "No table or diagram limits on free tier"]
         }
         ]
         @endverbatim
@@ -107,9 +119,7 @@
         <h1>Free ERD Tool Online — Visual Entity Relationship Diagram Editor</h1>
 
         <p class="intro">
-            A free ERD tool lets you sketch a database structure before writing a single line of SQL. This guide covers
-            what to look for in an online ER diagram editor, the difference between generic and SQL-aware tools, and
-            how to use SQL Designer — a completely free ERD tool — to go from blank canvas to exported SQL script.
+            A genuinely free ERD tool is an entity-relationship diagram editor with no diagram count limits, no table limits per diagram, no SQL export paywall, and no credit card required. SQL Designer is a browser-based free ERD tool for MySQL and PostgreSQL that meets all four criteria — drag-and-drop canvas, crow&rsquo;s foot notation, real SQL data types, and one-click <code>CREATE TABLE</code> export, all at no cost.
         </p>
 
         <h2>What Is an ERD Tool?</h2>

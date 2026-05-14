@@ -41,9 +41,10 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/erd-maker",
             "datePublished": "2026-04-16",
-            "dateModified": "2026-04-16",
-            "author": { "@type": "Organization", "name": "SQL Designer" },
-            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+            "dateModified": "2026-05-14",
+            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
         {
             "@context": "https://schema.org",
@@ -75,6 +76,17 @@
                     "acceptedAnswer": { "@type": "Answer", "text": "Yes. ERD makers use cardinality notation — typically crow's foot notation — to show how many records on each side of a relationship can exist (one-to-one, one-to-many, many-to-many). The notation is applied automatically based on whether the foreign key column allows NULL." }
                 }
             ]
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "SQL Designer",
+            "url": "https://sql-designer.com",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "description": "Free online ERD maker for MySQL and PostgreSQL. Create entity-relationship diagrams with a drag-and-drop canvas, add tables and columns with real SQL data types, draw foreign key relationships, and export a complete CREATE TABLE script. Supports SQL import to generate diagrams from existing scripts.",
+            "featureList": ["Drag-and-drop ERD canvas", "MySQL and PostgreSQL support", "SQL export and import", "Crow's foot notation", "Foreign key relationship drawing", "Real-time collaboration", "No diagram or table limits"]
         }
         ]
         @endverbatim
@@ -107,10 +119,7 @@
         <h1>Free ERD Maker Online — Create ER Diagrams in Your Browser</h1>
 
         <p class="intro">
-            An ERD maker is a tool for creating entity relationship diagrams — the standard way to visualise a
-            relational database schema. This guide explains what to look for in a free online ERD maker, how it
-            differs from a generic diagram tool, and how to use SQL Designer to create ER diagrams and export
-            working SQL with no installation required.
+            An ERD maker (entity relationship diagram maker) is a purpose-built tool for designing relational database schemas visually — with real SQL data types, PRIMARY KEY and FOREIGN KEY constraints, crow&rsquo;s foot cardinality notation, and the ability to export a runnable <code>CREATE TABLE</code> script. This distinguishes it from generic diagramming tools like draw.io, which produce a visual that looks like a schema but cannot validate constraints or generate SQL.
         </p>
 
         <h2>What Is an ERD Maker?</h2>

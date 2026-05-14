@@ -41,9 +41,10 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/mysql-db-designer",
             "datePublished": "2026-04-09",
-            "dateModified": "2026-04-09",
-            "author": { "@type": "Organization", "name": "SQL Designer" },
-            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+            "dateModified": "2026-05-14",
+            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
         {
             "@context": "https://schema.org",
@@ -70,6 +71,17 @@
                     "acceptedAnswer": { "@type": "Answer", "text": "Generic tools like draw.io only produce images. A MySQL-aware designer understands column types, validates constraints, renders crow's foot notation correctly, and generates syntactically correct MySQL DDL. The diagram and the SQL stay in sync." }
                 }
             ]
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "SQL Designer",
+            "url": "https://sql-designer.com",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "description": "Free online MySQL database designer. Design MySQL schemas visually with a drag-and-drop canvas, full MySQL type support (INT, VARCHAR, DECIMAL, JSON, ENUM, and more), constraint toggles (PRIMARY KEY, UNIQUE, NOT NULL, AUTO_INCREMENT), and foreign key relationship drawing. Exports a complete, runnable MySQL CREATE TABLE script.",
+            "featureList": ["MySQL-specific type picker", "Visual drag-and-drop canvas", "MySQL CREATE TABLE export", "Foreign key constraints", "AUTO_INCREMENT support", "Real-time collaboration", "No MySQL Workbench required"]
         }
         ]
         @endverbatim
@@ -105,10 +117,7 @@
         <h1>MySQL Designer Online — Free Visual MySQL DB Designer</h1>
 
         <p class="intro">
-            A MySQL designer lets you plan and visualise your database structure before writing any SQL. Instead of
-            editing <code>CREATE TABLE</code> statements by hand, you work on a visual canvas — adding tables, defining
-            columns with the right types, and drawing foreign key relationships. This guide explains what a MySQL
-            DB designer does and how to use one for free in your browser.
+            A MySQL database designer is a visual tool for planning MySQL schemas — adding tables to a canvas, defining columns with MySQL-specific data types (<code>INT</code>, <code>VARCHAR</code>, <code>DECIMAL</code>, <code>TINYINT(1)</code>, <code>JSON</code>, <code>ENUM</code>), setting constraints (<code>PRIMARY KEY</code>, <code>UNIQUE</code>, <code>NOT NULL</code>, <code>AUTO_INCREMENT</code>), drawing foreign key relationships, and exporting a complete, runnable MySQL <code>CREATE TABLE</code> script — without MySQL Workbench or any desktop installation.
         </p>
 
         <h2>What Is a MySQL Designer?</h2>

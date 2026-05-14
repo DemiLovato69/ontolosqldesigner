@@ -42,9 +42,10 @@
                 "image": "https://sql-designer.com/images/designer_screenshot.png",
                 "url": "https://sql-designer.com/blog/er-diagram-tool-online",
                 "datePublished": "2026-03-18",
-                "dateModified": "2026-03-24",
-                "author": { "@type": "Organization", "name": "SQL Designer" },
-                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+                "dateModified": "2026-05-14",
+                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
             {
                 "@context": "https://schema.org",
@@ -76,6 +77,17 @@
                         "acceptedAnswer": { "@type": "Answer", "text": "You draw a line from the foreign key column in one table to the primary key column in another. The tool renders the line with crow's foot notation to indicate cardinality, and the exported SQL includes the corresponding FOREIGN KEY constraint clause." }
                     }
                 ]
+            },
+            {
+                "@context": "https://schema.org",
+                "@type": "SoftwareApplication",
+                "name": "SQL Designer",
+                "url": "https://sql-designer.com",
+                "applicationCategory": "DeveloperApplication",
+                "operatingSystem": "Web",
+                "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+                "description": "Free online ER diagram tool for MySQL and PostgreSQL. Draw entity-relationship diagrams visually in the browser, define columns with real SQL data types, draw foreign key relationships with crow's foot notation, and export a complete CREATE TABLE DDL script — no installation required.",
+                "featureList": ["Browser-based, no install", "MySQL and PostgreSQL ER diagrams", "Visual drag-and-drop editor", "CREATE TABLE SQL export", "Crow's foot cardinality notation", "Foreign key relationship lines", "Real-time collaboration", "Shareable links"]
             }
             ]
         @endverbatim
@@ -220,9 +232,7 @@
         <h1>Free ER Diagram Tool Online for MySQL — No Download Required</h1>
 
         <p class="intro">
-            An entity-relationship (ER) diagram is the clearest way to plan and communicate a database structure.
-            If you need an ER diagram maker for a MySQL database — one that works in the browser without any
-            installation or subscription — you have more options than you might think.
+            An online ER diagram tool is a browser-based application for creating entity-relationship diagrams — visual representations of a database schema that show tables as rectangles, columns as rows inside each rectangle, and foreign key relationships as connecting lines with cardinality notation. A SQL-aware ER diagram tool goes further: it understands real data types, enforces constraint logic, and exports a runnable <code>CREATE TABLE</code> DDL script directly from the diagram.
         </p>
 
         <h2>What Is an ER Diagram?</h2>
@@ -316,9 +326,10 @@
                 <li><a href="/blog/how-to-design-mysql-database-schema"
                        style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">How to Design a
                         MySQL Database Schema &rarr;</a></li>
-                <li><a href="/blog/mysql-workbench-alternative"
-                       style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">MySQL Workbench
-                        Alternative Online &rarr;</a></li>
+                <li><a href="/blog/how-to-draw-er-diagram"
+                       style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">How to Draw an ER Diagram Step by Step &rarr;</a></li>
+                <li><a href="/blog/free-erd-tool"
+                       style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free ERD Tool Online — Visual Entity Relationship Diagram Editor &rarr;</a></li>
             </ul>
         </nav>
 

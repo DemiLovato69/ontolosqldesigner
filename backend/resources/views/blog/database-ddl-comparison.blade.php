@@ -1,9 +1,9 @@
 @extends('layouts.main')
 
-@section('title', 'DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite')
+@section('title', 'DDL Syntax Comparison: MySQL, PostgreSQL, Oracle, SQLite')
 
 @section('head')
-    <meta name="description" content="How CREATE TABLE syntax, primary keys, data types, constraints, and ALTER TABLE differ across MySQL, PostgreSQL, Oracle, Microsoft SQL Server, and SQLite — with side-by-side DDL examples.">
+    <meta name="description" content="Side-by-side DDL comparison: how CREATE TABLE, data types, constraints, and ALTER TABLE differ across MySQL, PostgreSQL, Oracle, SQL Server, and SQLite.">
     <meta name="author" content="SQL Designer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-ddl-comparison">
@@ -39,9 +39,10 @@
         "image": "https://sql-designer.com/images/designer_screenshot.png",
         "url": "https://sql-designer.com/blog/database-ddl-comparison",
         "datePublished": "2026-05-05",
-        "dateModified": "2026-05-05",
-        "author": { "@type": "Organization", "name": "SQL Designer" },
-        "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+        "dateModified": "2026-05-14",
+        "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+        "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+        "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] },
         "about": [
             { "@type": "SoftwareApplication", "name": "MySQL" },
             { "@type": "SoftwareApplication", "name": "PostgreSQL" },
@@ -245,7 +246,7 @@
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
         <p class="post-eyebrow">May 2026 · 12 min read</p>
         <h1 class="page-h1">DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite</h1>
-        <p class="page-sub">The five most-used relational databases all speak SQL, but their DDL dialects diverge in ways that matter when you're designing a schema. This guide compares <code>CREATE TABLE</code> syntax, primary keys, data types, constraints, and <code>ALTER TABLE</code> across MySQL, PostgreSQL, Oracle Database, Microsoft SQL Server, and SQLite — with concrete examples for each.</p>
+        <p class="page-sub">MySQL, PostgreSQL, Oracle Database, Microsoft SQL Server, and SQLite all use SQL DDL but differ in <code>CREATE TABLE</code> syntax, auto-increment mechanisms (<code>AUTO_INCREMENT</code> vs <code>SERIAL</code> vs <code>IDENTITY</code>), data type names (<code>VARCHAR</code> vs <code>VARCHAR2</code> vs <code>NVARCHAR</code>), CHECK constraint enforcement (optional in old MySQL, always-on elsewhere), and <code>ALTER TABLE</code> capabilities — differences that matter when designing portable schemas or migrating between databases.</p>
     </div>
 </section>
 

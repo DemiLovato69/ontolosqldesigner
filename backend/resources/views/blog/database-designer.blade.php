@@ -41,9 +41,10 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/database-designer",
             "datePublished": "2026-04-09",
-            "dateModified": "2026-04-09",
-            "author": { "@type": "Organization", "name": "SQL Designer" },
-            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+            "dateModified": "2026-05-14",
+            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
         {
             "@context": "https://schema.org",
@@ -75,6 +76,17 @@
                     "acceptedAnswer": { "@type": "Answer", "text": "Some tools limit free accounts to a small number of diagrams or tables per diagram. Others, like SQL Designer, are fully free with no diagram count limits, no table limits, and no SQL export paywall." }
                 }
             ]
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "SQL Designer",
+            "url": "https://sql-designer.com",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "description": "Free online database designer for MySQL and PostgreSQL. Plan and visualise relational database schemas with a drag-and-drop canvas, real SQL data types and constraints, visual foreign key relationship lines, and one-click CREATE TABLE SQL export. No installation or credit card required.",
+            "featureList": ["MySQL and PostgreSQL support", "Visual drag-and-drop canvas", "SQL export", "SQL import", "Foreign key relationships", "Real-time collaboration", "Shareable diagram links", "No diagram or table limits"]
         }
         ]
         @endverbatim
@@ -107,10 +119,7 @@
         <h1>Free DB Designer Online — Visual Database Designer for MySQL &amp; PostgreSQL</h1>
 
         <p class="intro">
-            A DB designer (database designer) is a tool for planning and visualising a relational schema before you
-            build it. Instead of writing <code>CREATE TABLE</code> statements from scratch, you work on a visual
-            canvas — adding tables, defining columns, and drawing relationships between them. This guide explains
-            what to look for in a free online DB designer and how to get started.
+            A database designer is a visual tool for planning relational schemas — adding tables to a canvas, defining columns with SQL data types and constraints, drawing foreign key relationships between tables, and exporting a <code>CREATE TABLE</code> DDL script for MySQL or PostgreSQL. This guide explains what separates a purpose-built database designer from a generic diagramming tool, and what to look for in a free option.
         </p>
 
         <h2>What Does a Database Designer Do?</h2>

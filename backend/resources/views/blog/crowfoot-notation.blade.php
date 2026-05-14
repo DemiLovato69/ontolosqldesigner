@@ -41,9 +41,10 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/crowfoot-notation",
             "datePublished": "2026-04-16",
-            "dateModified": "2026-04-16",
-            "author": { "@type": "Organization", "name": "SQL Designer" },
-            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+            "dateModified": "2026-05-14",
+            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
         {
             "@context": "https://schema.org",
@@ -74,6 +75,26 @@
                     "name": "How are many-to-many relationships modelled in crow's foot notation?",
                     "acceptedAnswer": { "@type": "Answer", "text": "A many-to-many relationship shows a crow's foot at both ends of the line. In a relational database this cannot be implemented with a single foreign key — it requires a junction table (e.g., product_tags) containing foreign keys to both related tables." }
                 }
+            ]
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "DefinedTerm",
+            "name": "Crow's Foot Notation",
+            "description": "Crow's foot notation is a graphical convention for representing cardinality and optionality in entity-relationship (ER) diagrams. It uses symbols at the ends of relationship lines: a single vertical bar for 'exactly one', a circle for 'zero', and three diverging lines (the crow's foot) for 'many'. Combined, these produce six cardinality markers — one-to-one, one-to-many, many-to-many, and their optional variants — that translate directly to foreign key definitions in a relational database.",
+            "inDefinedTermSet": { "@type": "DefinedTermSet", "name": "Database Design Glossary", "url": "https://sql-designer.com/blog" },
+            "url": "https://sql-designer.com/blog/crowfoot-notation"
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "HowTo",
+            "name": "How to Read Crow's Foot Notation in an ER Diagram",
+            "step": [
+                { "@type": "HowToStep", "name": "Look at the symbols at both ends of the line", "text": "Each end of a relationship line carries two symbols. The outer symbol shows the maximum cardinality (one or many). The inner symbol shows the minimum cardinality (zero/optional, or one/mandatory)." },
+                { "@type": "HowToStep", "name": "Read the maximum cardinality", "text": "A single vertical line means 'at most one'. Three diverging lines (the crow's foot) means 'many'. So a crow's foot at the orders end means one customer can have many orders." },
+                { "@type": "HowToStep", "name": "Read the minimum cardinality (optionality)", "text": "A vertical bar next to the entity means mandatory — the relationship must exist (NOT NULL foreign key). A circle means optional — the relationship may be absent (nullable foreign key)." },
+                { "@type": "HowToStep", "name": "Combine both symbols to get the full cardinality label", "text": "Bar + crow's foot = one or more (mandatory many). Circle + crow's foot = zero or more (optional many). Bar + bar = exactly one (mandatory one). Circle + bar = zero or one (optional one)." },
+                { "@type": "HowToStep", "name": "Map the foreign key direction", "text": "The foreign key column always lives on the 'many' side — the end with the crow's foot. In the SQL schema, that table will have a foreign key column referencing the primary key of the 'one' side." }
             ]
         }
         ]
@@ -110,11 +131,7 @@
         <h1>Crow&rsquo;s Foot Notation — ER Diagram Cardinality Explained</h1>
 
         <p class="intro">
-            Crow&rsquo;s foot notation is the most widely used system for showing cardinality in entity relationship
-            diagrams. The symbols drawn at each end of a relationship line tell you exactly how many records
-            on one side can relate to records on the other. This guide explains every symbol, how to read a
-            crow&rsquo;s foot diagram, and how the notation maps to actual foreign key relationships in MySQL
-            and PostgreSQL.
+            Crow&rsquo;s foot notation is a graphical symbol system for representing cardinality in entity-relationship (ER) diagrams, using symbols at the ends of relationship lines to show whether each connection is one-to-one, one-to-many, or many-to-many, and whether participation is mandatory or optional. Each symbol pair at an end of the line translates directly to a foreign key constraint and a NOT NULL decision in the SQL schema. This guide explains every symbol, how to read them together, and how they map to real MySQL and PostgreSQL relationships.
         </p>
 
         <h2>What Is Crow&rsquo;s Foot Notation?</h2>

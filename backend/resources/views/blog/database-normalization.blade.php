@@ -41,9 +41,10 @@
                 "image": "https://sql-designer.com/images/designer_screenshot.png",
                 "url": "https://sql-designer.com/blog/database-normalization",
                 "datePublished": "2026-03-19",
-                "dateModified": "2026-03-24",
-                "author": { "@type": "Organization", "name": "SQL Designer" },
-                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+                "dateModified": "2026-05-14",
+                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
             {
                 "@context": "https://schema.org",
@@ -75,6 +76,14 @@
                         "acceptedAnswer": { "@type": "Answer", "text": "Yes — moving from a lower to a higher normal form typically means extracting dependent data into a new table and replacing it with a foreign key reference. This reduces redundancy but increases the number of joins needed in queries." }
                     }
                 ]
+            },
+            {
+                "@context": "https://schema.org",
+                "@type": "DefinedTerm",
+                "name": "Database Normalization",
+                "description": "Database normalization is the process of structuring a relational database schema to reduce data redundancy and improve data integrity by organizing tables according to a set of rules called normal forms. The three primary normal forms — First Normal Form (1NF, requiring atomic values and a primary key), Second Normal Form (2NF, eliminating partial dependencies on composite keys), and Third Normal Form (3NF, eliminating transitive dependencies between non-key columns) — progressively eliminate the anomalies that cause incorrect or inconsistent data.",
+                "inDefinedTermSet": { "@type": "DefinedTermSet", "name": "Database Design Glossary", "url": "https://sql-designer.com/blog" },
+                "url": "https://sql-designer.com/blog/database-normalization"
             }
             ]
         @endverbatim
@@ -281,10 +290,7 @@
         <h1>Database Normalization Explained — 1NF, 2NF, and 3NF with Examples</h1>
 
         <p class="intro">
-            Normalization is the process of structuring a database schema to reduce data redundancy and improve
-            integrity. A poorly normalized schema stores the same data in multiple places — meaning updates have to
-            happen in multiple rows, and inconsistencies are inevitable. This guide walks through the first three normal
-            forms with concrete before-and-after examples.
+            Database normalization is the process of organizing a relational schema according to a set of rules called normal forms — each one eliminating a specific class of redundancy or dependency anomaly. First Normal Form (1NF) requires atomic column values and a primary key. Second Normal Form (2NF) removes partial dependencies on composite keys. Third Normal Form (3NF) removes transitive dependencies between non-key columns. This guide walks through all three with concrete before-and-after table examples.
         </p>
 
         <h2>Why Normalization Matters</h2>

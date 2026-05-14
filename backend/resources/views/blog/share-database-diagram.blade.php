@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'How to Share a Database Diagram Online — Shareable Links & Embeds')
+@section('title', 'Share a Database Diagram — Shareable Links & Embeds')
 
 @section('head')
     <meta name="description"
@@ -41,9 +41,10 @@
                 "image": "https://sql-designer.com/images/designer_screenshot.png",
                 "url": "https://sql-designer.com/blog/share-database-diagram",
                 "datePublished": "2026-04-11",
-                "dateModified": "2026-04-11",
-                "author": { "@type": "Organization", "name": "SQL Designer" },
-                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+                "dateModified": "2026-05-14",
+                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
             {
                 "@context": "https://schema.org",
@@ -288,10 +289,7 @@
         <h1>How to Share a Database Diagram Online — Shareable Links &amp; Embeds</h1>
 
         <p class="intro">
-            Sending a screenshot of a database schema works once — then it goes stale the moment you make a change.
-            Shareable diagram links solve this: teammates, reviewers, and stakeholders always see the live, current
-            version, and you control exactly what they can do with it. Here's how sharing and embedding work in
-            SQL Designer, and when to use each mode.
+            SQL Designer lets you share a database diagram online with a permanent link that always reflects the current version of the schema — with three configurable access modes: read-only (anyone with the link can view), editable (anyone can make changes), or approval-based (you approve each visitor individually). Diagrams can also be embedded as interactive iframes in documentation pages, wikis, or any site that accepts HTML.
         </p>
 
         <h2>The Problem with Screenshots and Exported Images</h2>

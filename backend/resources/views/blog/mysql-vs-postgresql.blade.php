@@ -39,9 +39,10 @@
         "image": "https://sql-designer.com/images/designer_screenshot.png",
         "url": "https://sql-designer.com/blog/mysql-vs-postgresql",
         "datePublished": "2026-03-19",
-        "dateModified": "2026-03-24",
-        "author": { "@type": "Organization", "name": "SQL Designer" },
-        "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+        "dateModified": "2026-05-14",
+        "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+        "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+        "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] }
     },
     {
         "@context": "https://schema.org",
@@ -223,7 +224,7 @@
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
         <p class="post-eyebrow">March 2026 · 7 min read</p>
         <h1 class="page-h1">MySQL vs PostgreSQL — Key Differences for Schema Design</h1>
-        <p class="page-sub">Both MySQL and PostgreSQL are excellent relational databases, but they have real differences that affect how you design your schema. If you're starting a new project or migrating between them, understanding these differences upfront will save you from surprises later.</p>
+        <p class="page-sub">MySQL and PostgreSQL differ in several schema-design-critical ways: auto-increment syntax (<code>AUTO_INCREMENT</code> in MySQL vs <code>SERIAL</code> or <code>GENERATED AS IDENTITY</code> in PostgreSQL), boolean handling (<code>TINYINT(1)</code> in MySQL vs native <code>BOOLEAN</code>), JSON support (<code>JSON</code> with path expressions vs <code>JSONB</code> with binary indexing), CHECK constraint enforcement (MySQL 8.0.16+ only vs always-on in PostgreSQL), and strict SQL mode (optional in MySQL, default in PostgreSQL). This guide explains each difference with side-by-side DDL examples.</p>
     </div>
 </section>
 

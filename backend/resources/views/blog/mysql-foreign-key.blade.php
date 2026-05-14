@@ -41,9 +41,10 @@
                 "image": "https://sql-designer.com/images/designer_screenshot.png",
                 "url": "https://sql-designer.com/blog/mysql-foreign-key",
                 "datePublished": "2026-03-19",
-                "dateModified": "2026-03-24",
-                "author": { "@type": "Organization", "name": "SQL Designer" },
-                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+                "dateModified": "2026-05-14",
+                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
             {
                 "@context": "https://schema.org",
@@ -74,6 +75,18 @@
                         "name": "Does MySQL require the referenced column to be a primary key?",
                         "acceptedAnswer": { "@type": "Answer", "text": "No, but the referenced column must have a UNIQUE index or be the primary key. Referencing a non-unique column is not allowed because MySQL needs to guarantee that each foreign key value maps to exactly one parent row." }
                     }
+                ]
+            },
+            {
+                "@context": "https://schema.org",
+                "@type": "HowTo",
+                "name": "How to Add a Foreign Key in MySQL",
+                "step": [
+                    { "@type": "HowToStep", "name": "Ensure both tables use InnoDB", "text": "MySQL only enforces foreign key constraints on InnoDB tables. If either table uses MyISAM, the constraint will be silently ignored." },
+                    { "@type": "HowToStep", "name": "Match column types exactly", "text": "The foreign key column and the referenced column must have identical types, including UNSIGNED. A mismatch (e.g., INT vs BIGINT, or signed vs UNSIGNED) causes error 1215." },
+                    { "@type": "HowToStep", "name": "Ensure the referenced column is indexed", "text": "The referenced column must be a PRIMARY KEY or have a UNIQUE index. MySQL requires this to guarantee referential integrity — it cannot allow a foreign key to point to a non-unique value." },
+                    { "@type": "HowToStep", "name": "Write the FOREIGN KEY clause in CREATE TABLE", "text": "Inside the CREATE TABLE statement for the child table, add: CONSTRAINT fk_name FOREIGN KEY (child_column) REFERENCES parent_table(parent_column) ON DELETE CASCADE ON UPDATE CASCADE. Choose the ON DELETE and ON UPDATE actions that match your data lifecycle." },
+                    { "@type": "HowToStep", "name": "Alternatively, add the constraint with ALTER TABLE", "text": "On an existing table: ALTER TABLE child_table ADD CONSTRAINT fk_name FOREIGN KEY (child_column) REFERENCES parent_table(parent_column). Existing rows that violate the constraint will cause the ALTER to fail." }
                 ]
             }
             ]
@@ -225,7 +238,7 @@
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>MySQL</span></p>
         <p class="post-eyebrow">March 2026 · 6 min read</p>
         <h1 class="page-h1">MySQL Foreign Key — Syntax, Examples, and Best Practices</h1>
-        <p class="page-sub">Foreign keys are the mechanism that turns a collection of isolated tables into a relational database. They enforce that relationships between rows are always valid, preventing orphaned records and data integrity bugs. This guide covers everything you need to know to use them correctly in MySQL.</p>
+        <p class="page-sub">A MySQL foreign key is a column constraint that references the primary key or a unique index of another table, enforcing referential integrity by preventing child rows that reference non-existent parent rows. The <code>FOREIGN KEY</code> syntax supports configurable <code>ON DELETE</code> and <code>ON UPDATE</code> actions — <code>CASCADE</code>, <code>SET NULL</code>, <code>RESTRICT</code>, and <code>NO ACTION</code> — and requires InnoDB storage and exactly matching column types on both sides. This guide covers syntax, options, common errors, and best practices.</p>
     </div>
 </section>
 

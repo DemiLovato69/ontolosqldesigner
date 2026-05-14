@@ -3,8 +3,7 @@
 @section('title', '10 Best Free ERD Tools in 2026 — Tested and Compared')
 
 @section('head')
-    <meta name="description"
-          content="We tested 10 free ERD tools in 2026. Here's an honest comparison: SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver — with real strengths, real limits, and clear use-case guidance.">
+    <meta name="description" content="We tested 10 free ERD tools in 2026: SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver — with honest strengths and limits.">
     <meta name="author" content="SQL Designer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/best-free-erd-tools">
@@ -41,9 +40,10 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/best-free-erd-tools",
             "datePublished": "2026-05-12",
-            "dateModified": "2026-05-12",
-            "author": { "@type": "Organization", "name": "SQL Designer" },
-            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+            "dateModified": "2026-05-14",
+            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
         {
             "@context": "https://schema.org",
@@ -408,10 +408,7 @@
         <h1>10 Best Free ERD Tools in 2026 — Tested and Compared</h1>
 
         <p class="intro">
-            Not all free ERD tools are genuinely free — and not all ERD tools are actually ERD tools. Some cap your
-            diagram count after two saves. Some lock SQL export behind a paywall. Some are generic drag-and-drop editors
-            with no SQL awareness at all. This guide covers 10 of the most commonly used options, tested in 2026:
-            what each tool is actually good at, where it falls short, and who should use it.
+            The ten most commonly used free ERD tools in 2026 are SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver — each with meaningfully different capabilities, free-tier restrictions, and levels of SQL awareness. Not all of them are genuinely free: some cap diagrams after two saves, some lock SQL export behind a paywall, and some are generic diagram editors with no SQL awareness at all. This guide covers what each tool is actually good at, where it falls short, and who should use it.
         </p>
 
         <h2>The 10 Tools at a Glance</h2>

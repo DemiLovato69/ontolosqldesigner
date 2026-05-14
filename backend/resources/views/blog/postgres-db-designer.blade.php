@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'Postgres Designer Online — Free Visual PostgreSQL DB Designer')
+@section('title', 'Postgres Designer Online — Free PostgreSQL DB Designer')
 
 @section('head')
     <meta name="description"
@@ -41,9 +41,10 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/postgres-db-designer",
             "datePublished": "2026-04-09",
-            "dateModified": "2026-04-09",
-            "author": { "@type": "Organization", "name": "SQL Designer" },
-            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+            "dateModified": "2026-05-14",
+            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
         {
             "@context": "https://schema.org",
@@ -70,6 +71,17 @@
                     "acceptedAnswer": { "@type": "Answer", "text": "Yes — purpose-built tools export PostgreSQL-flavoured DDL with correct syntax for SERIAL or IDENTITY columns, TEXT types, and FOREIGN KEY constraints. The output can be run directly in psql or pasted into a migration file." }
                 }
             ]
+        },
+        {
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "SQL Designer",
+            "url": "https://sql-designer.com",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Web",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "description": "Free online PostgreSQL database designer. Design PostgreSQL schemas visually with a drag-and-drop canvas, full PostgreSQL type support (SERIAL, BIGSERIAL, TEXT, BOOLEAN, NUMERIC, TIMESTAMPTZ, UUID, JSONB, and more), constraint toggles, and foreign key relationship drawing. Exports PostgreSQL-flavoured CREATE TABLE DDL ready to run in psql.",
+            "featureList": ["PostgreSQL-specific type picker", "SERIAL and BIGSERIAL support", "Visual drag-and-drop canvas", "PostgreSQL CREATE TABLE export", "Foreign key constraints", "Real-time collaboration", "No pgAdmin required"]
         }
         ]
         @endverbatim
@@ -105,10 +117,7 @@
         <h1>Postgres Designer Online — Free Visual PostgreSQL DB Designer</h1>
 
         <p class="intro">
-            A free Postgres designer lets you build a PostgreSQL database schema visually — without writing DDL
-            by hand. Add tables, define columns with PostgreSQL-specific types, draw foreign key relationships,
-            and export a ready-to-run <code>CREATE TABLE</code> script, all in the browser with no installation
-            required.
+            A PostgreSQL database designer is a visual tool for planning Postgres schemas — defining tables with PostgreSQL-specific types (<code>SERIAL</code>, <code>BIGSERIAL</code>, <code>TEXT</code>, <code>BOOLEAN</code>, <code>NUMERIC</code>, <code>TIMESTAMPTZ</code>, <code>UUID</code>, <code>JSONB</code>), setting constraints, drawing foreign key relationships with <code>ON DELETE</code> and <code>ON UPDATE</code> behaviour, and exporting a PostgreSQL-flavoured <code>CREATE TABLE</code> script ready to run in psql — all in the browser without pgAdmin or any installation.
         </p>
 
         <h2>Why Use a Visual Postgres Designer?</h2>

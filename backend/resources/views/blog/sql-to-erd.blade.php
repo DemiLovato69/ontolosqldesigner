@@ -41,9 +41,10 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/sql-to-erd",
             "datePublished": "2026-04-16",
-            "dateModified": "2026-04-16",
-            "author": { "@type": "Organization", "name": "SQL Designer" },
-            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+            "dateModified": "2026-05-14",
+            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
         {
             "@context": "https://schema.org",
@@ -114,10 +115,7 @@
         <h1>SQL to ERD — Generate an ER Diagram from a SQL Script</h1>
 
         <p class="intro">
-            If you have an existing database and want to see its structure visually, you don't need to rebuild
-            the diagram by hand. SQL Designer can parse a <code>CREATE TABLE</code> SQL script and generate an
-            ER diagram from it automatically — rendering tables, columns, data types, constraints, and foreign
-            key relationships on a visual canvas in seconds.
+            SQL to ERD conversion generates a visual entity-relationship diagram automatically from an existing SQL script — parsing each <code>CREATE TABLE</code> statement, column definition, constraint, and <code>FOREIGN KEY</code> reference, then rendering them as a diagram with relationship lines and crow&rsquo;s foot notation. SQL Designer supports MySQL and PostgreSQL DDL and completes the import in seconds with no manual redrawing required.
         </p>
 
         <h2>What Is SQL to ERD Conversion?</h2>

@@ -41,9 +41,10 @@
                 "image": "https://sql-designer.com/images/designer_screenshot.png",
                 "url": "https://sql-designer.com/blog/database-schema-examples",
                 "datePublished": "2026-04-02",
-                "dateModified": "2026-04-02",
-                "author": { "@type": "Organization", "name": "SQL Designer" },
-                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+                "dateModified": "2026-05-14",
+                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
             {
                 "@context": "https://schema.org",
@@ -256,10 +257,7 @@
         <h1>Database Schema Examples — MySQL &amp; PostgreSQL Templates</h1>
 
         <p class="intro">
-            Starting a new database from scratch is easier when you have a concrete example to work from. Below are
-            five common real-world database schema examples — e-commerce, blog, SaaS user management, task tracker,
-            and messaging — with MySQL and PostgreSQL <code>CREATE TABLE</code> scripts you can copy directly, or
-            open as entity relationship diagram examples in <a href="/demo">SQL Designer</a>.
+            Five practical database schema examples — e-commerce, blog platform, SaaS user management, task tracker, and messaging system — with complete MySQL and PostgreSQL <code>CREATE TABLE</code> scripts you can copy directly or open as an entity relationship diagram in <a href="/demo">SQL Designer</a>. Each schema shows the table structure, column types, primary keys, foreign key relationships, and the reasoning behind key design decisions.
         </p>
 
         <div class="schema-section">

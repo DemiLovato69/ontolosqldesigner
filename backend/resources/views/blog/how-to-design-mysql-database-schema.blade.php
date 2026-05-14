@@ -41,9 +41,10 @@
                 "image": "https://sql-designer.com/images/designer_screenshot.png",
                 "url": "https://sql-designer.com/blog/how-to-design-mysql-database-schema",
                 "datePublished": "2026-03-18",
-                "dateModified": "2026-03-24",
-                "author": { "@type": "Organization", "name": "SQL Designer" },
-                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+                "dateModified": "2026-05-14",
+                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
             {
                 "@context": "https://schema.org",
@@ -250,9 +251,7 @@
         <h1>How to Design a MySQL Database Schema — A Step-by-Step Guide</h1>
 
         <p class="intro">
-            A well-designed database schema is the foundation of a reliable application. Getting it right before you
-            write any code saves you from painful migrations, slow queries, and data integrity bugs later. This guide
-            walks you through the process from scratch.
+            Designing a MySQL database schema involves six steps: identifying entities, defining columns with MySQL data types, setting primary keys, defining foreign key relationships with ON DELETE and ON UPDATE behaviour, normalizing for redundancy, and exporting a <code>CREATE TABLE</code> DDL script. This guide walks through each step using an e-commerce application as the working example.
         </p>
 
         <h2>Step 1 — Identify Your Entities</h2>

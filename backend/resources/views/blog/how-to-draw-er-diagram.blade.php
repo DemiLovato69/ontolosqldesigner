@@ -39,9 +39,10 @@
         "image": "https://sql-designer.com/images/designer_screenshot.png",
         "url": "https://sql-designer.com/blog/how-to-draw-er-diagram",
         "datePublished": "2026-03-19",
-        "dateModified": "2026-03-24",
-        "author": { "@type": "Organization", "name": "SQL Designer" },
-        "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+        "dateModified": "2026-05-14",
+        "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+        "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+        "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] }
     },
     {
         "@context": "https://schema.org",
@@ -235,7 +236,7 @@
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>ER Diagrams</span></p>
         <p class="post-eyebrow">March 2026 · 6 min read</p>
         <h1 class="page-h1">How to Draw an ER Diagram Step by Step</h1>
-        <p class="page-sub">An entity-relationship (ER) diagram is the standard way to plan a database before writing any code. Getting the diagram right first saves you from painful schema migrations later. This guide walks through the process from a blank page to a complete ER diagram, using a practical example throughout.</p>
+        <p class="page-sub">An entity-relationship (ER) diagram is a visual representation of a database schema that shows entities (tables) as rectangles, attributes (columns) listed inside each rectangle, and foreign key relationships between entities as connecting lines annotated with crow&rsquo;s foot cardinality notation. This guide walks through drawing one from scratch — from blank page to a complete, SQL-exportable diagram — using a blog platform as the working example.</p>
     </div>
 </section>
 

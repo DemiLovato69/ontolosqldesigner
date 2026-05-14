@@ -41,9 +41,10 @@
                 "image": "https://sql-designer.com/images/designer_screenshot.png",
                 "url": "https://sql-designer.com/blog/mysql-data-types",
                 "datePublished": "2026-03-19",
-                "dateModified": "2026-03-24",
-                "author": { "@type": "Organization", "name": "SQL Designer" },
-                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } }
+                "dateModified": "2026-05-14",
+                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] }
             },
             {
                 "@context": "https://schema.org",
@@ -227,7 +228,7 @@
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>MySQL</span></p>
         <p class="post-eyebrow">March 2026 · 7 min read</p>
         <h1 class="page-h1">MySQL Data Types Explained — Which to Use and When</h1>
-        <p class="page-sub">Choosing the right data type for each column is one of the most important decisions in database design. The wrong choice costs you storage, hurts query performance, and can introduce subtle data integrity bugs. This guide covers the most important MySQL data types and when to reach for each one.</p>
+        <p class="page-sub">MySQL provides data types across four categories: numeric (<code>INT</code>, <code>BIGINT</code>, <code>DECIMAL</code>, <code>FLOAT</code>), string (<code>VARCHAR</code>, <code>TEXT</code>, <code>CHAR</code>, <code>ENUM</code>), date/time (<code>DATE</code>, <code>DATETIME</code>, <code>TIMESTAMP</code>), and structured (<code>JSON</code>). Each type has specific storage size, value range, and behavioural constraints — for example, <code>TIMESTAMP</code> auto-converts to UTC while <code>DATETIME</code> stores wall-clock time, and <code>DECIMAL</code> is exact while <code>FLOAT</code> is approximate. This guide covers which type to choose for each common use case.</p>
     </div>
 </section>
 
