@@ -68,7 +68,7 @@ Yes, completely free. SQL Designer is widely used for database design coursework
 Yes. SQL Designer supports real-time multiplayer — share a diagram link and multiple users can edit simultaneously with live cursors, similar to Figma.
 
 **What SQL does SQL Designer export?**
-It exports standard CREATE TABLE DDL scripts for MySQL and PostgreSQL, including column definitions, data types, PRIMARY KEY, UNIQUE, NOT NULL, AUTO_INCREMENT / SERIAL constraints, and FOREIGN KEY references.
+It exports standard CREATE TABLE DDL scripts for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access, including column definitions, data types, PRIMARY KEY, UNIQUE, NOT NULL, AUTO_INCREMENT / SERIAL constraints, and FOREIGN KEY references.
 
 ## Common use cases
 

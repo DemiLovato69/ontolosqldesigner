@@ -231,6 +231,12 @@
         <p class="post-meta"><time datetime="2026-03-18">March 2026</time> &mdash; 5 min read</p>
         <h1>Free ER Diagram Tool Online for MySQL — No Download Required</h1>
 
+        <div class="cta-box" style="margin-top:1.5rem;margin-bottom:2rem;">
+            <h3>Try SQL Designer — free, no install</h3>
+            <p>Visual ER diagram editor for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Export SQL with one click. No credit card, no download.</p>
+            <a class="btn-cta" href="/demo">Try the Demo</a>
+        </div>
+
         <p class="intro">
             An online ER diagram tool is a browser-based application for creating entity-relationship diagrams — visual representations of a database schema that show tables as rectangles, columns as rows inside each rectangle, and foreign key relationships as connecting lines with cardinality notation. A SQL-aware ER diagram tool goes further: it understands real data types, enforces constraint logic, and exports a runnable <code>CREATE TABLE</code> DDL script directly from the diagram.
         </p>

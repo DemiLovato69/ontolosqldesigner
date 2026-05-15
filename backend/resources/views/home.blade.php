@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'SQL Designer — Free Database Designer for MySQL, PostgreSQL, SQLite, Oracle & More')
+@section('title', 'SQL Designer — Free ERD & Schema Designer')
 
 @section('head')
     <meta name="description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, and SQL Server. Drag-and-drop tables, define relationships, and export SQL in seconds.">
@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#c05252">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:locale" content="en_US">
-    <meta property="og:title" content="SQL Designer — Free Database Designer for MySQL, PostgreSQL, SQLite, Oracle & More">
+    <meta property="og:title" content="SQL Designer — Free ERD & Schema DesignerL">
     <meta property="og:description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag-and-drop schema editor with SQL export. No install, no subscription.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sql-designer.com/">
@@ -19,7 +19,7 @@
     <meta property="og:image:height" content="1267">
     <meta property="og:image:alt" content="SQL Designer — visual database schema editor for MySQL, PostgreSQL, SQLite, Oracle and more">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="SQL Designer — Free Database Designer for MySQL, PostgreSQL, SQLite, Oracle & More | ERD Tool">
+    <meta name="twitter:title" content="SQL Designer — Free ERD & Schema Designer">
     <meta name="twitter:description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Design schemas online and export SQL. No install, no subscription.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <link rel="canonical" href="https://sql-designer.com/">
@@ -31,6 +31,13 @@
     {
         "@context": "https://schema.org",
         "@graph": [
+            {
+                "@type": "WebSite",
+                "@id": "https://sql-designer.com/#website",
+                "name": "SQL Designer",
+                "url": "https://sql-designer.com",
+                "description": "Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access."
+            },
             {
                 "@type": "WebApplication",
                 "name": "SQL Designer",

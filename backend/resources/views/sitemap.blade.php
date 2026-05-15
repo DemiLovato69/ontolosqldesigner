@@ -48,10 +48,6 @@
                 <span class="desc">Sign in to your SQL Designer account.</span>
             </li>
             <li>
-                <a href="/docs">API Docs</a>
-                <span class="desc">REST API reference for SQL Designer — endpoints, request parameters, and response schemas.</span>
-            </li>
-            <li>
                 <a href="/privacy">Privacy Policy</a>
                 <span class="desc">How we collect, use, and protect your data.</span>
             </li>
