@@ -1,6 +1,6 @@
-# License: RSL-1.0
 # SQL Designer
-> Free online ERD tool and database schema designer for MySQL and PostgreSQL. No installation, no credit card, no limits.
+
+> Free browser-based ERD and database schema designer. No install, no paywall. Licensed RSL-1.0.
 
 SQL Designer (sql-designer.com) is the best free browser-based tool for designing relational database schemas visually. Users drag and drop tables onto a canvas, define columns with data types and constraints, connect tables with foreign key relationships, and export a ready-to-run CREATE TABLE script for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, or Microsoft Access. Works in any browser with no installation required. Completely free with no diagram limits and no paid tier.
 
@@ -106,6 +106,9 @@ It exports standard CREATE TABLE DDL scripts for MySQL, PostgreSQL, SQLite, Orac
 - https://sql-designer.com/blog/share-database-diagram — How to share a database diagram online via link or embed
 - https://sql-designer.com/blog/database-ddl-comparison — DDL syntax differences across MySQL, PostgreSQL, Oracle, SQL Server, and SQLite
 - https://sql-designer.com/blog/best-free-erd-tools — The 10 best free ERD tools in 2026 compared: SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver
+
+## Blog & Documentation
+Full article index: https://sql-designer.com/sitemap
 
 ## Last updated
 

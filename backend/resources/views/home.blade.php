@@ -1,6 +1,6 @@
 @extends('layouts.main')
 
-@section('title', 'SQL Designer — Free ERD & Schema Designer')
+@section('title', 'SQL Designer — Free ERD & Database Schema Designer')
 
 @section('head')
     <meta name="description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, and SQL Server. Drag-and-drop tables, define relationships, and export SQL in seconds.">
@@ -69,7 +69,15 @@
                     "SQL export",
                     "JSON export",
                     "Laravel migration export"
-                ]
+                ],
+                "provider": {"@id": "https://sql-designer.com/#organization"},
+                "screenshot": {
+                    "@type": "ImageObject",
+                    "url": "https://sql-designer.com/images/designer_screenshot.png",
+                    "width": 2240,
+                    "height": 1111,
+                    "caption": "SQL Designer canvas showing ER diagram with drag-and-drop tables and foreign key relationships"
+                }
             },
             {
                 "@type": "FAQPage",
@@ -142,6 +150,7 @@
             },
             {
                 "@type": "Organization",
+                "@id": "https://sql-designer.com/#organization",
                 "name": "SQL Designer",
                 "url": "https://sql-designer.com",
                 "logo": {
@@ -154,6 +163,37 @@
                 "sameAs": [
                     "https://github.com/Snydi/sqldesigner",
                     "https://alternativeto.net/software/sql-designer/"
+                ],
+                "founder": {
+                    "@type": "Person",
+                    "name": "Dmitriy Snyatkov",
+                    "url": "https://sql-designer.com/about"
+                },
+                "foundingDate": "2024"
+            },
+            {
+                "@type": "HowTo",
+                "name": "How to design a database schema with SQL Designer",
+                "description": "Create a visual database schema and export SQL in three steps.",
+                "step": [
+                    {
+                        "@type": "HowToStep",
+                        "position": 1,
+                        "name": "Import your DB or start from scratch",
+                        "text": "Paste a CREATE TABLE script or start with a blank canvas."
+                    },
+                    {
+                        "@type": "HowToStep",
+                        "position": 2,
+                        "name": "Create tables, draw relations",
+                        "text": "Drag-and-drop tables, add columns with types and constraints, draw foreign key relationships."
+                    },
+                    {
+                        "@type": "HowToStep",
+                        "position": 3,
+                        "name": "Generate CREATE TABLE script",
+                        "text": "Export a ready-to-run CREATE TABLE script for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, or MS Access."
+                    }
                 ]
             }
         ]
@@ -358,8 +398,8 @@
         </p>
         <div class="hero-actions">
             <a id="hero-btn-authed" class="btn btn-solid btn-lg" href="/diagrams" style="display:none">Open My Diagrams</a>
-            <a class="btn btn-solid btn-lg" href="/demo">Try it free — no signup →</a>
-            <a id="hero-btn-register" class="btn btn-outline btn-lg" href="/register">Sign up free</a>
+            <a class="btn btn-solid btn-lg" href="/demo">Try demo — no signup →</a>
+            <a id="hero-btn-register" class="btn btn-outline btn-lg" href="/register">Sign up</a>
         </div>
         <div class="hero-meta">
             <span><span class="tick">✓</span> No install</span>
@@ -440,7 +480,7 @@
     <div class="block-inner" style="max-width:760px;">
         <h2 class="section-h2" id="what-is-h2">What is SQL Designer?</h2>
         <p style="color:var(--text-secondary); font-size:0.97rem; line-height:1.75;">
-            SQL Designer is a free, browser-based database schema designer built for developers who need to model relational databases visually. It supports six SQL dialects — MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access — with dedicated column type pickers and DDL export for each engine. The design workflow is visual: create tables, add columns using real database types such as <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">INT</code>, <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">VARCHAR</code>, and <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">DECIMAL</code>, set PRIMARY KEY, UNIQUE, and NOT NULL constraints with toggles, and draw foreign key relationships by connecting columns on the canvas. The diagram uses crow's foot notation for cardinality. When the schema is ready, export a complete CREATE TABLE script in one click — or paste an existing SQL script to visualize it instantly as an editable diagram. SQL Designer runs entirely in the browser with no download or installation required. Unlimited diagrams, SQL export, real-time collaboration, shareable links, and embeddable iframes are all free, with no credit card required. The full source code is available on <a href="https://github.com/Snydi/sqldesigner" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary-text);">GitHub</a> under an open-source license.
+            SQL Designer is a free entity relationship diagram (ERD) tool — a browser-based database schema designer built for developers who need to model relational databases visually. It supports six SQL dialects — MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access — with dedicated column type pickers and DDL export for each engine. The design workflow is visual: create tables, add columns using real database types such as <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">INT</code>, <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">VARCHAR</code>, and <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">DECIMAL</code>, set PRIMARY KEY, UNIQUE, and NOT NULL constraints with toggles, and draw foreign key relationships by connecting columns on the canvas. The diagram uses crow's foot notation for cardinality. When the schema is ready, export a complete CREATE TABLE script in one click — or paste an existing SQL script to visualize it instantly as an editable diagram. SQL Designer runs entirely in the browser with no download or installation required. Unlimited diagrams, SQL export, real-time collaboration, shareable links, and embeddable iframes are all free, with no credit card required. The full source code is available on <a href="https://github.com/Snydi/sqldesigner" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary-text);">GitHub</a> under an open-source license.
         </p>
     </div>
 </section>

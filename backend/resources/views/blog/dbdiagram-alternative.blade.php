@@ -303,7 +303,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Tools</p>
-        <p class="post-meta"><time datetime="2026-05-15">May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 9 min read</p>
+        <p class="post-meta"><time datetime="2026-05-15">May 2026</time> &mdash; <time datetime="2026-05-15">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 9 min read</p>
         <h1>dbdiagram.io Alternative — Free ERD Tool with Visual Canvas and SQL Export</h1>
 
         <p class="intro">

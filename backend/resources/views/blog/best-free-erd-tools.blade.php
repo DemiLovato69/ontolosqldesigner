@@ -405,7 +405,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Tools</p>
-        <p class="post-meta"><time datetime="2026-05-12">May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 10 min read</p>
+        <p class="post-meta"><time datetime="2026-05-12">May 2026</time> &mdash; <time datetime="2026-05-14">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 10 min read</p>
         <h1>10 Best Free ERD Tools in 2026 — Tested and Compared</h1>
 
         <p class="intro">

@@ -237,7 +237,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>MySQL</span></p>
-        <p class="post-eyebrow">March 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 6 min read</p>
+        <p class="post-eyebrow">March 2026 · <time datetime="2026-05-14">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 6 min read</p>
         <h1 class="page-h1">MySQL Foreign Key — Syntax, Examples, and Best Practices</h1>
         <p class="page-sub">A MySQL foreign key is a column constraint that references the primary key or a unique index of another table, enforcing referential integrity by preventing child rows that reference non-existent parent rows. The <code>FOREIGN KEY</code> syntax supports configurable <code>ON DELETE</code> and <code>ON UPDATE</code> actions — <code>CASCADE</code>, <code>SET NULL</code>, <code>RESTRICT</code>, and <code>NO ACTION</code> — and requires InnoDB storage and exactly matching column types on both sides. This guide covers syntax, options, common errors, and best practices.</p>
     </div>

@@ -1,16 +1,16 @@
 @extends('layouts.main')
 
-@section('title', 'Free ERD Maker Online — Create ER Diagrams in Your Browser')
+@section('title', 'How to Use a Free ERD Maker Online — Step-by-Step Guide')
 
 @section('head')
     <meta name="description"
-          content="Free ERD maker — create entity relationship diagrams online with a drag-and-drop canvas. Define tables, relationships, and export MySQL or PostgreSQL SQL.">
+          content="Learn how to use a free ERD maker online — step-by-step guide to drawing entity relationship diagrams, defining tables, and exporting SQL without installing software.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/erd-maker">
-    <meta property="og:title" content="Free ERD Maker Online — Create ER Diagrams in Your Browser">
+    <meta property="og:title" content="How to Use a Free ERD Maker Online — Step-by-Step Guide">
     <meta property="og:description"
-          content="Free ERD maker — create entity relationship diagrams online with drag-and-drop tables, foreign key relationships, and MySQL or PostgreSQL SQL export. No install.">
+          content="Step-by-step guide: how to draw entity relationship diagrams online with a free ERD maker. No install — drag tables, add columns, draw relationships, export SQL.">
     <meta property="og:type" content="article">
     <meta property="og:url" content="https://sql-designer.com/blog/erd-maker">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
@@ -18,8 +18,8 @@
     <meta property="og:image:height" content="1269">
     <meta property="og:image:alt" content="SQL Designer — free ERD maker with drag-and-drop canvas">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Free ERD Maker Online — Create ER Diagrams in Your Browser">
-    <meta name="twitter:description" content="Free ERD maker — create ER diagrams online with drag-and-drop tables, foreign keys, and SQL export. No install required.">
+    <meta name="twitter:title" content="How to Use a Free ERD Maker Online — Step-by-Step Guide">
+    <meta name="twitter:description" content="Step-by-step: draw ER diagrams online with a free ERD maker. No install — drag tables, draw foreign key relationships, and export SQL for MySQL or PostgreSQL.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <script type="application/ld+json">
         @verbatim
@@ -36,15 +36,16 @@
         {
             "@context": "https://schema.org",
             "@type": "TechArticle",
-            "headline": "Free ERD Maker Online — Create ER Diagrams in Your Browser",
-            "description": "Free ERD maker — create entity relationship diagrams online with a drag-and-drop canvas, foreign key relationships, and MySQL or PostgreSQL SQL export.",
+            "headline": "How to Use a Free ERD Maker Online — Step-by-Step Guide",
+            "description": "Step-by-step guide on how to use a free ERD maker online to draw entity relationship diagrams, define tables and relationships, and export SQL without installing software.",
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/erd-maker",
             "datePublished": "2026-04-16",
             "dateModified": "2026-05-14",
             "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
-            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] },
+            "mainEntityOfPage": { "@type": "WebPage", "@id": "https://sql-designer.com/blog/erd-maker" }
         },
         {
             "@context": "https://schema.org",
@@ -115,8 +116,8 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; ER Diagrams</p>
-        <p class="post-meta"><time datetime="2026-04-16">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
-        <h1>Free ERD Maker Online — Create ER Diagrams in Your Browser</h1>
+        <p class="post-meta"><time datetime="2026-04-16">April 2026</time> &mdash; <time datetime="2026-05-14">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
+        <h1>How to Use a Free ERD Maker Online — Step-by-Step Guide</h1>
 
         <p class="intro">
             An ERD maker (entity relationship diagram maker) is a purpose-built tool for designing relational database schemas visually — with real SQL data types, PRIMARY KEY and FOREIGN KEY constraints, crow&rsquo;s foot cardinality notation, and the ability to export a runnable <code>CREATE TABLE</code> script. This distinguishes it from generic diagramming tools like draw.io, which produce a visual that looks like a schema but cannot validate constraints or generate SQL.

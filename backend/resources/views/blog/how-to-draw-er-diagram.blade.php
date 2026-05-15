@@ -235,7 +235,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>ER Diagrams</span></p>
-        <p class="post-eyebrow">March 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 6 min read</p>
+        <p class="post-eyebrow">March 2026 · <time datetime="2026-05-14">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 6 min read</p>
         <h1 class="page-h1">How to Draw an ER Diagram Step by Step</h1>
         <p class="page-sub">An entity-relationship (ER) diagram is a visual representation of a database schema that shows entities (tables) as rectangles, attributes (columns) listed inside each rectangle, and foreign key relationships between entities as connecting lines annotated with crow&rsquo;s foot cardinality notation. This guide walks through drawing one from scratch — from blank page to a complete, SQL-exportable diagram — using a blog platform as the working example.</p>
     </div>

@@ -227,7 +227,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>MySQL</span></p>
-        <p class="post-eyebrow">March 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 7 min read</p>
+        <p class="post-eyebrow">March 2026 · <time datetime="2026-05-14">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 7 min read</p>
         <h1 class="page-h1">MySQL Data Types Explained — Which to Use and When</h1>
         <p class="page-sub">MySQL provides data types across four categories: numeric (<code>INT</code>, <code>BIGINT</code>, <code>DECIMAL</code>, <code>FLOAT</code>), string (<code>VARCHAR</code>, <code>TEXT</code>, <code>CHAR</code>, <code>ENUM</code>), date/time (<code>DATE</code>, <code>DATETIME</code>, <code>TIMESTAMP</code>), and structured (<code>JSON</code>). Each type has specific storage size, value range, and behavioural constraints — for example, <code>TIMESTAMP</code> auto-converts to UTC while <code>DATETIME</code> stores wall-clock time, and <code>DECIMAL</code> is exact while <code>FLOAT</code> is approximate. This guide covers which type to choose for each common use case.</p>
     </div>

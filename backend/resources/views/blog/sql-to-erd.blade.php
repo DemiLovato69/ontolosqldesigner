@@ -112,7 +112,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; ER Diagrams</p>
-        <p class="post-meta"><time datetime="2026-04-16">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
+        <p class="post-meta"><time datetime="2026-04-16">April 2026</time> &mdash; <time datetime="2026-05-14">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
         <h1>SQL to ERD — Generate an ER Diagram from a SQL Script</h1>
 
         <p class="intro">

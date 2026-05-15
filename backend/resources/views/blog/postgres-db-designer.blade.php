@@ -114,7 +114,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Schema Design</p>
-        <p class="post-meta"><time datetime="2026-04-09">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 6 min read</p>
+        <p class="post-meta"><time datetime="2026-04-09">April 2026</time> &mdash; <time datetime="2026-05-14">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 6 min read</p>
         <h1>Postgres Designer Online — Free Visual PostgreSQL DB Designer</h1>
 
         <p class="intro">

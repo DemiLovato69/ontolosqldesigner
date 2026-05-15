@@ -223,7 +223,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
-        <p class="post-eyebrow">March 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 7 min read</p>
+        <p class="post-eyebrow">March 2026 · <time datetime="2026-05-14">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 7 min read</p>
         <h1 class="page-h1">MySQL vs PostgreSQL — Key Differences for Schema Design</h1>
         <p class="page-sub">MySQL and PostgreSQL differ in several schema-design-critical ways: auto-increment syntax (<code>AUTO_INCREMENT</code> in MySQL vs <code>SERIAL</code> or <code>GENERATED AS IDENTITY</code> in PostgreSQL), boolean handling (<code>TINYINT(1)</code> in MySQL vs native <code>BOOLEAN</code>), JSON support (<code>JSON</code> with path expressions vs <code>JSONB</code> with binary indexing), CHECK constraint enforcement (MySQL 8.0.16+ only vs always-on in PostgreSQL), and strict SQL mode (optional in MySQL, default in PostgreSQL). This guide explains each difference with side-by-side DDL examples.</p>
     </div>

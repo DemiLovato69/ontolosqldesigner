@@ -287,7 +287,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Schema Design</p>
-        <p class="post-meta"><time datetime="2026-03-19">March 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 8 min read</p>
+        <p class="post-meta"><time datetime="2026-03-19">March 2026</time> &mdash; <time datetime="2026-05-14">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 8 min read</p>
         <h1>Database Normalization Explained — 1NF, 2NF, and 3NF with Examples</h1>
 
         <p class="intro">

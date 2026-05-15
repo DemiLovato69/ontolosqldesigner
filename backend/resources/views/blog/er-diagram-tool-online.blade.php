@@ -228,7 +228,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; ER Diagrams</p>
-        <p class="post-meta"><time datetime="2026-03-18">March 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
+        <p class="post-meta"><time datetime="2026-03-18">March 2026</time> &mdash; <time datetime="2026-05-14">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
         <h1>Free ER Diagram Tool Online for MySQL — No Download Required</h1>
 
         <div class="cta-box" style="margin-top:1.5rem;margin-bottom:2rem;">
