@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="Import a SQL script and generate an ER diagram automatically — SQL Designer parses your CREATE TABLE statements and renders a schema.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/sql-to-erd">
     <meta property="og:title" content="SQL to ERD — Generate an ER Diagram from a SQL Script">
@@ -42,7 +42,7 @@
             "url": "https://sql-designer.com/blog/sql-to-erd",
             "datePublished": "2026-04-16",
             "dateModified": "2026-05-14",
-            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
             "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
@@ -111,7 +111,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; ER Diagrams</p>
-        <p class="post-meta"><time datetime="2026-04-16">April 2026</time> &mdash; 5 min read</p>
+        <p class="post-meta"><time datetime="2026-04-16">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
         <h1>SQL to ERD — Generate an ER Diagram from a SQL Script</h1>
 
         <p class="intro">
@@ -180,7 +180,7 @@
         <nav aria-label="Related articles" style="margin-top:3rem; padding-top:2rem; border-top:1px solid var(--border-color);">
             <p style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.06em; color:#767676; margin:0 0 0.8rem;">Related Articles</p>
             <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
-                <li><a href="/blog/erd-maker" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free ERD Maker Online — Create ER Diagrams in Your Browser &rarr;</a></li>
+                <li><a href="/blog/how-to-design-mysql-database-schema" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">How to design a MySQL schema — step-by-step guide &rarr;</a></li>
                 <li><a href="/blog/free-erd-tool" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free ERD Tool Online — Visual Entity Relationship Diagram Editor &rarr;</a></li>
                 <li><a href="/blog/database-schema-examples" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Database Schema Examples — MySQL &amp; PostgreSQL Templates &rarr;</a></li>
             </ul>

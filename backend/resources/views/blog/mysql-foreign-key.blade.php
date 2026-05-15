@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="A complete guide to MySQL foreign keys: syntax, ON DELETE and ON UPDATE options, practical examples, and common mistakes to avoid.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/mysql-foreign-key">
     <meta property="og:title" content="MySQL Foreign Key — Syntax, Examples, and Best Practices">
@@ -42,7 +42,7 @@
                 "url": "https://sql-designer.com/blog/mysql-foreign-key",
                 "datePublished": "2026-03-19",
                 "dateModified": "2026-05-14",
-                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
                 "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
@@ -236,7 +236,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>MySQL</span></p>
-        <p class="post-eyebrow">March 2026 · 6 min read</p>
+        <p class="post-eyebrow">March 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 6 min read</p>
         <h1 class="page-h1">MySQL Foreign Key — Syntax, Examples, and Best Practices</h1>
         <p class="page-sub">A MySQL foreign key is a column constraint that references the primary key or a unique index of another table, enforcing referential integrity by preventing child rows that reference non-existent parent rows. The <code>FOREIGN KEY</code> syntax supports configurable <code>ON DELETE</code> and <code>ON UPDATE</code> actions — <code>CASCADE</code>, <code>SET NULL</code>, <code>RESTRICT</code>, and <code>NO ACTION</code> — and requires InnoDB storage and exactly matching column types on both sides. This guide covers syntax, options, common errors, and best practices.</p>
     </div>

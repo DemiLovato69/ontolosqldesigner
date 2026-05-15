@@ -83,9 +83,56 @@
         .btn-solid:hover { background: #6dc290; }
         .btn-lg { padding: 0.75rem 1.15rem; font-size: 0.95rem; border-radius: 7px; }
 
+        /* ── Mobile nav ──────────────────────────────────── */
+        .hamburger {
+            display: none;
+            flex-direction: column;
+            gap: 5px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.4rem;
+            margin-left: 0.25rem;
+        }
+        .hamburger span {
+            display: block;
+            width: 20px;
+            height: 2px;
+            background: var(--text-secondary);
+            border-radius: 2px;
+            transition: transform 200ms ease, opacity 200ms ease;
+        }
+        .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+        .hamburger.open span:nth-child(2) { opacity: 0; }
+        .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+        .mobile-nav {
+            display: none;
+            position: fixed;
+            top: 53px;
+            left: 0; right: 0;
+            background: rgba(31,31,31,0.98);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.75rem 1rem 1rem;
+            z-index: 49;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .mobile-nav.open { display: flex; }
+        .mobile-nav a {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            padding: 0.6rem 0.5rem;
+            border-radius: 5px;
+            display: block;
+        }
+        .mobile-nav a:hover { color: var(--text-primary); background: var(--bg-surface); }
+        .mobile-nav .divider { height: 1px; background: var(--border-light); margin: 0.4rem 0; }
+
         @media (max-width: 720px) {
             .header { padding: 0.65rem 1rem; }
             .nav-hide-mobile { display: none !important; }
+            .hamburger { display: flex; }
         }
 
         /* ── Footer ───────────────────────────────────────── */
@@ -161,6 +208,9 @@
             <a class="btn btn-ghost" href="/library">Library</a>
             <a class="btn btn-ghost" href="/blog">Blog</a>
         </nav>
+        <button class="hamburger" id="hamburger-btn" aria-label="Open navigation menu" aria-expanded="false" aria-controls="mobile-nav">
+            <span></span><span></span><span></span>
+        </button>
     </div>
     <nav class="flex-items" aria-label="Main navigation">
         <div id="nav-authed" style="display:none; gap:0.6rem;">
@@ -180,6 +230,37 @@
     </script>
 </header>
 
+<nav class="mobile-nav" id="mobile-nav" aria-label="Mobile navigation">
+    <a href="/features">Features</a>
+    <a href="/library">Library</a>
+    <a href="/blog">Blog</a>
+    <a href="/about">About</a>
+    <div class="divider"></div>
+    <div id="mobile-nav-authed" style="display:none;">
+        <a href="/diagrams">My Diagrams</a>
+    </div>
+    <a href="/login" id="mobile-nav-login">Log in</a>
+    <a href="/register" style="color:var(--color-primary-text); font-weight:500;">Sign up free</a>
+</nav>
+<script>
+    (function () {
+        var btn = document.getElementById('hamburger-btn');
+        var nav = document.getElementById('mobile-nav');
+        if (!btn || !nav) return;
+        btn.addEventListener('click', function () {
+            var open = nav.classList.toggle('open');
+            btn.classList.toggle('open', open);
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+        if (localStorage.getItem('auth_token')) {
+            var authed = document.getElementById('mobile-nav-authed');
+            var loginLink = document.getElementById('mobile-nav-login');
+            if (authed) authed.style.display = 'block';
+            if (loginLink) loginLink.style.display = 'none';
+        }
+    }());
+</script>
+
 <main>
     @yield('content')
 </main>
@@ -198,6 +279,7 @@
             <h2>Resources</h2>
             <ul>
                 <li><a href="/blog">Blog</a></li>
+                <li><a href="/about">About</a></li>
                 <li><a href="/sitemap">Sitemap</a></li>
             </ul>
         </div>

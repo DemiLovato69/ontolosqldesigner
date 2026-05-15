@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="Free ERD maker — create entity relationship diagrams online with a drag-and-drop canvas. Define tables, relationships, and export MySQL or PostgreSQL SQL.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/erd-maker">
     <meta property="og:title" content="Free ERD Maker Online — Create ER Diagrams in Your Browser">
@@ -42,7 +42,7 @@
             "url": "https://sql-designer.com/blog/erd-maker",
             "datePublished": "2026-04-16",
             "dateModified": "2026-05-14",
-            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
             "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
@@ -115,7 +115,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; ER Diagrams</p>
-        <p class="post-meta"><time datetime="2026-04-16">April 2026</time> &mdash; 5 min read</p>
+        <p class="post-meta"><time datetime="2026-04-16">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
         <h1>Free ERD Maker Online — Create ER Diagrams in Your Browser</h1>
 
         <p class="intro">

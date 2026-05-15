@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="Schema examples for e-commerce, blog, SaaS, and more. MySQL and PostgreSQL CREATE TABLE templates you can copy or build visually in SQL Designer.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-schema-examples">
     <meta property="og:title" content="Database Schema Examples — MySQL & PostgreSQL Templates">
@@ -42,7 +42,7 @@
                 "url": "https://sql-designer.com/blog/database-schema-examples",
                 "datePublished": "2026-04-02",
                 "dateModified": "2026-05-14",
-                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
                 "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
@@ -253,7 +253,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Schema Design</p>
-        <p class="post-meta"><time datetime="2026-04-02">April 2026</time> &mdash; 9 min read</p>
+        <p class="post-meta"><time datetime="2026-04-02">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 9 min read</p>
         <h1>Database Schema Examples — MySQL &amp; PostgreSQL Templates</h1>
 
         <p class="intro">
@@ -564,6 +564,8 @@ CREATE TABLE messages (
             <p style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.06em; color:#767676; margin:0 0 0.8rem;">
                 Related Articles</p>
             <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
+                <li><a href="/blog/how-to-draw-er-diagram"
+                       style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Draw an ER Diagram Step by Step &rarr;</a></li>
                 <li><a href="/blog/how-to-design-mysql-database-schema"
                        style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">How to Design a MySQL Database Schema &rarr;</a></li>
                 <li><a href="/blog/database-normalization"

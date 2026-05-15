@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="Share your database schema online with a shareable link or embed it as an interactive iframe. Control access with approval-based permissions.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/share-database-diagram">
     <meta property="og:title" content="How to Share a Database Diagram Online — Shareable Links & Embeds">
@@ -42,7 +42,7 @@
                 "url": "https://sql-designer.com/blog/share-database-diagram",
                 "datePublished": "2026-04-11",
                 "dateModified": "2026-05-14",
-                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
                 "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
@@ -285,7 +285,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Guides</p>
-        <p class="post-meta"><time datetime="2026-04-11">April 2026</time> &mdash; 5 min read</p>
+        <p class="post-meta"><time datetime="2026-04-11">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
         <h1>How to Share a Database Diagram Online — Shareable Links &amp; Embeds</h1>
 
         <p class="intro">

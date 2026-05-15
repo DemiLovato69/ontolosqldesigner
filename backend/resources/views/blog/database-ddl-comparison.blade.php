@@ -4,7 +4,7 @@
 
 @section('head')
     <meta name="description" content="Side-by-side DDL comparison: how CREATE TABLE, data types, constraints, and ALTER TABLE differ across MySQL, PostgreSQL, Oracle, SQL Server, and SQLite.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-ddl-comparison">
     <meta property="og:title" content="DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite">
@@ -40,7 +40,7 @@
         "url": "https://sql-designer.com/blog/database-ddl-comparison",
         "datePublished": "2026-05-05",
         "dateModified": "2026-05-14",
-        "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+        "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
         "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
         "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] },
         "about": [
@@ -244,7 +244,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
-        <p class="post-eyebrow">May 2026 · 12 min read</p>
+        <p class="post-eyebrow">May 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 12 min read</p>
         <h1 class="page-h1">DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite</h1>
         <p class="page-sub">MySQL, PostgreSQL, Oracle Database, Microsoft SQL Server, and SQLite all use SQL DDL but differ in <code>CREATE TABLE</code> syntax, auto-increment mechanisms (<code>AUTO_INCREMENT</code> vs <code>SERIAL</code> vs <code>IDENTITY</code>), data type names (<code>VARCHAR</code> vs <code>VARCHAR2</code> vs <code>NVARCHAR</code>), CHECK constraint enforcement (optional in old MySQL, always-on elsewhere), and <code>ALTER TABLE</code> capabilities — differences that matter when designing portable schemas or migrating between databases.</p>
     </div>

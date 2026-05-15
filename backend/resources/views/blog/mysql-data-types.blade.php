@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="A practical guide to MySQL data types: numeric, string, date/time, and JSON types — with advice on which to choose for each use case.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/mysql-data-types">
     <meta property="og:title" content="MySQL Data Types Explained — Which to Use and When">
@@ -42,7 +42,7 @@
                 "url": "https://sql-designer.com/blog/mysql-data-types",
                 "datePublished": "2026-03-19",
                 "dateModified": "2026-05-14",
-                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
                 "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] }
             },
@@ -226,7 +226,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>MySQL</span></p>
-        <p class="post-eyebrow">March 2026 · 7 min read</p>
+        <p class="post-eyebrow">March 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 7 min read</p>
         <h1 class="page-h1">MySQL Data Types Explained — Which to Use and When</h1>
         <p class="page-sub">MySQL provides data types across four categories: numeric (<code>INT</code>, <code>BIGINT</code>, <code>DECIMAL</code>, <code>FLOAT</code>), string (<code>VARCHAR</code>, <code>TEXT</code>, <code>CHAR</code>, <code>ENUM</code>), date/time (<code>DATE</code>, <code>DATETIME</code>, <code>TIMESTAMP</code>), and structured (<code>JSON</code>). Each type has specific storage size, value range, and behavioural constraints — for example, <code>TIMESTAMP</code> auto-converts to UTC while <code>DATETIME</code> stores wall-clock time, and <code>DECIMAL</code> is exact while <code>FLOAT</code> is approximate. This guide covers which type to choose for each common use case.</p>
     </div>
@@ -408,8 +408,9 @@
             <p class="related-label">Related Articles</p>
             <ul>
                 <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax and Examples &rarr;</a></li>
+                <li><a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL data types — key differences &rarr;</a></li>
+                <li><a href="/blog/database-ddl-comparison">DDL syntax across databases — MySQL, PostgreSQL, SQLite &rarr;</a></li>
                 <li><a href="/blog/how-to-design-mysql-database-schema">How to Design a MySQL Database Schema &rarr;</a></li>
-                <li><a href="/blog/database-normalization">Database Normalization Explained &rarr;</a></li>
             </ul>
         </nav>
     </article>

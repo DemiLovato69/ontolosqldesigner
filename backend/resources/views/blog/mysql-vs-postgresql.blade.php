@@ -4,7 +4,7 @@
 
 @section('head')
     <meta name="description" content="Comparing MySQL and PostgreSQL for database schema design: data types, constraints, auto-increment, JSON support, and which to choose for your project.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/mysql-vs-postgresql">
     <meta property="og:title" content="MySQL vs PostgreSQL — Key Differences for Schema Design">
@@ -40,7 +40,7 @@
         "url": "https://sql-designer.com/blog/mysql-vs-postgresql",
         "datePublished": "2026-03-19",
         "dateModified": "2026-05-14",
-        "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+        "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
         "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
         "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] }
     },
@@ -222,7 +222,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
-        <p class="post-eyebrow">March 2026 · 7 min read</p>
+        <p class="post-eyebrow">March 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 7 min read</p>
         <h1 class="page-h1">MySQL vs PostgreSQL — Key Differences for Schema Design</h1>
         <p class="page-sub">MySQL and PostgreSQL differ in several schema-design-critical ways: auto-increment syntax (<code>AUTO_INCREMENT</code> in MySQL vs <code>SERIAL</code> or <code>GENERATED AS IDENTITY</code> in PostgreSQL), boolean handling (<code>TINYINT(1)</code> in MySQL vs native <code>BOOLEAN</code>), JSON support (<code>JSON</code> with path expressions vs <code>JSONB</code> with binary indexing), CHECK constraint enforcement (MySQL 8.0.16+ only vs always-on in PostgreSQL), and strict SQL mode (optional in MySQL, default in PostgreSQL). This guide explains each difference with side-by-side DDL examples.</p>
     </div>

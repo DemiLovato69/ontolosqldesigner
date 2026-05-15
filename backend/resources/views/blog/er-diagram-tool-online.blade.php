@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="Create ER diagrams for MySQL in your browser — free, no installation required. Draw tables, define foreign key relationships, and export SQL.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/er-diagram-tool-online">
     <meta property="og:title" content="Free ER Diagram Tool Online for MySQL — No Download Required">
@@ -43,7 +43,7 @@
                 "url": "https://sql-designer.com/blog/er-diagram-tool-online",
                 "datePublished": "2026-03-18",
                 "dateModified": "2026-05-14",
-                "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+                "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
                 "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
             },
@@ -228,7 +228,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; ER Diagrams</p>
-        <p class="post-meta"><time datetime="2026-03-18">March 2026</time> &mdash; 5 min read</p>
+        <p class="post-meta"><time datetime="2026-03-18">March 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 5 min read</p>
         <h1>Free ER Diagram Tool Online for MySQL — No Download Required</h1>
 
         <div class="cta-box" style="margin-top:1.5rem;margin-bottom:2rem;">
@@ -329,9 +329,10 @@
             <p style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.06em; color:#767676; margin:0 0 0.8rem;">
                 Related Articles</p>
             <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
+                <li><a href="/blog/best-free-erd-tools"
+                       style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Best free ERD tools comparison — 10 tested in 2026 &rarr;</a></li>
                 <li><a href="/blog/how-to-design-mysql-database-schema"
-                       style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">How to Design a
-                        MySQL Database Schema &rarr;</a></li>
+                       style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">How to Design a MySQL Database Schema &rarr;</a></li>
                 <li><a href="/blog/how-to-draw-er-diagram"
                        style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">How to Draw an ER Diagram Step by Step &rarr;</a></li>
                 <li><a href="/blog/free-erd-tool"

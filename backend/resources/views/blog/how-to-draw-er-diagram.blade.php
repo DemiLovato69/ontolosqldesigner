@@ -4,7 +4,7 @@
 
 @section('head')
     <meta name="description" content="A step-by-step guide to drawing ER diagrams: entities, attributes, relationships, cardinality notation, and practical tips for MySQL.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/how-to-draw-er-diagram">
     <meta property="og:title" content="How to Draw an ER Diagram Step by Step">
@@ -40,7 +40,7 @@
         "url": "https://sql-designer.com/blog/how-to-draw-er-diagram",
         "datePublished": "2026-03-19",
         "dateModified": "2026-05-14",
-        "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+        "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
         "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
         "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] }
     },
@@ -234,7 +234,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>ER Diagrams</span></p>
-        <p class="post-eyebrow">March 2026 · 6 min read</p>
+        <p class="post-eyebrow">March 2026 · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 6 min read</p>
         <h1 class="page-h1">How to Draw an ER Diagram Step by Step</h1>
         <p class="page-sub">An entity-relationship (ER) diagram is a visual representation of a database schema that shows entities (tables) as rectangles, attributes (columns) listed inside each rectangle, and foreign key relationships between entities as connecting lines annotated with crow&rsquo;s foot cardinality notation. This guide walks through drawing one from scratch — from blank page to a complete, SQL-exportable diagram — using a blog platform as the working example.</p>
     </div>
@@ -335,9 +335,10 @@
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
             <ul>
+                <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Cardinality Explained &rarr;</a></li>
+                <li><a href="/blog/database-schema-examples">ER Diagram Examples — Real-World Schema Templates &rarr;</a></li>
                 <li><a href="/blog/er-diagram-tool-online">Free ER Diagram Tool Online for MySQL &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization Explained &rarr;</a></li>
-                <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax and Examples &rarr;</a></li>
             </ul>
         </nav>
     </article>

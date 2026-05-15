@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="Free DB designer — design relational database schemas visually with drag-and-drop tables, foreign keys, and SQL export for MySQL and PostgreSQL.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-designer">
     <meta property="og:title" content="Free DB Designer Online — Visual Database Designer">
@@ -42,7 +42,7 @@
             "url": "https://sql-designer.com/blog/database-designer",
             "datePublished": "2026-04-09",
             "dateModified": "2026-05-14",
-            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
             "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
@@ -115,7 +115,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Schema Design</p>
-        <p class="post-meta"><time datetime="2026-04-09">April 2026</time> &mdash; 6 min read</p>
+        <p class="post-meta"><time datetime="2026-04-09">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 6 min read</p>
         <h1>Free DB Designer Online — Visual Database Designer for MySQL &amp; PostgreSQL</h1>
 
         <p class="intro">
@@ -218,7 +218,7 @@
             <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
                 <li><a href="/blog/mysql-db-designer" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free MySQL DB Designer Online &rarr;</a></li>
                 <li><a href="/blog/postgres-db-designer" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free PostgreSQL DB Designer Online &rarr;</a></li>
-                <li><a href="/blog/free-erd-tool" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free ERD Tool Online &rarr;</a></li>
+                <li><a href="/blog/share-database-diagram" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Share your database diagram online &rarr;</a></li>
                 <li><a href="/blog/how-to-design-mysql-database-schema" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">How to Design a MySQL Database Schema &rarr;</a></li>
             </ul>
         </nav>

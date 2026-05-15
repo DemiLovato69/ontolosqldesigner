@@ -24,12 +24,13 @@ Route::prefix('/blog')->group(function () {
     Route::get('/postgres-db-designer', fn() => view('blog.postgres-db-designer'));
     Route::get('/database-designer', fn() => view('blog.database-designer'));
     Route::get('/share-database-diagram', fn() => view('blog.share-database-diagram'));
-    Route::get('/erd-maker', fn() => view('blog.erd-maker'));
+    Route::get('/erd-maker', fn() => redirect('/blog/free-erd-tool', 301));
     Route::get('/sql-to-erd', fn() => view('blog.sql-to-erd'));
     Route::get('/crowfoot-notation', fn() => view('blog.crowfoot-notation'));
     Route::get('/database-ddl-comparison', fn() => view('blog.database-ddl-comparison'));
     Route::get('/best-free-erd-tools', fn() => view('blog.best-free-erd-tools'));
 });
+Route::get('/about', fn() => view('about'));
 Route::get('/features', fn() => view('features'));
 Route::get('/library', function () {
     $featured = Diagram::where('featured', true)

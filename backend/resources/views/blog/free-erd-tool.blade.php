@@ -5,7 +5,7 @@
 @section('head')
     <meta name="description"
           content="The best free ERD tool online — draw entity relationship diagrams visually, define foreign keys, and export MySQL or PostgreSQL SQL.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/free-erd-tool">
     <meta property="og:title" content="Free ERD Tool Online — Visual Entity Relationship Diagram Editor">
@@ -42,7 +42,7 @@
             "url": "https://sql-designer.com/blog/free-erd-tool",
             "datePublished": "2026-04-09",
             "dateModified": "2026-05-14",
-            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
             "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
@@ -115,7 +115,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; ER Diagrams</p>
-        <p class="post-meta"><time datetime="2026-04-09">April 2026</time> &mdash; 6 min read</p>
+        <p class="post-meta"><time datetime="2026-04-09">April 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 10 min read</p>
         <h1>Free ERD Tool Online — Visual Entity Relationship Diagram Editor</h1>
 
         <p class="intro">
@@ -184,16 +184,115 @@
             email and you can start immediately. Diagrams are saved to your account and accessible from any device.
         </p>
 
-        <h2>How to Use SQL Designer as a Free ERD Tool</h2>
+        <h2>Step-by-Step: Building an ER Diagram in SQL Designer</h2>
+        <p>
+            Here is a complete walkthrough of designing a simple blog database — users, posts, and comments —
+            using SQL Designer as your free ERD tool.
+        </p>
+
+        <figure style="margin:1.5rem 0; border:1px solid var(--border-color); border-radius:6px; overflow:hidden;">
+            <img src="/images/designer_screenshot.png"
+                 alt="SQL Designer canvas — tables connected with foreign key lines in crow's foot notation"
+                 width="760" height="377"
+                 style="display:block; width:100%; height:auto;">
+            <figcaption style="font-size:0.8rem; color:var(--text-subtle); padding:0.6rem 0.8rem;">
+                SQL Designer canvas with three tables connected by foreign key relationships. Crow's foot notation is applied automatically.
+            </figcaption>
+        </figure>
+
+        <h2>Walkthrough: Blog Database Schema</h2>
+        <p><strong>Step 1 — Create a diagram.</strong> Sign up for free and click "New Diagram". Give it a name (e.g. "Blog DB"). No credit card, no trial period — the full tool is available immediately.</p>
+        <p><strong>Step 2 — Add a <code>users</code> table.</strong> Click the canvas to place a new table. Name it <code>users</code>. Add columns:</p>
         <ul>
-            <li><strong>1. Create a diagram</strong> — sign up for free and create a new diagram for your project or database.</li>
-            <li><strong>2. Add tables</strong> — click the canvas to add a table entity and give it a name.</li>
-            <li><strong>3. Define columns</strong> — add columns with names, data types (MySQL or PostgreSQL), and
-                constraints (PK, UQ, NN).</li>
-            <li><strong>4. Draw relationships</strong> — drag a connection from a foreign key column to the primary key
-                on the referenced table. Crow's foot notation is applied automatically.</li>
-            <li><strong>5. Export SQL</strong> — generate a complete <code>CREATE TABLE</code> DDL script for MySQL
-                or PostgreSQL in one click.</li>
+            <li><code>id</code> — <code>INT UNSIGNED</code>, PRIMARY KEY, AUTO_INCREMENT</li>
+            <li><code>email</code> — <code>VARCHAR(255)</code>, UNIQUE, NOT NULL</li>
+            <li><code>created_at</code> — <code>TIMESTAMP</code>, NOT NULL, DEFAULT CURRENT_TIMESTAMP</li>
+        </ul>
+        <p><strong>Step 3 — Add a <code>posts</code> table.</strong> Place a second table. Add:</p>
+        <ul>
+            <li><code>id</code> — <code>INT UNSIGNED</code>, PRIMARY KEY, AUTO_INCREMENT</li>
+            <li><code>user_id</code> — <code>INT UNSIGNED</code>, NOT NULL</li>
+            <li><code>title</code> — <code>VARCHAR(255)</code>, NOT NULL</li>
+            <li><code>body</code> — <code>TEXT</code></li>
+            <li><code>published_at</code> — <code>TIMESTAMP</code>, NULL</li>
+        </ul>
+        <p><strong>Step 4 — Draw the relationship.</strong> Hover over the <code>user_id</code> column on <code>posts</code>. Drag the connector that appears to the <code>id</code> column on <code>users</code>. SQL Designer draws a crow's foot line showing a many-to-one relationship (many posts per user) and records the foreign key constraint automatically.</p>
+        <p><strong>Step 5 — Add a <code>comments</code> table</strong> with <code>post_id</code> and <code>user_id</code> foreign keys. Connect both relationships in the same way.</p>
+        <p><strong>Step 6 — Export SQL.</strong> Click the Export button and select MySQL or PostgreSQL. You get a complete <code>CREATE TABLE</code> script with all column definitions, constraints, and <code>FOREIGN KEY ... REFERENCES</code> declarations — ready to paste into a database client or a migration file.</p>
+
+        <h2>Free ERD Tool Feature Comparison</h2>
+        <p>
+            Not every tool marketed as "free" behaves the same way on a free account. Here is how the most common
+            restrictions apply across popular ERD tools:
+        </p>
+        <div style="overflow-x:auto; margin:1.5rem 0;">
+            <table style="width:100%; border-collapse:collapse; font-size:0.85rem;">
+                <thead>
+                    <tr style="border-bottom:2px solid var(--border-color);">
+                        <th style="text-align:left; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500; text-transform:uppercase; letter-spacing:0.04em; font-size:0.75rem;">Feature</th>
+                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--color-primary-text); font-weight:600;">SQL Designer</th>
+                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;">Lucidchart</th>
+                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;">draw.io</th>
+                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;">dbdiagram.io</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr style="border-bottom:1px solid var(--border-light);">
+                        <td style="padding:0.55rem 0.8rem; color:var(--text-secondary);">Unlimited diagrams</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">3 limit</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border-light);">
+                        <td style="padding:0.55rem 0.8rem; color:var(--text-secondary);">SQL export (free tier)</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">Paid</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">No SQL</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border-light);">
+                        <td style="padding:0.55rem 0.8rem; color:var(--text-secondary);">Real SQL data types</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">Partial</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">No</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border-light);">
+                        <td style="padding:0.55rem 0.8rem; color:var(--text-secondary);">Crow's foot notation</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">No</td>
+                    </tr>
+                    <tr style="border-bottom:1px solid var(--border-light);">
+                        <td style="padding:0.55rem 0.8rem; color:var(--text-secondary);">SQL import to ERD</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">Paid</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">No</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0.55rem 0.8rem; color:var(--text-secondary);">Collaborative editing</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--color-primary-text);">✓</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">Paid</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">No</td>
+                        <td style="text-align:center; padding:0.55rem 0.8rem; color:var(--text-muted);">Paid</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <p>
+            For a detailed breakdown of all options including ChartDB, ERDPlus, DrawSQL, and DBeaver, see the
+            <a href="/blog/best-free-erd-tools" style="color:var(--color-primary-text);">full free ERD tools comparison</a>.
+        </p>
+
+        <h2>Common Use Cases</h2>
+        <ul>
+            <li><strong>New project schema design</strong> — model your tables and relationships visually before writing any DDL. Catch missing foreign keys and type mismatches at design time, not at migration time.</li>
+            <li><strong>Documenting an existing database</strong> — import a <code>CREATE TABLE</code> script with SQL import to generate a visual diagram instantly. Share the diagram link with your team.</li>
+            <li><strong>Teaching and learning</strong> — draw ER diagrams to understand how relational concepts map to real tables. The visual feedback makes normalization and cardinality much clearer than written descriptions alone.</li>
+            <li><strong>Team collaboration</strong> — share a live diagram link for read-only review, or invite collaborators to edit in real time. Embed the diagram in internal documentation or a README.</li>
         </ul>
 
         <h2>ERD Tool vs. Generic Diagram Tool</h2>
@@ -207,10 +306,16 @@
             data type you define in the visual editor appears correctly in the exported script. That makes it the right
             tool when you're designing a schema that will actually be implemented.
         </p>
+        <p>
+            If you want to go deeper on the theory before picking up a tool, read
+            <a href="/blog/how-to-draw-er-diagram" style="color:var(--color-primary-text);">how to draw an ER diagram step by step</a>
+            — it covers entities, attributes, cardinality, and notation in detail.
+        </p>
 
         <nav aria-label="Related articles" style="margin-top:3rem; padding-top:2rem; border-top:1px solid var(--border-color);">
             <p style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.06em; color:#767676; margin:0 0 0.8rem;">Related Articles</p>
             <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
+                <li><a href="/blog/best-free-erd-tools" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Compare all free ERD tools — 10 tested in 2026 &rarr;</a></li>
                 <li><a href="/blog/er-diagram-tool-online" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free ER Diagram Tool Online for MySQL &rarr;</a></li>
                 <li><a href="/blog/how-to-draw-er-diagram" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">How to Draw an ER Diagram Step by Step &rarr;</a></li>
                 <li><a href="/blog/database-designer" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Free Online Database Designer &rarr;</a></li>

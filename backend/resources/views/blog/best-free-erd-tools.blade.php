@@ -4,7 +4,7 @@
 
 @section('head')
     <meta name="description" content="We tested 10 free ERD tools in 2026 — SQL Designer, DrawSQL, dbdiagram.io, ChartDB, ERDPlus and more. Honest strengths, real limits.">
-    <meta name="author" content="SQL Designer">
+    <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/best-free-erd-tools">
     <meta property="og:title" content="10 Best Free ERD Tools in 2026 — Tested and Compared">
@@ -41,7 +41,7 @@
             "url": "https://sql-designer.com/blog/best-free-erd-tools",
             "datePublished": "2026-05-12",
             "dateModified": "2026-05-14",
-            "author": { "@type": "Person", "name": "SQL Designer Editorial", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
+            "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
             "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
         },
@@ -404,7 +404,7 @@
 @section('content')
     <article class="blog-post">
         <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Tools</p>
-        <p class="post-meta"><time datetime="2026-05-12">May 2026</time> &mdash; 10 min read</p>
+        <p class="post-meta"><time datetime="2026-05-12">May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 10 min read</p>
         <h1>10 Best Free ERD Tools in 2026 — Tested and Compared</h1>
 
         <p class="intro">
