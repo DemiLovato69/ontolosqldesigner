@@ -8,12 +8,14 @@
         "php": "^8.2",
         "ext-pdo": "*",
         "ext-zip": "*",
+        "google/apiclient": "^2.15",
         "knuckleswtf/scribe": "^5.9",
         "laravel/framework": "^12.0",
         "laravel/reverb": "^1.9",
         "laravel/sanctum": "^4.0",
         "laravel/socialite": "^5.26",
-        "laravel/tinker": "^3.0"
+        "laravel/tinker": "^3.0",
+        "ext-simplexml": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
