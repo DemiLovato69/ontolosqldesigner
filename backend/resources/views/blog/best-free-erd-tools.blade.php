@@ -43,7 +43,8 @@
             "dateModified": "2026-05-14",
             "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
-            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
+            "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] },
+            "mainEntityOfPage": { "@type": "WebPage", "@id": "https://sql-designer.com/blog/best-free-erd-tools" }
         },
         {
             "@context": "https://schema.org",
@@ -444,7 +445,7 @@
                 <tr>
                     <td><strong>SQL Designer</strong></td>
                     <td class="check">✓</td>
-                    <td class="check">✓ MySQL, PG</td>
+                    <td class="check">✓ MySQL, PG, SQL Server, Oracle, MS Access</td>
                     <td>MySQL, PostgreSQL</td>
                     <td class="check">✓</td>
                     <td class="check">None</td>
@@ -539,6 +540,7 @@
         <div class="tool-card">
             <p class="best-for">Best for: designing a relational database schema from scratch — completely free</p>
             <h3>1. SQL Designer — sql-designer.com</h3>
+            <img src="/images/designer_screenshot.png" alt="SQL Designer canvas showing an ER diagram with tables and foreign key relationships" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>SQL Designer is a browser-based schema design tool for MySQL, PostgreSQL, SQLite, Oracle, SQL Server,
                 and Microsoft Access. The workflow is visual: drag tables onto a canvas, add columns with real
                 database types (<code>INT</code>, <code>VARCHAR</code>, <code>DECIMAL</code>,
@@ -561,36 +563,38 @@
         <div class="tool-card">
             <p class="best-for">Best for: teams who want visual design with broader database support</p>
             <h3>2. DrawSQL — drawsql.app</h3>
+            <img src="/images/drawsql_screenshot.png" alt="DrawSQL interface showing a database schema diagram" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>DrawSQL is a polished visual database schema designer with a clean drag-and-drop interface.
-                It supports MySQL, PostgreSQL, SQLite, and SQL Server, and produces SQL export for all of them.
+                It supports MySQL, PostgreSQL and SQL Server, and produces SQL export for all of them.
                 Data types, constraints, and foreign key relationships are all handled visually. The interface
                 is arguably more refined than most competitors. Team collaboration — sharing, commenting, and
                 multiple editors — is built in.</p>
-            <p><strong>Limitations:</strong> the free tier caps diagrams at approximately 15 tables. For
+            <p><strong>Limitations:</strong> the free tier caps diagrams at 15 tables. For
                 small schemas this is fine; for larger projects it becomes a hard boundary. Some advanced
-                collaboration features are paywalled. Paid plans start at $15/month.</p>
-            <p class="verdict">Verdict: an excellent visual ERD tool with broader database support and a more
-                polished UI than SQL Designer; the table cap on the free tier is the main constraint.</p>
+                collaboration features are paywalled. Paid plans start at $19/month.</p>
+            <p class="verdict">Verdict: an excellent visual ERD tool with a more
+                polished UI than SQL Designer; the table cap on the free tier is the main constraint. Other than that, paywall restricts access to JSON export, real-time collaboration and private diagrams.</p>
         </div>
 
         <div class="tool-card">
             <p class="best-for">Best for: developers who prefer defining schemas in code rather than clicking</p>
             <h3>3. dbdiagram.io</h3>
+            <img src="/images/dbdiagram_screenshot.png" alt="dbdiagram.io interface showing a DBML schema with visual diagram output" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>dbdiagram.io is text-first: you write your schema in DBML (Database Markup Language) and it
                 renders a visual diagram on the right. It's fast and efficient for developers who can type a
                 schema directly. The rendered diagrams are clean and shareable. It's probably the most
                 widely-used tool in this list.</p>
-            <p><strong>Limitations:</strong> SQL export is behind a paywall on the free tier — you can draw
-                and share, but you cannot generate MySQL or PostgreSQL DDL without paying. Diagrams are public
-                by default; private diagrams require a paid plan ($9/month). Real-time collaboration is
+            <p><strong>Limitations:</strong> diagrams are public
+                by default; private diagrams require a paid plan ($14/month). Real-time collaboration is
                 paywalled. For non-developers or visual thinkers, the DBML-first approach adds friction.</p>
             <p class="verdict">Verdict: the go-to for code-first teams who want fast schema documentation;
-                the SQL export paywall makes it a poor fit as a free end-to-end design tool.</p>
+                the privacy and collaboration paywall makes it a poor fit as a free end-to-end design tool.</p>
         </div>
 
         <div class="tool-card">
             <p class="best-for">Best for: conceptual data models and communication diagrams, not working schemas</p>
             <h3>4. draw.io / diagrams.net</h3>
+            <img src="/images/drawio_screenshot.png" alt="draw.io showing a conceptual entity-relationship diagram with table shapes" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>draw.io is a free, open-source, general-purpose diagramming tool with a large shape library
                 that includes entity and table shapes. It's completely free with no document limits. Diagrams
                 save to your local filesystem, Google Drive, GitHub, or OneDrive. There is both a browser
@@ -608,6 +612,7 @@
         <div class="tool-card">
             <p class="best-for">Best for: documenting and understanding existing databases with AI assistance</p>
             <h3>5. ChartDB — chartdb.io</h3>
+            <img src="/images/chartdb_screenshot.png" alt="ChartDB showing an AI-generated schema visualization from an imported SQL script" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>ChartDB is an open-source tool designed primarily around importing and visualising existing
                 database schemas. Paste a SQL script or connect to a live database, and ChartDB generates
                 a visual diagram with AI-assisted explanations of the schema. It supports MySQL, PostgreSQL,
@@ -616,7 +621,7 @@
             <p><strong>Limitations:</strong> oriented toward documentation and understanding rather than
                 greenfield design. Building a schema from scratch is less polished than DrawSQL or SQL
                 Designer. The AI features require an API key or the cloud version. Self-hosting requires
-                running your own server. Cloud plans start at $12.5/month.</p>
+                running your own server. Cloud plans start at $25/month.</p>
             <p class="verdict">Verdict: the strongest option for teams who need to understand, document, or
                 reverse-engineer an existing schema with AI assistance. Less suited to design-first workflows.</p>
         </div>
@@ -624,6 +629,7 @@
         <div class="tool-card">
             <p class="best-for">Best for: students, academics, and anyone learning ERD notation</p>
             <h3>6. ERDPlus — erdplus.com</h3>
+            <img src="/images/erdplus_screenshot.png" alt="ERDPlus showing an entity-relationship diagram using Chen notation" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>ERDPlus is a free, browser-based ERD tool aimed squarely at academic use. It supports
                 standard Chen notation, crow's foot notation, and relational schemas. There are no account
                 limits. It can generate SQL for simple schemas. The interface is minimal and
@@ -638,9 +644,10 @@
         <div class="tool-card">
             <p class="best-for">Best for: rapidly sketching a small schema before writing any code</p>
             <h3>7. QuickDBD — quickdatabasediagrams.com</h3>
+            <img src="/images/quickdbd_screenshot.png" alt="QuickDBD showing a text-based schema input with visual diagram on the right" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>QuickDBD is a text-to-diagram tool: type a schema definition in a simple syntax and it
                 renders a clean visual diagram on the right. It exports SQL for MySQL, PostgreSQL, SQL Server,
-                and others. The tool is fast for small schemas — fewer clicks, faster iteration. It is
+                and others. But supports import only for MySQL, Oracle and SQL Server. The tool is fast for small schemas — fewer clicks, faster iteration. It is
                 browser-based with no install required.</p>
             <p><strong>Limitations:</strong> the free plan is limited to one diagram only. Multiple diagrams
                 require a paid plan ($14/month). There is no drag-and-drop visual editing — the interface is
@@ -652,14 +659,15 @@
 
         <div class="tool-card">
             <p class="best-for">Best for: teams who need polished presentation diagrams with collaboration</p>
-            <h3>8. Lucidchart</h3>
+            <h3>8. Lucidchart — lucidchart.com</h3>
+            <img src="/images/lucidchart_screenshot.png" alt="Lucidchart showing an ERD template with table shapes and relationship connectors" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>Lucidchart is a general-purpose diagramming platform with strong collaboration features —
                 comments, version history, integrations with Slack, Jira, Confluence, and Google Workspace.
                 It has ERD-specific shapes and templates. The user interface is polished. It is used broadly
                 in enterprise environments for all types of diagrams.</p>
             <p><strong>Limitations:</strong> like draw.io, Lucidchart has no SQL awareness — column types
                 are text labels, there is no constraint system, and there is no DDL export. The free tier
-                limits diagrams to 60 objects. Paid plans start at $8/user/month. For actual database
+                limits diagrams to 60 objects. Paid plans start at $11/user/month. For actual database
                 schema design that produces SQL, Lucidchart is the wrong tool.</p>
             <p class="verdict">Verdict: excellent for presentation-quality diagrams and collaboration in
                 existing workflows; not suitable for schema design that needs to generate SQL.</p>
@@ -668,6 +676,7 @@
         <div class="tool-card">
             <p class="best-for">Best for: teams who need multi-database visual design with a wider engine list</p>
             <h3>9. DB Designer — dbdesigner.net</h3>
+            <img src="/images/dbdesigner_screenshot.png" alt="DB Designer showing a visual schema editor with drag-and-drop table columns" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>DB Designer is a visual database schema designer that supports MySQL, PostgreSQL, SQLite,
                 and SQL Server with a drag-and-drop canvas, data type dropdowns, constraint toggles, and
                 foreign key relationship lines. It is a closer direct competitor to SQL Designer than most
@@ -675,14 +684,14 @@
             <p><strong>Limitations:</strong> the free tier limits the number of objects per diagram
                 (approximately 50). Collaboration and sharing are more restricted on the free plan. The
                 interface feels dated compared to newer tools like DrawSQL. The object cap is reached quickly
-                on real-world schemas. Paid plans start at $19/month.</p>
-            <p class="verdict">Verdict: a solid visual ERD tool with wider database engine support than SQL
-                Designer; the free tier object cap is the main practical friction.</p>
+                on real-world schemas. Paid plans start at $9/month.</p>
+            <p class="verdict">Verdict: a solid visual ERD tool with wide database engine support; the free tier object cap is the main practical friction.</p>
         </div>
 
         <div class="tool-card">
             <p class="best-for">Best for: generating ERDs automatically from a live database you already run</p>
             <h3>10. DBeaver — dbeaver.io</h3>
+            <img src="/images/dbeaver_screenshot.png" alt="DBeaver showing an auto-generated ER diagram from a live PostgreSQL database connection" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>DBeaver is a full-featured desktop database client that connects to a live database,
                 runs queries, manages data, and administrates the server. One of its features is automatic
                 ERD generation: connect to PostgreSQL, MySQL, SQLite, Oracle, or virtually any other database,

@@ -172,8 +172,6 @@
             .footer-bottom { flex-direction: column; }
         }
     </style>
-    <link rel="alternate" hreflang="en" href="{{ url()->current() }}" />
-    <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}" />
     @yield('head')
     <script>
         window.dataLayer = window.dataLayer || [];

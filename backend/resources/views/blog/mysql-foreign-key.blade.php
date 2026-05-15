@@ -44,7 +44,8 @@
                 "dateModified": "2026-05-14",
                 "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
-                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] },
+                "mainEntityOfPage": { "@type": "WebPage", "@id": "https://sql-designer.com/blog/mysql-foreign-key" }
             },
             {
                 "@context": "https://schema.org",

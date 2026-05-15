@@ -36,6 +36,7 @@
     {
         "@context": "https://schema.org",
         "@type": "SoftwareApplication",
+        "@id": "https://sql-designer.com/#app",
         "name": "SQL Designer",
         "url": "https://sql-designer.com",
         "applicationCategory": "DeveloperApplication",

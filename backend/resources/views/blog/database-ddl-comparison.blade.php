@@ -49,7 +49,8 @@
             { "@type": "SoftwareApplication", "name": "Oracle Database" },
             { "@type": "SoftwareApplication", "name": "Microsoft SQL Server" },
             { "@type": "SoftwareApplication", "name": "SQLite" }
-        ]
+        ],
+        "mainEntityOfPage": { "@type": "WebPage", "@id": "https://sql-designer.com/blog/database-ddl-comparison" }
     },
     {
         "@context": "https://schema.org",

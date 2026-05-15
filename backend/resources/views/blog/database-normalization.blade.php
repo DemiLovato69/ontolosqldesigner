@@ -44,7 +44,8 @@
                 "dateModified": "2026-05-14",
                 "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
-                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] }
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] },
+                "mainEntityOfPage": { "@type": "WebPage", "@id": "https://sql-designer.com/blog/database-normalization" }
             },
             {
                 "@context": "https://schema.org",
@@ -455,6 +456,92 @@ employee_id | department_id
 department_id | department_name</code></pre>
         <p class="label-good">✓ In 3NF</p>
         <p>Department names live in one place. Renaming "Engineering" is a single row update.</p>
+
+        <h2>Boyce-Codd Normal Form (BCNF)</h2>
+        <p><strong>Rule:</strong> The table must be in 3NF, and for every functional dependency X → Y, X must be a candidate key — a minimal set of columns that uniquely identifies each row.</p>
+        <p>BCNF closes a gap in 3NF. Third Normal Form allows a non-key column to be a determinant if it is part of a candidate key. BCNF does not allow this — every determinant must be a candidate key, without exception.</p>
+
+        <h3>Violation example</h3>
+        <p>Consider a table where students are enrolled in courses and each course is taught by exactly one teacher. Business rule: a student can take the same course from different sections, but each teacher teaches only one course.</p>
+        <table>
+            <tr><th>student_id</th><th>teacher_id</th><th>course_name</th></tr>
+            <tr><td>1</td><td>T1</td><td>SQL Fundamentals</td></tr>
+            <tr><td>1</td><td>T2</td><td>Python Basics</td></tr>
+            <tr><td>2</td><td>T1</td><td>SQL Fundamentals</td></tr>
+        </table>
+        <p>Functional dependencies: <code>(student_id, teacher_id)</code> → <code>course_name</code>, and <code>teacher_id</code> → <code>course_name</code>. The composite <code>(student_id, teacher_id)</code> is the primary key. The table is in 3NF — but not BCNF, because <code>teacher_id</code> determines <code>course_name</code> while not being a candidate key.</p>
+        <p class="label-bad">✗ Not in BCNF</p>
+
+        <h3>Fixed — split the dependency</h3>
+        <pre><code>-- teachers: teacher determines course
+teacher_id | course_name
+
+-- enrollments: student enrolls with a teacher
+student_id | teacher_id</code></pre>
+        <p class="label-good">✓ In BCNF</p>
+        <p>Every determinant is now a candidate key. BCNF matters most for tables with multiple overlapping candidate keys. For the majority of application schemas, reaching 3NF is the practical target — BCNF becomes relevant mainly in academic exercises or schemas with complex key structures. The official definition is formalized in <a href="https://dl.acm.org/doi/10.1145/320493.320489" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary-text);">Boyce and Codd (1974)</a>.</p>
+
+        <h2>Fourth Normal Form (4NF)</h2>
+        <p><strong>Rule:</strong> The table must be in BCNF and have no non-trivial multi-valued dependencies.</p>
+        <p>A multi-valued dependency exists when one column independently determines multiple values in another column, without any connection between those values. The result is a combinatorial explosion of rows.</p>
+
+        <h3>Example</h3>
+        <table>
+            <tr><th>person_id</th><th>skill</th><th>spoken_language</th></tr>
+            <tr><td>1</td><td>Python</td><td>English</td></tr>
+            <tr><td>1</td><td>Python</td><td>French</td></tr>
+            <tr><td>1</td><td>SQL</td><td>English</td></tr>
+            <tr><td>1</td><td>SQL</td><td>French</td></tr>
+        </table>
+        <p>Skills and languages are independent of each other but both depend on <code>person_id</code>. Every combination must be stored, even though there is no actual link between a skill and a language.</p>
+        <p class="label-bad">✗ Not in 4NF</p>
+        <pre><code>-- Fix: split into two independent tables
+person_skills(person_id, skill)
+person_languages(person_id, spoken_language)</code></pre>
+        <p class="label-good">✓ In 4NF</p>
+        <p>In typical application development, 3NF or BCNF is the right target. 4NF and higher (5NF, 6NF) address theoretical edge cases that rarely arise in practice.</p>
+
+        <h2>Practical Walkthrough — Unnormalized to 3NF</h2>
+        <p>
+            Here is a complete example starting from a single flat table and normalizing it step by step to Third Normal Form. The scenario: a company stores employee project assignments.
+        </p>
+
+        <h3>Starting point — unnormalized</h3>
+        <table>
+            <tr><th>emp_id</th><th>emp_name</th><th>dept_id</th><th>dept_name</th><th>project_ids</th><th>project_names</th></tr>
+            <tr><td>1</td><td>Alice</td><td>10</td><td>Engineering</td><td>101, 102</td><td>Alpha, Beta</td></tr>
+            <tr><td>2</td><td>Bob</td><td>20</td><td>Marketing</td><td>103</td><td>Gamma</td></tr>
+        </table>
+        <p>Problems: <code>project_ids</code> and <code>project_names</code> hold comma-separated lists (not atomic), and data about employees, departments, and projects is mixed into one table.</p>
+
+        <h3>Step 1 — First Normal Form (1NF)</h3>
+        <p>Eliminate multi-valued columns. Each row holds exactly one project.</p>
+        <table>
+            <tr><th>emp_id</th><th>emp_name</th><th>dept_id</th><th>dept_name</th><th>project_id</th><th>project_name</th></tr>
+            <tr><td>1</td><td>Alice</td><td>10</td><td>Engineering</td><td>101</td><td>Alpha</td></tr>
+            <tr><td>1</td><td>Alice</td><td>10</td><td>Engineering</td><td>102</td><td>Beta</td></tr>
+            <tr><td>2</td><td>Bob</td><td>20</td><td>Marketing</td><td>103</td><td>Gamma</td></tr>
+        </table>
+        <p>Composite primary key: <code>(emp_id, project_id)</code>. Now in 1NF.</p>
+
+        <h3>Step 2 — Second Normal Form (2NF)</h3>
+        <p>Remove partial dependencies. <code>emp_name</code>, <code>dept_id</code>, and <code>dept_name</code> depend only on <code>emp_id</code>. <code>project_name</code> depends only on <code>project_id</code>. Neither depends on the full composite key.</p>
+        <pre><code>employees(emp_id, emp_name, dept_id, dept_name)
+projects(project_id, project_name)
+employee_projects(emp_id, project_id)  -- junction table</code></pre>
+        <p>Now in 2NF. Each non-key column depends on its entire primary key.</p>
+
+        <h3>Step 3 — Third Normal Form (3NF)</h3>
+        <p><code>dept_name</code> depends on <code>dept_id</code>, not directly on <code>emp_id</code>. That is a transitive dependency. Extract it.</p>
+        <pre><code>employees(emp_id, emp_name, dept_id)
+departments(dept_id, dept_name)
+projects(project_id, project_name)
+employee_projects(emp_id, project_id)</code></pre>
+        <p class="label-good">✓ In 3NF</p>
+        <p>
+            Four clean tables. Each stores exactly one kind of fact. Renaming a department updates one row in <code>departments</code>. Adding a new project requires one row in <code>projects</code>. The <code>employee_projects</code> junction handles the many-to-many relationship. You can <a href="/demo" style="color:var(--color-primary-text);">visualize this schema in SQL Designer</a> by importing the CREATE TABLE script — the foreign key relationships render automatically.
+        </p>
+        <p>For the formal treatment of functional dependencies and normalization theory, see <a href="https://www.postgresql.org/docs/current/ddl-constraints.html" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary-text);">PostgreSQL's DDL Constraints documentation</a> and E.F. Codd's foundational 1970 paper <em>A Relational Model of Data for Large Shared Data Banks</em> (<a href="https://dl.acm.org/doi/10.1145/362384.362685" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary-text);">ACM, 1970</a>). The MySQL documentation covers <a href="https://dev.mysql.com/doc/refman/8.0/en/create-table.html" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary-text);">foreign key constraint syntax</a> for implementing normalized schemas in production.</p>
 
         <h2>When to Denormalize</h2>
         <p>

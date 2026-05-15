@@ -40,6 +40,7 @@
             },
             {
                 "@type": "WebApplication",
+                "@id": "https://sql-designer.com/#app",
                 "name": "SQL Designer",
                 "url": "https://sql-designer.com",
                 "description": "Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag-and-drop tables, define relationships, and export SQL scripts. No install, no subscription.",
@@ -143,7 +144,12 @@
                 "@type": "Organization",
                 "name": "SQL Designer",
                 "url": "https://sql-designer.com",
-                "logo": "https://sql-designer.com/images/logo.svg",
+                "logo": {
+                    "@type": "ImageObject",
+                    "url": "https://sql-designer.com/favicon-192x192.png",
+                    "width": 192,
+                    "height": 192
+                },
                 "description": "Free online visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access.",
                 "sameAs": [
                     "https://github.com/Snydi/sqldesigner",
@@ -430,6 +436,15 @@
     </div>
 </section>
 
+<section class="block" aria-labelledby="what-is-h2" style="background:var(--bg-page); border-bottom:1px solid var(--border-light);">
+    <div class="block-inner" style="max-width:760px;">
+        <h2 class="section-h2" id="what-is-h2">What is SQL Designer?</h2>
+        <p style="color:var(--text-secondary); font-size:0.97rem; line-height:1.75;">
+            SQL Designer is a free, browser-based database schema designer built for developers who need to model relational databases visually. It supports six SQL dialects — MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access — with dedicated column type pickers and DDL export for each engine. The design workflow is visual: create tables, add columns using real database types such as <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">INT</code>, <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">VARCHAR</code>, and <code style="font-family:'JetBrains Mono',monospace; font-size:0.9em; background:var(--bg-surface); padding:1px 5px; border-radius:3px;">DECIMAL</code>, set PRIMARY KEY, UNIQUE, and NOT NULL constraints with toggles, and draw foreign key relationships by connecting columns on the canvas. The diagram uses crow's foot notation for cardinality. When the schema is ready, export a complete CREATE TABLE script in one click — or paste an existing SQL script to visualize it instantly as an editable diagram. SQL Designer runs entirely in the browser with no download or installation required. Unlimited diagrams, SQL export, real-time collaboration, shareable links, and embeddable iframes are all free, with no credit card required. The full source code is available on <a href="https://github.com/Snydi/sqldesigner" target="_blank" rel="noopener noreferrer" style="color:var(--color-primary-text);">GitHub</a> under an open-source license.
+        </p>
+    </div>
+</section>
+
 <section class="block faq" aria-labelledby="faq-h2">
     <div class="block-inner faq-grid">
         <div>
@@ -477,22 +492,44 @@
     <div class="block-inner">
         <h2 class="section-h2" id="blog-h2">From the blog</h2>
         <div class="blog-grid">
-            <a class="blog-card" href="/blog/how-to-design-mysql-database-schema">
-                <h3>How to design a MySQL schema</h3>
-                <p>Entities, types, primary keys, foreign keys, normalization — a working guide.</p>
+            <a class="blog-card" href="/blog/best-free-erd-tools">
+                <span class="cat">Tools</span>
+                <h3>10 Best Free ERD Tools in 2026</h3>
+                <p>We tested SQL Designer, DrawSQL, dbdiagram.io, ChartDB, ERDPlus and more — honest strengths, real limits.</p>
                 <span class="read">Read →</span>
             </a>
-            <a class="blog-card" href="/blog/er-diagram-tool-online">
-                <h3>ER diagrams, explained</h3>
-                <p>What ER diagrams are, why they matter, and how to build one in the browser.</p>
+            <a class="blog-card" href="/blog/mysql-vs-postgresql">
+                <span class="cat">Reference</span>
+                <h3>MySQL vs PostgreSQL — Key Differences</h3>
+                <p>Data types, constraints, JSON support, and which database engine to choose for your next project.</p>
+                <span class="read">Read →</span>
+            </a>
+            <a class="blog-card" href="/blog/database-normalization">
+                <span class="cat">Schema Design</span>
+                <h3>Database Normalization — 1NF, 2NF, 3NF</h3>
+                <p>Concrete before-and-after table examples. Understand normal forms and when to denormalize.</p>
+                <span class="read">Read →</span>
+            </a>
+            <a class="blog-card" href="/blog/how-to-design-mysql-database-schema">
+                <span class="cat">Schema Design</span>
+                <h3>How to Design a MySQL Schema</h3>
+                <p>Entities, types, primary keys, foreign keys, normalization — a step-by-step working guide.</p>
                 <span class="read">Read →</span>
             </a>
             <a class="blog-card" href="/blog/sql-to-erd">
+                <span class="cat">Tutorial</span>
                 <h3>From SQL to ERD in 30 seconds</h3>
                 <p>Paste a <code class="mono">CREATE TABLE</code> script and get a visual diagram you can edit.</p>
                 <span class="read">Read →</span>
             </a>
+            <a class="blog-card" href="/blog/crowfoot-notation">
+                <span class="cat">Reference</span>
+                <h3>Crow's Foot Notation Explained</h3>
+                <p>One-to-one, one-to-many, many-to-many symbols — and how they map to real foreign key constraints.</p>
+                <span class="read">Read →</span>
+            </a>
         </div>
+        <p style="margin-top:1.25rem; text-align:center;"><a href="/blog" style="color:var(--color-primary-text); font-size:0.88rem; font-family:'JetBrains Mono',monospace;">View all articles →</a></p>
     </div>
 </section>
 

@@ -12,7 +12,7 @@ Route::get('/', function () {
 Route::prefix('/blog')->group(function () {
     Route::get('/', fn() => view('blog.index'));
     Route::get('/how-to-design-mysql-database-schema', fn() => view('blog.how-to-design-mysql-database-schema'));
-    Route::get('/er-diagram-tool-online', fn() => view('blog.er-diagram-tool-online'));
+    Route::get('/er-diagram-tool-online', fn() => redirect('/blog/free-erd-tool', 301));
     Route::get('/mysql-foreign-key', fn() => view('blog.mysql-foreign-key'));
     Route::get('/mysql-data-types', fn() => view('blog.mysql-data-types'));
     Route::get('/database-normalization', fn() => view('blog.database-normalization'));

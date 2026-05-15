@@ -116,10 +116,6 @@
                 <span class="desc">Step-by-step guide covering entities, data types, primary keys, foreign keys, and normalization.</span>
             </li>
             <li>
-                <a href="/blog/er-diagram-tool-online">Free ER Diagram Tool Online for MySQL</a>
-                <span class="desc">What ER diagrams are, why they matter, and how to create one in the browser for free.</span>
-            </li>
-            <li>
                 <a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax, Examples, and Best Practices</a>
                 <span class="desc">Complete guide to MySQL foreign keys: syntax, ON DELETE/UPDATE options, and common mistakes.</span>
             </li>

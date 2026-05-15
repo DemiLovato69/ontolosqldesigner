@@ -110,8 +110,6 @@ _deploy_apply:
 	docker exec php sh -c "kill -USR2 1"
 	docker compose -f docker-compose.prod.yml -p snydiagram restart queue
 	docker exec nginx sh -c "mkdir -p /tmp/nginx_fastcgi_cache && nginx -s reload"
-	sleep 2
-	$(MAKE) indexnow
 
 indexnow:
 	docker exec php sh -c "cd /var/www/html/backend && php artisan seo:indexnow"
