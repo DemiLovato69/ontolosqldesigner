@@ -7,10 +7,10 @@
     <meta name="keywords" content="mysql designer, mysql database designer, mysql db designer, visual sql designer, visual database designer, database designer for postgresql, ERD tool, online ERD tool, MySQL schema designer, PostgreSQL schema designer, postgres schema designer, postgres db designer, postgres database designer, SQLite designer, Oracle schema designer, SQL Server database designer, MS Access designer, database diagram tool, SQL schema visualizer, ER diagram, entity relationship diagram, database design tool, free database designer, open source database designer, open source ERD tool, MySQL workbench alternative, pgAdmin alternative, free postgres designer">
     <meta name="robots" content="index, follow">
     <meta name="author" content="SQL Designer">
-    <meta name="theme-color" content="#c05252">
+    <meta name="theme-color" content="#5db583">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:locale" content="en_US">
-    <meta property="og:title" content="SQL Designer — Free ERD & Schema DesignerL">
+    <meta property="og:title" content="SQL Designer — Free ERD & Schema Designer">
     <meta property="og:description" content="Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag-and-drop schema editor with SQL export. No install, no subscription.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sql-designer.com/">
@@ -358,13 +358,13 @@
         </p>
         <div class="hero-actions">
             <a id="hero-btn-authed" class="btn btn-solid btn-lg" href="/diagrams" style="display:none">Open My Diagrams</a>
-            <a id="hero-btn-register" class="btn btn-outline btn-lg" href="/register">Sign up free</a>
             <a class="btn btn-solid btn-lg" href="/demo">Try it free — no signup →</a>
+            <a id="hero-btn-register" class="btn btn-outline btn-lg" href="/register">Sign up free</a>
         </div>
         <div class="hero-meta">
             <span><span class="tick">✓</span> No install</span>
-            <span><span class="tick">✓</span> Auto-save</span>
-            <span><span class="tick">✓</span> Free</span>
+            <span><span class="tick">✓</span> Unlimited diagrams</span>
+            <span><span class="tick">✓</span> SQL export free</span>
             <span><span class="tick">✓</span> Open source</span>
         </div>
     </div>

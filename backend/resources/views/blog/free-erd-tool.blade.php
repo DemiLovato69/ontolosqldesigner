@@ -232,9 +232,9 @@
                     <tr style="border-bottom:2px solid var(--border-color);">
                         <th style="text-align:left; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500; text-transform:uppercase; letter-spacing:0.04em; font-size:0.75rem;">Feature</th>
                         <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--color-primary-text); font-weight:600;">SQL Designer</th>
-                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;">Lucidchart</th>
-                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;">draw.io</th>
-                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;">dbdiagram.io</th>
+                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;"><a href="https://www.lucidchart.com/pages/pricing" target="_blank" rel="noopener noreferrer" style="color:inherit;">Lucidchart</a></th>
+                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;"><a href="https://diagrams.net" target="_blank" rel="noopener noreferrer" style="color:inherit;">draw.io</a></th>
+                        <th style="text-align:center; padding:0.6rem 0.8rem; color:var(--text-subtle); font-weight:500;"><a href="https://dbdiagram.io/pricing" target="_blank" rel="noopener noreferrer" style="color:inherit;">dbdiagram.io</a></th>
                     </tr>
                 </thead>
                 <tbody>
