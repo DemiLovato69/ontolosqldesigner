@@ -9,7 +9,9 @@ import store from '@/store/index.js'
 import router from '@/router/index.js';
 import App from '@/App.vue';
 
-Clarity.init('wndxp2jbej');
+if (import.meta.env.PROD) {
+    Clarity.init('wndxp2jbej');
+}
 
 store.dispatch('initializeAuth');
 
