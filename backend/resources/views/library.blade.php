@@ -523,7 +523,6 @@
         <p>Drop a public diagram into your blog post or docs site with the embed snippet. Diagrams with a live backlink land in the Featured row.</p>
         <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
             <a class="btn btn-solid" href="/diagrams/new">Make a diagram</a>
-            <a class="btn btn-outline" href="/blog/share-database-diagram">How sharing works</a>
         </div>
     </div>
     <pre class="submit-code"><span class="tok-com">&lt;!-- paste anywhere --&gt;</span>

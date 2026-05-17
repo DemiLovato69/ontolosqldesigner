@@ -11,21 +11,12 @@ Route::get('/', function () {
 
 Route::prefix('/blog')->group(function () {
     Route::get('/', fn() => view('blog.index'));
-    Route::get('/how-to-design-mysql-database-schema', fn() => view('blog.how-to-design-mysql-database-schema'));
-    Route::get('/er-diagram-tool-online', fn() => redirect('/blog/free-erd-tool', 301));
     Route::get('/mysql-foreign-key', fn() => view('blog.mysql-foreign-key'));
     Route::get('/mysql-data-types', fn() => view('blog.mysql-data-types'));
     Route::get('/database-normalization', fn() => view('blog.database-normalization'));
-    Route::get('/how-to-draw-er-diagram', fn() => view('blog.how-to-draw-er-diagram'));
     Route::get('/mysql-vs-postgresql', fn() => view('blog.mysql-vs-postgresql'));
     Route::get('/database-schema-examples', fn() => view('blog.database-schema-examples'));
-    Route::get('/free-erd-tool', fn() => view('blog.free-erd-tool'));
-    Route::get('/mysql-db-designer', fn() => view('blog.mysql-db-designer'));
-    Route::get('/postgres-db-designer', fn() => view('blog.postgres-db-designer'));
     Route::get('/database-designer', fn() => view('blog.database-designer'));
-    Route::get('/share-database-diagram', fn() => view('blog.share-database-diagram'));
-    Route::get('/erd-maker', fn() => redirect('/blog/free-erd-tool', 301));
-    Route::get('/sql-to-erd', fn() => view('blog.sql-to-erd'));
     Route::get('/crowfoot-notation', fn() => view('blog.crowfoot-notation'));
     Route::get('/database-ddl-comparison', fn() => view('blog.database-ddl-comparison'));
     Route::get('/best-free-erd-tools', fn() => view('blog.best-free-erd-tools'));

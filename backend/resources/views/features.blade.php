@@ -627,7 +627,7 @@
                     <div class="feat-glyph">↧</div>
                     <div class="feat-body">
                         <h3>SQL import</h3>
-                        <p>Paste a <code>CREATE TABLE</code> script and SQL Designer parses it into a <a href="/blog/sql-to-erd">visual ER diagram</a> automatically. Reverse-engineer an existing schema in seconds.</p>
+                        <p>Paste a <code>CREATE TABLE</code> script and SQL Designer parses it into a visual ER diagram automatically. Reverse-engineer an existing schema in seconds.</p>
                     </div>
                 </div>
 
@@ -651,7 +651,7 @@
                     <div class="feat-glyph">⌬</div>
                     <div class="feat-body">
                         <h3>Share links</h3>
-                        <p>Generate a link with three access modes: read-only, editable, or approval-based — you approve each visitor individually. <a href="/blog/share-database-diagram">How sharing works →</a></p>
+                        <p>Generate a link with three access modes: read-only, editable, or approval-based — you approve each visitor individually.</p>
                     </div>
                 </div>
 

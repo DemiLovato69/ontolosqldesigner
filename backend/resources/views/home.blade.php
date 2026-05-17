@@ -398,7 +398,7 @@
         </p>
         <div class="hero-actions">
             <a id="hero-btn-authed" class="btn btn-solid btn-lg" href="/diagrams" style="display:none">Open My Diagrams</a>
-            <a class="btn btn-solid btn-lg" href="/demo">Try demo — no signup →</a>
+            <a class="btn btn-solid btn-lg" href="/demo">Try demo — no signup</a>
             <a id="hero-btn-register" class="btn btn-outline btn-lg" href="/register">Sign up</a>
         </div>
         <div class="hero-meta">
@@ -548,18 +548,6 @@
                 <span class="cat">Schema Design</span>
                 <h3>Database Normalization — 1NF, 2NF, 3NF</h3>
                 <p>Concrete before-and-after table examples. Understand normal forms and when to denormalize.</p>
-                <span class="read">Read →</span>
-            </a>
-            <a class="blog-card" href="/blog/how-to-design-mysql-database-schema">
-                <span class="cat">Schema Design</span>
-                <h3>How to Design a MySQL Schema</h3>
-                <p>Entities, types, primary keys, foreign keys, normalization — a step-by-step working guide.</p>
-                <span class="read">Read →</span>
-            </a>
-            <a class="blog-card" href="/blog/sql-to-erd">
-                <span class="cat">Tutorial</span>
-                <h3>From SQL to ERD in 30 seconds</h3>
-                <p>Paste a <code class="mono">CREATE TABLE</code> script and get a visual diagram you can edit.</p>
                 <span class="read">Read →</span>
             </a>
             <a class="blog-card" href="/blog/crowfoot-notation">

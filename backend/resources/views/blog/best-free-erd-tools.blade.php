@@ -3,7 +3,7 @@
 @section('title', '10 Best Free ERD Tools in 2026 — Tested and Compared')
 
 @section('head')
-    <meta name="description" content="We tested 10 free ERD tools in 2026 — SQL Designer, DrawSQL, dbdiagram.io, ChartDB, ERDPlus and more. Honest strengths, real limits.">
+    <meta name="description" content="We tested 10 free ERD tools in 2026. Most cap tables, paywall SQL export, or lack SQL awareness. Here's what each tool does well and where it falls short.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/best-free-erd-tools">
@@ -40,7 +40,7 @@
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/best-free-erd-tools",
             "datePublished": "2026-05-12",
-            "dateModified": "2026-05-14",
+            "dateModified": "2026-05-16",
             "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
             "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] },
@@ -399,13 +399,32 @@
         }
 
         .blog-post .btn-cta:hover { opacity: 0.9; }
+
+        .blog-post .tldr-box {
+            background: var(--bg-surface);
+            border-radius: 6px;
+            padding: 1.2rem 1.5rem;
+            margin: 0 0 2rem;
+            border-left: 3px solid var(--color-primary-text);
+        }
+
+        .blog-post .tldr-box .tldr-label {
+            display: block;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--color-primary-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .blog-post .tldr-box ul { margin: 0 0 0 1.2rem; }
     </style>
 @endsection
 
 @section('content')
     <article class="blog-post">
-        <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Tools</p>
-        <p class="post-meta"><time datetime="2026-05-12">May 2026</time> &mdash; <time datetime="2026-05-14">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 10 min read</p>
+        <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Best Free ERD Tools</p>
+        <p class="post-meta"><time datetime="2026-05-12">May 2026</time> &mdash; <time datetime="2026-05-16">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 10 min read</p>
         <h1>10 Best Free ERD Tools in 2026 — Tested and Compared</h1>
 
         <p class="intro">
@@ -427,6 +446,17 @@
             stronger for AI-assisted schema explanation. Read the Limitations paragraph under each tool and judge
             for yourself.
         </p>
+
+        <div class="tldr-box">
+            <strong class="tldr-label">Quick answer</strong>
+            <ul>
+                <li><strong>Best overall free ERD tool:</strong> SQL Designer — no table cap, no SQL export paywall</li>
+                <li><strong>Best for code-first teams:</strong> dbdiagram.io (DBML) or QuickDBD (text-to-diagram)</li>
+                <li><strong>Best for documenting an existing database:</strong> ChartDB (browser) or DBeaver (desktop)</li>
+                <li><strong>No SQL awareness — conceptual diagrams only:</strong> draw.io or Lucidchart</li>
+                <li><strong>Best for students:</strong> ERDPlus — free, no limits, designed for teaching ER notation</li>
+            </ul>
+        </div>
 
         <h2>The 10 Tools at a Glance</h2>
         <table class="comparison-table">
@@ -458,7 +488,7 @@
                     <td>MySQL, PG, SQLite, MSSQL</td>
                     <td class="check">✓</td>
                     <td class="partial">~15 tables/diagram</td>
-                    <td>$15/mo</td>
+                    <td>$19/mo</td>
                 </tr>
                 <tr>
                     <td>dbdiagram.io</td>
@@ -540,7 +570,7 @@
         <div class="tool-card">
             <p class="best-for">Best for: designing a relational database schema from scratch — completely free</p>
             <h3>1. SQL Designer — sql-designer.com</h3>
-            <img src="/images/designer_screenshot.png" alt="SQL Designer canvas showing an ER diagram with tables and foreign key relationships" width="720" height="400" loading="lazy" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
+            <img src="/images/designer_screenshot.png" alt="SQL Designer canvas showing an ER diagram with tables and foreign key relationships" width="720" height="400" loading="eager" style="width:100%; height:auto; border-radius:5px; border:1px solid var(--border-color); margin:0.75rem 0 1rem;">
             <p>SQL Designer is a browser-based schema design tool for MySQL, PostgreSQL, SQLite, Oracle, SQL Server,
                 and Microsoft Access. The workflow is visual: drag tables onto a canvas, add columns with real
                 database types (<code>INT</code>, <code>VARCHAR</code>, <code>DECIMAL</code>,
@@ -632,6 +662,12 @@
             <p class="verdict">Verdict: the strongest option for teams who need to understand, document, or
                 reverse-engineer an existing schema with AI assistance. Less suited to design-first workflows.</p>
         </div>
+
+        <h2>Tools 6–10: Specialized, Academic, and Desktop Options</h2>
+        <p>These tools serve narrower use cases: academic ER diagram learning, rapid text-to-diagram sketching,
+            presentation-quality conceptual diagrams, and auto-generating ERDs from a live database. Each is
+            excellent in its context, but none is the right fit for greenfield relational database design
+            from a blank canvas.</p>
 
         <div class="tool-card">
             <p class="best-for">Best for: students, academics, and anyone learning ERD notation</p>
@@ -808,7 +844,10 @@
             <h3>Which free ERD tools support both MySQL and PostgreSQL?</h3>
             <p>SQL Designer, DrawSQL, dbdiagram.io, DB Designer, ChartDB, and DBeaver all support both MySQL and
                 PostgreSQL. SQL Designer goes furthest — it supports six dialects: MySQL, PostgreSQL, SQLite,
-                Oracle, SQL Server, and MS Access, with separate type pickers and DDL export for each. DrawSQL
+                Oracle, SQL Server, and MS Access, with separate type pickers and DDL export for each. MySQL and
+                PostgreSQL consistently rank as the two most widely deployed open-source relational databases
+                (<a href="https://db-engines.com/en/ranking" target="_blank" rel="noopener noreferrer"
+                style="color:var(--color-primary-text);">DB-Engines Ranking</a>, retrieved May 2026). DrawSQL
                 and DB Designer also handle both, but with free tier restrictions. ChartDB supports both for
                 schema visualisation and import.</p>
         </div>
@@ -863,9 +902,7 @@
         <nav aria-label="Related articles" style="margin-top:3rem; padding-top:2rem; border-top:1px solid var(--border-color);">
             <p style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.06em; color:var(--text-muted); margin:0 0 0.8rem;">Related Articles</p>
             <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
-                <li><a href="/blog/free-erd-tool" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Free ERD Tool Online — Visual Entity Relationship Diagram Editor &rarr;</a></li>
-                <li><a href="/blog/er-diagram-tool-online" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Free ER Diagram Tool Online for MySQL &rarr;</a></li>
-                <li><a href="/blog/how-to-draw-er-diagram" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">How to Draw an ER Diagram Step by Step &rarr;</a></li>
+                <li><a href="/blog/database-designer" style="color:var(--color-primary-text); font-size:0.88rem; text-decoration:none;">Free Online Database Designer — Visual Schema Editor &rarr;</a></li>
             </ul>
         </nav>
 

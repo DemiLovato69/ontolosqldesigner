@@ -1,9 +1,9 @@
 @extends('layouts.main')
 
-@section('title', 'DDL Syntax Comparison: MySQL, PostgreSQL, Oracle, SQLite')
+@section('title', 'SQL DDL Comparison: MySQL, PostgreSQL, Oracle, SQL Server')
 
 @section('head')
-    <meta name="description" content="Side-by-side DDL comparison: how CREATE TABLE, data types, constraints, and ALTER TABLE differ across MySQL, PostgreSQL, Oracle, SQL Server, and SQLite.">
+    <meta name="description" content="DDL syntax for MySQL, PostgreSQL, Oracle, SQL Server, and SQLite compared side by side: auto-increment, data types, constraints, and ALTER TABLE in one guide.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-ddl-comparison">
@@ -39,7 +39,7 @@
         "image": "https://sql-designer.com/images/designer_screenshot.png",
         "url": "https://sql-designer.com/blog/database-ddl-comparison",
         "datePublished": "2026-05-05",
-        "dateModified": "2026-05-14",
+        "dateModified": "2026-05-16",
         "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
         "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
         "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] },
@@ -61,7 +61,7 @@
                 "name": "How do you create an auto-increment primary key in each database?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "MySQL uses AUTO_INCREMENT, PostgreSQL uses SERIAL or GENERATED ALWAYS AS IDENTITY, Oracle uses GENERATED ALWAYS AS IDENTITY (12c+) or a separate sequence, SQL Server uses IDENTITY(1,1), and SQLite uses INTEGER PRIMARY KEY which auto-increments implicitly."
+                    "text": "MySQL uses AUTO_INCREMENT, PostgreSQL uses SERIAL or GENERATED ALWAYS AS IDENTITY, Oracle uses GENERATED ALWAYS AS IDENTITY (12c+) or a separate sequence on older versions, SQL Server uses IDENTITY(1,1), and SQLite uses INTEGER PRIMARY KEY which auto-increments implicitly by aliasing the internal rowid."
                 }
             },
             {
@@ -69,7 +69,7 @@
                 "name": "Which databases enforce CHECK constraints?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "PostgreSQL, Oracle, SQL Server, and SQLite all enforce CHECK constraints fully. MySQL enforces CHECK constraints from version 8.0.16 onwards — older MySQL versions parse them but silently ignore them."
+                    "text": "PostgreSQL, Oracle, and SQL Server have always enforced CHECK constraints fully. MySQL ignored them before version 8.0.16 (April 2019) — schemas built on MySQL 5.7 or earlier may contain data that violates defined CHECK rules. SQLite enforces CHECK constraints since version 3.25.0 (2018)."
                 }
             },
             {
@@ -77,7 +77,23 @@
                 "name": "What is the equivalent of VARCHAR across different databases?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "MySQL and PostgreSQL both use VARCHAR(n) for variable-length strings. Oracle uses VARCHAR2(n). SQL Server uses VARCHAR(n) for ASCII and NVARCHAR(n) for Unicode. SQLite uses TEXT regardless of the declared type."
+                    "text": "MySQL and PostgreSQL both use VARCHAR(n). Oracle requires VARCHAR2(n) — using plain VARCHAR in Oracle is not recommended. SQL Server uses VARCHAR(n) for ASCII and NVARCHAR(n) for Unicode. SQLite stores strings as TEXT regardless of the declared column type."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Does Oracle have a native BOOLEAN column type?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Oracle 23c introduced a native BOOLEAN column type, the first Oracle version to support it in SQL DDL. On earlier Oracle versions, the standard workaround is NUMBER(1) CHECK (col IN (0, 1)), which enforces boolean semantics at the database level without a true boolean type."
+                }
+            },
+            {
+                "@type": "Question",
+                "name": "Can you rename a column directly in SQLite?",
+                "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "SQLite has supported RENAME COLUMN since version 3.25.0 (2018). Dropping columns requires SQLite 3.35.0 or later (2021). On older SQLite builds, both operations require recreating the table with the new structure and copying data across."
                 }
             }
         ]
@@ -221,11 +237,21 @@
         .article-body .warn p { margin: 0; font-size: 0.88rem; }
         .article-body a { color: var(--color-primary-text); }
         .article-body strong { color: var(--text-primary); }
+        .article-body .key-takeaways { background: rgba(93,181,131,0.06); border: 1px solid rgba(93,181,131,0.2); border-left: 3px solid var(--color-primary-text); padding: 1rem 1.2rem; border-radius: 0 6px 6px 0; margin: 0 0 2rem; }
+        .article-body .key-takeaways .kt-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--color-primary-text); margin: 0 0 0.6rem; font-weight: 600; }
+        .article-body .key-takeaways ul { margin: 0; padding: 0 0 0 1.2rem; }
+        .article-body .key-takeaways li { font-size: 0.88rem; margin-bottom: 0.3rem; color: var(--text-secondary); }
 
         .db-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; margin: 0 0 1.5rem; }
         .db-block { background: var(--bg-surface); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem 1.2rem; }
         .db-block .db-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 0.5rem; }
         .db-block pre { margin: 0; padding: 0; background: none; border: none; font-size: 0.8rem; line-height: 1.6; color: #e2e8f0; }
+
+        .faq-section { margin: 0; }
+        .faq-item { border-bottom: 1px solid var(--border-color); padding: 1rem 0; }
+        .faq-item:last-child { border-bottom: none; }
+        .faq-q { font-size: 0.95rem; font-weight: 600; color: var(--text-primary); margin: 0 0 0.5rem; }
+        .faq-a { font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.7; }
 
         .related-nav { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
         .related-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 0.8rem; }
@@ -245,9 +271,9 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
-        <p class="post-eyebrow">May 2026 · <time datetime="2026-05-14">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 12 min read</p>
+        <p class="post-eyebrow">May 2026 · <time datetime="2026-05-16">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a>, database tool developer · 12 min read</p>
         <h1 class="page-h1">DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite</h1>
-        <p class="page-sub">MySQL, PostgreSQL, Oracle Database, Microsoft SQL Server, and SQLite all use SQL DDL but differ in <code>CREATE TABLE</code> syntax, auto-increment mechanisms (<code>AUTO_INCREMENT</code> vs <code>SERIAL</code> vs <code>IDENTITY</code>), data type names (<code>VARCHAR</code> vs <code>VARCHAR2</code> vs <code>NVARCHAR</code>), CHECK constraint enforcement (optional in old MySQL, always-on elsewhere), and <code>ALTER TABLE</code> capabilities — differences that matter when designing portable schemas or migrating between databases.</p>
+        <p class="page-sub">MySQL, PostgreSQL, Oracle Database, Microsoft SQL Server, and SQLite all use SQL DDL but differ in <code>CREATE TABLE</code> syntax, auto-increment mechanisms (<code>AUTO_INCREMENT</code> vs <code>SERIAL</code> vs <code>IDENTITY</code>), data type names (<code>VARCHAR</code> vs <code>VARCHAR2</code> vs <code>NVARCHAR</code>), CHECK constraint enforcement (ignored in MySQL before 8.0.16), and <code>ALTER TABLE</code> capabilities. These differences matter when you're designing portable schemas or migrating between databases.</p>
     </div>
 </section>
 
@@ -266,13 +292,24 @@
             <li><a href="#generated-columns">Generated Columns</a></li>
             <li><a href="#alter-table">ALTER TABLE</a></li>
             <li><a href="#summary">Summary</a></li>
+            <li><a href="#faq">FAQ</a></li>
         </ul>
     </aside>
 
     <article class="article-body">
 
+        <div class="key-takeaways">
+            <p class="kt-label">Key Takeaways</p>
+            <ul>
+                <li>Each database uses a different keyword for auto-increment PKs: <code>AUTO_INCREMENT</code>, <code>SERIAL</code>/<code>IDENTITY</code>, <code>GENERATED AS IDENTITY</code>, <code>IDENTITY(1,1)</code>, or implicit <code>INTEGER PRIMARY KEY</code>.</li>
+                <li>MySQL silently ignored <code>CHECK</code> constraints before version 8.0.16 (April 2019), so older schemas may contain invalid data.</li>
+                <li>Oracle's <code>DATE</code> type stores both date and time, unlike every other database where <code>DATE</code> is date-only — a common migration gotcha.</li>
+                <li>SQLite didn't support <code>DROP COLUMN</code> until version 3.35.0 (2021) and isn't suited for schemas that need frequent structural changes in production.</li>
+            </ul>
+        </div>
+
         <h2 id="at-a-glance">At a Glance</h2>
-        <p>The table below summarises the most important DDL differences. Each section below drills into one topic with side-by-side code examples.</p>
+        <p>Five major SQL databases share the same core DDL concepts but use incompatible syntax. MySQL relies on <code>AUTO_INCREMENT</code> while SQL Server uses <code>IDENTITY(1,1)</code>. Oracle stores all integers as <code>NUMBER(p,s)</code> while PostgreSQL has dedicated <code>BIGINT</code> and <code>SMALLINT</code> types. SQLite ignores declared type names entirely at the storage level. The table below summarizes the most important differences; each section below drills into one topic with side-by-side code examples.</p>
         <table>
             <tr>
                 <th>Feature</th>
@@ -344,7 +381,7 @@
                 <td><code>RENAME COLUMN</code></td>
                 <td><code>RENAME COLUMN</code></td>
                 <td><code>sp_rename</code> (stored procedure)</td>
-                <td>Not supported directly</td>
+                <td>Supported since SQLite 3.25.0</td>
             </tr>
             <tr>
                 <td>IF NOT EXISTS</td>
@@ -356,9 +393,9 @@
             </tr>
         </table>
 
-        <h2 id="primary-keys">Primary Keys and Auto-Increment</h2>
+        <h2 id="primary-keys">How Does Each Database Handle Auto-Increment Primary Keys?</h2>
         <p>
-            Auto-incrementing integer primary keys are the most visible DDL difference between databases. Every database has its own keyword or mechanism, and the underlying behaviour varies in subtle ways.
+            Auto-incrementing integer primary keys are the most visible DDL difference between databases. Every database uses its own keyword or mechanism, and the underlying behaviour varies in subtle ways. MySQL's <code>AUTO_INCREMENT</code> is a column-level attribute. PostgreSQL offers <code>SERIAL</code> (a shorthand that creates a backing sequence) and <code>GENERATED ALWAYS AS IDENTITY</code> (the SQL:2003 standard form, preferred for new schemas from PostgreSQL 10 onwards). SQL Server uses <code>IDENTITY(seed, increment)</code>. Oracle added native identity columns in 12c; older versions require a separate sequence object plus a trigger. SQLite takes the simplest approach: declare <code>INTEGER PRIMARY KEY</code> and the column automatically aliases the internal <code>rowid</code>.
         </p>
 
         <div class="db-grid">
@@ -414,15 +451,15 @@ CREATE TABLE users (
 
         <p>Key behavioural notes:</p>
         <ul>
-            <li><strong>MySQL</strong> — <code>AUTO_INCREMENT</code> reuses gaps in SQLite style unless you use <code>NO_AUTO_VALUE_ON_ZERO</code>. The counter resets on server restart if the table is empty (before MySQL 8.0).</li>
-            <li><strong>PostgreSQL</strong> — <code>SERIAL</code> creates a backing sequence object. <code>GENERATED ALWAYS AS IDENTITY</code> is the SQL:2003 standard equivalent and is preferred for new schemas.</li>
-            <li><strong>Oracle</strong> — Before 12c, sequences were always separate objects and had to be fed into the column via a trigger or called explicitly in the <code>INSERT</code>.</li>
-            <li><strong>SQL Server</strong> — <code>IDENTITY(seed, increment)</code>. Once a row with an identity value is inserted, you cannot insert an explicit value without <code>SET IDENTITY_INSERT table ON</code>.</li>
-            <li><strong>SQLite</strong> — <code>INTEGER PRIMARY KEY</code> (without the <code>AUTOINCREMENT</code> keyword) is an alias for the internal <code>rowid</code> and reuses deleted values. Adding <code>AUTOINCREMENT</code> prevents reuse but has a small performance cost.</li>
+            <li><strong>MySQL</strong> (<a href="https://dev.mysql.com/doc/refman/8.0/en/example-auto-increment.html" target="_blank" rel="noopener">MySQL docs</a>): <code>AUTO_INCREMENT</code> reuses gaps by default. Before MySQL 8.0, the counter reset on server restart when the table was empty.</li>
+            <li><strong>PostgreSQL</strong> (<a href="https://www.postgresql.org/docs/current/datatype-numeric.html" target="_blank" rel="noopener">PostgreSQL docs</a>): <code>SERIAL</code> creates a backing sequence object. <code>GENERATED ALWAYS AS IDENTITY</code> is the SQL:2003 standard equivalent and is preferred for new schemas.</li>
+            <li><strong>Oracle</strong> (<a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/CREATE-TABLE.html" target="_blank" rel="noopener">Oracle docs</a>): before 12c, sequences were separate objects fed into the column via a trigger or called explicitly in the <code>INSERT</code> statement.</li>
+            <li><strong>SQL Server</strong> (<a href="https://learn.microsoft.com/en-us/sql/t-sql/statements/create-table-transact-sql-identity-property" target="_blank" rel="noopener">SQL Server docs</a>): once a row with an identity value is inserted, you cannot insert an explicit value without <code>SET IDENTITY_INSERT table ON</code>.</li>
+            <li><strong>SQLite</strong> (<a href="https://www.sqlite.org/autoinc.html" target="_blank" rel="noopener">SQLite docs</a>): <code>INTEGER PRIMARY KEY</code> without the <code>AUTOINCREMENT</code> keyword reuses deleted values. Adding <code>AUTOINCREMENT</code> prevents reuse at a small performance cost.</li>
         </ul>
 
         <h2 id="string-types">String Types</h2>
-        <p>String storage is one of the most divergent areas across databases, particularly around Unicode support and maximum lengths.</p>
+        <p>String storage is one of the most divergent areas across databases, particularly around Unicode support and maximum lengths. Oracle's requirement for <code>VARCHAR2</code> instead of <code>VARCHAR</code> trips up nearly every developer migrating from MySQL or PostgreSQL. SQL Server's distinction between <code>VARCHAR</code> (single-byte ASCII) and <code>NVARCHAR</code> (Unicode UTF-16) is equally easy to get wrong in production.</p>
         <table>
             <tr>
                 <th>Use case</th>
@@ -468,16 +505,16 @@ CREATE TABLE users (
 
         <p>Important differences to be aware of:</p>
         <ul>
-            <li><strong>Oracle uses <code>VARCHAR2</code>, not <code>VARCHAR</code></strong> — Oracle's <code>VARCHAR</code> is reserved and may behave differently in future versions. Always use <code>VARCHAR2</code>.</li>
-            <li><strong>SQL Server stores Unicode by default with <code>N</code> prefix types</strong> — <code>NVARCHAR</code> and <code>NCHAR</code> store Unicode (UTF-16). Plain <code>VARCHAR</code> is ASCII only. For any modern application use <code>NVARCHAR</code>.</li>
-            <li><strong>PostgreSQL's <code>TEXT</code> is unlimited</strong> — <code>TEXT</code> and <code>VARCHAR(n)</code> have the same performance; the length limit is just a constraint, not a storage optimisation.</li>
-            <li><strong>SQLite ignores type affinity at storage level</strong> — SQLite stores any string as <code>TEXT</code> regardless of whether you declare the column as <code>VARCHAR(255)</code> or <code>CHAR(10)</code>. Type names are only advisory.</li>
+            <li><strong>Oracle uses <code>VARCHAR2</code>, not <code>VARCHAR</code>.</strong> Oracle's documentation (<a href="https://docs.oracle.com/en/database/oracle/oracle-database/21/sqlrf/Data-Types.html" target="_blank" rel="noopener">Oracle SQL reference</a>) reserves the <code>VARCHAR</code> keyword for potential future redefinition. Always use <code>VARCHAR2</code>.</li>
+            <li><strong>SQL Server uses <code>N</code>-prefix types for Unicode.</strong> <code>NVARCHAR</code> and <code>NCHAR</code> store Unicode (UTF-16). Plain <code>VARCHAR</code> is ASCII only. For any modern application, use <code>NVARCHAR</code>.</li>
+            <li><strong>PostgreSQL's <code>TEXT</code> is unlimited.</strong> <code>TEXT</code> and <code>VARCHAR(n)</code> have identical performance; the length limit is just a constraint, not a storage optimisation (<a href="https://www.postgresql.org/docs/current/datatype-character.html" target="_blank" rel="noopener">PostgreSQL character types</a>).</li>
+            <li><strong>SQLite ignores type affinity at the storage level.</strong> SQLite stores any string as <code>TEXT</code> regardless of whether you declare the column as <code>VARCHAR(255)</code> or <code>CHAR(10)</code>. Type names are advisory only.</li>
         </ul>
 
-        <div class="verdict"><p>If you're writing portable DDL, <code>VARCHAR(n)</code> works on MySQL, PostgreSQL, Oracle (as <code>VARCHAR2</code>), and SQL Server. Always use <code>NVARCHAR</code> on SQL Server for Unicode safety.</p></div>
+        <div class="verdict"><p>For portable DDL, <code>VARCHAR(n)</code> works on MySQL, PostgreSQL, Oracle (write it as <code>VARCHAR2</code>), and SQL Server. Always use <code>NVARCHAR</code> on SQL Server for Unicode safety.</p></div>
 
         <h2 id="numeric-types">Numeric Types</h2>
-        <p>Integer and decimal types are broadly consistent in naming, but there are gaps:</p>
+        <p>Integer and decimal types are broadly consistent in naming, but gaps exist. Oracle stands out because it has no dedicated integer storage types — everything goes through the flexible <code>NUMBER(p,s)</code> format, which means integers may take more storage than the equivalent MySQL <code>INT</code> or PostgreSQL <code>INTEGER</code>. SQLite takes the opposite approach: the database decides actual storage size automatically based on the value stored, regardless of the declared type name.</p>
         <table>
             <tr>
                 <th>MySQL</th>
@@ -525,14 +562,14 @@ CREATE TABLE users (
 
         <p>Notable differences:</p>
         <ul>
-            <li><strong>Oracle has no separate integer types</strong> — everything is <code>NUMBER(p,s)</code>. <code>INTEGER</code> is an alias for <code>NUMBER(38)</code> and lacks the compact storage of a true 4-byte integer.</li>
-            <li><strong>SQLite uses dynamic typing</strong> — any integer you declare gets stored in 1–8 bytes depending on value, regardless of the declared type name.</li>
-            <li><strong>MySQL supports <code>UNSIGNED</code></strong> — <code>INT UNSIGNED</code> doubles the positive range (0 to ~4.3B). No other major database supports this modifier.</li>
+            <li><strong>Oracle has no separate integer types.</strong> Everything is <code>NUMBER(p,s)</code>. <code>INTEGER</code> is an alias for <code>NUMBER(38)</code> and lacks the compact storage of a true 4-byte integer.</li>
+            <li><strong>SQLite uses dynamic typing.</strong> Any integer you declare gets stored in 1 to 8 bytes depending on value, regardless of the declared type name.</li>
+            <li><strong>MySQL supports <code>UNSIGNED</code>.</strong> <code>INT UNSIGNED</code> doubles the positive range to 0 through roughly 4.3 billion. No other major database supports this modifier.</li>
             <li>Use <code>DECIMAL</code> or <code>NUMERIC</code> for monetary values in all databases. Never use <code>FLOAT</code> or <code>DOUBLE</code> for money.</li>
         </ul>
 
-        <h2 id="boolean-type">Boolean Type</h2>
-        <p>Boolean is one of the most inconsistent types across SQL databases:</p>
+        <h2 id="boolean-type">Which Databases Have a Native Boolean Type?</h2>
+        <p>Boolean is one of the most inconsistent types across SQL databases. PostgreSQL is the only engine here with a true native <code>BOOLEAN</code> column that accepts <code>TRUE</code>, <code>FALSE</code>, and a range of equivalent string literals (<code>'t'</code>, <code>'yes'</code>, <code>'on'</code>, and <code>1</code>). SQL Server's <code>BIT</code> is close but is better described as a 1-bit integer. Oracle had no SQL-level boolean column at all until version 23c.</p>
         <table>
             <tr>
                 <th>Database</th>
@@ -567,11 +604,12 @@ CREATE TABLE users (
         </table>
 
         <p>
-            PostgreSQL is the only database here with a true native boolean type. Oracle has no boolean type at all in SQL (PL/SQL has one, but it cannot be used as a column type). SQL Server's <code>BIT</code> accepts <code>1</code>/<code>0</code> and <code>'true'</code>/<code>'false'</code> strings but is not a proper boolean.
+            SQL Server's <code>BIT</code> accepts <code>1</code>/<code>0</code> and <code>'true'</code>/<code>'false'</code> strings but is not a proper boolean type. Oracle's PL/SQL has a boolean type, but it cannot be used as a column type in SQL DDL prior to version 23c.
         </p>
-        <div class="warn"><p>Oracle 23c introduced a native <code>BOOLEAN</code> column type — the first Oracle version to support it. If you're on an older Oracle version, use <code>NUMBER(1) CHECK (col IN (0, 1))</code>.</p></div>
+        <div class="warn"><p>Oracle 23c introduced a native <code>BOOLEAN</code> column type (<a href="https://docs.oracle.com/en/database/oracle/oracle-database/23/sqlrf/Data-Types.html" target="_blank" rel="noopener">Oracle 23c data types</a>), the first Oracle version to support it in SQL DDL. On older Oracle versions, use <code>NUMBER(1) CHECK (col IN (0, 1))</code>.</p></div>
 
         <h2 id="date-and-time">Date and Time Types</h2>
+        <p>Date and time handling is where Oracle surprises developers most. Oracle's <code>DATE</code> type stores both date and time to the nearest second, unlike every other database where <code>DATE</code> is date-only. SQL Server's <code>DATETIME2</code> (preferred over the deprecated <code>DATETIME</code>) offers 100-nanosecond precision and a wider year range. MySQL has no built-in timezone-aware timestamp type.</p>
         <table>
             <tr>
                 <th>Use case</th>
@@ -615,12 +653,12 @@ CREATE TABLE users (
             </tr>
         </table>
 
-        <p>Critical Oracle gotcha: Oracle's <code>DATE</code> type stores both date <em>and time</em> (to the nearest second). This is unlike every other database where <code>DATE</code> is date-only. If you query <code>WHERE event_date = DATE '2026-05-01'</code> in Oracle and the column has a time component, you'll get no results. Use <code>TRUNC(event_date)</code> to strip the time, or use <code>TIMESTAMP</code> columns from the start.</p>
+        <p>Critical Oracle gotcha: Oracle's <code>DATE</code> stores both date <em>and</em> time (to the nearest second). This is unlike every other database where <code>DATE</code> is date-only. If you query <code>WHERE event_date = DATE '2026-05-01'</code> in Oracle and the column has a time component, you'll get no results. Use <code>TRUNC(event_date)</code> to strip the time, or use <code>TIMESTAMP</code> columns from the start.</p>
 
-        <p>SQL Server has deprecated the older <code>DATETIME</code> type in favour of <code>DATETIME2</code>, which has higher precision (100ns vs 3ms) and a wider range. Use <code>DATETIME2</code> in new SQL Server schemas.</p>
+        <p>SQL Server deprecated the older <code>DATETIME</code> type in favour of <code>DATETIME2</code>, which has higher precision (100ns vs 3ms) and a wider date range. Use <code>DATETIME2</code> in all new SQL Server schemas.</p>
 
-        <h2 id="check-constraints">CHECK Constraints</h2>
-        <p><code>CHECK</code> constraints let you enforce rules at the database level — for example, that a status column can only hold certain values, or that a price must be positive.</p>
+        <h2 id="check-constraints">Which Databases Enforce CHECK Constraints?</h2>
+        <p><code>CHECK</code> constraints enforce rules at the database level — for example, limiting a status column to a fixed set of values. PostgreSQL, Oracle, and SQL Server have always enforced them fully. MySQL silently ignored CHECK constraints before version 8.0.16, released in April 2019 (<a href="https://dev.mysql.com/doc/refman/8.0/en/create-table-check-constraints.html" target="_blank" rel="noopener">MySQL CHECK constraint docs</a>). Any schema built on MySQL 5.7 or earlier that relied on CHECK for data integrity may contain dirty data.</p>
         <pre><code>-- Works the same way in MySQL 8.0.16+, PostgreSQL, Oracle, and SQL Server
 CREATE TABLE orders (
     id          INT PRIMARY KEY,
@@ -630,17 +668,17 @@ CREATE TABLE orders (
     CONSTRAINT chk_total   CHECK (total_cents >= 0)
 );</code></pre>
 
-        <p>The SQL above is portable across all five databases with minor syntax adjustments. The key differences are enforcement history:</p>
+        <p>The SQL above is portable across all five databases with minor syntax adjustments. The key differences are in enforcement history:</p>
         <ul>
-            <li><strong>MySQL</strong> — <code>CHECK</code> constraints were parsed but silently ignored before MySQL 8.0.16. Any existing schema built on MySQL 5.7 or earlier that uses <code>CHECK</code> for data integrity may have dirty data in it.</li>
-            <li><strong>PostgreSQL, Oracle, SQL Server</strong> — always enforced <code>CHECK</code> constraints fully.</li>
-            <li><strong>SQLite</strong> — enforced <code>CHECK</code> constraints from version 3.25.0 (2018). Very old SQLite builds may ignore them.</li>
+            <li><strong>MySQL</strong>: <code>CHECK</code> constraints were parsed but silently ignored before MySQL 8.0.16. Any existing schema built on MySQL 5.7 or earlier that uses <code>CHECK</code> for data integrity may have dirty data.</li>
+            <li><strong>PostgreSQL, Oracle, SQL Server</strong>: always enforced <code>CHECK</code> constraints fully.</li>
+            <li><strong>SQLite</strong>: enforced <code>CHECK</code> constraints from version 3.25.0, released 2018 (<a href="https://www.sqlite.org/releaselog/3_25_0.html" target="_blank" rel="noopener">SQLite 3.25.0 release notes</a>). Very old SQLite builds may ignore them.</li>
         </ul>
 
-        <div class="verdict"><p>For maximum portability and correctness, always use <code>CHECK</code> constraints with a named <code>CONSTRAINT chk_name</code> so they can be dropped by name later.</p></div>
+        <div class="verdict"><p>For maximum portability, always name your CHECK constraints: <code>CONSTRAINT chk_name CHECK (...)</code>. Named constraints can be dropped by name later if the schema evolves.</p></div>
 
         <h2 id="default-values">DEFAULT Values</h2>
-        <p>Specifying default values for columns is mostly consistent, but the function names for current timestamp differ:</p>
+        <p>Specifying default values is mostly consistent across databases, but the function names for the current timestamp differ in every dialect. MySQL also has a unique extension that automatically refreshes a timestamp column on any UPDATE — no other database supports this without a trigger.</p>
         <pre><code>-- MySQL
 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
@@ -662,11 +700,11 @@ created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
 updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP</code></pre>
 
         <p>
-            MySQL's <code>ON UPDATE CURRENT_TIMESTAMP</code> is a MySQL-only extension that automatically refreshes the column on any <code>UPDATE</code>. PostgreSQL, Oracle, and SQL Server require a trigger to replicate this behaviour. SQLite has no trigger-free equivalent.
+            MySQL's <code>ON UPDATE CURRENT_TIMESTAMP</code> is a MySQL-only extension that automatically refreshes the column on any <code>UPDATE</code>. PostgreSQL, Oracle, and SQL Server all require a trigger to replicate this behaviour. SQLite has no trigger-free equivalent.
         </p>
 
         <h2 id="generated-columns">Generated (Computed) Columns</h2>
-        <p>Generated columns derive their value from an expression and are recalculated automatically. They are useful for storing pre-computed values like full names or totals without duplicating logic in application code.</p>
+        <p>Generated columns derive their value from an expression evaluated automatically by the database. They're useful for storing pre-computed values like full names, order totals, or slugs without duplicating logic in application code. The syntax is similar across databases, but the STORED vs VIRTUAL distinction behaves differently depending on the engine.</p>
 
         <div class="db-grid">
             <div class="db-block">
@@ -713,11 +751,11 @@ total_price REAL
         </div>
 
         <p>
-            <strong>STORED vs VIRTUAL</strong> — a stored (persisted) generated column writes the computed value to disk, making reads fast but writes slightly slower. A virtual column recomputes on every read. PostgreSQL only supports <code>STORED</code>. Oracle defaults to <code>VIRTUAL</code>. MySQL supports both.
+            <strong>STORED vs VIRTUAL:</strong> a stored (persisted) generated column writes the computed value to disk, making reads fast but writes slightly slower. A virtual column recomputes on every read. PostgreSQL only supports <code>STORED</code>. Oracle defaults to <code>VIRTUAL</code>. MySQL supports both.
         </p>
 
         <h2 id="alter-table">ALTER TABLE Differences</h2>
-        <p>Modifying an existing table is where dialects diverge most sharply. Here are the most common operations:</p>
+        <p>Modifying an existing table is where dialects diverge most sharply. SQLite has historically been the most restrictive — some operations still require recreating the table on older SQLite builds. Here are the most common operations across all five databases:</p>
 
         <h3>Add a column</h3>
         <pre><code>-- MySQL, PostgreSQL, SQLite
@@ -739,8 +777,8 @@ ALTER TABLE users RENAME COLUMN phone TO phone_number;
 -- SQL Server (uses a system stored procedure, not standard SQL)
 EXEC sp_rename 'users.phone', 'phone_number', 'COLUMN';
 
--- SQLite — not supported directly.
--- You must recreate the table.</code></pre>
+-- SQLite 3.25.0+
+ALTER TABLE users RENAME COLUMN phone TO phone_number;</code></pre>
 
         <h3>Change a column's data type</h3>
         <pre><code>-- MySQL
@@ -761,25 +799,56 @@ ALTER TABLE users ALTER COLUMN age SMALLINT;
         <pre><code>-- MySQL, PostgreSQL, Oracle, SQL Server
 ALTER TABLE users DROP COLUMN phone;
 
--- SQLite — not supported before version 3.35.0 (2021).
--- Upgrade or recreate the table.</code></pre>
+-- SQLite 3.35.0+ (March 2021)
+ALTER TABLE users DROP COLUMN phone;
 
-        <div class="warn"><p>SQLite has historically had very limited <code>ALTER TABLE</code> support. Adding columns and renaming tables always worked, but renaming columns requires SQLite 3.25.0+ and dropping columns requires SQLite 3.35.0+. Check your SQLite version before relying on these operations.</p></div>
+-- Older SQLite — not supported. Recreate the table.</code></pre>
+
+        <div class="warn"><p>SQLite's <code>ALTER TABLE</code> support has expanded significantly but remains limited compared to other databases. Renaming columns requires SQLite 3.25.0+ and dropping columns requires SQLite 3.35.0+. Always check your SQLite version before relying on these in production (<a href="https://www.sqlite.org/lang_altertable.html" target="_blank" rel="noopener">SQLite ALTER TABLE docs</a>).</p></div>
 
         <h2 id="summary">Summary: Which Differences Matter Most in Practice</h2>
-        <p>If you're designing a schema from scratch, here's where to focus your attention:</p>
+        <p>If you're designing a schema from scratch, focus your attention here:</p>
         <ul>
-            <li><strong>Primary keys</strong> — the biggest immediate syntax difference. Know your database's keyword before writing your first <code>CREATE TABLE</code>.</li>
-            <li><strong>String types</strong> — use <code>VARCHAR2</code> on Oracle, <code>NVARCHAR</code> on SQL Server, and <code>VARCHAR</code> everywhere else. SQLite accepts anything and stores it as <code>TEXT</code>.</li>
-            <li><strong>Booleans</strong> — only PostgreSQL has a true native <code>BOOLEAN</code>. Use <code>TINYINT(1)</code>, <code>BIT</code>, or <code>NUMBER(1)</code> with a <code>CHECK</code> constraint elsewhere.</li>
-            <li><strong>Oracle's <code>DATE</code> includes time</strong> — this surprises almost everyone coming from MySQL or PostgreSQL. Use <code>TIMESTAMP</code> in Oracle if you only want a date.</li>
-            <li><strong>CHECK enforcement history</strong> — if you're working with a MySQL 5.7 or earlier schema, <code>CHECK</code> constraints were ignored. Verify data integrity before migrating.</li>
-            <li><strong>SQLite ALTER TABLE limitations</strong> — SQLite is not suitable for schemas that need frequent structural changes in production. Column drops and renames require a recent SQLite version.</li>
-            <li><strong>Timestamp defaults</strong> — <code>CURRENT_TIMESTAMP</code> works in MySQL and SQLite; PostgreSQL prefers <code>NOW()</code>; Oracle uses <code>SYSTIMESTAMP</code>; SQL Server uses <code>GETDATE()</code> or <code>SYSDATETIME()</code>.</li>
+            <li><strong>Primary keys</strong>: the biggest immediate syntax difference. Know your database's keyword before writing your first <code>CREATE TABLE</code>.</li>
+            <li><strong>String types</strong>: use <code>VARCHAR2</code> on Oracle, <code>NVARCHAR</code> on SQL Server, and <code>VARCHAR</code> everywhere else. SQLite accepts anything and stores it as <code>TEXT</code>.</li>
+            <li><strong>Booleans</strong>: only PostgreSQL has a true native <code>BOOLEAN</code>. Use <code>TINYINT(1)</code>, <code>BIT</code>, or <code>NUMBER(1)</code> with a <code>CHECK</code> constraint elsewhere.</li>
+            <li><strong>Oracle's <code>DATE</code> includes time</strong>: this surprises almost everyone coming from MySQL or PostgreSQL. Use <code>TIMESTAMP</code> in Oracle when you only want a date.</li>
+            <li><strong>CHECK enforcement history</strong>: if you're working with a MySQL 5.7 or earlier schema, <code>CHECK</code> constraints were ignored. Verify data integrity before migrating.</li>
+            <li><strong>SQLite ALTER TABLE limitations</strong>: SQLite is not suited for schemas that need frequent structural changes in production. Column drops and renames require a recent SQLite version.</li>
+            <li><strong>Timestamp defaults</strong>: <code>CURRENT_TIMESTAMP</code> works in MySQL and SQLite; PostgreSQL prefers <code>NOW()</code>; Oracle uses <code>SYSTIMESTAMP</code>; SQL Server uses <code>GETDATE()</code> or <code>SYSDATETIME()</code>.</li>
         </ul>
         <p>
             Whichever database you're targeting, modelling your schema visually before writing DDL makes it easier to catch type mismatches and missing constraints early. SQL Designer supports MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access dialects and exports ready-to-run <code>CREATE TABLE</code> scripts — <a href="/demo">try the demo</a> with your own schema.
         </p>
+
+        <section class="faq-section" aria-label="Frequently asked questions">
+            <h2 id="faq">Frequently Asked Questions</h2>
+
+            <div class="faq-item">
+                <p class="faq-q">How do you create an auto-increment primary key in each database?</p>
+                <p class="faq-a">MySQL uses <code>AUTO_INCREMENT</code>, PostgreSQL uses <code>SERIAL</code> or <code>GENERATED ALWAYS AS IDENTITY</code>, Oracle uses <code>GENERATED ALWAYS AS IDENTITY</code> (12c+) or a separate sequence on older versions, SQL Server uses <code>IDENTITY(1,1)</code>, and SQLite uses <code>INTEGER PRIMARY KEY</code>, which auto-increments implicitly by aliasing the internal rowid.</p>
+            </div>
+
+            <div class="faq-item">
+                <p class="faq-q">Which databases enforce CHECK constraints?</p>
+                <p class="faq-a">PostgreSQL, Oracle, and SQL Server have always enforced CHECK constraints fully. MySQL ignored them before version 8.0.16 (released April 2019), so schemas built on MySQL 5.7 or earlier may contain data that violates defined CHECK rules. SQLite has enforced CHECK constraints since version 3.25.0 (2018).</p>
+            </div>
+
+            <div class="faq-item">
+                <p class="faq-q">What is the equivalent of VARCHAR across different databases?</p>
+                <p class="faq-a">MySQL and PostgreSQL both use <code>VARCHAR(n)</code>. Oracle requires <code>VARCHAR2(n)</code> — using plain <code>VARCHAR</code> in Oracle is not recommended. SQL Server uses <code>VARCHAR(n)</code> for ASCII and <code>NVARCHAR(n)</code> for Unicode. SQLite stores strings as <code>TEXT</code> regardless of the declared column type.</p>
+            </div>
+
+            <div class="faq-item">
+                <p class="faq-q">Does Oracle have a native BOOLEAN column type?</p>
+                <p class="faq-a">Oracle 23c introduced a native <code>BOOLEAN</code> column type, the first Oracle version to support it in SQL DDL. On earlier Oracle versions, the standard workaround is <code>NUMBER(1) CHECK (col IN (0, 1))</code>, which enforces boolean semantics at the database level without a true boolean type.</p>
+            </div>
+
+            <div class="faq-item">
+                <p class="faq-q">Can you rename a column directly in SQLite?</p>
+                <p class="faq-a">Yes, but only on SQLite 3.25.0 or later (2018). Dropping columns requires SQLite 3.35.0 or later (2021). On older SQLite builds, both operations require recreating the table: create a new table with the new structure, copy data across, drop the original, then rename the new table.</p>
+            </div>
+        </section>
 
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
@@ -795,7 +864,7 @@ ALTER TABLE users DROP COLUMN phone;
 
 <section class="docs-cta">
     <h2>Design your database schema visually</h2>
-    <p>SQL Designer lets you model tables, relationships, and constraints visually and export a CREATE TABLE script for MySQL or PostgreSQL. Free, browser-based, no installation required.</p>
+    <p>SQL Designer lets you model tables, relationships, and constraints visually and export a CREATE TABLE script for MySQL, PostgreSQL, Oracle, SQL Server, or SQLite. Free, browser-based, no installation required.</p>
     <div class="actions">
         <a class="btn btn-solid btn-lg" href="/demo">Open the demo</a>
         <a class="btn btn-outline btn-lg" href="/register">Create free account</a>

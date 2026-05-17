@@ -49,18 +49,6 @@
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://sql-designer.com/blog/erd-maker</loc>
-        <lastmod>2026-04-16</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
-        <loc>https://sql-designer.com/blog/sql-to-erd</loc>
-        <lastmod>2026-04-16</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.8</priority>
-    </url>
-    <url>
         <loc>https://sql-designer.com/blog/crowfoot-notation</loc>
         <lastmod>2026-04-16</lastmod>
         <changefreq>monthly</changefreq>
@@ -73,31 +61,7 @@
         <priority>0.8</priority>
     </url>
     <url>
-        <loc>https://sql-designer.com/blog/share-database-diagram</loc>
-        <lastmod>2026-04-11</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
         <loc>https://sql-designer.com/blog/database-designer</loc>
-        <lastmod>2026-04-16</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc>https://sql-designer.com/blog/free-erd-tool</loc>
-        <lastmod>2026-04-02</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc>https://sql-designer.com/blog/postgres-db-designer</loc>
-        <lastmod>2026-04-16</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc>https://sql-designer.com/blog/mysql-db-designer</loc>
         <lastmod>2026-04-16</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
@@ -105,12 +69,6 @@
     <url>
         <loc>https://sql-designer.com/blog/database-schema-examples</loc>
         <lastmod>2026-04-16</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
-        <loc>https://sql-designer.com/blog/how-to-design-mysql-database-schema</loc>
-        <lastmod>2026-03-18</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>
@@ -133,14 +91,8 @@
         <priority>0.7</priority>
     </url>
     <url>
-        <loc>https://sql-designer.com/blog/how-to-draw-er-diagram</loc>
-        <lastmod>2026-03-19</lastmod>
-        <changefreq>monthly</changefreq>
-        <priority>0.7</priority>
-    </url>
-    <url>
         <loc>https://sql-designer.com/blog/mysql-vs-postgresql</loc>
-        <lastmod>2026-03-19</lastmod>
+        <lastmod>2026-05-16</lastmod>
         <changefreq>monthly</changefreq>
         <priority>0.7</priority>
     </url>

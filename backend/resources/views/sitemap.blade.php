@@ -72,14 +72,6 @@
                 <span class="desc">Side-by-side comparison of CREATE TABLE syntax, primary keys, data types, constraints, and ALTER TABLE across five major databases.</span>
             </li>
             <li>
-                <a href="/blog/erd-maker">Free ERD Maker Online</a>
-                <span class="desc">What an ERD maker is, how it differs from a generic diagram tool, and how to create ER diagrams and export SQL for free.</span>
-            </li>
-            <li>
-                <a href="/blog/sql-to-erd">SQL to ERD — Generate an ER Diagram from SQL</a>
-                <span class="desc">Import a CREATE TABLE script and generate a visual ER diagram automatically — tables, columns, and foreign key relationships rendered instantly.</span>
-            </li>
-            <li>
                 <a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Cardinality Explained</a>
                 <span class="desc">Crow's foot symbols for one-to-one, one-to-many, and many-to-many relationships, and how they map to real foreign key constraints.</span>
             </li>
@@ -88,32 +80,12 @@
                 <span class="desc">We tested 10 free ERD tools — SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver — with honest strengths, real limits, and use-case guidance.</span>
             </li>
             <li>
-                <a href="/blog/share-database-diagram">How to Share a Database Diagram Online</a>
-                <span class="desc">Share your schema with a live link or embed it as an interactive iframe in your docs, with access control.</span>
-            </li>
-            <li>
                 <a href="/blog/database-designer">Free Online Database Designer</a>
                 <span class="desc">Visual schema builder for MySQL and PostgreSQL — design databases without writing DDL.</span>
             </li>
             <li>
-                <a href="/blog/free-erd-tool">Free ERD Tool Online</a>
-                <span class="desc">Visual entity relationship diagram editor — draw ER diagrams and export SQL for free.</span>
-            </li>
-            <li>
-                <a href="/blog/postgres-db-designer">Free PostgreSQL DB Designer Online</a>
-                <span class="desc">Visual ERD tool for Postgres — design PostgreSQL schemas and export DDL in the browser.</span>
-            </li>
-            <li>
-                <a href="/blog/mysql-db-designer">Free MySQL DB Designer Online</a>
-                <span class="desc">Design MySQL databases visually with drag-and-drop tables, foreign keys, and SQL export.</span>
-            </li>
-            <li>
                 <a href="/blog/database-schema-examples">Database Schema Examples — MySQL &amp; PostgreSQL Templates</a>
                 <span class="desc">Five real-world schema templates — e-commerce, blog, SaaS, task tracker, and messaging — with complete CREATE TABLE scripts.</span>
-            </li>
-            <li>
-                <a href="/blog/how-to-design-mysql-database-schema">How to Design a MySQL Database Schema</a>
-                <span class="desc">Step-by-step guide covering entities, data types, primary keys, foreign keys, and normalization.</span>
             </li>
             <li>
                 <a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax, Examples, and Best Practices</a>
@@ -126,10 +98,6 @@
             <li>
                 <a href="/blog/database-normalization">Database Normalization Explained — 1NF, 2NF, and 3NF</a>
                 <span class="desc">Learn normalization with clear examples and understand when it's acceptable to denormalize.</span>
-            </li>
-            <li>
-                <a href="/blog/how-to-draw-er-diagram">How to Draw an ER Diagram Step by Step</a>
-                <span class="desc">Entities, attributes, relationships, cardinality notation, and practical tips.</span>
             </li>
             <li>
                 <a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL — Key Differences for Schema Design</a>
