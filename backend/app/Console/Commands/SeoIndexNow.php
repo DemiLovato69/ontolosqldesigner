@@ -16,8 +16,7 @@ class SeoIndexNow extends Command
     public function handle(): void
     {
         $xml  = simplexml_load_file(public_path('sitemap.xml'));
-        $urls = collect($xml->url)->map(fn($u) => (string) $u->loc)->values()->all();
-
+        $urls = collect(iterator_to_array($xml->url, false))->map(fn($u) => (string) $u->loc)->values()->all();
         $this->submitToIndexNow($urls);
         $this->submitToGoogleIndexing($urls);
     }
