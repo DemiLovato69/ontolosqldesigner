@@ -22,6 +22,7 @@
     <meta name="twitter:title" content="MySQL Data Types Explained — Which to Use and When">
     <meta name="twitter:description" content="MySQL's 30+ data types split into 4 families. Learn which numeric, string, date/time, and JSON type to choose — and the mistakes that corrupt financial data.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
             [
@@ -93,162 +94,6 @@
             ]
         @endverbatim
     </script>
-    <style>
-        body { overflow-y: auto; }
-
-        .page-intro {
-            padding: clamp(2rem, 4vw, 3.5rem) var(--gutter, 2rem) clamp(1.5rem, 3vw, 2.5rem);
-            border-bottom: 1px solid var(--border-light);
-            position: relative;
-            overflow: hidden;
-        }
-        .page-intro::before {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background-image:
-                linear-gradient(var(--border-light) 1px, transparent 1px),
-                linear-gradient(90deg, var(--border-light) 1px, transparent 1px);
-            background-size: 56px 56px;
-            mask-image: linear-gradient(to bottom, black 0%, transparent 75%);
-            opacity: 0.45;
-            pointer-events: none;
-        }
-        .intro-inner { max-width: 900px; margin: 0 auto; position: relative; }
-        .breadcrumb {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            letter-spacing: 0.06em;
-            margin: 0 0 1rem;
-        }
-        .breadcrumb a { color: var(--text-muted); text-decoration: none; }
-        .breadcrumb a:hover { color: var(--color-primary-text); }
-        .breadcrumb .sep { margin: 0 0.4rem; color: var(--border-strong); }
-        .post-eyebrow {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.72rem;
-            color: var(--text-muted);
-            letter-spacing: 0.06em;
-            margin: 0 0 0.8rem;
-        }
-        h1.page-h1 {
-            font-size: clamp(1.6rem, 3.5vw, 2.4rem);
-            line-height: 1.15;
-            letter-spacing: -0.02em;
-            font-weight: 600;
-            margin: 0 0 1rem;
-            text-wrap: balance;
-            color: var(--text-primary);
-        }
-        .page-sub {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            margin: 0;
-            max-width: 66ch;
-            line-height: 1.7;
-            text-wrap: pretty;
-            border-left: 3px solid var(--color-primary);
-            padding-left: 1.2rem;
-        }
-
-        .article-layout {
-            display: grid;
-            grid-template-columns: 200px minmax(0, 1fr);
-            gap: clamp(2rem, 5vw, 4rem);
-            max-width: 1060px;
-            margin: 0 auto;
-            padding: clamp(2rem, 4vw, 3rem) var(--gutter, 2rem) clamp(3rem, 6vw, 5rem);
-            align-items: start;
-        }
-        @media (max-width: 760px) {
-            .article-layout { grid-template-columns: 1fr; gap: 1.5rem; padding-top: 1.5rem; }
-        }
-        .article-sidebar { position: sticky; top: 5rem; }
-        @media (max-width: 760px) { .article-sidebar { position: static; } }
-        .sidebar-label {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.7rem;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: var(--text-muted);
-            margin: 0 0 0.8rem;
-        }
-        .sidebar-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.05rem; }
-        .sidebar-nav a {
-            display: block;
-            font-size: 0.82rem;
-            color: var(--text-muted);
-            padding: 0.35rem 0.7rem;
-            border-left: 2px solid var(--border-color);
-            transition: color 120ms, border-color 120ms;
-            text-decoration: none;
-            line-height: 1.4;
-        }
-        .sidebar-nav a:hover, .sidebar-nav a.active {
-            color: var(--color-primary-text);
-            border-left-color: var(--color-primary-text);
-        }
-        @media (max-width: 760px) {
-            .sidebar-nav { flex-direction: row; flex-wrap: wrap; gap: 0.4rem; }
-            .sidebar-nav a { border-left: none; border-bottom: 2px solid var(--border-color); padding: 0.3rem 0.5rem; font-size: 0.78rem; }
-        }
-
-        .article-body { min-width: 0; }
-        .article-body h2 {
-            font-size: clamp(1.1rem, 2vw, 1.35rem);
-            letter-spacing: -0.01em;
-            font-weight: 600;
-            margin: 2.5rem 0 0.8rem;
-            padding-bottom: 0.6rem;
-            border-bottom: 1px solid var(--border-color);
-            color: var(--text-primary);
-            scroll-margin-top: 5rem;
-        }
-        .article-body h2:first-child { margin-top: 0; }
-        .article-body p { font-size: 0.93rem; color: var(--text-secondary); line-height: 1.75; margin: 0 0 1rem; text-wrap: pretty; }
-        .article-body ul, .article-body ol { margin: 0 0 1rem 1.5rem; padding: 0; }
-        .article-body li { font-size: 0.93rem; color: var(--text-secondary); line-height: 1.75; margin-bottom: 0.35rem; }
-        .article-body code { background: var(--bg-elevated); padding: 0.1em 0.4em; border-radius: 3px; font-size: 0.83em; color: var(--text-primary); font-family: 'JetBrains Mono', monospace; }
-        .article-body pre { background: #181f2e; color: #e2e8f0; border-radius: 8px; padding: 1.2rem 1.5rem; overflow-x: auto; margin: 1rem 0 1.5rem; font-size: 0.875rem; line-height: 1.65; border: 1px solid var(--border-color); }
-        .article-body pre code { background: none; padding: 0; color: inherit; font-size: inherit; font-family: 'JetBrains Mono', monospace; }
-        .article-body table { width: 100%; border-collapse: collapse; margin: 0 0 1.5rem; font-size: 0.85rem; }
-        .article-body th { background: var(--bg-elevated); color: var(--text-primary); padding: 0.6rem 1rem; text-align: left; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.06em; border-bottom: 1px solid var(--border-strong); font-family: 'JetBrains Mono', monospace; }
-        .article-body td { padding: 0.55rem 1rem; border-bottom: 1px solid var(--border-light); color: var(--text-secondary); vertical-align: top; }
-        .article-body tr:nth-child(even) td { background: var(--bg-elevated); }
-        .article-body .verdict { background: rgba(93,181,131,0.08); border-left: 3px solid var(--color-primary-text); padding: 0.9rem 1.2rem; border-radius: 0 6px 6px 0; margin: 1.2rem 0; }
-        .article-body .verdict p { margin: 0; font-size: 0.88rem; }
-        .article-body a { color: var(--color-primary-text); }
-        .article-body strong { color: var(--text-primary); }
-
-        .key-takeaways { background: rgba(93,181,131,0.07); border: 1px solid rgba(93,181,131,0.2); border-radius: 8px; padding: 1.2rem 1.5rem; margin: 0 0 2rem; }
-        .key-takeaways .kt-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--color-primary-text); margin: 0 0 0.75rem; font-weight: 600; }
-        .key-takeaways ul { margin: 0; padding-left: 1.25rem; }
-        .key-takeaways li { font-size: 0.9rem; color: var(--text-secondary); line-height: 1.7; margin-bottom: 0.45rem; }
-        .key-takeaways li:last-child { margin-bottom: 0; }
-
-        .article-figure { margin: 1.5rem 0; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); }
-        .article-figure img { width: 100%; height: auto; display: block; max-height: 300px; object-fit: cover; }
-        .article-figure figcaption { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--text-muted); padding: 0.5rem 0.8rem; background: var(--bg-elevated); }
-
-        .citation-capsule { background: var(--bg-elevated); border-left: 3px solid var(--border-strong); padding: 0.85rem 1.1rem; border-radius: 0 6px 6px 0; margin: 1.2rem 0 1.5rem; }
-        .citation-capsule p { margin: 0; font-size: 0.87rem; color: var(--text-secondary); font-style: italic; line-height: 1.7; }
-
-        .video-wrap { margin: 1.5rem 0 2rem; border-radius: 8px; overflow: hidden; border: 1px solid var(--border-color); aspect-ratio: 16/9; }
-        .video-wrap iframe { width: 100%; height: 100%; display: block; }
-        .video-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-muted); margin: 2rem 0 0.6rem; }
-
-        .related-nav { margin-top: 3rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color); }
-        .related-label { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted); margin: 0 0 0.8rem; }
-        .related-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
-        .related-nav a { color: var(--color-primary-text); font-size: 0.88rem; text-decoration: none; }
-        .related-nav a:hover { text-decoration: underline; }
-
-        .docs-cta { margin: 0 auto; max-width: 1060px; padding: clamp(2rem, 4vw, 2.8rem) var(--gutter, 2rem); border-top: 1px solid var(--border-color); text-align: center; }
-        .docs-cta h2 { font-size: clamp(1.2rem, 2.2vw, 1.6rem); letter-spacing: -0.02em; margin: 0 0 0.6rem; font-weight: 600; color: var(--text-primary); text-transform: none; }
-        .docs-cta p { color: var(--text-secondary); margin: 0 auto 1.2rem; max-width: 52ch; font-size: 0.93rem; }
-        .docs-cta .actions { display: flex; gap: 0.6rem; justify-content: center; flex-wrap: wrap; }
-    </style>
 @endsection
 
 @section('content')
@@ -287,7 +132,7 @@
             </ul>
         </div>
 
-        <figure class="article-figure">
+        <figure>
             <img src="https://images.unsplash.com/photo-1461749280684-dccba630e2f6?fm=jpg&q=80&w=1400&auto=format&fit=crop"
                  alt="SQL code on a monitor screen representing MySQL database schema design and data type selection"
                  loading="lazy" width="1400" height="700">
@@ -343,7 +188,7 @@
             </tr>
         </table>
 
-        <figure class="article-figure" style="background: #181f2e; padding: 0;">
+        <figure>
             <svg viewBox="0 0 600 295" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bar chart showing storage size in bytes for each MySQL numeric data type">
                 <title>MySQL Numeric Type Storage Sizes</title>
                 <rect width="600" height="295" rx="8" fill="#181f2e"/>
@@ -445,7 +290,7 @@
 
         <p>The TIMESTAMP versus DATETIME decision has real production consequences. TIMESTAMP stores every value in UTC and reconverts to the session timezone on retrieval, making it automatic for audit columns like <code>created_at</code>. Its hard upper limit is <strong>2038-01-19</strong> — the point where a 32-bit Unix timestamp overflows. Any application storing future dates past that boundary must use DATETIME, which supports dates through year 9999 (<a href="https://dev.mysql.com/doc/refman/8.0/en/datetime.html" target="_blank" rel="noopener">MySQL 8.0 Reference Manual</a>).</p>
 
-        <figure class="article-figure">
+        <figure>
             <img src="https://images.unsplash.com/photo-1435527173128-983b87201f4d?fm=jpg&q=80&w=1400&auto=format&fit=crop"
                  alt="Open desk calendar illustrating MySQL date and time data type selection for created_at and scheduled event columns"
                  loading="lazy" width="1400" height="700">

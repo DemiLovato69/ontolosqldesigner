@@ -22,6 +22,7 @@
     <meta name="twitter:title" content="Database Schema Examples — MySQL & PostgreSQL Templates">
     <meta name="twitter:description" content="5 ready-to-copy database schema examples — e-commerce, blog, SaaS, and more — with MySQL and PostgreSQL CREATE TABLE scripts.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
             [
@@ -87,229 +88,6 @@
             ]
         @endverbatim
     </script>
-    <style>
-        body {
-            overflow-y: auto;
-        }
-
-        .blog-post {
-            max-width: 760px;
-            margin: 0 auto;
-            padding: 3rem 1.5rem 5rem;
-        }
-
-        .blog-post .breadcrumb {
-            font-size: 0.875rem;
-            color: #767676;
-            background-color: transparent;
-            text-transform: none;
-            margin-bottom: 1.5rem;
-        }
-
-        .blog-post .breadcrumb a {
-            color: var(--color-primary);
-        }
-
-        .blog-post .post-meta {
-            font-size: 0.875rem;
-            color: #767676;
-            background-color: transparent;
-            text-transform: none;
-            margin-bottom: 1rem;
-        }
-
-        .blog-post h1 {
-            font-size: 1.6rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: var(--text-primary);
-            background-color: transparent;
-            margin: 0 0 1rem;
-            line-height: 1.3;
-        }
-
-        .blog-post .intro {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            background-color: transparent;
-            text-transform: none;
-            line-height: 1.8;
-            margin-bottom: 2rem;
-            border-left: 3px solid var(--color-primary);
-            padding-left: 1.2rem;
-        }
-
-        .blog-post h2 {
-            font-size: 1.05rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            color: var(--color-primary);
-            background-color: transparent;
-            margin: 2.5rem 0 0.8rem;
-        }
-
-        .blog-post h3 {
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: var(--text-primary);
-            background-color: transparent;
-            margin: 1.5rem 0 0.6rem;
-        }
-
-        .blog-post p {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            background-color: transparent;
-            text-transform: none;
-            line-height: 1.8;
-            margin: 0 0 1rem;
-        }
-
-        .blog-post ul {
-            margin: 0 0 1rem 1.5rem;
-            padding: 0;
-        }
-
-        .blog-post li {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            background-color: transparent;
-            text-transform: none;
-            line-height: 1.8;
-            margin-bottom: 0.3rem;
-        }
-
-        .blog-post pre {
-            background: var(--bg-elevated);
-            border-radius: 6px;
-            padding: 1.2rem 1.5rem;
-            overflow-x: auto;
-            margin: 0 0 1.5rem;
-        }
-
-        .blog-post pre code {
-            background: none;
-            padding: 0;
-            font-size: 0.82rem;
-            color: var(--text-primary);
-            line-height: 1.7;
-        }
-
-        .blog-post code {
-            background: var(--bg-elevated);
-            padding: 0.1em 0.4em;
-            border-radius: 3px;
-            font-size: 0.85em;
-            color: var(--text-primary);
-        }
-
-        .blog-post .schema-section {
-            background: var(--bg-surface);
-            border-radius: 6px;
-            padding: 1.5rem 2rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.07);
-            margin-bottom: 2rem;
-        }
-
-        .blog-post .schema-section h2 {
-            margin-top: 0;
-        }
-
-        .blog-post .cta-box {
-            background: var(--color-primary-hover);
-            color: #fff;
-            border-radius: 6px;
-            padding: 2rem;
-            text-align: center;
-            margin-top: 3rem;
-        }
-
-        .blog-post .cta-box h3 {
-            font-size: 1rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            margin: 0 0 0.8rem;
-        }
-
-        .blog-post .cta-box p {
-            color: #fff;
-            background-color: transparent;
-            margin: 0 0 1.2rem;
-            font-size: 0.85rem;
-        }
-
-        .blog-post .btn-cta {
-            background: var(--bg-surface);
-            color: var(--color-primary);
-            padding: 0.6rem 1.8rem;
-            border-radius: 4px;
-            font-weight: bold;
-            font-size: 0.85rem;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            text-decoration: none;
-        }
-
-        .blog-post .btn-cta:hover {
-            opacity: 0.9;
-        }
-
-        .blog-post .key-takeaways {
-            background: var(--bg-surface);
-            border-left: 3px solid var(--color-primary);
-            border-radius: 0 6px 6px 0;
-            padding: 1.2rem 1.5rem;
-            margin: 0 0 2.5rem;
-        }
-
-        .blog-post .key-takeaways-title {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 0.07em;
-            color: var(--color-primary);
-            font-weight: 700;
-            margin: 0 0 0.6rem !important;
-        }
-
-        .blog-post .key-takeaways ul {
-            margin-bottom: 0 !important;
-        }
-
-        .blog-post .chart-wrap {
-            margin: 0 0 2rem;
-        }
-
-        .blog-post .chart-wrap svg {
-            width: 100%;
-            height: auto;
-            border-radius: 6px;
-            display: block;
-        }
-
-        .blog-post .chart-caption {
-            font-size: 0.78rem;
-            color: #767676;
-            text-align: center;
-            margin-top: 0.4rem;
-        }
-
-        .blog-post .citation-capsule {
-            border-left: 2px solid var(--border-color);
-            padding-left: 1rem;
-            margin: 0.8rem 0 1.2rem;
-            font-style: italic;
-        }
-
-        .blog-post .faq-section .faq-q {
-            font-size: 0.88rem;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            color: var(--color-primary);
-            font-weight: 700;
-            margin: 1.8rem 0 0.4rem;
-        }
-    </style>
 @endsection
 
 @section('content')
@@ -728,14 +506,14 @@ CREATE TABLE messages (
             <p><code>TIMESTAMPTZ</code> stores the value in UTC internally and converts it to the session's configured timezone on retrieval. <code>TIMESTAMP</code> stores the literal value with no timezone information. For <code>created_at</code>, <code>updated_at</code>, and any audit column, always use <code>TIMESTAMPTZ</code> — consistent UTC storage avoids DST gaps and ordering bugs when users span multiple timezones.</p>
         </div>
 
-        <nav aria-label="Related articles" style="margin-top:3rem; padding-top:2rem; border-top:1px solid var(--border-color);">
-            <p style="font-size:0.875rem; text-transform:uppercase; letter-spacing:0.06em; color:#767676; margin:0 0 0.8rem;">Related Articles</p>
-            <ul style="list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:0.5rem;">
-                <li><a href="/blog/database-normalization" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Database Normalization — 1NF, 2NF, 3NF Explained &rarr;</a></li>
-                <li><a href="/blog/mysql-foreign-key" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">MySQL Foreign Key — Syntax and Best Practices &rarr;</a></li>
-                <li><a href="/blog/crowfoot-notation" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Crow's Foot Notation — ER Diagram Cardinality Explained &rarr;</a></li>
-                <li><a href="/blog/mysql-vs-postgresql" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">MySQL vs PostgreSQL — Which Should You Use? &rarr;</a></li>
-                <li><a href="/blog/best-free-erd-tools" style="color:var(--color-primary); font-size:0.88rem; text-decoration:none;">Best Free ERD Tools — 10 Tested in 2026 &rarr;</a></li>
+        <nav class="related-nav" aria-label="Related articles">
+            <p class="related-label">Related Articles</p>
+            <ul>
+                <li><a href="/blog/database-normalization">Database Normalization — 1NF, 2NF, 3NF Explained &rarr;</a></li>
+                <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax and Best Practices &rarr;</a></li>
+                <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Cardinality Explained &rarr;</a></li>
+                <li><a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL — Which Should You Use? &rarr;</a></li>
+                <li><a href="/blog/best-free-erd-tools">Best Free ERD Tools — 10 Tested in 2026 &rarr;</a></li>
             </ul>
         </nav>
 
