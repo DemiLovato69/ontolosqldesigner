@@ -206,7 +206,7 @@ ALTER TABLE events
         <figure>
             <div class="video-wrap">
                 <iframe
-                    src="https://www.youtube.com/embed/ooHoamrUAmc"
+                    src="https://www.youtube-nocookie.com/embed/ooHoamrUAmc"
                     title="MySQL vs PostgreSQL: Which Database Should You Choose?"
                     frameborder="0"
                     loading="lazy"
@@ -391,7 +391,7 @@ SELECT * FROM users WHERE username ILIKE 'alice';</code></pre>
         <p>PostgreSQL overtook MySQL in developer adoption during the 2022 Stack Overflow survey and now leads 55.6% to 40.5% overall, with a wider 18.6-point gap among professional developers alone (<a href="https://survey.stackoverflow.co/2025/technology/" target="_blank" rel="noopener">Stack Overflow Developer Survey 2025</a>). For new projects, PostgreSQL is the stronger default, with better JSON handling, always-enforced constraints, and a more standards-compliant SQL dialect.</p>
 
         <p>
-            Whichever you choose, the schema design process is the same: model your entities and relationships first, pick appropriate data types, and <a href="/demo">validate the design visually</a> before writing DDL.
+            Whichever you choose, the schema design process is the same: model your entities and relationships first, pick appropriate data types, and use a <a href="/blog/database-designer">free online database designer</a> to <a href="/demo">validate the design visually</a> before writing DDL.
         </p>
 
         <h2 id="faq">FAQ</h2>

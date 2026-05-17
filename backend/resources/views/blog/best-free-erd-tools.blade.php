@@ -519,6 +519,10 @@
             <p class="related-label">Related Articles</p>
             <ul>
                 <li><a href="/blog/database-designer">Free Online Database Designer — Visual Schema Editor &rarr;</a></li>
+                <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Cardinality Explained &rarr;</a></li>
+                <li><a href="/blog/database-schema-examples">Database Schema Examples — MySQL &amp; PostgreSQL Templates &rarr;</a></li>
+                <li><a href="/blog/database-normalization">Database Normalization Explained — 1NF, 2NF, 3NF &rarr;</a></li>
+                <li><a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL — Key Differences for Schema Design &rarr;</a></li>
             </ul>
         </nav>
     </article>

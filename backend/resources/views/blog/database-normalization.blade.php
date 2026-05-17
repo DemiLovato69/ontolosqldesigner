@@ -4,13 +4,13 @@
 
 @section('head')
     <meta name="description"
-          content="Poor database design costs the average org $12.9M a year. Understand 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples.">
+          content="Poor database design costs the average org $12.9M a year. Learn 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples and real-world SQL.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-normalization">
     <meta property="og:title" content="Database Normalization — 1NF, 2NF, and 3NF Explained">
     <meta property="og:description"
-          content="Poor database design costs the average org $12.9M a year. Understand 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples.">
+          content="Poor database design costs the average org $12.9M a year. Learn 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples and real-world SQL.">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-normalization">
@@ -20,7 +20,7 @@
     <meta property="og:image:alt" content="SQL Designer — visual MySQL and PostgreSQL schema editor">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Database Normalization — 1NF, 2NF, and 3NF Explained">
-    <meta name="twitter:description" content="Poor database design costs the average org $12.9M a year. Understand 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples.">
+    <meta name="twitter:description" content="Poor database design costs the average org $12.9M a year. Learn 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples and real-world SQL.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
@@ -460,7 +460,7 @@ employee_projects(emp_id, project_id)</code></pre>
         <p>
             Four clean tables, each storing exactly one kind of fact. Renaming a department updates one row in <code>departments</code>. Adding a new project adds one row in <code>projects</code>. The <code>employee_projects</code> junction handles the many-to-many relationship. You can <a href="/demo">visualize this schema in SQL Designer</a> by importing the CREATE TABLE script — the foreign key relationships render automatically.
         </p>
-        <p>For the formal treatment of functional dependencies and normalization theory, see E.F. Codd's foundational paper <em>A Relational Model of Data for Large Shared Data Banks</em> (<a href="https://dl.acm.org/doi/10.1145/362384.362685" target="_blank" rel="noopener noreferrer">ACM, 1970</a>), the <a href="https://www.postgresql.org/docs/current/ddl-constraints.html" target="_blank" rel="noopener noreferrer">PostgreSQL DDL Constraints documentation</a>, and the MySQL docs on <a href="https://dev.mysql.com/doc/refman/8.0/en/create-table.html" target="_blank" rel="noopener noreferrer">foreign key constraint syntax</a>.</p>
+        <p>For the formal treatment of functional dependencies and normalization theory, see E.F. Codd's foundational paper <em>A Relational Model of Data for Large Shared Data Banks</em> (<a href="https://dl.acm.org/doi/10.1145/362384.362685" target="_blank" rel="noopener noreferrer">ACM, 1970</a>), the <a href="https://www.postgresql.org/docs/current/ddl-constraints.html" target="_blank" rel="noopener noreferrer">PostgreSQL DDL Constraints documentation</a>, and the MySQL docs on <a href="https://dev.mysql.com/doc/refman/8.0/en/create-table.html" target="_blank" rel="noopener noreferrer">foreign key constraint syntax</a>. When moving a normalized schema across databases, the <a href="/blog/database-ddl-comparison">DDL syntax comparison</a> covers where MySQL, PostgreSQL, Oracle, SQL Server, and SQLite diverge on primary keys, booleans, and timestamp defaults.</p>
 
         <figure>
             <img src="https://images.unsplash.com/photo-1489875347897-49f64b51c1f8?fm=jpg&q=60&w=1600&auto=format&fit=crop"
@@ -526,6 +526,7 @@ employee_projects(emp_id, project_id)</code></pre>
                 <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax and Examples &rarr;</a></li>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Symbols Explained &rarr;</a></li>
                 <li><a href="/blog/database-designer">Free Online Database Designer — design your normalized schema visually &rarr;</a></li>
+                <li><a href="/blog/database-schema-examples">Database Schema Examples — MySQL &amp; PostgreSQL Templates &rarr;</a></li>
             </ul>
         </nav>
     </article>

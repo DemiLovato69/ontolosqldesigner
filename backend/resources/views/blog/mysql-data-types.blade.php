@@ -399,6 +399,38 @@ SELECT * FROM users WHERE preferences->>'$.notifications' = 'true';</code></pre>
             </noscript>
         </div>
 
+        <section class="faq-section" aria-label="Frequently asked questions">
+            <h2>Frequently Asked Questions</h2>
+            <div class="faq-item">
+                <p class="faq-q">What MySQL data type should I use for storing money?</p>
+                <p class="faq-a">Use <code>DECIMAL(p, s)</code> — for example <code>DECIMAL(10, 2)</code> for two decimal places. Never use <code>FLOAT</code> or <code>DOUBLE</code> for money. Both use IEEE 754 binary floating-point, which cannot represent most decimal fractions exactly, causing rounding errors that accumulate in financial totals.</p>
+            </div>
+            <div class="faq-item">
+                <p class="faq-q">What is the difference between DATETIME and TIMESTAMP in MySQL?</p>
+                <p class="faq-a"><code>TIMESTAMP</code> stores values in UTC and automatically converts to the session timezone on retrieval, making it ideal for <code>created_at</code> and <code>updated_at</code> audit columns. <code>DATETIME</code> stores the literal wall-clock time without timezone conversion and has a wider date range (up to year 9999 vs TIMESTAMP's 2038-01-19 limit).</p>
+            </div>
+            <div class="faq-item">
+                <p class="faq-q">What MySQL type should I use for boolean columns?</p>
+                <p class="faq-a">MySQL has no native boolean type. The convention is <code>TINYINT(1)</code>, which stores 0 (false) or 1 (true). ORMs like Laravel and Rails treat <code>TINYINT(1)</code> as a boolean automatically. MySQL 8.0+ also accepts <code>BOOLEAN</code> as a synonym for <code>TINYINT(1)</code>.</p>
+            </div>
+            <div class="faq-item">
+                <p class="faq-q">When should I use VARCHAR vs TEXT in MySQL?</p>
+                <p class="faq-a">Use <code>VARCHAR(n)</code> for short strings where you know the maximum length: names, emails, URLs, slugs. Use <code>TEXT</code> for long-form content such as article bodies, descriptions, or HTML where the length is unpredictable. Avoid using TEXT columns in <code>WHERE</code> clauses without a full-text index, as it forces a full table scan.</p>
+            </div>
+            <div class="faq-item">
+                <p class="faq-q">What MySQL data type should I use for a primary key?</p>
+                <p class="faq-a"><code>INT UNSIGNED NOT NULL AUTO_INCREMENT</code> is the standard choice for most tables, supporting up to approximately 4.3 billion rows. Use <code>BIGINT UNSIGNED NOT NULL AUTO_INCREMENT</code> for tables expected to grow very large, such as event logs or high-volume transactional tables.</p>
+            </div>
+            <div class="faq-item">
+                <p class="faq-q">Why should I avoid ENUM in MySQL?</p>
+                <p class="faq-a"><code>ENUM</code> stores allowed values as a one- or two-byte integer mapped to a list of strings. Adding a new value requires an <code>ALTER TABLE</code> that rewrites the entire table in older MySQL versions, causing downtime on large tables. ENUM values are also opaque to ORMs and external tools. A <code>VARCHAR</code> column with a <code>CHECK</code> constraint, or a separate lookup table, is more maintainable and easier to extend.</p>
+            </div>
+            <div class="faq-item">
+                <p class="faq-q">What MySQL data type should I use for a UUID?</p>
+                <p class="faq-a"><code>CHAR(36)</code> stores the standard hyphenated UUID string. For storage efficiency, MySQL 8.0+ provides <code>UUID_TO_BIN()</code> and <code>BIN_TO_UUID()</code> to convert a UUID into <code>BINARY(16)</code>, halving the storage compared to <code>CHAR(36)</code> and improving index performance. Use <code>CHAR(36)</code> for readability; use <code>BINARY(16)</code> for high-volume tables where index size matters.</p>
+            </div>
+        </section>
+
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
             <ul>

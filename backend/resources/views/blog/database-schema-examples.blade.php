@@ -4,13 +4,13 @@
 
 @section('head')
     <meta name="description"
-          content="5 ready-to-copy database schema examples — e-commerce, blog, SaaS, and more — with MySQL and PostgreSQL CREATE TABLE scripts. Updated May 2026.">
+          content="5 ready-to-copy database schema examples — e-commerce, blog, SaaS, and more — with complete MySQL and PostgreSQL CREATE TABLE scripts. Updated May 2026.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-schema-examples">
     <meta property="og:title" content="Database Schema Examples — MySQL & PostgreSQL Templates">
     <meta property="og:description"
-          content="5 ready-to-copy database schema examples — e-commerce, blog, SaaS, and more — with MySQL and PostgreSQL CREATE TABLE scripts. Updated May 2026.">
+          content="5 ready-to-copy database schema examples — e-commerce, blog, SaaS, and more — with complete MySQL and PostgreSQL CREATE TABLE scripts. Updated May 2026.">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-schema-examples">
@@ -46,7 +46,7 @@
                 "dateModified": "2026-05-17",
                 "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
-                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] },
                 "mainEntityOfPage": { "@type": "WebPage", "@id": "https://sql-designer.com/blog/database-schema-examples" }
             },
             {
@@ -91,14 +91,31 @@
 @endsection
 
 @section('content')
-    <article class="blog-post">
-        <p class="breadcrumb"><a href="/blog">Blog</a> &rsaquo; Schema Design</p>
-        <p class="post-meta"><time datetime="2026-04-02">April 2026</time> &mdash; <time datetime="2026-05-17">Last updated: May 2026</time> &mdash; by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> &mdash; 10 min read</p>
-        <h1>Database Schema Examples — MySQL &amp; PostgreSQL Templates</h1>
 
-        <p class="intro">
-            Five production-ready database schema examples — e-commerce, blog platform, SaaS user management, task tracker, and messaging — with complete MySQL and PostgreSQL <code>CREATE TABLE</code> scripts you can copy directly or open as an entity relationship diagram in <a href="/demo">SQL Designer</a>. Each schema covers table structure, column types, primary keys, foreign key relationships, and the reasoning behind key design decisions.
-        </p>
+<section class="page-intro">
+    <div class="intro-inner">
+        <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
+        <p class="post-eyebrow">April 2026 · <time datetime="2026-05-17">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a>, database tool developer · 10 min read</p>
+        <h1 class="page-h1">Database Schema Examples — MySQL &amp; PostgreSQL Templates</h1>
+        <p class="page-sub">Five production-ready database schema examples — e-commerce, blog platform, SaaS user management, task tracker, and messaging — with complete MySQL and PostgreSQL <code>CREATE TABLE</code> scripts you can copy directly or open as an entity relationship diagram in <a href="/demo">SQL Designer</a>. Each schema covers table structure, column types, primary keys, foreign key relationships, and the reasoning behind key design decisions.</p>
+    </div>
+</section>
+
+<div class="article-layout">
+    <aside class="article-sidebar" aria-label="Article navigation">
+        <p class="sidebar-label">On this page</p>
+        <ul class="sidebar-nav">
+            <li><a href="#ecommerce">E-Commerce Schema</a></li>
+            <li><a href="#blog-cms">Blog / CMS Schema</a></li>
+            <li><a href="#saas">SaaS Schema</a></li>
+            <li><a href="#task-tracker">Task Tracker Schema</a></li>
+            <li><a href="#messaging">Messaging Schema</a></li>
+            <li><a href="#tips">Tips for Adapting</a></li>
+            <li><a href="#faq">FAQ</a></li>
+        </ul>
+    </aside>
+
+    <article class="article-body">
 
         <div class="key-takeaways">
             <p class="key-takeaways-title">Key Takeaways</p>
@@ -110,6 +127,13 @@
                 <li>A self-referencing <code>parent_id</code> handles threading (comments, sub-tasks) without a second table, at the cost of recursive queries for deep hierarchies.</li>
             </ul>
         </div>
+
+        <figure>
+            <img src="https://images.pexels.com/photos/1181354/pexels-photo-1181354.jpeg?auto=compress&cs=tinysrgb&w=1600"
+                 alt="A software engineer at a laptop planning database schema design for a relational application"
+                 loading="lazy" width="1600" height="1067">
+            <figcaption>Schema design decisions — table structure, foreign keys, indexes — made at the start define the ceiling for everything built on top. (Photo: Christina Morillo / Pexels)</figcaption>
+        </figure>
 
         <div class="chart-wrap">
             <svg viewBox="0 0 600 262" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Horizontal bar chart: most-used databases in Stack Overflow Developer Survey 2025. PostgreSQL 55.6%, MySQL 40.5%, SQLite 34.3%, MongoDB 26.1%, Redis 22.4%">
@@ -142,7 +166,7 @@
         </div>
 
         <div class="schema-section">
-            <h2>1. E-Commerce Schema</h2>
+            <h2 id="ecommerce">1. E-Commerce Schema</h2>
             <!-- [PERSONAL EXPERIENCE] -->
             <p>
                 A production e-commerce schema typically requires joining at least 5 tables even for a simple product listing query — categories, products, customers, orders, and order line items. The highest-leverage design decision isn't which ORM to use; it's whether you snapshot the price on each order line. You must. Don't look it up from <code>products</code> at query time, or a price change will silently rewrite every historical order total.
@@ -207,7 +231,7 @@ CREATE TABLE order_items (
         </div>
 
         <div class="schema-section">
-            <h2>2. Blog / CMS Schema</h2>
+            <h2 id="blog-cms">2. Blog / CMS Schema</h2>
             <!-- [PERSONAL EXPERIENCE] -->
             <p>
                 The most common modelling mistake in blog schemas is treating posts-to-tags as one-to-many. It isn't. A post can have many tags, and a tag applies to many posts. That's many-to-many, and it needs a junction table. The schema below adds <code>post_tags</code> with a composite primary key. It also handles threaded comments with a <code>parent_id</code> self-reference, and draft/scheduled posts via a nullable <code>published_at</code>.
@@ -280,7 +304,7 @@ CREATE TABLE comments (
         </div>
 
         <div class="schema-section">
-            <h2>3. SaaS User &amp; Subscription Schema</h2>
+            <h2 id="saas">3. SaaS User &amp; Subscription Schema</h2>
             <!-- [PERSONAL EXPERIENCE] -->
             <p>
                 In the 2025 Stack Overflow Developer Survey (65,437 respondents), PostgreSQL reached 55.6% adoption versus MySQL's 40.5% (<a href="https://survey.stackoverflow.co/2025/technology" target="_blank" rel="noopener">Stack Overflow, 2025</a>). That shift shows up most clearly in SaaS work. <code>TIMESTAMPTZ</code>, native UUID support, and row-level security map cleanly to multi-tenant requirements. This schema models organisations, members, plans, and subscriptions with the same price-snapshot discipline as the e-commerce example.
@@ -340,7 +364,7 @@ CREATE TABLE subscriptions (
         </div>
 
         <div class="schema-section">
-            <h2>4. Task Tracker Schema</h2>
+            <h2 id="task-tracker">4. Task Tracker Schema</h2>
             <p>
                 Task schemas look deceptively simple until sub-tasks, assignees, and labels enter the picture. The <code>parent_id</code> self-reference on <code>tasks</code> handles sub-tasks in a single table. Labels are scoped to a project via a foreign key, then linked to individual tasks through a junction table. The cascade rules here matter: deleting a project removes its tasks; removing a label removes the association, not the task itself.
             </p>
@@ -395,7 +419,7 @@ CREATE TABLE task_labels (
         </div>
 
         <div class="schema-section">
-            <h2>5. Messaging / Chat Schema</h2>
+            <h2 id="messaging">5. Messaging / Chat Schema</h2>
             <p>
                 The key structural choice in a messaging schema is whether direct messages and group conversations share a table. A unified <code>conversations</code> table with an <code>is_group</code> flag means one <code>messages</code> table serves both cases — fewer joins, simpler queries. The <code>conversation_members</code> junction table connects users to conversations and works identically for 1-on-1 and group chats.
             </p>
@@ -475,36 +499,49 @@ CREATE TABLE messages (
             <p class="chart-caption">Blog/CMS is the most complex at 6 tables due to the <code>post_tags</code> junction table. Messaging is the leanest at 4 — the unified conversations model keeps join depth low.</p>
         </div>
 
-        <h2>Tips for Adapting These Schemas</h2>
+        <h2 id="tips">Tips for Adapting These Schemas</h2>
         <ul>
             <li><strong>Add <code>updated_at</code> columns</strong> wherever you need to detect changes. In MySQL, use <code>ON UPDATE CURRENT_TIMESTAMP</code>. In PostgreSQL, create a trigger — the column doesn't update automatically.</li>
             <li><strong>Use <code>TIMESTAMPTZ</code> in PostgreSQL</strong> over <code>TIMESTAMP</code>. It stores UTC and converts correctly per session timezone, which matters the moment your users span more than one timezone.</li>
             <li><strong>Index FK columns in PostgreSQL manually.</strong> MySQL creates indexes on foreign key columns automatically; PostgreSQL doesn't. Add an explicit index on any FK column you'll use in a <code>WHERE</code> or <code>JOIN</code>.</li>
             <li><strong>Think twice before adding soft deletes.</strong> A <code>deleted_at</code> column requires <code>WHERE deleted_at IS NULL</code> in every query. One forgotten filter is a data leak waiting to happen. Use it only where the audit trail is genuinely worth that cost.</li>
             <li><strong>Design visually first</strong> — missing relationships and redundant tables are obvious in a diagram and invisible in a wall of DDL. Use the <a href="/demo">SQL Designer demo</a> to drag, connect, and adjust before you commit to code.</li>
+            <li><strong>Check DDL syntax when targeting a different database.</strong> The <code>CREATE TABLE</code> syntax for primary keys, boolean types, timestamp defaults, and <code>ALTER TABLE</code> differs significantly between MySQL, PostgreSQL, Oracle, SQL Server, and SQLite. For a full side-by-side reference, see the <a href="/blog/database-ddl-comparison">DDL syntax comparison guide</a>.</li>
         </ul>
 
-        <div class="faq-section">
-            <h2>Frequently Asked Questions</h2>
+        <section class="faq-section" aria-label="Frequently asked questions">
+            <h2 id="faq">Frequently Asked Questions</h2>
 
-            <p class="faq-q">Should I use MySQL or PostgreSQL for a new project in 2026?</p>
-            <p>PostgreSQL is the stronger default for greenfield work. In the 2025 Stack Overflow Developer Survey (65,437 respondents), it reached 55.6% usage versus MySQL's 40.5% — the first time PostgreSQL has held a clear lead — and ranked first in most-admired and most-desired database for the third year running (<a href="https://survey.stackoverflow.co/2025/technology" target="_blank" rel="noopener">Stack Overflow, 2025</a>). MySQL remains dominant in legacy web stacks and shared hosting environments, but for new work PostgreSQL's feature set is now broadly preferred.</p>
+            <div class="faq-item">
+                <p class="faq-q">Should I use MySQL or PostgreSQL for a new project in 2026?</p>
+                <p class="faq-a">PostgreSQL is the stronger default for greenfield work. In the 2025 Stack Overflow Developer Survey (65,437 respondents), it reached 55.6% usage versus MySQL's 40.5% — the first time PostgreSQL has held a clear lead — and ranked first in most-admired and most-desired database for the third year running (<a href="https://survey.stackoverflow.co/2025/technology" target="_blank" rel="noopener">Stack Overflow, 2025</a>). MySQL remains dominant in legacy web stacks and shared hosting environments, but for new work PostgreSQL's feature set is now broadly preferred.</p>
+            </div>
 
-            <p class="faq-q">What tables does a basic e-commerce schema need?</p>
-            <p>A minimal schema needs five tables: <code>categories</code>, <code>products</code>, <code>customers</code>, <code>orders</code>, and <code>order_items</code>. The <code>order_items</code> table is the critical one — it links each order line to a product and stores the price at time of purchase so future price changes don't alter historical totals.</p>
+            <div class="faq-item">
+                <p class="faq-q">What tables does a basic e-commerce schema need?</p>
+                <p class="faq-a">A minimal schema needs five tables: <code>categories</code>, <code>products</code>, <code>customers</code>, <code>orders</code>, and <code>order_items</code>. The <code>order_items</code> table is the critical one — it links each order line to a product and stores the price at time of purchase so future price changes don't alter historical totals.</p>
+            </div>
 
-            <p class="faq-q">How do you model a many-to-many relationship?</p>
-            <p>Use a junction table. For posts and tags: create a <code>post_tags</code> table with foreign keys to both <code>posts</code> and <code>tags</code>. Set the primary key as a composite of both foreign keys — this prevents duplicate tag associations and creates a covering index automatically. Add <code>ON DELETE CASCADE</code> on both FKs so cleanup is handled at the database level.</p>
+            <div class="faq-item">
+                <p class="faq-q">How do you model a many-to-many relationship?</p>
+                <p class="faq-a">Use a junction table. For posts and tags: create a <code>post_tags</code> table with foreign keys to both <code>posts</code> and <code>tags</code>. Set the primary key as a composite of both foreign keys — this prevents duplicate tag associations and creates a covering index automatically. Add <code>ON DELETE CASCADE</code> on both FKs so cleanup is handled at the database level.</p>
+            </div>
 
-            <p class="faq-q">Should I store product price in order_items or look it up from products?</p>
-            <p>Store it in <code>order_items</code> as <code>price_at_purchase</code>. If you look it up from <code>products</code>, any future price change retroactively alters every historical order total that includes that product. That's almost never the right behavior — and it can silently break financial reports.</p>
+            <div class="faq-item">
+                <p class="faq-q">Should I store product price in order_items or look it up from products?</p>
+                <p class="faq-a">Store it in <code>order_items</code> as <code>price_at_purchase</code>. If you look it up from <code>products</code>, any future price change retroactively alters every historical order total that includes that product. That's almost never the right behavior — and it can silently break financial reports.</p>
+            </div>
 
-            <p class="faq-q">What is a soft delete and when should I use it?</p>
-            <p>A soft delete adds a nullable <code>deleted_at</code> timestamp. Instead of removing the row you set <code>deleted_at = NOW()</code>. It's useful for audit trails and when a hard delete would break referential integrity. The ongoing cost: every query needs <code>WHERE deleted_at IS NULL</code>. Missing that filter in even one place exposes deleted rows as if they were active.</p>
+            <div class="faq-item">
+                <p class="faq-q">What is a soft delete and when should I use it?</p>
+                <p class="faq-a">A soft delete adds a nullable <code>deleted_at</code> timestamp. Instead of removing the row you set <code>deleted_at = NOW()</code>. It's useful for audit trails and when a hard delete would break referential integrity. The ongoing cost: every query needs <code>WHERE deleted_at IS NULL</code>. Missing that filter in even one place exposes deleted rows as if they were active.</p>
+            </div>
 
-            <p class="faq-q">What is the difference between TIMESTAMP and TIMESTAMPTZ in PostgreSQL?</p>
-            <p><code>TIMESTAMPTZ</code> stores the value in UTC internally and converts it to the session's configured timezone on retrieval. <code>TIMESTAMP</code> stores the literal value with no timezone information. For <code>created_at</code>, <code>updated_at</code>, and any audit column, always use <code>TIMESTAMPTZ</code> — consistent UTC storage avoids DST gaps and ordering bugs when users span multiple timezones.</p>
-        </div>
+            <div class="faq-item">
+                <p class="faq-q">What is the difference between TIMESTAMP and TIMESTAMPTZ in PostgreSQL?</p>
+                <p class="faq-a"><code>TIMESTAMPTZ</code> stores the value in UTC internally and converts it to the session's configured timezone on retrieval. <code>TIMESTAMP</code> stores the literal value with no timezone information. For <code>created_at</code>, <code>updated_at</code>, and any audit column, always use <code>TIMESTAMPTZ</code> — consistent UTC storage avoids DST gaps and ordering bugs when users span multiple timezones.</p>
+            </div>
+        </section>
 
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
@@ -517,10 +554,30 @@ CREATE TABLE messages (
             </ul>
         </nav>
 
-        <div class="cta-box">
-            <h3>Build these schemas visually</h3>
-            <p>Drag and drop tables, connect relationships, and export a MySQL or PostgreSQL <code>CREATE TABLE</code> script — free, no install, no credit card.</p>
-            <a class="btn-cta" href="/demo">Try the Demo</a>
-        </div>
     </article>
+</div>
+
+<section class="docs-cta">
+    <h2>Build these schemas visually</h2>
+    <p>Drag and drop tables, connect relationships, and export a MySQL or PostgreSQL <code>CREATE TABLE</code> script — free, no install, no credit card.</p>
+    <div class="actions">
+        <a class="btn btn-solid btn-lg" href="/demo">Open the demo</a>
+        <a class="btn btn-outline btn-lg" href="/register">Create free account</a>
+    </div>
+</section>
+
+<script>
+    (function () {
+        const links = document.querySelectorAll('.sidebar-nav a[href^="#"]');
+        const headings = document.querySelectorAll('.article-body h2[id]');
+        function update() {
+            let current = '';
+            const y = window.scrollY + 100;
+            headings.forEach(el => { if (el.offsetTop <= y) current = el.id; });
+            links.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current));
+        }
+        window.addEventListener('scroll', update, { passive: true });
+        update();
+    })();
+</script>
 @endsection

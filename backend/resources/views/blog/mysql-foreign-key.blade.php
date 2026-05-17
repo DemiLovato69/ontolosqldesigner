@@ -46,7 +46,7 @@
                 "dateModified": "2026-05-16",
                 "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
                 "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
-                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".intro"] },
+                "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] },
                 "mainEntityOfPage": { "@type": "WebPage", "@id": "https://sql-designer.com/blog/mysql-foreign-key" }
             },
             {
@@ -136,6 +136,13 @@
                 <li>MySQL is used by <strong>40.5% of all developers</strong> in 2025, making foreign key design one of the most widely-needed SQL skills in production (<a href="https://survey.stackoverflow.co/2025/technology/" target="_blank" rel="noopener">Stack Overflow Developer Survey 2025</a>).</li>
             </ul>
         </div>
+
+        <figure>
+            <img src="https://images.pexels.com/photos/1148820/pexels-photo-1148820.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1"
+                 alt="Server rack hardware in a data center representing the database infrastructure where MySQL foreign key constraints enforce referential integrity"
+                 loading="lazy" width="1260" height="750">
+            <figcaption>Foreign key constraints are a database-level guarantee — they enforce referential integrity regardless of the application layer. (Photo: panumas nikhomkhai / Pexels)</figcaption>
+        </figure>
 
         <h2 id="what-is-a-foreign-key">What Is a MySQL Foreign Key?</h2>
         <p>
@@ -376,26 +383,26 @@ SET FOREIGN_KEY_CHECKS = 1;</code></pre>
         </p>
 
         <h2 id="faq">Frequently Asked Questions</h2>
-        <ul class="faq-list" itemscope itemtype="https://schema.org/FAQPage">
-            <li class="faq-item" itemprop="mainEntity" itemscope itemtype="https://schema.org/Question">
-                <p class="faq-q" itemprop="name">What is the MySQL foreign key syntax?</p>
-                <p class="faq-a" itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer"><span itemprop="text">The full syntax is: <code>CONSTRAINT constraint_name FOREIGN KEY (child_column) REFERENCES parent_table(parent_column) ON DELETE action ON UPDATE action</code>. Place it inside <code>CREATE TABLE</code> or add it with <code>ALTER TABLE</code>. The constraint name is optional but strongly recommended for readability and easier debugging.</span></p>
+        <ul class="faq-list">
+            <li class="faq-item">
+                <p class="faq-q">What is the MySQL foreign key syntax?</p>
+                <p class="faq-a">The full syntax is: <code>CONSTRAINT constraint_name FOREIGN KEY (child_column) REFERENCES parent_table(parent_column) ON DELETE action ON UPDATE action</code>. Place it inside <code>CREATE TABLE</code> or add it with <code>ALTER TABLE</code>. The constraint name is optional but strongly recommended for readability and easier debugging.</p>
             </li>
-            <li class="faq-item" itemprop="mainEntity" itemscope itemtype="https://schema.org/Question">
-                <p class="faq-q" itemprop="name">What does ON DELETE CASCADE do in MySQL?</p>
-                <p class="faq-a" itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer"><span itemprop="text"><code>ON DELETE CASCADE</code> automatically deletes child rows when the parent row is deleted. If you delete an order, all associated <code>order_items</code> rows are removed automatically. Use it when child records have no meaning independent of the parent, and you're certain you want that automatic cleanup behaviour.</span></p>
+            <li class="faq-item">
+                <p class="faq-q">What does ON DELETE CASCADE do in MySQL?</p>
+                <p class="faq-a"><code>ON DELETE CASCADE</code> automatically deletes child rows when the parent row is deleted. If you delete an order, all associated <code>order_items</code> rows are removed automatically. Use it when child records have no meaning independent of the parent, and you're certain you want that automatic cleanup behaviour.</p>
             </li>
-            <li class="faq-item" itemprop="mainEntity" itemscope itemtype="https://schema.org/Question">
-                <p class="faq-q" itemprop="name">What is the difference between ON DELETE CASCADE and ON DELETE SET NULL?</p>
-                <p class="faq-a" itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer"><span itemprop="text"><code>CASCADE</code> removes the child row when the parent is deleted. <code>SET NULL</code> instead sets the foreign key column to <code>NULL</code>, leaving the child row in place. <code>SET NULL</code> requires the foreign key column to be nullable. Use it when the child record can exist independently, such as a comment whose author account was deleted.</span></p>
+            <li class="faq-item">
+                <p class="faq-q">What is the difference between ON DELETE CASCADE and ON DELETE SET NULL?</p>
+                <p class="faq-a"><code>CASCADE</code> removes the child row when the parent is deleted. <code>SET NULL</code> instead sets the foreign key column to <code>NULL</code>, leaving the child row in place. <code>SET NULL</code> requires the foreign key column to be nullable. Use it when the child record can exist independently, such as a comment whose author account was deleted.</p>
             </li>
-            <li class="faq-item" itemprop="mainEntity" itemscope itemtype="https://schema.org/Question">
-                <p class="faq-q" itemprop="name">Why does MySQL return error 1215 when adding a foreign key?</p>
-                <p class="faq-a" itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer"><span itemprop="text">Error 1215 almost always means one of three things: the child and parent column types don't match exactly (including <code>UNSIGNED</code>), the referenced column isn't indexed, or the tables use different storage engines. Run <code>SHOW ENGINE INNODB STATUS\G</code> and look for the <code>LATEST FOREIGN KEY ERROR</code> section for the exact cause.</span></p>
+            <li class="faq-item">
+                <p class="faq-q">Why does MySQL return error 1215 when adding a foreign key?</p>
+                <p class="faq-a">Error 1215 almost always means one of three things: the child and parent column types don't match exactly (including <code>UNSIGNED</code>), the referenced column isn't indexed, or the tables use different storage engines. Run <code>SHOW ENGINE INNODB STATUS\G</code> and look for the <code>LATEST FOREIGN KEY ERROR</code> section for the exact cause.</p>
             </li>
-            <li class="faq-item" itemprop="mainEntity" itemscope itemtype="https://schema.org/Question">
-                <p class="faq-q" itemprop="name">Does MySQL require the referenced column to be a primary key?</p>
-                <p class="faq-a" itemprop="acceptedAnswer" itemscope itemtype="https://schema.org/Answer"><span itemprop="text">No. The referenced column must have a <code>UNIQUE</code> index or be the primary key, but it doesn't have to be the primary key. MySQL requires uniqueness on the referenced column to guarantee that each foreign key value maps to exactly one parent row.</span></p>
+            <li class="faq-item">
+                <p class="faq-q">Does MySQL require the referenced column to be a primary key?</p>
+                <p class="faq-a">No. The referenced column must have a <code>UNIQUE</code> index or be the primary key, but it doesn't have to be the primary key. MySQL requires uniqueness on the referenced column to guarantee that each foreign key value maps to exactly one parent row.</p>
             </li>
         </ul>
 

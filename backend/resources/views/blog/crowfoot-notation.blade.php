@@ -4,7 +4,7 @@
 
 @section('head')
     <meta name="description"
-          content="Crow's foot notation is the ER diagram standard since Gordon Everest's 1976 paper. Learn all six cardinality symbols with mandatory, optional and SQL examples.">
+          content="Crow's foot notation is the ER diagram standard since Gordon Everest's 1976 paper. Learn the six cardinality symbols with mandatory, optional, and SQL examples.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/crowfoot-notation">
@@ -355,6 +355,8 @@
                 <li><a href="/blog/database-schema-examples">Database Schema Examples — Common Patterns for MySQL and PostgreSQL &rarr;</a></li>
                 <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax, Examples, and Best Practices &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization — 1NF, 2NF, 3NF Explained &rarr;</a></li>
+                <li><a href="/blog/best-free-erd-tools">10 Best Free ERD Tools in 2026 &rarr;</a></li>
+                <li><a href="/blog/database-designer">Free Online Database Designer — Visual Schema Editor &rarr;</a></li>
             </ul>
         </nav>
     </article>

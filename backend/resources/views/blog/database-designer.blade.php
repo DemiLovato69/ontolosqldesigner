@@ -4,13 +4,13 @@
 
 @section('head')
     <meta name="description"
-          content="Free DB designer — design relational database schemas visually with drag-and-drop tables, foreign keys, and SQL export for MySQL and PostgreSQL.">
+          content="Free DB designer — design relational database schemas visually with drag-and-drop tables, foreign keys, and SQL export for MySQL and PostgreSQL. Browser-based.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-designer">
     <meta property="og:title" content="Free DB Designer Online — Visual Database Designer">
     <meta property="og:description"
-          content="Free DB designer — design relational schemas visually in your browser. Drag-and-drop tables, foreign keys, MySQL and PostgreSQL SQL export. No install.">
+          content="Free DB designer — design relational database schemas visually with drag-and-drop tables, foreign keys, and SQL export for MySQL and PostgreSQL. Browser-based.">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-designer">
@@ -232,7 +232,7 @@
             <li><strong>2. Add tables</strong> — one table per entity. Common starting points: <code>users</code>, <code>products</code>, <code>orders</code>.</li>
             <li><strong>3. Define columns</strong> — for each column, set the name, data type (MySQL or PostgreSQL), and constraints (PK, UQ, NN).</li>
             <li><strong>4. Draw relationships</strong> — drag a line from the foreign key column to the primary key it references. Crow's foot notation is drawn automatically.</li>
-            <li><strong>5. Export SQL</strong> — click the export button to download a complete, valid <code>CREATE TABLE</code> script for your chosen database.</li>
+            <li><strong>5. Export SQL</strong> — click the export button to download a complete, valid <code>CREATE TABLE</code> script for your chosen database. If you need to target more than one database dialect, the <a href="/blog/database-ddl-comparison">DDL syntax comparison guide</a> shows exactly where MySQL, PostgreSQL, Oracle, SQL Server, and SQLite diverge.</li>
         </ul>
         <p>
             Not ready to sign up? The <a href="/demo">demo</a> loads a sample schema so you can try the designer without creating an account.
@@ -300,6 +300,10 @@
             <ul>
                 <li><a href="/blog/database-schema-examples">Database Schema Examples &rarr;</a></li>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation Explained &rarr;</a></li>
+                <li><a href="/blog/best-free-erd-tools">10 Best Free ERD Tools in 2026 — Tested and Compared &rarr;</a></li>
+                <li><a href="/blog/database-normalization">Database Normalization — 1NF, 2NF, 3NF Explained &rarr;</a></li>
+                <li><a href="/blog/mysql-data-types">MySQL Data Types Explained &rarr;</a></li>
+                <li><a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL — Key Differences &rarr;</a></li>
             </ul>
         </nav>
     </article>

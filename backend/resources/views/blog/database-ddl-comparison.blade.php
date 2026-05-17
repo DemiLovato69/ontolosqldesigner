@@ -148,6 +148,13 @@
             </ul>
         </div>
 
+        <figure>
+            <img src="https://images.pexels.com/photos/1181354/pexels-photo-1181354.jpeg?auto=compress&cs=tinysrgb&w=1600"
+                 alt="A software engineer with a laptop working beside server racks in a data center"
+                 width="1600" height="1067" loading="lazy">
+            <figcaption>DDL differences matter most when schemas move between databases — each engine running its own rules on the same server infrastructure. (Photo: Christina Morillo / <a href="https://www.pexels.com" target="_blank" rel="noopener noreferrer">Pexels</a>)</figcaption>
+        </figure>
+
         <h2 id="at-a-glance">At a Glance</h2>
         <p>Five major SQL databases share the same core DDL concepts but use incompatible syntax. MySQL relies on <code>AUTO_INCREMENT</code> while SQL Server uses <code>IDENTITY(1,1)</code>. Oracle stores all integers as <code>NUMBER(p,s)</code> while PostgreSQL has dedicated <code>BIGINT</code> and <code>SMALLINT</code> types. SQLite ignores declared type names entirely at the storage level. The table below summarizes the most important differences; each section below drills into one topic with side-by-side code examples.</p>
         <table>
@@ -597,6 +604,74 @@ total_price REAL
         <h2 id="alter-table">ALTER TABLE Differences</h2>
         <p>Modifying an existing table is where dialects diverge most sharply. SQLite has historically been the most restrictive — some operations still require recreating the table on older SQLite builds. Here are the most common operations across all five databases:</p>
 
+        <figure aria-label="ALTER TABLE compatibility matrix across MySQL, PostgreSQL, Oracle, SQL Server, and SQLite">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 320" role="img" aria-label="ALTER TABLE operation support across MySQL, PostgreSQL, Oracle, SQL Server, and SQLite">
+                <title>ALTER TABLE Compatibility Matrix</title>
+                <rect width="760" height="320" fill="#111827" rx="10"/>
+                <text x="380" y="26" text-anchor="middle" fill="#f1f5f9" font-family="system-ui,-apple-system,sans-serif" font-size="14" font-weight="700">ALTER TABLE: Which Operations Are Supported?</text>
+                <rect x="0" y="38" width="760" height="44" fill="#1e293b"/>
+                <text x="85" y="64" text-anchor="middle" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10" font-weight="700">OPERATION</text>
+                <text x="233" y="64" text-anchor="middle" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10" font-weight="700">MYSQL</text>
+                <text x="353" y="64" text-anchor="middle" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10" font-weight="700">POSTGRESQL</text>
+                <text x="469" y="64" text-anchor="middle" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10" font-weight="700">ORACLE</text>
+                <text x="586" y="64" text-anchor="middle" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10" font-weight="700">SQL SERVER</text>
+                <text x="702" y="64" text-anchor="middle" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10" font-weight="700">SQLITE</text>
+                <line x1="170" y1="38" x2="170" y2="298" stroke="#2d3748" stroke-width="1"/>
+                <line x1="296" y1="38" x2="296" y2="298" stroke="#2d3748" stroke-width="1"/>
+                <line x1="410" y1="38" x2="410" y2="298" stroke="#2d3748" stroke-width="1"/>
+                <line x1="528" y1="38" x2="528" y2="298" stroke="#2d3748" stroke-width="1"/>
+                <line x1="644" y1="38" x2="644" y2="298" stroke="#2d3748" stroke-width="1"/>
+                <!-- Row 1: Add Column -->
+                <rect x="0" y="82" width="760" height="54" fill="#111827"/>
+                <text x="85" y="104" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">Add</text>
+                <text x="85" y="120" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">Column</text>
+                <rect x="175" y="89" width="116" height="40" fill="#052e16" rx="4"/><text x="233" y="114" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="301" y="89" width="104" height="40" fill="#052e16" rx="4"/><text x="353" y="114" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="415" y="89" width="108" height="40" fill="#052e16" rx="4"/><text x="469" y="114" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="533" y="89" width="106" height="40" fill="#052e16" rx="4"/><text x="586" y="114" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="649" y="89" width="106" height="40" fill="#052e16" rx="4"/><text x="702" y="114" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <!-- Row 2: Rename Column -->
+                <line x1="0" y1="136" x2="760" y2="136" stroke="#1e293b" stroke-width="1"/>
+                <rect x="0" y="136" width="760" height="54" fill="#0f172a"/>
+                <text x="85" y="158" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">Rename</text>
+                <text x="85" y="174" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">Column</text>
+                <rect x="175" y="143" width="116" height="40" fill="#1c1206" rx="4"/><text x="233" y="158" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600">~ Partial</text><text x="233" y="174" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="10">MySQL 8+</text>
+                <rect x="301" y="143" width="104" height="40" fill="#052e16" rx="4"/><text x="353" y="168" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="415" y="143" width="108" height="40" fill="#1c1206" rx="4"/><text x="469" y="158" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600">~ Partial</text><text x="469" y="174" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="10">12c R2+</text>
+                <rect x="533" y="143" width="106" height="40" fill="#1c1206" rx="4"/><text x="586" y="158" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600">~ Partial</text><text x="586" y="174" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="10">sp_rename</text>
+                <rect x="649" y="143" width="106" height="40" fill="#1c1206" rx="4"/><text x="702" y="158" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600">~ Partial</text><text x="702" y="174" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="10">v3.25+</text>
+                <!-- Row 3: Change Data Type -->
+                <line x1="0" y1="190" x2="760" y2="190" stroke="#1e293b" stroke-width="1"/>
+                <rect x="0" y="190" width="760" height="54" fill="#111827"/>
+                <text x="85" y="212" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">Change</text>
+                <text x="85" y="228" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">Data Type</text>
+                <rect x="175" y="197" width="116" height="40" fill="#052e16" rx="4"/><text x="233" y="222" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="301" y="197" width="104" height="40" fill="#052e16" rx="4"/><text x="353" y="222" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="415" y="197" width="108" height="40" fill="#052e16" rx="4"/><text x="469" y="222" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="533" y="197" width="106" height="40" fill="#052e16" rx="4"/><text x="586" y="222" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="649" y="197" width="106" height="40" fill="#1f0606" rx="4"/><text x="702" y="222" text-anchor="middle" fill="#ef4444" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✗ None</text>
+                <!-- Row 4: Drop Column -->
+                <line x1="0" y1="244" x2="760" y2="244" stroke="#1e293b" stroke-width="1"/>
+                <rect x="0" y="244" width="760" height="54" fill="#0f172a"/>
+                <text x="85" y="266" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">Drop</text>
+                <text x="85" y="282" text-anchor="middle" fill="#cbd5e1" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">Column</text>
+                <rect x="175" y="251" width="116" height="40" fill="#052e16" rx="4"/><text x="233" y="276" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="301" y="251" width="104" height="40" fill="#052e16" rx="4"/><text x="353" y="276" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="415" y="251" width="108" height="40" fill="#052e16" rx="4"/><text x="469" y="276" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="533" y="251" width="106" height="40" fill="#052e16" rx="4"/><text x="586" y="276" text-anchor="middle" fill="#22c55e" font-family="system-ui,-apple-system,sans-serif" font-size="12" font-weight="600">✓ Full</text>
+                <rect x="649" y="251" width="106" height="40" fill="#1c1206" rx="4"/><text x="702" y="265" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="11" font-weight="600">~ Partial</text><text x="702" y="281" text-anchor="middle" fill="#f59e0b" font-family="system-ui,-apple-system,sans-serif" font-size="10">v3.35+</text>
+                <!-- Legend -->
+                <rect x="0" y="298" width="760" height="22" fill="#0f172a"/>
+                <circle cx="148" cy="309" r="5" fill="#22c55e"/>
+                <text x="157" y="313" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10.5">Full support</text>
+                <circle cx="295" cy="309" r="5" fill="#f59e0b"/>
+                <text x="304" y="313" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10.5">Partial / version-limited</text>
+                <circle cx="510" cy="309" r="5" fill="#ef4444"/>
+                <text x="519" y="313" fill="#94a3b8" font-family="system-ui,-apple-system,sans-serif" font-size="10.5">Not supported</text>
+            </svg>
+            <figcaption>ALTER TABLE support across five databases. SQLite requires v3.25+ to rename columns and v3.35+ to drop them; changing a column's data type is not supported and requires recreating the table.</figcaption>
+        </figure>
+
         <h3>Add a column</h3>
         <pre><code>-- MySQL, PostgreSQL, SQLite
 ALTER TABLE users ADD COLUMN phone VARCHAR(20);
@@ -658,7 +733,7 @@ ALTER TABLE users DROP COLUMN phone;
             <li><strong>Timestamp defaults</strong>: <code>CURRENT_TIMESTAMP</code> works in MySQL and SQLite; PostgreSQL prefers <code>NOW()</code>; Oracle uses <code>SYSTIMESTAMP</code>; SQL Server uses <code>GETDATE()</code> or <code>SYSDATETIME()</code>.</li>
         </ul>
         <p>
-            Whichever database you're targeting, modelling your schema visually before writing DDL makes it easier to catch type mismatches and missing constraints early. SQL Designer supports MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access dialects and exports ready-to-run <code>CREATE TABLE</code> scripts — <a href="/demo">try the demo</a> with your own schema.
+            Whichever database you're targeting, modelling your schema visually before writing DDL makes it easier to catch type mismatches and missing constraints early. SQL Designer supports MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access dialects and exports ready-to-run <code>CREATE TABLE</code> scripts — see the <a href="/blog/database-designer">free online database designer</a> or <a href="/demo">try the demo</a> with your own schema.
         </p>
 
         <section class="faq-section" aria-label="Frequently asked questions">
@@ -697,6 +772,7 @@ ALTER TABLE users DROP COLUMN phone;
                 <li><a href="/blog/mysql-data-types">MySQL Data Types Explained &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization Explained &rarr;</a></li>
                 <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax and Examples &rarr;</a></li>
+                <li><a href="/blog/best-free-erd-tools">Best Free ERD Tools — 10 Tested in 2026 &rarr;</a></li>
             </ul>
         </nav>
     </article>
