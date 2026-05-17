@@ -36,7 +36,15 @@
                 "@id": "https://sql-designer.com/#website",
                 "name": "SQL Designer",
                 "url": "https://sql-designer.com",
-                "description": "Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access."
+                "description": "Free visual database designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access.",
+                "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": {
+                        "@type": "EntryPoint",
+                        "urlTemplate": "https://sql-designer.com/blog?q={search_term_string}"
+                    },
+                    "query-input": "required name=search_term_string"
+                }
             },
             {
                 "@type": "WebApplication",
@@ -171,31 +179,6 @@
                 },
                 "foundingDate": "2024"
             },
-            {
-                "@type": "HowTo",
-                "name": "How to design a database schema with SQL Designer",
-                "description": "Create a visual database schema and export SQL in three steps.",
-                "step": [
-                    {
-                        "@type": "HowToStep",
-                        "position": 1,
-                        "name": "Import your DB or start from scratch",
-                        "text": "Paste a CREATE TABLE script or start with a blank canvas."
-                    },
-                    {
-                        "@type": "HowToStep",
-                        "position": 2,
-                        "name": "Create tables, draw relations",
-                        "text": "Drag-and-drop tables, add columns with types and constraints, draw foreign key relationships."
-                    },
-                    {
-                        "@type": "HowToStep",
-                        "position": 3,
-                        "name": "Generate CREATE TABLE script",
-                        "text": "Export a ready-to-run CREATE TABLE script for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, or MS Access."
-                    }
-                ]
-            }
         ]
     }
     @endverbatim
@@ -394,7 +377,7 @@
             Export clean SQL.
         </h1>
         <p class="hero-sub">
-            A browser-based database design tool for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access. Drag tables, draw relations, ship a CREATE TABLE script.
+            SQL Designer is a free, browser-based ERD and database schema designer — build tables visually, draw relationships, and export clean CREATE TABLE SQL for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, or MS Access. No install required.
         </p>
         <div class="hero-actions">
             <a id="hero-btn-authed" class="btn btn-solid btn-lg" href="/diagrams" style="display:none">Open My Diagrams</a>

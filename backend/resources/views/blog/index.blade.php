@@ -3,13 +3,14 @@
 @section('title', 'SQL Designer Blog — Database Design Guides')
 
 @section('head')
-    <meta name="description" content="Tutorials and guides on MySQL database design, ER diagrams, and schema best practices. Written by the SQL Designer team.">
+    <meta name="description" content="Database design guides written by Dmitriy Snyatkov, the developer behind SQL Designer — ERD, normalization, SQL dialects, and more.">
     <meta name="author" content="SQL Designer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog">
     <meta property="og:title" content="Blog — SQL Designer">
     <meta property="og:description" content="Tutorials and guides on MySQL database design, ER diagrams, and schema best practices.">
     <meta property="og:type" content="website">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2557">

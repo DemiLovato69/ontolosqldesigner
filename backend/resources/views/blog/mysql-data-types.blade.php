@@ -12,6 +12,7 @@
     <meta property="og:description"
           content="MySQL's 30+ data types split into 4 families. Learn which numeric, string, date/time, and JSON type to choose — and the mistakes that corrupt financial data.">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/mysql-data-types">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2556">

@@ -52,6 +52,10 @@
                 <span class="desc">Sign in to your SQL Designer account.</span>
             </li>
             <li>
+                <a href="/sitemap">Site Map</a>
+                <span class="desc">Full index of all pages on SQL Designer.</span>
+            </li>
+            <li>
                 <a href="/privacy">Privacy Policy</a>
                 <span class="desc">How we collect, use, and protect your data.</span>
             </li>

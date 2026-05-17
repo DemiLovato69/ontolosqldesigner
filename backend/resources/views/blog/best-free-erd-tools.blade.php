@@ -11,6 +11,7 @@
     <meta property="og:description"
           content="Honest comparison of 10 free ERD tools: SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, and DBeaver.">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/best-free-erd-tools">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2556">

@@ -12,6 +12,7 @@
     <meta property="og:description"
           content="Free DB designer — design relational schemas visually in your browser. Drag-and-drop tables, foreign keys, MySQL and PostgreSQL SQL export. No install.">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-designer">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2557">

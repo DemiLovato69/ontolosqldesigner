@@ -12,6 +12,7 @@
     <meta property="og:description"
           content="Poor database design costs the average org $12.9M a year. Understand 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples.">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-normalization">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2556">

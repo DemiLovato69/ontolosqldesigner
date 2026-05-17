@@ -10,6 +10,7 @@
     <meta property="og:title" content="MySQL vs PostgreSQL — Key Differences for Schema Design">
     <meta property="og:description" content="PostgreSQL is used by 55.6% of developers vs MySQL at 40.5%. Compare key schema design differences: auto-increment, JSONB, CHECK constraints, and more.">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/mysql-vs-postgresql">
     <meta property="og:image" content="https://images.unsplash.com/photo-1695668548342-c0c1ad479aee?fm=jpg&q=80&w=1200&h=630&fit=crop">
     <meta property="og:image:width" content="1200">

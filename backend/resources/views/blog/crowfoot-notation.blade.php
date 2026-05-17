@@ -12,6 +12,7 @@
     <meta property="og:description"
           content="Learn crow's foot notation for ER diagrams — the symbols for cardinality (one, many, zero-or-one) with examples for MySQL and PostgreSQL schema design.">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/crowfoot-notation">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2557">

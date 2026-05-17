@@ -12,6 +12,7 @@
     <meta property="og:description"
           content="MySQL foreign keys (InnoDB only) enforce referential integrity. Learn syntax, ON DELETE CASCADE vs SET NULL, error 1215 fixes, and e-commerce schema examples.">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/mysql-foreign-key">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2556">

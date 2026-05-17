@@ -10,6 +10,7 @@
     <meta property="og:title" content="DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite">
     <meta property="og:description" content="Side-by-side DDL comparison across five major databases: CREATE TABLE, primary keys, data types, constraints, and ALTER TABLE syntax.">
     <meta property="og:type" content="article">
+    <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-ddl-comparison">
     <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta property="og:image:width" content="2556">

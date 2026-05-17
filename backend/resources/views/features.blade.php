@@ -7,7 +7,7 @@
     <meta name="author" content="SQL Designer">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/features">
-    <meta property="og:title" content="Features — Multi-Dialect ERD Tool for MySQL, PostgreSQL, SQLite, Oracle &amp; More | SQL Designer">
+    <meta property="og:title" content="SQL Designer Features — Free ERD &amp; Schema Designer">
     <meta property="og:description" content="Every feature in SQL Designer: drag-and-drop canvas, SQL export for MySQL, PostgreSQL, SQLite, Oracle, SQL Server and MS Access, foreign keys, constraints, SQL import, auto-save, sharing.">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="SQL Designer">
@@ -18,7 +18,7 @@
     <meta property="og:image:height" content="1269">
     <meta property="og:image:alt" content="SQL Designer — full feature list for the free database designer and ERD tool">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Features — Multi-Dialect ERD Tool for MySQL, PostgreSQL, SQLite, Oracle &amp; More | SQL Designer">
+    <meta name="twitter:title" content="SQL Designer Features — Free ERD &amp; Schema Designer">
     <meta name="twitter:description" content="Every feature in SQL Designer: drag-and-drop canvas, SQL export for MySQL, PostgreSQL, SQLite, Oracle, SQL Server and MS Access, foreign keys, constraints, SQL import, auto-save, sharing.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <meta name="keywords" content="ERD tool, database designer, MySQL schema designer, PostgreSQL schema designer, SQLite schema designer, Oracle schema designer, SQL Server schema designer, MS Access schema designer, entity relationship diagram, visual SQL tool, foreign key diagram, CREATE TABLE generator, SQL import, free ERD tool, crow's foot notation, database diagram online, multi-dialect SQL export">
@@ -492,6 +492,9 @@
                     <li><a href="#browser-based">Browser-based</a></li>
                 </ul>
             </li>
+            <li>
+                <a class="sidebar-section" href="#vs">vs. alternatives</a>
+            </li>
         </ul>
     </aside>
 
@@ -507,7 +510,7 @@
                     <div class="feat-glyph">⌘</div>
                     <div class="feat-body">
                         <h3>Drag-and-drop canvas</h3>
-                        <p>An infinite, pan-and-zoom canvas. Drop tables anywhere, rearrange freely, work with schemas of any size without losing the shape.</p>
+                        <p>An infinite, pan-and-zoom canvas. Drop tables anywhere, rearrange freely, and work with schemas of any size without losing the shape of your design. Pan by scrolling, zoom with pinch or mouse wheel, and auto-fit the whole diagram to your screen in one click. The layout is always yours to control — no auto-arrange forced on you when you add a new table.</p>
                     </div>
                 </div>
 
@@ -547,7 +550,7 @@
                     <div class="feat-glyph fk">⤳</div>
                     <div class="feat-body">
                         <h3>Foreign keys</h3>
-                        <p>Drag from one column to another to define a foreign key. Cardinality is rendered in <a href="/blog/crowfoot-notation">crow's foot notation</a> and the constraint is included on export.</p>
+                        <p>Drag from one column to another to define a foreign key — no dialog boxes, no typing constraint names by hand. Cardinality is rendered in <a href="/blog/crowfoot-notation">crow's foot notation</a> so one-to-many and one-to-one relationships are immediately readable on the canvas. Every foreign key you draw is reflected in the SQL export as a proper <code>FOREIGN KEY ... REFERENCES</code> constraint, in the correct syntax for whichever dialect you've selected.</p>
                     </div>
                 </div>
 
@@ -627,7 +630,7 @@
                     <div class="feat-glyph">↧</div>
                     <div class="feat-body">
                         <h3>SQL import</h3>
-                        <p>Paste a <code>CREATE TABLE</code> script and SQL Designer parses it into a visual ER diagram automatically. Reverse-engineer an existing schema in seconds.</p>
+                        <p>Paste a <code>CREATE TABLE</code> script and SQL Designer parses it into a visual ER diagram automatically — tables, columns, types, constraints, and foreign keys all placed on the canvas. Useful for reverse-engineering a production schema before a refactor, visualizing a schema from documentation, or onboarding onto an unfamiliar database. Supports multi-table scripts with <code>FOREIGN KEY</code> references across tables.</p>
                     </div>
                 </div>
 
@@ -688,6 +691,29 @@
                 </div>
 
             </div>
+        </section>
+
+        <section class="docs-section" id="vs" aria-labelledby="vs-h2">
+            <p class="section-eyebrow">06 / Compare</p>
+            <h2 class="section-h2" id="vs-h2">How SQL Designer compares</h2>
+            <p style="font-size:0.95rem; color:var(--text-secondary); margin:0 0 1.5rem; max-width:65ch; text-wrap:pretty;">
+                Most database designers fall into one of two buckets: desktop software that requires installation and ties you to one engine, or SaaS tools that put SQL export behind a paywall. SQL Designer is neither.
+            </p>
+            <div style="display:flex; flex-direction:column; gap:1px; background:var(--border-light); border:1px solid var(--border-light); border-radius:8px; overflow:hidden; margin-bottom:1.5rem;">
+                <div style="background:var(--bg-surface); padding:1.3rem 1.4rem;">
+                    <h3 style="font-size:0.95rem; font-weight:600; margin:0 0 0.5rem; letter-spacing:-0.005em;">vs. MySQL Workbench</h3>
+                    <p style="font-size:0.9rem; color:var(--text-secondary); margin:0; max-width:62ch; line-height:1.65; text-wrap:pretty;">MySQL Workbench is powerful but desktop-only, MySQL-exclusive, and requires a ~200 MB install. It's the right choice for deep MySQL administration (query tuning, server monitoring, migrations). SQL Designer is the right choice when you want to sketch or document a schema fast, collaborate with someone who isn't on the same machine, or need output for a dialect other than MySQL — without installing anything.</p>
+                </div>
+                <div style="background:var(--bg-surface); padding:1.3rem 1.4rem;">
+                    <h3 style="font-size:0.95rem; font-weight:600; margin:0 0 0.5rem; letter-spacing:-0.005em;">vs. dbdiagram.io</h3>
+                    <p style="font-size:0.9rem; color:var(--text-secondary); margin:0; max-width:62ch; line-height:1.65; text-wrap:pretty;">dbdiagram.io uses a custom DSL — you write schema text and it renders a diagram. That's fast for people who prefer code-first workflows, but it means a learning curve and no drag-and-drop. Its free tier also caps the number of diagrams and restricts SQL export to paid plans. SQL Designer is visual from the start, dialect-aware, and free with no diagram cap or export paywall.</p>
+                </div>
+                <div style="background:var(--bg-surface); padding:1.3rem 1.4rem;">
+                    <h3 style="font-size:0.95rem; font-weight:600; margin:0 0 0.5rem; letter-spacing:-0.005em;">The SQL Designer position</h3>
+                    <p style="font-size:0.9rem; color:var(--text-secondary); margin:0; max-width:62ch; line-height:1.65; text-wrap:pretty;">Browser-based so nothing to install. Visual so there's no DSL to learn. Free forever — no feature is gated behind a subscription, and there are no diagram or export limits. Open source so you can inspect exactly what the tool does with your schema. This combination is what most free-tier ERD tools promise and don't deliver.</p>
+                </div>
+            </div>
+            <p style="font-size:0.88rem; color:var(--text-muted);">Full comparison including DrawSQL, ERDPlus, ChartDB, and Lucidchart: <a href="/blog/best-free-erd-tools" style="color:var(--color-primary-text);">10 Best Free ERD Tools in 2026 →</a></p>
         </section>
 
     </div>
