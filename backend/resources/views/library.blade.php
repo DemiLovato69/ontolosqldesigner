@@ -329,8 +329,8 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 860px;
-            height: 484px;
+            width: 300%;
+            height: 300%;
             border: none;
             transform: scale(calc(1 / 3));
             transform-origin: top left;
