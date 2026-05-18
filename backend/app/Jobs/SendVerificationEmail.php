@@ -27,7 +27,6 @@ class SendVerificationEmail implements ShouldQueue
 
     public function handle(): void
     {
-        Mail::purge('smtp');
         Mail::to($this->user->email)->send(new VerifyEmailMail($this->user));
     }
 }
