@@ -7,6 +7,7 @@ use App\Policies\DiagramPolicy;
 use App\Repositories\DiagramRepository;
 use App\Repositories\DiagramRepositoryInterface;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -19,5 +20,26 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Gate::policy(Diagram::class, DiagramPolicy::class);
+
+        // Alpine musl + pcntl_async_signals breaks the first SSL stream_socket_client call.
+        // One throwaway attempt initializes OpenSSL state so subsequent connections succeed.
+        // In simple words, some absolute BS happened to queue-emails docker container on prod, and this is the only solution that fixed it
+        if ($this->app->runningInConsole()) {
+            Queue::before(function () {
+                static $warmedUp = false;
+                if ($warmedUp) {
+                    return;
+                }
+                $warmedUp = true;
+                $host = config('mail.mailers.smtp.host');
+                $port = config('mail.mailers.smtp.port');
+                if ($host && $port) {
+                    $conn = @stream_socket_client("ssl://{$host}:{$port}", $e, $es, 5, STREAM_CLIENT_CONNECT);
+                    if ($conn) {
+                        fclose($conn);
+                    }
+                }
+            });
+        }
     }
 }
