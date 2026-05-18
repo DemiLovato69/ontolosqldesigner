@@ -12,9 +12,13 @@ services:
         depends_on:
             postgres:
                 condition: service_healthy
+            redis:
+                condition: service_healthy
         environment:
             DB_HOST: postgres
             DB_PORT: 5432
+            REDIS_HOST: redis
+            REDIS_PORT: 6379
 
     queue:
         build:
@@ -101,6 +105,18 @@ services:
         depends_on:
             - php
             - node
+        networks:
+            - snydiagram_network
+
+    redis:
+        image: redis:7-alpine
+        container_name: redis
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 5s
+            timeout: 3s
+            retries: 10
         networks:
             - snydiagram_network
 

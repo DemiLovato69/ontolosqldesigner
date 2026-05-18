@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\DB;
 
 class AdminService
 {
+    public function __construct(private readonly LibraryService $libraryService) {}
+
     public function authenticate(string $username, string $password): bool
     {
         return hash_equals('admin', $username)
@@ -87,6 +89,7 @@ class AdminService
         $diagram->featured = true;
         $diagram->featured_url = $url;
         $diagram->save();
+        $this->libraryService->invalidate();
     }
 
     public function unfeatureDiagram(Diagram $diagram): void
@@ -94,6 +97,7 @@ class AdminService
         $diagram->featured = false;
         $diagram->featured_url = null;
         $diagram->save();
+        $this->libraryService->invalidate();
     }
 
     public function impersonate(User $user): string

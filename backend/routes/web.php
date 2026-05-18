@@ -2,7 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
-use App\Models\Diagram;
+use App\Http\Controllers\LibraryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -23,18 +23,7 @@ Route::prefix('/blog')->group(function () {
 });
 Route::get('/about', fn() => view('about'));
 Route::get('/features', fn() => view('features'));
-Route::get('/library', function () {
-    $featured = Diagram::where('featured', true)
-        ->whereNotNull('share_access')
-        ->orderByDesc('updated_at')
-        ->get(['name', 'share_token', 'featured_url', 'updated_at']);
-    $diagrams = Diagram::where('library', true)
-        ->where('featured', false)
-        ->whereNotNull('share_access')
-        ->orderByDesc('updated_at')
-        ->get(['name', 'share_token', 'updated_at']);
-    return view('library', compact('featured', 'diagrams'));
-});
+Route::get('/library', [LibraryController::class, 'index']);
 Route::get('/sitemap', fn() => view('sitemap'));
 Route::get('/privacy', fn() => view('privacy'));
 Route::get('/terms', fn() => view('terms'));
