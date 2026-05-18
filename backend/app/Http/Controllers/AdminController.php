@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Knuckles\Scribe\Attributes\Group;
 
@@ -47,9 +48,16 @@ class AdminController extends Controller
     public function showDashboard(): Factory|View
     {
         $sort = in_array(request('sort'), ['registered', 'last_action']) ? request('sort') : 'registered';
-        ['users' => $users, 'libraryDiagrams' => $libraryDiagrams, 'registrationsByDay' => $registrationsByDay, 'activityByDay' => $activityByDay] = $this->adminService->getDashboardData($sort);
+        ['users' => $users, 'registrationsByDay' => $registrationsByDay, 'activityByDay' => $activityByDay] = $this->adminService->getDashboardData($sort);
 
-        return view('admin.dashboard', compact('users', 'libraryDiagrams', 'registrationsByDay', 'activityByDay', 'sort'));
+        return view('admin.dashboard', compact('users', 'registrationsByDay', 'activityByDay', 'sort'));
+    }
+
+    public function showLibrary(): Factory|View
+    {
+        $libraryDiagrams = $this->adminService->getLibraryDiagrams();
+
+        return view('admin.library', compact('libraryDiagrams'));
     }
 
     public function featureDiagram(Diagram $diagram, FeatureDiagramRequest $request): JsonResponse
@@ -98,7 +106,7 @@ class AdminController extends Controller
 
     public function userActivity(User $user): JsonResponse
     {
-        $rows = \DB::table('diagram_changelog')
+        $rows = DB::table('diagram_changelog')
             ->selectRaw("DATE(created_at) as day, COUNT(*) as count")
             ->where('user_id', $user->id)
             ->where('created_at', '>=', now()->subDays(59)->startOfDay())

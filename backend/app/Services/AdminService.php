@@ -68,14 +68,18 @@ class AdminService
         return [
             'users' => $usersQuery->get(),
             'activityByDay' => $activityByDay,
-            'libraryDiagrams' => Diagram::with('user')
-                ->where('library', true)
-                ->whereNotNull('share_access')
-                ->orderByDesc('featured')
-                ->orderByDesc('updated_at')
-                ->get(),
             'registrationsByDay' => $days,
         ];
+    }
+
+    public function getLibraryDiagrams(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Diagram::with('user')
+            ->where('library', true)
+            ->whereNotNull('share_access')
+            ->orderByDesc('featured')
+            ->orderByDesc('updated_at')
+            ->get();
     }
 
     public function featureDiagram(Diagram $diagram, string $url): void
