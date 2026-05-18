@@ -60,7 +60,7 @@ services:
         environment:
             DB_HOST: postgres
             DB_PORT: 5432
-        command: ["php", "artisan", "queue:work", "--queue=emails", "--tries=3", "--sleep=3", "--timeout=30"]
+        command: ["php", "artisan", "queue:work", "--queue=emails", "--tries=5", "--sleep=3", "--timeout=30"]
 
     reverb:
         build:
