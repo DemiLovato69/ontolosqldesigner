@@ -46,7 +46,7 @@ return [
             'password' => env('MAIL_PASSWORD'),
             'timeout' => 15,
             'local_domain' => env('MAIL_EHLO_DOMAIN'),
-            'stream' => ['ssl' => ['verify_peer' => false, 'verify_peer_name' => false]],
+            'stream' => ['ssl' => ['verify_peer' => false, 'verify_peer_name' => false, 'crypto_method' => STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT]],
         ],
 
         'ses' => [
