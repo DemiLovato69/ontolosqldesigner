@@ -4,7 +4,7 @@
 
 @section('head')
     <meta name="description"
-          content="Crow's foot notation is the ER diagram standard since Gordon Everest's 1976 paper. Learn the six cardinality symbols with mandatory, optional, and SQL examples.">
+          content="Crow's foot notation is the ER diagram standard since Gordon Everest's 1976 paper. Learn the six cardinality symbols with mandatory, optional, and SQL.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/crowfoot-notation">

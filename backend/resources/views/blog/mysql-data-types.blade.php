@@ -400,7 +400,7 @@ SELECT * FROM users WHERE preferences->>'$.notifications' = 'true';</code></pre>
         </div>
 
         <section class="faq-section" aria-label="Frequently asked questions">
-            <h2>Frequently Asked Questions</h2>
+            <h2 id="faq">Frequently Asked Questions</h2>
             <div class="faq-item">
                 <p class="faq-q">What MySQL data type should I use for storing money?</p>
                 <p class="faq-a">Use <code>DECIMAL(p, s)</code> — for example <code>DECIMAL(10, 2)</code> for two decimal places. Never use <code>FLOAT</code> or <code>DOUBLE</code> for money. Both use IEEE 754 binary floating-point, which cannot represent most decimal fractions exactly, causing rounding errors that accumulate in financial totals.</p>

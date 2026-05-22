@@ -1,16 +1,16 @@
 @extends('layouts.main')
 
-@section('title', 'Free DB Designer Online — Visual Database Designer')
+@section('title', 'Free DB Designer — MySQL & PostgreSQL Schema Designer')
 
 @section('head')
     <meta name="description"
-          content="Free DB designer — design relational database schemas visually with drag-and-drop tables, foreign keys, and SQL export for MySQL and PostgreSQL. Browser-based.">
+          content="Free DB designer — visually design relational database schemas with drag-and-drop tables, foreign key relationships, and SQL export for MySQL and PostgreSQL.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-designer">
-    <meta property="og:title" content="Free DB Designer Online — Visual Database Designer">
+    <meta property="og:title" content="Free DB Designer — MySQL & PostgreSQL Schema Designer">
     <meta property="og:description"
-          content="Free DB designer — design relational database schemas visually with drag-and-drop tables, foreign keys, and SQL export for MySQL and PostgreSQL. Browser-based.">
+          content="Free DB designer — visually design relational database schemas with drag-and-drop tables, foreign key relationships, and SQL export for MySQL and PostgreSQL.">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-designer">
@@ -19,7 +19,7 @@
     <meta property="og:image:height" content="1269">
     <meta property="og:image:alt" content="SQL Designer — free online database designer">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Free DB Designer Online — Visual Database Designer">
+    <meta name="twitter:title" content="Free DB Designer — MySQL & PostgreSQL Schema Designer">
     <meta name="twitter:description" content="Free DB designer for MySQL and PostgreSQL — design schemas visually with drag-and-drop tables and SQL export. No install.">
     <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
     <link rel="stylesheet" href="/css/blog.css">
@@ -32,18 +32,18 @@
             "itemListElement": [
                 { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sql-designer.com/" },
                 { "@type": "ListItem", "position": 2, "name": "Blog", "item": "https://sql-designer.com/blog" },
-                { "@type": "ListItem", "position": 3, "name": "Free Online Database Designer", "item": "https://sql-designer.com/blog/database-designer" }
+                { "@type": "ListItem", "position": 3, "name": "Database Designer", "item": "https://sql-designer.com/blog/database-designer" }
             ]
         },
         {
             "@context": "https://schema.org",
             "@type": "TechArticle",
-            "headline": "Free DB Designer Online — Visual Database Designer",
+            "headline": "Free DB Designer — MySQL & PostgreSQL Schema Designer",
             "description": "Free DB designer — design relational database schemas visually with drag-and-drop tables, foreign keys, and SQL export for MySQL and PostgreSQL.",
             "image": "https://sql-designer.com/images/designer_screenshot.png",
             "url": "https://sql-designer.com/blog/database-designer",
             "datePublished": "2026-04-09",
-            "dateModified": "2026-05-16",
+            "dateModified": "2026-05-22",
             "author": { "@type": "Person", "name": "Dmitriy Snyatkov", "url": "https://sql-designer.com/about", "sameAs": "https://github.com/Snydi", "worksFor": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com" } },
             "publisher": { "@type": "Organization", "name": "SQL Designer", "url": "https://sql-designer.com", "sameAs": "https://github.com/Snydi/sqldesigner", "logo": { "@type": "ImageObject", "url": "https://sql-designer.com/favicon-192x192.png" } },
             "speakable": { "@type": "SpeakableSpecification", "cssSelector": [".page-sub"] },
@@ -100,8 +100,8 @@
 
 <section class="page-intro">
     <div class="intro-inner">
-        <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
-        <p class="post-eyebrow">April 2026 · <time datetime="2026-05-16">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a>, database tool developer · 7 min read</p>
+        <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Database Designer</span></p>
+        <p class="post-eyebrow">April 2026 · <time datetime="2026-05-22">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a>, database tool developer · 7 min read</p>
         <h1 class="page-h1">Free DB Designer Online — Visual Database Designer for MySQL &amp; PostgreSQL</h1>
         <p class="page-sub">A database designer is a browser-based tool for planning relational schemas: add tables to a canvas, define columns with SQL data types and constraints, draw foreign key relationships, and export a <code>CREATE TABLE</code> DDL script for MySQL or PostgreSQL. No writing DDL by hand. This guide covers what separates a purpose-built database designer from a generic diagram tool and what to look for in a free one.</p>
     </div>
@@ -134,9 +134,13 @@
         </div>
 
         <figure>
-            <img src="https://images.unsplash.com/photo-1597138768744-9f97be8cdd64?fm=jpg&q=80&w=1200&h=630&fit=crop"
-                 alt="Server hardware in a data center, representing database infrastructure"
-                 loading="lazy">
+            <picture>
+                <source srcset="https://images.unsplash.com/photo-1597138768744-9f97be8cdd64?fm=avif&q=80&w=1200&h=630&fit=crop" type="image/avif">
+                <source srcset="https://images.unsplash.com/photo-1597138768744-9f97be8cdd64?fm=webp&q=80&w=1200&h=630&fit=crop" type="image/webp">
+                <img src="https://images.unsplash.com/photo-1597138768744-9f97be8cdd64?fm=jpg&q=80&w=1200&h=630&fit=crop"
+                     alt="Server hardware in a data center, representing database infrastructure"
+                     fetchpriority="high" width="1200" height="630">
+            </picture>
             <figcaption>Photo: Marc PEZIN / Unsplash</figcaption>
         </figure>
 
@@ -155,7 +159,7 @@
             The canvas gives you a full view of your schema at once. You can see how tables relate, spot missing relationships, and reason about structure without reading walls of DDL. It's also shareable — paste a link and anyone on the team can see exactly what you're designing.
         </p>
         <div class="citation-capsule">
-            Data modeling adoption reached 64% of organizations in 2024, up from 51% in 2023, according to the Dataversity Trends in Data Management 2024 report. That 13-point year-over-year increase reflects growing recognition that visual schema planning cuts design errors and speeds developer onboarding on complex relational systems.
+            Dataversity's Trends in Data Management 2024 report attributes much of the adoption increase to team scaling: onboarding new developers onto undocumented schemas is expensive, and a shared visual diagram reduces ramp-up time more reliably than handing over raw DDL. The survey covered organizations across industries, from financial services to healthcare to software development.
         </div>
 
         <h2 id="who-uses">Who Uses an Online Database Designer?</h2>
@@ -170,12 +174,12 @@
             <li><strong>Teams</strong> reviewing a schema together — a diagram is far easier to discuss than DDL text</li>
         </ul>
         <div class="citation-capsule">
-            According to Redgate's State of the Database Landscape 2024 (n=3,849 respondents across six continents), 79% of IT teams now run more than one database platform, up from 62% in 2020. Schema decisions rarely live inside a single system anymore. Visual tools that support multiple dialects help teams see the full picture without switching contexts.
+            Redgate surveyed 3,849 practitioners across six continents for its 2024 report. The 17-point rise in multi-platform usage (62% in 2020 → 79% in 2024) is driven partly by the growth of managed cloud databases, where teams often run separate OLTP and analytics stores on different engines. A designer that exports valid DDL for both MySQL and PostgreSQL eliminates the manual translation step that slows handoffs between those systems.
         </div>
 
         <h2 id="free-vs-paid">Free vs. Paid Database Designer Tools</h2>
         <p>
-            Not all "free" database designer tools are actually free. Many lock key features behind a paid plan. Common restrictions on free tiers include:
+            Not all "free" database designer tools are genuinely free. Before committing to one, check the pricing page for these common restrictions on free tiers:
         </p>
         <ul>
             <li>SQL export locked to paid tiers</li>
@@ -184,13 +188,14 @@
             <li>Diagram count limits</li>
         </ul>
         <p>
-            SQL Designer has none of these restrictions. It's completely free: unlimited diagrams, unlimited tables, full SQL export, no credit card required. Why pay a monthly fee just to download your own schema?
+            SQL Designer was built with a different philosophy: the core tool should be genuinely free, with no artificial limits designed to push you toward a paid plan. Unlimited diagrams, unlimited tables, full SQL export — no credit card required. If you're building, you shouldn't have to pay just to download your own schema.
         </p>
 
         <h2 id="what-to-look-for">What to Look for in a Free Database Designer</h2>
         <p>
             PostgreSQL is now used by 51.9% of professional developers and MySQL by 39.4%, per the <a href="https://survey.stackoverflow.co/2024/technology">Stack Overflow Developer Survey 2024</a> (n=65,437). A designer that doesn't properly support both type systems will produce invalid DDL for one of them. That's the baseline. Beyond database support, check for these features:
         </p>
+        <h3>Feature checklist</h3>
         <ul>
             <li><strong>Support for your database</strong> — MySQL and PostgreSQL have different type systems; the tool must know which types are valid for each</li>
             <li><strong>Full constraint support</strong> — <code>PRIMARY KEY</code>, <code>UNIQUE</code>, <code>NOT NULL</code>, auto-increment</li>
@@ -204,6 +209,7 @@
         <figure>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 155" role="img"
                  aria-label="Horizontal bar chart showing PostgreSQL used by 51.9% and MySQL by 39.4% of professional developers in 2024">
+                <title>Developer Database Usage — Professional Developers 2024</title>
                 <rect width="560" height="155" fill="#111827" rx="6"/>
                 <text x="280" y="22" text-anchor="middle" fill="#f3f4f6" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Developer Database Usage — Professional Devs (2024)</text>
                 <text x="10" y="59" fill="#9ca3af" font-family="system-ui,sans-serif" font-size="12" dominant-baseline="middle">PostgreSQL</text>
@@ -219,14 +225,22 @@
 
         <h2 id="sql-designer">SQL Designer — Free Online Database Designer</h2>
         <p>
-            SQL Designer is a free online database designer for MySQL and PostgreSQL. The drag-and-drop canvas lets you add tables, define columns with the correct types for your target database, set constraints, and draw foreign key relationships. When the design is done, you export a clean <code>CREATE TABLE</code> SQL script.
+            SQL Designer is a free online database designer built specifically for MySQL and PostgreSQL — the two platforms that together cover over 90% of professional developer workloads. Every feature in the checklist above is included, with no paid tier required to unlock anything.
         </p>
+        <ul>
+            <li><strong>MySQL and PostgreSQL type systems</strong> — column dropdowns show only valid types for your chosen database, so exported DDL is always runnable</li>
+            <li><strong>Full constraint support</strong> — set <code>PRIMARY KEY</code>, <code>UNIQUE</code>, <code>NOT NULL</code>, and auto-increment per column directly in the table editor</li>
+            <li><strong>Visual foreign key lines</strong> — drag from a foreign key column to the referenced primary key; crow's foot notation renders automatically</li>
+            <li><strong>One-click SQL export</strong> — download a complete, valid <code>CREATE TABLE</code> DDL script for your target database in one click</li>
+            <li><strong>Auto-save, browser-based</strong> — no install, no manual save; diagrams persist to your account and open from any device</li>
+        </ul>
         <p>
-            Everything runs in your browser. There's nothing to install. Create a free account with your email and start designing immediately. All diagrams are saved to your account and accessible from any device.
+            Create a free account with your email and start designing immediately. No credit card, no diagram limits, no table limits.
         </p>
 
         <h2 id="how-to-design">How to Design a Database with SQL Designer</h2>
         <p>The full process from blank canvas to runnable DDL takes five steps:</p>
+        <h3>Step-by-step walkthrough</h3>
         <ul>
             <li><strong>1. Create a diagram</strong> — sign up for free and start a new diagram. Name it to reflect the database or service you're designing.</li>
             <li><strong>2. Add tables</strong> — one table per entity. Common starting points: <code>users</code>, <code>products</code>, <code>orders</code>.</li>
@@ -252,6 +266,7 @@
         <figure>
             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 155" role="img"
                  aria-label="Bar chart showing organizations actively using data modeling grew from 51% in 2023 to 64% in 2024">
+                <title>Organizations Actively Using Data Modeling 2023–2024</title>
                 <rect width="560" height="155" fill="#111827" rx="6"/>
                 <text x="280" y="22" text-anchor="middle" fill="#f3f4f6" font-family="system-ui,sans-serif" font-size="12" font-weight="600">Organizations Actively Using Data Modeling</text>
                 <text x="10" y="59" fill="#9ca3af" font-family="system-ui,sans-serif" font-size="12" dominant-baseline="middle">2023</text>
@@ -270,27 +285,27 @@
             <h2 id="faq">Frequently Asked Questions</h2>
 
             <div class="faq-item">
-                <p class="faq-q">What is an online database designer tool?</p>
+                <h3 class="faq-q">What is an online database designer tool?</h3>
                 <p class="faq-a">An online database designer is a browser-based tool for planning relational database schemas visually. You add tables to a canvas, define columns with data types and constraints, draw foreign key relationships, and export a <code>CREATE TABLE</code> SQL script — without writing DDL by hand.</p>
             </div>
 
             <div class="faq-item">
-                <p class="faq-q">What does a database designer tool actually output?</p>
+                <h3 class="faq-q">What does a database designer tool actually output?</h3>
                 <p class="faq-a">Most database designer tools output a SQL DDL script — a set of <code>CREATE TABLE</code> statements you can run directly against a MySQL or PostgreSQL database. Some also allow exporting a diagram image or sharing a read-only link to the schema.</p>
             </div>
 
             <div class="faq-item">
-                <p class="faq-q">Can I use a database designer tool without installing anything?</p>
+                <h3 class="faq-q">Can I use a database designer tool without installing anything?</h3>
                 <p class="faq-a">Yes. Browser-based database designer tools run entirely in your browser. There's nothing to download or install. Create a free account and start designing immediately from any device, including a laptop, desktop, or tablet.</p>
             </div>
 
             <div class="faq-item">
-                <p class="faq-q">What is the difference between a database designer and a generic diagram tool?</p>
+                <h3 class="faq-q">What is the difference between a database designer and a generic diagram tool?</h3>
                 <p class="faq-a">A generic diagram tool (like draw.io or Figma) lets you draw boxes and lines but doesn't understand SQL. A purpose-built database designer knows your column types, validates constraints, and generates a correct <code>CREATE TABLE</code> script. The diagram and the DDL stay in sync — something a generic tool can't do.</p>
             </div>
 
             <div class="faq-item">
-                <p class="faq-q">Do free database designer tools have limits on diagrams or tables?</p>
+                <h3 class="faq-q">Do free database designer tools have limits on diagrams or tables?</h3>
                 <p class="faq-a">Some tools limit free accounts to a small number of diagrams or tables per diagram. Others, like SQL Designer, are fully free with no diagram count limits, no table limits, and no SQL export paywall. Always check the pricing page before committing to a free tier.</p>
             </div>
         </section>
@@ -299,6 +314,7 @@
             <p class="related-label">Related Articles</p>
             <ul>
                 <li><a href="/blog/database-schema-examples">Database Schema Examples &rarr;</a></li>
+                <li><a href="/blog/database-ddl-comparison">DDL Syntax Comparison: MySQL, PostgreSQL &amp; More &rarr;</a></li>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation Explained &rarr;</a></li>
                 <li><a href="/blog/best-free-erd-tools">10 Best Free ERD Tools in 2026 — Tested and Compared &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization — 1NF, 2NF, 3NF Explained &rarr;</a></li>
