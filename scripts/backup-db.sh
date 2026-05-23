@@ -6,11 +6,11 @@
 
 set -euo pipefail
 
-BACKUP_DIR="${1:-/var/www/snydiagram/backups}"
+BACKUP_DIR="${1:-/home/sql_designer/backups}"
 TIMESTAMP=$(date +"%Y-%m-%d_%H-%M-%S")
 FILENAME="snydiagram_${TIMESTAMP}.sql.gz"
 KEEP_DAYS=7
-ENV_FILE="/var/www/snydiagram/backend/.env"
+ENV_FILE="/home/sql_designer/backend/.env"
 
 # Parse DB vars from .env without sourcing (safe with special chars in values)
 get_env() { grep -m1 "^${1}=" "$ENV_FILE" | cut -d= -f2- | tr -d '\r'; }
