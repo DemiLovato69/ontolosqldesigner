@@ -14,14 +14,14 @@
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/crowfoot-notation">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2557">
-    <meta property="og:image:height" content="1269">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <meta property="og:image:alt" content="SQL Designer — ER diagram with crow's foot notation">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Crow's Foot Notation — ER Diagram Cardinality Explained">
     <meta name="twitter:description" content="Crow's foot notation explained — learn the cardinality symbols for ER diagrams with practical database design examples.">
-    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.webp">
     <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
@@ -40,7 +40,7 @@
             "@type": "TechArticle",
             "headline": "Crow's Foot Notation — ER Diagram Cardinality Explained",
             "description": "Crow's foot notation explained — the symbols for one-to-one, one-to-many, and many-to-many relationships in ER diagrams, with examples for MySQL and PostgreSQL schemas.",
-            "image": "https://sql-designer.com/images/designer_screenshot.png",
+            "image": { "@type": "ImageObject", "url": "https://sql-designer.com/images/designer_screenshot.webp", "width": 2240, "height": 1111 },
             "url": "https://sql-designer.com/blog/crowfoot-notation",
             "datePublished": "2026-04-16",
             "dateModified": "2026-05-16",

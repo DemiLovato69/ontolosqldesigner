@@ -4,24 +4,24 @@
 
 @section('head')
     <meta name="description"
-          content="Poor database design costs the average org $12.9M a year. Learn 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples and real-world SQL.">
+          content="Learn database normalization — 1NF, 2NF, 3NF, BCNF, and 4NF — with clear before-and-after table examples, real SQL scripts, and a step-by-step walkthrough.">
     <meta name="author" content="Dmitriy Snyatkov">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sql-designer.com/blog/database-normalization">
     <meta property="og:title" content="Database Normalization — 1NF, 2NF, and 3NF Explained">
     <meta property="og:description"
-          content="Poor database design costs the average org $12.9M a year. Learn 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples and real-world SQL.">
+          content="Learn database normalization — 1NF, 2NF, 3NF, BCNF, and 4NF — with clear before-and-after table examples, real SQL scripts, and a step-by-step walkthrough.">
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-normalization">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2556">
-    <meta property="og:image:height" content="1271">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <meta property="og:image:alt" content="SQL Designer — visual MySQL and PostgreSQL schema editor">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Database Normalization — 1NF, 2NF, and 3NF Explained">
-    <meta name="twitter:description" content="Poor database design costs the average org $12.9M a year. Learn 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples and real-world SQL.">
-    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <meta name="twitter:description" content="Learn database normalization — 1NF, 2NF, 3NF, BCNF, and 4NF — with clear before-and-after table examples, real SQL scripts, and a step-by-step walkthrough.">
+    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.webp">
     <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
@@ -39,8 +39,8 @@
                 "@context": "https://schema.org",
                 "@type": "TechArticle",
                 "headline": "Database Normalization Explained — 1NF, 2NF, and 3NF with Examples",
-                "description": "Poor database design costs the average organization $12.9 million per year. Learn 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples and a full step-by-step walkthrough.",
-                "image": "https://sql-designer.com/images/designer_screenshot.png",
+                "description": "Learn 1NF, 2NF, 3NF, BCNF, and 4NF with clear before-and-after table examples and a full step-by-step walkthrough.",
+                "image": { "@type": "ImageObject", "url": "https://sql-designer.com/images/designer_screenshot.webp", "width": 2240, "height": 1111 },
                 "url": "https://sql-designer.com/blog/database-normalization",
                 "datePublished": "2026-03-19",
                 "dateModified": "2026-05-16",
@@ -61,7 +61,7 @@
                     {
                         "@type": "Question",
                         "name": "What is First Normal Form (1NF)?",
-                        "acceptedAnswer": { "@type": "Answer", "text": "First Normal Form (1NF) requires that every column holds a single, atomic value — no comma-separated lists or repeating groups in a single cell. Each row must be uniquely identifiable by a primary key. MIT Sloan found that 47% of newly created data records contain a critical error, often caused by multi-valued columns." }
+                        "acceptedAnswer": { "@type": "Answer", "text": "First Normal Form (1NF) requires that every column holds a single, atomic value — no comma-separated lists or repeating groups in a single cell. Each row must be uniquely identifiable by a primary key." }
                     },
                     {
                         "@type": "Question",
@@ -87,6 +87,16 @@
                 "description": "Database normalization is the process of structuring a relational database schema to reduce data redundancy and improve data integrity by organizing tables according to a set of rules called normal forms. The three primary normal forms — First Normal Form (1NF, requiring atomic values and a primary key), Second Normal Form (2NF, eliminating partial dependencies on composite keys), and Third Normal Form (3NF, eliminating transitive dependencies between non-key columns) — progressively eliminate the anomalies that cause incorrect or inconsistent data.",
                 "inDefinedTermSet": { "@type": "DefinedTermSet", "name": "Database Design Glossary", "url": "https://sql-designer.com/blog" },
                 "url": "https://sql-designer.com/blog/database-normalization"
+            },
+            {
+                "@context": "https://schema.org",
+                "@type": "VideoObject",
+                "name": "Learn Database Normalization — 1NF, 2NF, 3NF, 4NF, 5NF",
+                "description": "A complete walkthrough of database normalization from 1NF through 5NF with worked examples — Decomplexify on YouTube.",
+                "thumbnailUrl": "https://img.youtube.com/vi/GFQaEYEc8_8/hqdefault.jpg",
+                "uploadDate": "2021-11-21",
+                "embedUrl": "https://www.youtube.com/embed/GFQaEYEc8_8",
+                "url": "https://www.youtube.com/watch?v=GFQaEYEc8_8"
             }
             ]
         @endverbatim
@@ -100,7 +110,7 @@
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>Schema Design</span></p>
         <p class="post-eyebrow">March 2026 · <time datetime="2026-05-16">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a>, database tool developer · 10 min read</p>
         <h1 class="page-h1">Database Normalization Explained — 1NF, 2NF, and 3NF with Examples</h1>
-        <p class="page-sub">Bad schema design doesn't just cause bugs — it costs money. Poor data quality runs the average organization $12.9 million per year (<a href="https://www.gartner.com" target="_blank" rel="noopener noreferrer">Gartner</a>, 2024). Most of that traces back to one root problem: the same fact stored in multiple rows, each copy free to drift out of sync. Database normalization fixes this at the design level — organizing tables so each piece of data is stored exactly once, in exactly one place.</p>
+        <p class="page-sub">Bad schema design doesn't just cause bugs — it creates structural problems that compound at scale. In almost every case, the root cause is the same: the same fact stored in multiple rows, each copy free to drift out of sync. Database normalization fixes this at the design level — organizing tables so each piece of data is stored exactly once, in exactly one place.</p>
     </div>
 </section>
 
@@ -125,7 +135,7 @@
         <div class="key-takeaways">
             <p class="kt-label">Key Takeaways</p>
             <ul>
-                <li>Poor data quality costs organizations $12.9M/year on average — most anomalies are preventable at the schema design stage (<a href="https://www.gartner.com" target="_blank" rel="noopener noreferrer">Gartner</a>, 2024).</li>
+                <li>Most data anomalies — update conflicts, insert errors, orphaned rows — are preventable at the schema design stage through normalization.</li>
                 <li>1NF requires atomic values; 2NF removes partial key dependencies; 3NF removes transitive dependencies. Each step splits one table into two, linked by a foreign key.</li>
                 <li>For most production apps, 3NF is the right target. BCNF and 4NF address edge cases with overlapping candidate keys or independent multi-valued columns.</li>
                 <li>Denormalize only deliberately — for analytics, pre-computed caches, or historical snapshots — and document why. Never denormalize during initial design as a shortcut.</li>
@@ -134,7 +144,7 @@
 
         <h2 id="why-wrong">Why Does Database Design Go Wrong?</h2>
         <p>
-            Poor data quality costs the average organization $12.9 million per year, according to Gartner (2024). That's not from hardware failures or network outages. It comes from early schema choices: storing the same customer email in fifty order rows, embedding a product price that needs updating across hundreds of records every time it changes. Every redundant copy is a future inconsistency waiting to happen.
+            Bad schema design doesn't fail loudly — it fails quietly. It comes from early schema choices: storing the same customer email in fifty order rows, embedding a product price that needs updating across hundreds of records every time it changes. Every redundant copy is a future inconsistency waiting to happen.
         </p>
         <p>Consider a single <code>orders</code> table that stores everything:</p>
         <table>
@@ -171,33 +181,9 @@
             Alice's email appears twice. Change it in one row and miss the other, and your data is broken. The Widget price also appears twice — a price change means hunting down every row that references it. Normalization eliminates that class of error at the design stage.
         </p>
 
-        <figure>
-            <svg viewBox="0 0 480 245" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Donut chart showing 47% of newly created data records contain at least one critical error. Source: MIT Sloan Management Review, 2024.">
-                <title>Data Quality: 47% of New Records Contain Critical Errors</title>
-                <rect width="480" height="245" fill="#0f172a" rx="8"/>
-                <text x="240" y="26" text-anchor="middle" font-family="ui-monospace,monospace" font-size="11" fill="#94a3b8" letter-spacing="1.5">DATA QUALITY IN NEWLY CREATED RECORDS</text>
-                <circle cx="150" cy="130" r="75" fill="none" stroke="#1e293b" stroke-width="32"/>
-                <circle cx="150" cy="130" r="75" fill="none" stroke="#ef4444" stroke-width="32"
-                    stroke-dasharray="221.48 471.24"
-                    transform="rotate(-90 150 130)"/>
-                <circle cx="150" cy="130" r="75" fill="none" stroke="#22c55e" stroke-width="32"
-                    stroke-dasharray="249.76 471.24"
-                    transform="rotate(79.2 150 130)"/>
-                <text x="150" y="123" text-anchor="middle" font-family="ui-monospace,monospace" font-size="26" font-weight="bold" fill="#ef4444">47%</text>
-                <text x="150" y="142" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="#94a3b8" letter-spacing="1">CONTAIN ERRORS</text>
-                <rect x="258" y="88" width="13" height="13" fill="#ef4444" rx="2"/>
-                <text x="277" y="99" font-family="ui-monospace,monospace" font-size="11" fill="#e2e8f0">47% — at least one critical error</text>
-                <rect x="258" y="111" width="13" height="13" fill="#22c55e" rx="2"/>
-                <text x="277" y="122" font-family="ui-monospace,monospace" font-size="11" fill="#e2e8f0">53% — appear structurally clean</text>
-                <text x="258" y="148" font-family="ui-monospace,monospace" font-size="10" fill="#64748b">Multi-valued columns and update</text>
-                <text x="258" y="162" font-family="ui-monospace,monospace" font-size="10" fill="#64748b">anomalies are a common root cause.</text>
-                <text x="240" y="232" text-anchor="middle" font-family="ui-monospace,monospace" font-size="9" fill="#475569">Source: MIT Sloan Management Review, 2024</text>
-            </svg>
-            <figcaption>47% of newly created data records contain at least one critical error — multi-valued columns and update anomalies are among the most common causes. (MIT Sloan Management Review, 2024)</figcaption>
-        </figure>
 
         <p>
-            MIT Sloan Management Review found that 47% of newly created data records contain at least one critical error, with redundant columns and update anomalies among the most frequent causes (MIT Sloan Management Review, 2024). Normalization eliminates that class of error by design — before a single row is ever written to production.
+            Normalization eliminates that class of error by design — before a single row is ever written to production.
         </p>
 
         <figure>
@@ -210,7 +196,7 @@
 
         <h2 id="1nf">What Is First Normal Form (1NF)?</h2>
         <p>
-            1NF is the foundation everything else builds on. It fixes the most obvious problem: data that can't be queried reliably because multiple values are crammed into a single cell. MIT Sloan Management Review found that 47% of newly created data records contain at least one critical error (MIT Sloan Management Review, 2024) — multi-valued columns like comma-separated lists are a direct cause. 1NF requires every cell to hold exactly one atomic value, and every row to be uniquely identifiable by a primary key.
+            1NF is the foundation everything else builds on. It fixes the most obvious problem: data that can't be queried reliably because multiple values are crammed into a single cell. Multi-valued columns — comma-separated lists, pipe-delimited values, or repeating groups — are among the most common structural errors in schema design. 1NF requires every cell to hold exactly one atomic value, and every row to be uniquely identifiable by a primary key.
         </p>
         <p><strong>Rule:</strong> Every column must hold a single, atomic value. No repeating groups, no comma-separated lists in a cell.</p>
 
@@ -480,7 +466,7 @@ employee_projects(emp_id, project_id)</code></pre>
             <li><strong>Historical snapshots</strong> — sometimes you <em>want</em> to store the product price at the time of purchase, not the current price. Denormalization is correct here by design.</li>
         </ul>
         <p>
-            Worth noting: only 3% of companies' data meets basic quality standards, according to Harvard Business Review. Most of that gap isn't intentional denormalization — it's accidental redundancy from schemas that were never properly normalized (<a href="https://hbr.org" target="_blank" rel="noopener noreferrer">Harvard Business Review</a>). Normalize first. Then denormalize deliberately, with documentation that explains why.
+            Normalize first. Then denormalize deliberately, with documentation that explains why.
         </p>
 
         <figure>
@@ -490,6 +476,12 @@ employee_projects(emp_id, project_id)</code></pre>
                  width="1600" height="1067">
             <figcaption>Photo by Taylor Vick on <a href="https://unsplash.com" target="_blank" rel="noopener noreferrer">Unsplash</a></figcaption>
         </figure>
+
+        <div class="cta-inline">
+            <strong>Build normalized schemas visually</strong>
+            <span>SQL Designer lets you design your tables and foreign key relationships on a canvas, then export a CREATE TABLE script. See <a href="/blog/database-schema-examples" style="color:var(--color-primary-text);">schema examples</a> for reference.</span>
+            <a href="/demo" class="btn btn-solid btn-sm">Open the demo</a>
+        </div>
 
         <section class="faq-section" aria-label="Frequently asked questions about database normalization">
             <h2 id="faq">Frequently Asked Questions</h2>

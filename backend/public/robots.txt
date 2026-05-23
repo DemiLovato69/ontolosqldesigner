@@ -23,4 +23,7 @@ Allow: /
 User-agent: OAI-SearchBot
 Allow: /
 
+User-agent: Bytespider
+Disallow: /
+
 Sitemap: https://sql-designer.com/sitemap.xml

@@ -12,14 +12,14 @@
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-ddl-comparison">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2556">
-    <meta property="og:image:height" content="1271">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <meta property="og:image:alt" content="SQL Designer — visual database schema editor">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite">
     <meta name="twitter:description" content="Side-by-side DDL comparison across five major databases: CREATE TABLE, primary keys, data types, constraints, and ALTER TABLE syntax.">
-    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.webp">
     <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
@@ -38,7 +38,7 @@
         "@type": "TechArticle",
         "headline": "DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite",
         "description": "How CREATE TABLE syntax, primary keys, data types, constraints, and ALTER TABLE differ across MySQL, PostgreSQL, Oracle, Microsoft SQL Server, and SQLite — with side-by-side DDL examples.",
-        "image": "https://sql-designer.com/images/designer_screenshot.png",
+        "image": { "@type": "ImageObject", "url": "https://sql-designer.com/images/designer_screenshot.webp", "width": 2240, "height": 1111 },
         "url": "https://sql-designer.com/blog/database-ddl-comparison",
         "datePublished": "2026-05-05",
         "dateModified": "2026-05-16",
@@ -768,11 +768,13 @@ ALTER TABLE users DROP COLUMN phone;
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
             <ul>
+                <li><a href="/features">SQL Designer Features — multi-dialect DDL export &rarr;</a></li>
                 <li><a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL — Key Differences for Schema Design &rarr;</a></li>
                 <li><a href="/blog/mysql-data-types">MySQL Data Types Explained &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization Explained &rarr;</a></li>
                 <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax and Examples &rarr;</a></li>
                 <li><a href="/blog/best-free-erd-tools">Best Free ERD Tools — 10 Tested in 2026 &rarr;</a></li>
+                <li><a href="/blog/postgresql-data-types">PostgreSQL Data Types — NUMERIC, TIMESTAMPTZ, JSONB, UUID &rarr;</a></li>
             </ul>
         </nav>
     </article>

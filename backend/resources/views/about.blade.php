@@ -13,9 +13,9 @@
           content="SQL Designer is a free visual ERD and database schema designer for MySQL, PostgreSQL, and more. Built and maintained by Dmitriy Snyatkov.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sql-designer.com/about">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2557">
-    <meta property="og:image:height" content="1269">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <script type="application/ld+json">
         @verbatim
         [
@@ -201,7 +201,7 @@
             <img src="/images/author_photo.jpeg" alt="Dmitriy Snyatkov" class="author-avatar" width="64" height="64" loading="lazy">
             <div class="author-info">
                 <h3>Dmitriy Snyatkov</h3>
-                <p>Software developer and the creator of SQL Designer. I've been building web applications for over a 3 years, with a focus on developer tooling and data-heavy systems. I built SQL Designer because I kept running into ERD tools that looked great in screenshots but hit paywalls the moment you tried to export SQL or create a second diagram. SQL Designer launched in 2026 and has since been used by developers across the stack — from junior devs sketching their first normalized schema to teams documenting production databases.</p>
+                <p>Software developer and the creator of SQL Designer. I've been building web applications for over a 3 years, with a focus on developer tooling and data-heavy systems. I built SQL Designer because I kept running into ERD tools that looked great in screenshots but hit paywalls the moment you tried to export SQL or create a second diagram. SQL Designer began development in 2024 and launched publicly in 2026, and has since been used by developers across the stack — from junior devs sketching their first normalized schema to teams documenting production databases.</p>
                 <div class="author-links">
                     <a href="https://github.com/Snydi" target="_blank" rel="noopener noreferrer">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/></svg>
@@ -218,6 +218,9 @@
         <h2>Why SQL Designer Exists</h2>
         <p>
             Most ERD tools fall into one of two categories: generic drawing tools (like draw.io or Miro) that produce a picture of a schema but can't validate SQL types or export DDL, and dedicated database design tools that are either paid, require a desktop install, or cap free users at a small number of diagrams.
+        </p>
+        <p>
+            The frustration that led to building SQL Designer was specific: trying to sketch a normalized schema for a multi-tenant SaaS application and hitting a paywall every time I wanted to export the DDL. The free tier of every dedicated tool I tried — DrawSQL, dbdiagram.io, QuickDBD — had table limits, export limits, or both. draw.io worked but knew nothing about MySQL vs PostgreSQL type differences. I ended up writing the CREATE TABLE statements by hand, which is exactly what a visual tool is supposed to prevent.
         </p>
         <p>
             SQL Designer sits in a different spot: it understands real database types and constraints, generates valid <code>CREATE TABLE</code> scripts for six dialects, and is genuinely free — no table limits, no diagram limits, no SQL export paywall. The source code is open on GitHub.
@@ -242,6 +245,14 @@
                 <p>Real-time multiplayer editing, shareable links with read-only or edit access, and embeddable iframes.</p>
             </div>
         </div>
+
+        <h2>How It Was Built</h2>
+        <p>
+            Development started in 2024. The first working version was a single-page app with a canvas rendered in SVG and SQL output hardcoded for MySQL. Over the following months the rendering layer was rewritten around Vue Flow for proper node-based graph interactions, PostgreSQL was added as a second dialect (which required rethinking the column type system entirely — the two databases share very few type names), and the backend moved to Laravel with a PostgreSQL store for diagrams and user accounts.
+        </p>
+        <p>
+            The six-dialect SQL export — MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access — was the most time-consuming part to get right. Each dialect has different quoting characters, different identity/auto-increment syntax, different constraint placement rules, and different sets of native types. The type picker component adapts to the selected dialect, so a column you define as <code>SERIAL</code> in PostgreSQL mode becomes <code>INT AUTO_INCREMENT</code> in MySQL without you having to remember the difference. The tool launched publicly in early 2026.
+        </p>
 
         <h2>Open Source</h2>
         <p>

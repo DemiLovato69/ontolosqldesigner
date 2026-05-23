@@ -20,6 +20,7 @@ Route::prefix('/blog')->group(function () {
     Route::get('/crowfoot-notation', fn() => view('blog.crowfoot-notation'));
     Route::get('/database-ddl-comparison', fn() => view('blog.database-ddl-comparison'));
     Route::get('/best-free-erd-tools', fn() => view('blog.best-free-erd-tools'));
+    Route::get('/postgresql-data-types', fn() => view('blog.postgresql-data-types'));
 });
 Route::get('/about', fn() => view('about'));
 Route::get('/features', fn() => view('features'));
@@ -67,8 +68,19 @@ Route::prefix('/auth')->where(['driver' => 'google|github|gitlab'])->group(funct
     Route::get('/{driver}/callback', [AuthController::class, 'oauthCallback']);
 });
 
-Route::get('/{any}', function () {
-    return view('layouts.app');
+Route::get('/{any}', function ($any) {
+    $exactRoutes = ['register', 'login', 'logout', 'verify-email', 'demo', 'diagrams', 'auth/callback'];
+    $prefixRoutes = ['diagrams/', 'shared/', 'embed/', 'auth/'];
+
+    if (in_array($any, $exactRoutes)) {
+        return view('layouts.app');
+    }
+    foreach ($prefixRoutes as $prefix) {
+        if (str_starts_with($any, $prefix)) {
+            return view('layouts.app');
+        }
+    }
+    abort(404);
 })->where('any', '.*');
 
 

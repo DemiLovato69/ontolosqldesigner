@@ -40,18 +40,6 @@
                 <span class="desc">Real database schemas shared by the community — browse for inspiration or share your own.</span>
             </li>
             <li>
-                <a href="/demo">Try Demo</a>
-                <span class="desc">Try the schema designer without creating an account.</span>
-            </li>
-            <li>
-                <a href="/register">Register</a>
-                <span class="desc">Create a free account to save and manage your diagrams.</span>
-            </li>
-            <li>
-                <a href="/login">Log In</a>
-                <span class="desc">Sign in to your SQL Designer account.</span>
-            </li>
-            <li>
                 <a href="/sitemap">Site Map</a>
                 <span class="desc">Full index of all pages on SQL Designer.</span>
             </li>
@@ -106,6 +94,10 @@
             <li>
                 <a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL — Key Differences for Schema Design</a>
                 <span class="desc">Comparing data types, constraints, JSON support, and which database to choose for your project.</span>
+            </li>
+            <li>
+                <a href="/blog/postgresql-data-types">PostgreSQL Data Types Explained — Which to Use and When</a>
+                <span class="desc">Complete guide to PostgreSQL's 42+ built-in types: numeric, text, boolean, date/time, JSONB, arrays, UUID, and identity columns — with CREATE TABLE examples.</span>
             </li>
         </ul>
     </div>

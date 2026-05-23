@@ -12,14 +12,14 @@
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2557">
-    <meta property="og:image:height" content="1269">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <meta property="og:image:alt" content="SQL Designer — visual MySQL and PostgreSQL schema editor">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Blog — SQL Designer">
     <meta name="twitter:description" content="Tutorials and guides on MySQL database design, ER diagrams, and schema best practices.">
-    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.webp">
     <script type="application/ld+json">
     @verbatim
     [
@@ -139,7 +139,7 @@
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><span>Blog</span></p>
         <h1 class="page-h1">Database Design Blog</h1>
-        <p class="page-sub">Guides and tutorials on MySQL and PostgreSQL schema design, ER diagrams, and database modelling. Written by the team behind SQL Designer — a free, open-source database design tool.</p>
+        <p class="page-sub">Guides and tutorials on MySQL and PostgreSQL schema design, ER diagrams, and database modelling. Written by Dmitriy Snyatkov, creator of SQL Designer — a free, open-source database design tool.</p>
     </div>
 </section>
 
@@ -188,6 +188,11 @@
         <p class="card-meta">March 2026 · by <span style="color:var(--color-primary-text);">Dmitriy Snyatkov</span> · 7 min read</p>
         <h2>MySQL vs PostgreSQL — Key Differences for Schema Design</h2>
         <p>Comparing MySQL and PostgreSQL for database schema design: data types, constraints, auto-increment, JSON support, and which to choose for your next project.</p>
+    </a>
+    <a class="post-card" href="/blog/postgresql-data-types">
+        <p class="card-meta">May 2026 · by <span style="color:var(--color-primary-text);">Dmitriy Snyatkov</span> · 10 min read</p>
+        <h2>PostgreSQL Data Types Explained — Which to Use and When</h2>
+        <p>A practical guide to PostgreSQL's 42+ built-in types: numeric, text, boolean, TIMESTAMPTZ, JSONB, arrays, UUID, and identity columns — with CREATE TABLE examples and MySQL comparisons.</p>
     </a>
 </div>
 

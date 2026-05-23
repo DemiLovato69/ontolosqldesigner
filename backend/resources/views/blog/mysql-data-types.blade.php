@@ -14,14 +14,14 @@
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/mysql-data-types">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2556">
-    <meta property="og:image:height" content="1271">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <meta property="og:image:alt" content="SQL Designer — visual MySQL and PostgreSQL schema editor">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="MySQL Data Types Explained — Which to Use and When">
     <meta name="twitter:description" content="MySQL's 30+ data types split into 4 families. Learn which numeric, string, date/time, and JSON type to choose — and the mistakes that corrupt financial data.">
-    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.webp">
     <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
@@ -40,7 +40,7 @@
                 "@type": "TechArticle",
                 "headline": "MySQL Data Types Explained — Which to Use and When",
                 "description": "A practical guide to MySQL data types: numeric, string, date/time, and JSON types, with advice on which to choose and common mistakes to avoid.",
-                "image": "https://sql-designer.com/images/designer_screenshot.png",
+                "image": { "@type": "ImageObject", "url": "https://sql-designer.com/images/designer_screenshot.webp", "width": 2240, "height": 1111 },
                 "url": "https://sql-designer.com/blog/mysql-data-types",
                 "datePublished": "2026-03-19",
                 "dateModified": "2026-05-17",
@@ -90,6 +90,16 @@
                         "acceptedAnswer": { "@type": "Answer", "text": "CHAR(36) stores the standard hyphenated UUID string. For storage efficiency, MySQL 8.0+ provides UUID_TO_BIN() and BIN_TO_UUID() to convert a UUID into BINARY(16), halving the storage compared to CHAR(36) and improving index performance. Use CHAR(36) for readability; use BINARY(16) for high-volume tables where index size matters." }
                     }
                 ]
+            },
+            {
+                "@context": "https://schema.org",
+                "@type": "VideoObject",
+                "name": "MySQL Full Course — Bro Code",
+                "description": "Full MySQL course covering data types, schema design, and queries — Bro Code on YouTube (2023).",
+                "thumbnailUrl": "https://img.youtube.com/vi/5OdVJbNCSso/hqdefault.jpg",
+                "uploadDate": "2023-01-02",
+                "embedUrl": "https://www.youtube.com/embed/5OdVJbNCSso",
+                "url": "https://www.youtube.com/watch?v=5OdVJbNCSso"
             }
             ]
         @endverbatim
@@ -101,7 +111,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>MySQL</span></p>
-        <p class="post-eyebrow">March 2026 · <time datetime="2026-05-17">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 9 min read</p>
+        <p class="post-eyebrow">March 2026 · <time datetime="2026-05-17">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a>, database tool developer · 9 min read</p>
         <h1 class="page-h1">MySQL Data Types Explained — Which to Use and When</h1>
         <p class="page-sub">MySQL provides data types across four categories: numeric (<code>INT</code>, <code>BIGINT</code>, <code>DECIMAL</code>, <code>FLOAT</code>), string (<code>VARCHAR</code>, <code>TEXT</code>, <code>CHAR</code>, <code>ENUM</code>), date/time (<code>DATE</code>, <code>DATETIME</code>, <code>TIMESTAMP</code>), and structured (<code>JSON</code>). Each type has specific storage size, value range, and behavioural constraints — for example, <code>TIMESTAMP</code> auto-converts to UTC while <code>DATETIME</code> stores wall-clock time, and <code>DECIMAL</code> is exact while <code>FLOAT</code> is approximate. This guide covers which type to choose for each common use case.</p>
     </div>
@@ -438,6 +448,7 @@ SELECT * FROM users WHERE preferences->>'$.notifications' = 'true';</code></pre>
                 <li><a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL — data type differences &rarr;</a></li>
                 <li><a href="/blog/database-ddl-comparison">DDL syntax across MySQL, PostgreSQL, and SQLite &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database normalization — first through third normal form &rarr;</a></li>
+                <li><a href="/blog/postgresql-data-types">PostgreSQL Data Types — BOOLEAN, JSONB, UUID, TIMESTAMPTZ &rarr;</a></li>
             </ul>
         </nav>
     </article>

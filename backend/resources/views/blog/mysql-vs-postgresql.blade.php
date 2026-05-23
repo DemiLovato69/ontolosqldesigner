@@ -38,7 +38,7 @@
         "@type": "TechArticle",
         "headline": "MySQL vs PostgreSQL — Key Differences for Schema Design",
         "description": "PostgreSQL is used by 55.6% of developers vs MySQL at 40.5%. Compare key schema design differences: auto-increment, JSONB, CHECK constraints, and more.",
-        "image": "https://images.unsplash.com/photo-1695668548342-c0c1ad479aee?fm=jpg&q=80&w=1200&h=630&fit=crop",
+        "image": { "@type": "ImageObject", "url": "https://images.unsplash.com/photo-1695668548342-c0c1ad479aee?fm=jpg&q=80&w=1200&h=630&fit=crop", "width": 1200, "height": 630 },
         "url": "https://sql-designer.com/blog/mysql-vs-postgresql",
         "datePublished": "2026-03-19",
         "dateModified": "2026-05-17",
@@ -77,6 +77,16 @@
                 "acceptedAnswer": { "@type": "Answer", "text": "Yes. PostgreSQL overtook MySQL in the 2022 Stack Overflow Developer Survey and has widened the gap since. By 2025, PostgreSQL is used by 55.6% of developers vs 40.5% for MySQL. It's also the most admired database for three consecutive years, with 66% of users wanting to continue using it (Stack Overflow, 2025)." }
             }
         ]
+    },
+    {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": "MySQL vs PostgreSQL: Which Database Should You Choose?",
+        "description": "A side-by-side comparison of MySQL and PostgreSQL covering performance, features, and when to choose each for a web application.",
+        "thumbnailUrl": "https://img.youtube.com/vi/ooHoamrUAmc/hqdefault.jpg",
+        "uploadDate": "2024-08-21",
+        "embedUrl": "https://www.youtube.com/embed/ooHoamrUAmc",
+        "url": "https://www.youtube.com/watch?v=ooHoamrUAmc"
     }
     ]
             @endverbatim
@@ -428,6 +438,7 @@ SELECT * FROM users WHERE username ILIKE 'alice';</code></pre>
                 <li><a href="/blog/database-ddl-comparison">DDL Syntax Compared: MySQL, PostgreSQL, Oracle, SQL Server &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization Explained &rarr;</a></li>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Cardinality Explained &rarr;</a></li>
+                <li><a href="/blog/postgresql-data-types">PostgreSQL Data Types Explained — full type reference &rarr;</a></li>
             </ul>
         </nav>
     </article>

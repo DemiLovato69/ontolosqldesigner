@@ -14,14 +14,14 @@
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/mysql-foreign-key">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2556">
-    <meta property="og:image:height" content="1271">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <meta property="og:image:alt" content="SQL Designer — visual MySQL and PostgreSQL schema editor">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="MySQL Foreign Key — Syntax, Examples, and Best Practices">
     <meta name="twitter:description" content="MySQL foreign keys (InnoDB only) enforce referential integrity. Learn syntax, ON DELETE CASCADE vs SET NULL, error 1215 fixes, and e-commerce schema examples.">
-    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.webp">
     <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
@@ -40,7 +40,7 @@
                 "@type": "TechArticle",
                 "headline": "MySQL Foreign Key — Syntax, Examples, and Best Practices",
                 "description": "MySQL foreign keys (InnoDB only) enforce referential integrity. Learn syntax, ON DELETE CASCADE vs SET NULL, error 1215 fixes, and e-commerce schema examples.",
-                "image": "https://sql-designer.com/images/designer_screenshot.png",
+                "image": { "@type": "ImageObject", "url": "https://sql-designer.com/images/designer_screenshot.webp", "width": 2240, "height": 1111 },
                 "url": "https://sql-designer.com/blog/mysql-foreign-key",
                 "datePublished": "2026-03-19",
                 "dateModified": "2026-05-16",
@@ -92,6 +92,16 @@
                     { "@type": "HowToStep", "name": "Alternatively, add the constraint with ALTER TABLE", "text": "On an existing table: ALTER TABLE child_table ADD CONSTRAINT fk_name FOREIGN KEY (child_column) REFERENCES parent_table(parent_column). Existing rows that violate the constraint will cause the ALTER to fail." },
                     { "@type": "HowToStep", "name": "Verify with SHOW CREATE TABLE", "text": "After adding the constraint, run SHOW CREATE TABLE child_table to confirm the constraint is listed with the correct name, columns, and actions." }
                 ]
+            },
+            {
+                "@context": "https://schema.org",
+                "@type": "VideoObject",
+                "name": "MySQL: FOREIGN KEYS are easy (kind of)",
+                "description": "A practical tutorial on MySQL foreign key syntax, ON DELETE CASCADE, SET NULL, and common mistakes — Bro Code on YouTube (2022).",
+                "thumbnailUrl": "https://img.youtube.com/vi/rFssfx37UJw/hqdefault.jpg",
+                "uploadDate": "2022-10-27",
+                "embedUrl": "https://www.youtube.com/embed/rFssfx37UJw",
+                "url": "https://www.youtube.com/watch?v=rFssfx37UJw"
             }
             ]
         @endverbatim
@@ -103,7 +113,7 @@
 <section class="page-intro">
     <div class="intro-inner">
         <p class="breadcrumb"><a href="/">Home</a><span class="sep">/</span><a href="/blog">Blog</a><span class="sep">/</span><span>MySQL</span></p>
-        <p class="post-eyebrow">March 2026 · <time datetime="2026-05-16">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a> · 8 min read</p>
+        <p class="post-eyebrow">March 2026 · <time datetime="2026-05-16">Last updated: May 2026</time> · by <a href="/about" style="color:var(--color-primary-text);">Dmitriy Snyatkov</a>, database tool developer · 8 min read</p>
         <h1 class="page-h1">MySQL Foreign Key — Syntax, Examples, and Best Practices</h1>
         <p class="page-sub">A MySQL foreign key is a column constraint that references the primary key or a unique index of another table, enforcing referential integrity at the database level. The <code>FOREIGN KEY</code> syntax supports four configurable actions for <code>ON DELETE</code> and <code>ON UPDATE</code>: <code>CASCADE</code>, <code>SET NULL</code>, <code>RESTRICT</code>, and <code>NO ACTION</code>. InnoDB storage and exactly matching column types on both sides are required. This guide covers syntax, all options, error 1215, performance considerations, and production best practices.</p>
     </div>

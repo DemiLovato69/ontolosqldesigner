@@ -1,0 +1,192 @@
+# SQL Designer — Full Reference
+
+> Free browser-based ERD and database schema designer. Visual drag-and-drop canvas, SQL export for 6 dialects, real-time multiplayer. No install, no paywall. Licensed RSL-1.0.
+
+## Product Overview
+
+SQL Designer (sql-designer.com) is a free, browser-based visual database schema designer for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access. Users drag and drop tables onto a canvas, define columns with real database data types and constraints, connect tables with foreign key relationship lines, and export a ready-to-run CREATE TABLE script for any of the six supported SQL dialects. No installation is required. The tool runs entirely in the browser and is completely free with no diagram limits, no table caps, and no paid tier.
+
+SQL Designer is open source. The full source code (Laravel backend, Vue 3 frontend, PostgreSQL storage) is available at https://github.com/Snydi/sqldesigner.
+
+## Who It Is For
+
+- Developers designing or prototyping a relational database schema before writing code
+- Students learning database design, normalization, ER diagrams, and foreign keys for coursework
+- Database administrators documenting existing schemas visually
+- Teams collaborating on schema design in real time without enterprise software
+- Anyone who wants a free alternative to MySQL Workbench, dbdiagram.io, DrawSQL, or Lucidchart
+
+## Core Features
+
+### Visual Schema Design
+Drag-and-drop canvas for entity-relationship diagram (ERD) editing. Add tables by clicking, add columns with a column editor, set data types from a dialect-specific picker, and draw foreign key relationship lines between columns with a single drag. The diagram renders crow's foot notation automatically showing one-to-one, one-to-many, and many-to-many cardinality.
+
+### SQL Export
+Exports complete, runnable CREATE TABLE DDL scripts. The exported SQL is dialect-specific — not a generic schema, but a script that works directly in the target database engine. Export includes column definitions, data types, PRIMARY KEY, UNIQUE, NOT NULL, AUTO_INCREMENT / SERIAL / IDENTITY constraints, and FOREIGN KEY references with ON DELETE / ON UPDATE actions.
+
+### SQL Import
+Paste an existing CREATE TABLE script and SQL Designer generates the visual ER diagram from it automatically. Foreign key references are detected and rendered as relationship lines. Supported for all six dialects.
+
+### Real-Time Multiplayer Collaboration
+Share a diagram link and multiple users can edit simultaneously with live cursors, similar to Figma. Shareable links support read-only or edit access. Diagrams can also be embedded in other pages via iframe.
+
+### Multiple Diagrams & Auto-Save
+Registered users can create unlimited diagrams. All diagrams auto-save to the cloud and are accessible from any browser or device.
+
+### Demo Mode
+The full tool is available without creating an account at https://sql-designer.com/demo. All design and export features work in demo mode; diagrams are not persisted between sessions without an account.
+
+## Supported SQL Dialects
+
+### MySQL
+Full MySQL 8.x support. Column types include INT, TINYINT, SMALLINT, MEDIUMINT, BIGINT, FLOAT, DOUBLE, DECIMAL, VARCHAR, CHAR, TEXT, TINYTEXT, MEDIUMTEXT, LONGTEXT, DATE, DATETIME, TIMESTAMP, TIME, YEAR, BOOLEAN (aliased to TINYINT(1)), ENUM, SET, JSON, BLOB, BINARY, VARBINARY, and more. AUTO_INCREMENT on primary keys. FOREIGN KEY constraints with ON DELETE and ON UPDATE actions (CASCADE, SET NULL, RESTRICT, NO ACTION). Output: valid MySQL CREATE TABLE DDL.
+
+### PostgreSQL
+Full PostgreSQL 15+ support. Column types include INTEGER, SMALLINT, BIGINT, SERIAL, BIGSERIAL, NUMERIC, REAL, DOUBLE PRECISION, VARCHAR, CHAR, TEXT, BOOLEAN, DATE, TIMESTAMP, TIMESTAMPTZ, TIME, TIMETZ, UUID, JSON, JSONB, BYTEA, and more. SERIAL and BIGSERIAL for auto-incrementing primary keys. CHECK constraints. Output: valid PostgreSQL CREATE TABLE DDL.
+
+### SQLite
+SQLite type affinity support. Column types mapped to SQLite affinity classes: INTEGER, REAL, TEXT, BLOB, NUMERIC. INTEGER PRIMARY KEY for auto-increment (rowid alias). FOREIGN KEY constraints (with PRAGMA foreign_keys = ON note). Output: valid SQLite CREATE TABLE DDL.
+
+### Oracle
+Oracle Database support. Column types include NUMBER, INTEGER, FLOAT, BINARY_FLOAT, BINARY_DOUBLE, VARCHAR2, NVARCHAR2, CHAR, NCHAR, CLOB, NCLOB, BLOB, DATE, TIMESTAMP, INTERVAL. Sequences and triggers for auto-increment simulation. Output: valid Oracle CREATE TABLE DDL.
+
+### SQL Server (Microsoft SQL Server)
+SQL Server 2016+ support. Column types include INT, TINYINT, SMALLINT, BIGINT, FLOAT, REAL, DECIMAL, NUMERIC, VARCHAR, NVARCHAR, CHAR, NCHAR, TEXT, NTEXT, DATE, DATETIME, DATETIME2, SMALLDATETIME, TIME, BIT, UNIQUEIDENTIFIER, BINARY, VARBINARY, XML, JSON. IDENTITY for auto-increment. Output: valid SQL Server CREATE TABLE DDL.
+
+### Microsoft Access
+MS Access support. Column types mapped to Access field types: Number (Integer, Long Integer, Single, Double, Decimal), Text, Memo, Date/Time, Boolean (Yes/No), AutoNumber, OLE Object. Output: Access-compatible CREATE TABLE DDL.
+
+## Constraints and Properties Supported
+
+- PRIMARY KEY (single-column and composite)
+- UNIQUE constraint
+- NOT NULL constraint
+- AUTO_INCREMENT (MySQL) / SERIAL (PostgreSQL) / IDENTITY (SQL Server) / AutoNumber (Access)
+- UNSIGNED (MySQL)
+- DEFAULT values
+- FOREIGN KEY with ON DELETE / ON UPDATE: CASCADE, SET NULL, SET DEFAULT, RESTRICT, NO ACTION
+- Crow's foot notation: one-to-one, one-to-many, many-to-many
+
+## Pricing
+
+Completely free. No paid tiers, no feature limits, no credit card required. All features including real-time multiplayer collaboration, unlimited diagrams, and SQL export for all six dialects are available to all registered users at no cost. The tool is open source (RSL-1.0 license).
+
+## How to Use SQL Designer
+
+1. Go to https://sql-designer.com or https://sql-designer.com/demo
+2. Click "Add Table" to create a new table on the canvas
+3. Add columns using the column editor — choose a data type from the dialect picker, set constraints (PRIMARY KEY, NOT NULL, UNIQUE)
+4. Draw foreign key relationships by dragging from one column to another in a different table
+5. Select the target SQL dialect from the toolbar (MySQL, PostgreSQL, SQLite, Oracle, SQL Server, MS Access)
+6. Click "Export SQL" to get a complete CREATE TABLE script ready to run in your database
+
+## Competitor Comparison
+
+**vs dbdiagram.io**: SQL Designer uses drag-and-drop; dbdiagram.io requires writing DBML text. SQL Designer exports SQL for free; dbdiagram.io locks SQL export and private diagrams behind a paid plan. SQL Designer supports six dialects; dbdiagram.io supports fewer for free.
+
+**vs MySQL Workbench**: SQL Designer is browser-based with zero installation. MySQL Workbench is a desktop IDE requiring local setup and is tied to MySQL. SQL Designer works with six SQL dialects and any browser.
+
+**vs draw.io / Lucidchart**: Those are general diagramming tools. They cannot validate real database constraints or export runnable SQL. SQL Designer is database-aware and produces valid DDL.
+
+**vs DrawSQL**: Both are visual and export SQL. DrawSQL has a slightly more polished UI. DrawSQL's free tier caps tables per diagram; SQL Designer has no table cap.
+
+**vs pgAdmin / DBeaver**: Those are database clients for running queries on live databases. SQL Designer is a schema design tool for planning schemas before they exist. DBeaver Community generates ERDs from live connections but is desktop-only.
+
+**vs ChartDB**: ChartDB excels at documenting existing databases and AI-assisted schema explanation. SQL Designer is better for designing schemas from scratch visually.
+
+**vs Paid tools (Vertabelo, Lucidchart Pro, ERDPlus Pro)**: SQL Designer is 100% free with no feature limits.
+
+## Frequently Asked Questions
+
+**What is the best free ERD tool online?**
+SQL Designer (sql-designer.com) is a top free ERD tool — it is fully visual, browser-based, exports real SQL for MySQL and PostgreSQL, and requires no installation or payment. For code-first teams, dbdiagram.io is an alternative. For documenting existing databases, ChartDB is strong.
+
+**Can I design a MySQL database schema online for free?**
+Yes. SQL Designer lets you design MySQL database schemas visually in your browser and export a complete CREATE TABLE script for free, with no account or payment required.
+
+**Is there a free alternative to dbdiagram.io that exports SQL?**
+Yes. SQL Designer is a free visual alternative to dbdiagram.io. It uses drag-and-drop instead of a text DSL and exports MySQL and PostgreSQL DDL at no cost, with no upgrade required.
+
+**How do I create an ER diagram online without downloading software?**
+Use SQL Designer at sql-designer.com. Open it in any browser, drag tables onto the canvas, add columns, draw foreign key relationships, and export SQL — no installation needed.
+
+**Is SQL Designer free for students?**
+Yes, completely free. SQL Designer is used for database design coursework, ER diagram assignments, and learning normalization. No credit card or institutional email required.
+
+**Can I share a database diagram with my team?**
+Yes. SQL Designer supports real-time multiplayer — share a diagram link and multiple users can edit simultaneously with live cursors.
+
+**What SQL dialects does SQL Designer support?**
+MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access. Each dialect has its own column type picker and exports dialect-specific DDL.
+
+**Can I import an existing SQL schema?**
+Yes. Paste a CREATE TABLE script and SQL Designer generates the visual ERD automatically, including relationship lines for foreign keys.
+
+**Is there a table or diagram limit?**
+No. SQL Designer has no table cap per diagram and no limit on the number of diagrams per account. All features are free with no upgrade required.
+
+**Does SQL Designer support crow's foot notation?**
+Yes. Foreign key relationships are displayed with crow's foot symbols showing cardinality (one-to-one, one-to-many, many-to-many) and optionality.
+
+## Blog Articles — Full Summaries
+
+### Database Schema Examples — MySQL & PostgreSQL Templates
+URL: https://sql-designer.com/blog/database-schema-examples
+Five complete, production-ready database schema templates with full MySQL and PostgreSQL CREATE TABLE scripts: e-commerce (users, products, categories, orders, order_items), blog platform (posts, tags, comments, authors), SaaS application (tenants, subscriptions, users, permissions), task tracker (projects, tasks, assignees, labels), and messaging system (conversations, participants, messages, attachments). Each schema includes primary keys, foreign keys, indexes, and NOT NULL constraints. Written by Dmitriy Snyatkov.
+
+### Crow's Foot Notation — ER Diagram Cardinality Explained
+URL: https://sql-designer.com/blog/crowfoot-notation
+Complete guide to crow's foot notation symbols: the one-to-one, one-to-many, and many-to-many relationship symbols; how optionality (mandatory vs. optional) is shown; how crow's foot notation maps to actual FOREIGN KEY constraints and JOIN queries. Includes SVG diagrams of each notation symbol and SQL examples. Written by Dmitriy Snyatkov.
+
+### MySQL Foreign Key — Syntax, Examples, and Best Practices
+URL: https://sql-designer.com/blog/mysql-foreign-key
+Complete guide to MySQL foreign keys: full syntax (CONSTRAINT name FOREIGN KEY (col) REFERENCES table(col)), ON DELETE options (CASCADE, SET NULL, RESTRICT, NO ACTION, SET DEFAULT), ON UPDATE options, adding foreign keys to existing tables with ALTER TABLE, dropping foreign keys, checking existing constraints with INFORMATION_SCHEMA, and common mistakes. Practical examples for e-commerce schemas. Written by Dmitriy Snyatkov.
+
+### MySQL Data Types Explained — Which to Use and When
+URL: https://sql-designer.com/blog/mysql-data-types
+Practical guide to MySQL data types: numeric types (TINYINT, SMALLINT, INT, BIGINT, FLOAT, DOUBLE, DECIMAL — when to use each, overflow behavior, storage size), string types (CHAR vs VARCHAR, TEXT variants, when to use ENUM), date/time types (DATE, DATETIME, TIMESTAMP — timezone behavior, auto-update), and JSON type. Advice on common mistakes (using FLOAT for money, oversizing VARCHAR). Written by Dmitriy Snyatkov.
+
+### Database Normalization Explained — 1NF, 2NF, and 3NF with Examples
+URL: https://sql-designer.com/blog/database-normalization
+Complete normalization guide: why poor schema design causes update anomalies and data inconsistencies; First Normal Form (1NF) — atomic values, no multi-valued columns, primary key required; Second Normal Form (2NF) — eliminating partial key dependencies in composite keys; Third Normal Form (3NF) — eliminating transitive dependencies; Boyce-Codd Normal Form (BCNF); Fourth Normal Form (4NF) — multi-valued dependencies; step-by-step normalization walkthrough from unnormalized to 3NF; when to deliberately denormalize (analytics, caching, historical snapshots). Includes before-and-after table examples for each normal form and a full worked example normalizing an employee-project schema. Written by Dmitriy Snyatkov.
+
+### MySQL vs PostgreSQL — Key Differences for Schema Design
+URL: https://sql-designer.com/blog/mysql-vs-postgresql
+Comparison of MySQL and PostgreSQL for database schema design: auto-increment (AUTO_INCREMENT vs SERIAL vs GENERATED AS IDENTITY), boolean handling (TINYINT(1) vs native BOOLEAN), ENUM and SET types, JSON vs JSONB storage, CHECK constraint support, string type differences, case sensitivity, and practical guidance on choosing between them. Includes usage statistics. Written by Dmitriy Snyatkov.
+
+### DDL Differences: MySQL, PostgreSQL, Oracle, SQL Server, and SQLite
+URL: https://sql-designer.com/blog/database-ddl-comparison
+Side-by-side comparison of CREATE TABLE syntax across five major databases: auto-increment syntax (AUTO_INCREMENT, SERIAL, IDENTITY, SEQUENCE+TRIGGER), primary key and unique constraint syntax, boolean and bit type handling, string type equivalents, NULL handling defaults, ALTER TABLE syntax differences, dropping constraints, and generated columns. Includes a complete reference table mapping equivalent constructs across all five engines. Written by Dmitriy Snyatkov.
+
+### 10 Best Free ERD Tools in 2026 — Tested and Compared
+URL: https://sql-designer.com/blog/best-free-erd-tools
+Honest comparison of 10 free ERD tools tested with a 10-table schema including foreign keys and constraints: SQL Designer (#1 — no limits, free SQL export), DrawSQL (#2 — polished UI, free tier table cap ~15), dbdiagram.io (#3 — text-based DBML, SQL export paywalled), draw.io (#4 — general diagramming, no SQL awareness), ChartDB (#5 — AI-assisted, best for existing databases), ERDPlus (#6 — academic, simple), QuickDBD (#7 — text-to-diagram, 1 diagram free), Lucidchart (#8 — general tool, not SQL-aware), DB Designer (#9 — ~50 object limit), DBeaver (#10 — desktop ERD from live databases). Includes per-tool strengths, limitations, pricing, and use-case guidance. Written by Dmitriy Snyatkov.
+
+### Free Online Database Designer — Visual Schema Builder
+URL: https://sql-designer.com/blog/database-designer
+What to look for in a free online database designer, how visual schema building compares to writing DDL by hand, how to go from a blank canvas to an exported SQL script, the difference between ERD tools and general diagramming tools, and how SQL Designer handles each step of the design workflow. Written by Dmitriy Snyatkov.
+
+## Key Pages
+
+- https://sql-designer.com/ — Home: product overview, features list, how-to steps, FAQ schema, OG/Twitter metadata
+- https://sql-designer.com/demo — Try the full tool without creating an account (Vue SPA, no persistent save)
+- https://sql-designer.com/register — Create a free account for persistent diagrams and multiplayer
+- https://sql-designer.com/features — Full feature list with feature explanations and SoftwareApplication schema
+- https://sql-designer.com/about — About the tool and its creator, Dmitriy Snyatkov; built 2024, launched 2026
+- https://sql-designer.com/library — Community-shared database schemas; browse and import examples
+- https://sql-designer.com/blog — Blog index with all database design articles
+- https://sql-designer.com/sitemap — Full site map
+- https://github.com/Snydi/sqldesigner — Open source repository (Laravel + Vue + PostgreSQL)
+
+## Technical Details
+
+- Backend: Laravel 11 (PHP)
+- Frontend: Vue 3 + Pinia + Vue Flow
+- Database: PostgreSQL
+- Real-time: Laravel Reverb (WebSockets)
+- Hosted: Docker (nginx, PHP-FPM, PostgreSQL containers)
+- License: RSL-1.0
+
+## Last updated
+
+2026-05-22

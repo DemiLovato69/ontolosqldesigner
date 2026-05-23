@@ -14,14 +14,14 @@
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/database-schema-examples">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2556">
-    <meta property="og:image:height" content="1271">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <meta property="og:image:alt" content="SQL Designer — visual MySQL and PostgreSQL schema editor">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Database Schema Examples — MySQL & PostgreSQL Templates">
     <meta name="twitter:description" content="5 ready-to-copy database schema examples — e-commerce, blog, SaaS, and more — with MySQL and PostgreSQL CREATE TABLE scripts.">
-    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.webp">
     <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
@@ -40,7 +40,7 @@
                 "@type": "TechArticle",
                 "headline": "Database Schema Examples — MySQL & PostgreSQL Templates",
                 "description": "5 ready-to-copy database schema examples — e-commerce, blog, SaaS, and more — with MySQL and PostgreSQL CREATE TABLE scripts.",
-                "image": "https://sql-designer.com/images/designer_screenshot.png",
+                "image": { "@type": "ImageObject", "url": "https://sql-designer.com/images/designer_screenshot.webp", "width": 2240, "height": 1111 },
                 "url": "https://sql-designer.com/blog/database-schema-examples",
                 "datePublished": "2026-04-02",
                 "dateModified": "2026-05-17",
@@ -546,6 +546,7 @@ CREATE TABLE messages (
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
             <ul>
+                <li><a href="/library">SQL Designer Schema Library — ready-made templates &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization — 1NF, 2NF, 3NF Explained &rarr;</a></li>
                 <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax and Best Practices &rarr;</a></li>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Cardinality Explained &rarr;</a></li>

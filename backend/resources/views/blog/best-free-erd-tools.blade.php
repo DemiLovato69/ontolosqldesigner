@@ -13,14 +13,14 @@
     <meta property="og:type" content="article">
     <meta property="og:site_name" content="SQL Designer">
     <meta property="og:url" content="https://sql-designer.com/blog/best-free-erd-tools">
-    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.png">
-    <meta property="og:image:width" content="2556">
-    <meta property="og:image:height" content="1271">
+    <meta property="og:image" content="https://sql-designer.com/images/designer_screenshot.webp">
+    <meta property="og:image:width" content="2240">
+    <meta property="og:image:height" content="1111">
     <meta property="og:image:alt" content="SQL Designer — free ERD tool for MySQL and PostgreSQL">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="10 Best Free ERD Tools in 2026 — Tested and Compared">
     <meta name="twitter:description" content="Honest comparison of 10 free ERD tools — SQL Designer, DrawSQL, dbdiagram.io, draw.io, ChartDB, ERDPlus, QuickDBD, Lucidchart, DB Designer, DBeaver.">
-    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.png">
+    <meta name="twitter:image" content="https://sql-designer.com/images/designer_screenshot.webp">
     <link rel="stylesheet" href="/css/blog.css">
     <script type="application/ld+json">
         @verbatim
@@ -39,7 +39,7 @@
             "@type": "TechArticle",
             "headline": "10 Best Free ERD Tools in 2026 — Tested and Compared",
             "description": "An honest comparison of 10 free ERD tools in 2026 — with real strengths, real limits, pricing details, and clear use-case guidance for every type of user.",
-            "image": "https://sql-designer.com/images/designer_screenshot.png",
+            "image": { "@type": "ImageObject", "url": "https://sql-designer.com/images/designer_screenshot.webp", "width": 2240, "height": 1111 },
             "url": "https://sql-designer.com/blog/best-free-erd-tools",
             "datePublished": "2026-05-12",
             "dateModified": "2026-05-16",
@@ -187,7 +187,7 @@
             <strong>How we tested:</strong> We created a 10-table schema in each tool — including foreign key relationships, composite primary keys, and NOT NULL constraints — then attempted to export MySQL and PostgreSQL DDL scripts and verified the output was valid SQL. Free-tier limits were confirmed against each tool's current pricing page.
         </p>
         <p>
-            <strong>Disclosure:</strong> SQL Designer is our product — we built it and we run this site. We ranked it #1 because we believe it is the strongest free option for designing a schema from scratch with no free-tier restrictions. We've tried to be specific about where each competitor has a genuine advantage: DrawSQL has a more polished UI, DBeaver is better for documenting an existing live database, ChartDB is stronger for AI-assisted schema explanation. Read the Limitations paragraph under each tool and judge for yourself.
+            <strong>Disclosure:</strong> SQL Designer is my product — we built it and I run this site. I ranked it #1 because I believe it is the strongest free option for designing a schema from scratch with no free-tier restrictions. I've tried to be specific about where each competitor has a genuine advantage: DrawSQL has a more polished UI, DBeaver is better for documenting an existing live database, ChartDB is stronger for AI-assisted schema explanation. Read the Limitations paragraph under each tool and judge for yourself. As an open-source project, the complete source code and commit history are publicly verifiable at <a href="https://github.com/Snydi/sqldesigner" target="_blank" rel="noopener noreferrer">github.com/Snydi/sqldesigner</a>.
         </p>
 
         <div class="tldr-box">
@@ -313,7 +313,7 @@
         <div class="tool-card">
             <p class="best-for">Best for: designing a relational database schema from scratch — completely free</p>
             <h3>1. SQL Designer — sql-designer.com</h3>
-            <img src="/images/designer_screenshot.png" alt="SQL Designer canvas showing an ER diagram with tables and foreign key relationships" width="720" height="400" loading="eager">
+            <img src="/images/designer_screenshot.webp" alt="SQL Designer canvas showing an ER diagram with tables and foreign key relationships" width="720" height="400" loading="eager">
             <p>SQL Designer is a browser-based schema design tool for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access. The workflow is visual: drag tables onto a canvas, add columns with real database types (<code>INT</code>, <code>VARCHAR</code>, <code>DECIMAL</code>, <code>TIMESTAMP</code>), set <code>PRIMARY KEY</code>, <code>UNIQUE</code>, <code>NOT NULL</code>, and <code>AUTO_INCREMENT</code> or <code>SERIAL</code> constraints with toggles, and draw foreign key relationships by connecting columns. The diagram uses crow's foot notation. When the schema is ready, export a complete <code>CREATE TABLE</code> DDL script for your target engine in one click — or paste existing SQL to visualise it instantly.</p>
             <p>The free tier has no table cap, no diagram limit, and no paywall on SQL export. Collaboration features — shareable links, embeddable iframes, and real-time multiplayer editing — are included at no cost. No credit card required; the <a href="/demo">demo canvas</a> works without an account.</p>
             <p><strong>Limitations:</strong> there is no reverse-engineering from a live database connection; you import SQL scripts, not live databases. The tool is focused on schema design, not query execution or database administration.</p>
@@ -518,6 +518,7 @@
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
             <ul>
+                <li><a href="/features">SQL Designer Features — Full Feature List &rarr;</a></li>
                 <li><a href="/blog/database-designer">Free Online Database Designer — Visual Schema Editor &rarr;</a></li>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Cardinality Explained &rarr;</a></li>
                 <li><a href="/blog/database-schema-examples">Database Schema Examples — MySQL &amp; PostgreSQL Templates &rarr;</a></li>
