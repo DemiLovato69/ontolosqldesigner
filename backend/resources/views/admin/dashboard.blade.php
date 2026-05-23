@@ -345,6 +345,38 @@
             .modal { padding: 18px 16px; gap: 12px; }
             .url-input { width: 100%; }
         }
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            padding: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+        }
+        .pagination a,
+        .pagination span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 30px;
+            height: 30px;
+            padding: 0 8px;
+            border: 1px solid #e0dede;
+            border-radius: 4px;
+            color: #888;
+            text-decoration: none;
+            background: #fff;
+            letter-spacing: .04em;
+            transition: border-color .2s, color .2s;
+        }
+        .pagination a:hover { border-color: #aaa; color: #2c3e50; }
+        .pagination .active span {
+            background: #fff5f5;
+            border-color: #8f2f2f;
+            color: #8f2f2f;
+        }
+        .pagination .disabled span { opacity: .35; cursor: default; }
     </style>
 </head>
 <body>
@@ -362,7 +394,7 @@
 
     <main>
         <div class="stats">
-            Total users: <strong>{{ $users->count() }}</strong>
+            Total users: <strong>{{ $totalUsers }}</strong>
         </div>
 
         <div class="chart-card">
@@ -380,7 +412,7 @@
         </div>
 
         <div class="section-heading" style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
-            <span>Users — {{ $users->count() }}</span>
+            <span>Users — {{ $totalUsers }}</span>
             <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
                 <div class="sort-toggle">
                     <a href="?sort=registered" class="sort-btn {{ $sort === 'registered' ? 'active' : '' }}">Registered</a>
@@ -466,6 +498,30 @@
         @empty
             <p class="empty">No users yet.</p>
         @endforelse
+
+        @if($users->lastPage() > 1)
+            <nav class="pagination" aria-label="Users pagination">
+                @if($users->onFirstPage())
+                    <span class="disabled"><span>←</span></span>
+                @else
+                    <a href="{{ $users->previousPageUrl() }}">←</a>
+                @endif
+
+                @foreach($users->getUrlRange(1, $users->lastPage()) as $page => $url)
+                    @if($page == $users->currentPage())
+                        <span class="active"><span>{{ $page }}</span></span>
+                    @else
+                        <a href="{{ $url }}">{{ $page }}</a>
+                    @endif
+                @endforeach
+
+                @if($users->hasMorePages())
+                    <a href="{{ $users->nextPageUrl() }}">→</a>
+                @else
+                    <span class="disabled"><span>→</span></span>
+                @endif
+            </nav>
+        @endif
     </main>
 
     <div class="toast" id="toast"></div>
@@ -473,7 +529,7 @@
     <div class="modal-overlay" id="bulkEmailModalOverlay">
         <div class="modal">
             <div class="modal-title">Email All Users</div>
-            <div class="modal-to" style="color:#a05020;">Sends to <strong>{{ $users->count() }}</strong> users — jobs will be queued and sent 2 seconds apart</div>
+            <div class="modal-to" style="color:#a05020;">Sends to <strong>{{ $totalUsers }}</strong> users — jobs will be queued and sent 2 seconds apart</div>
             <input type="text" id="bulkEmailSubject" placeholder="Subject" maxlength="255" />
             <textarea id="bulkEmailBody" placeholder="Message body..."></textarea>
             <div class="modal-actions">

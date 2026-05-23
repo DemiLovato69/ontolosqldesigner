@@ -3,6 +3,7 @@
 namespace App\Repositories;
 
 use App\Models\Diagram;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 
 class LibraryRepository
@@ -22,5 +23,14 @@ class LibraryRepository
             ->whereNotNull('share_access')
             ->orderByDesc('updated_at')
             ->get(['name', 'share_token', 'updated_at']);
+    }
+
+    public function getSharedByUsersPaginated(int $perPage = 24): LengthAwarePaginator
+    {
+        return Diagram::where('library', true)
+            ->where('featured', false)
+            ->whereNotNull('share_access')
+            ->orderByDesc('updated_at')
+            ->paginate($perPage, ['name', 'share_token', 'updated_at']);
     }
 }
