@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Diagram;
 use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 class AdminService
@@ -20,32 +21,35 @@ class AdminService
     /** @return array{users: LengthAwarePaginator, totalUsers: int, registrationsByDay: array, activityByDay: array} */
     public function getDashboardData(string $sort = 'registered'): array
     {
+        $tz = 'Europe/Moscow';
+        $cutoff = now()->subDays(59)->startOfDay();
+
         $rows = DB::table('users')
-            ->selectRaw("DATE(created_at) as day, COUNT(*) as count")
-            ->where('created_at', '>=', now()->subDays(59)->startOfDay())
-            ->groupByRaw("DATE(created_at)")
+            ->selectRaw("DATE(created_at AT TIME ZONE 'Europe/Moscow') as day, COUNT(*) as count")
+            ->where('created_at', '>=', $cutoff)
+            ->groupByRaw("DATE(created_at AT TIME ZONE 'Europe/Moscow')")
             ->orderBy('day')
             ->get()
             ->keyBy('day');
 
         $days = [];
         for ($i = 59; $i >= 0; $i--) {
-            $date = now()->subDays($i)->format('Y-m-d');
+            $date = now($tz)->subDays($i)->format('Y-m-d');
             $days[$date] = $rows->has($date) ? (int) $rows[$date]->count : 0;
         }
 
         $activityRows = DB::table('diagram_changelog')
-            ->selectRaw("DATE(created_at) as day, COUNT(DISTINCT user_id) as count")
+            ->selectRaw("DATE(created_at AT TIME ZONE 'Europe/Moscow') as day, COUNT(DISTINCT user_id) as count")
             ->whereNotNull('user_id')
-            ->where('created_at', '>=', now()->subDays(59)->startOfDay())
-            ->groupByRaw("DATE(created_at)")
+            ->where('created_at', '>=', $cutoff)
+            ->groupByRaw("DATE(created_at AT TIME ZONE 'Europe/Moscow')")
             ->orderBy('day')
             ->get()
             ->keyBy('day');
 
         $activityByDay = [];
         for ($i = 59; $i >= 0; $i--) {
-            $date = now()->subDays($i)->format('Y-m-d');
+            $date = now($tz)->subDays($i)->format('Y-m-d');
             $activityByDay[$date] = $activityRows->has($date) ? (int) $activityRows[$date]->count : 0;
         }
 
@@ -69,15 +73,26 @@ class AdminService
 
         $totalUsers = User::count();
 
+        $returningUsers = DB::table('diagram_changelog')
+            ->whereNotNull('user_id')
+            ->groupBy('user_id')
+            ->havingRaw('COUNT(DISTINCT DATE(created_at AT TIME ZONE \'Europe/Moscow\')) >= 2')
+            ->get()
+            ->count();
+
+        $retentionRate = $totalUsers > 0 ? round($returningUsers / $totalUsers * 100, 1) : 0;
+
         return [
             'users'              => $usersQuery->paginate(20)->withQueryString(),
             'totalUsers'         => $totalUsers,
             'activityByDay'      => $activityByDay,
             'registrationsByDay' => $days,
+            'returningUsers'     => $returningUsers,
+            'retentionRate'      => $retentionRate,
         ];
     }
 
-    public function getLibraryDiagrams(): \Illuminate\Database\Eloquent\Collection
+    public function getLibraryDiagrams(): Collection
     {
         return Diagram::with('user')
             ->where('library', true)

@@ -395,6 +395,10 @@
     <main>
         <div class="stats">
             Total users: <strong>{{ $totalUsers }}</strong>
+            &nbsp;&middot;&nbsp;
+            Returning users: <strong>{{ $returningUsers }}</strong>
+            &nbsp;&middot;&nbsp;
+            Retention: <strong>{{ $retentionRate }}%</strong>
         </div>
 
         <div class="chart-card">
