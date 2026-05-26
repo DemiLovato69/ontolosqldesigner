@@ -431,6 +431,42 @@
         .submit-code .tok-attr { color: var(--accent-fk, #c9a86a); }
         .submit-code .tok-str { color: #b8b8b8; }
         .submit-code .tok-com { color: var(--text-muted); }
+
+        /* ── Pagination ── */
+        .lib-pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            padding: 1.5rem 0 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .lib-pagination a,
+        .lib-pagination span {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 2rem;
+            height: 2rem;
+            padding: 0 0.5rem;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            background: var(--bg-surface);
+            transition: border-color 120ms, color 120ms;
+        }
+        .lib-pagination a:hover { border-color: var(--border-strong); color: var(--text-primary); }
+        .lib-pagination span[aria-current="page"] {
+            background: rgba(93,181,131,0.1);
+            border-color: var(--color-primary-text, #5db583);
+            color: var(--color-primary-text, #5db583);
+        }
+        .lib-pagination span.disabled {
+            opacity: 0.35;
+            cursor: default;
+        }
     </style>
 @endsection
 
@@ -522,7 +558,30 @@
                     </a>
                 @endforeach
             </div>
+        @if($diagrams->lastPage() > 1)
+            <nav class="lib-pagination" aria-label="Diagrams pagination">
+                @if($diagrams->onFirstPage())
+                    <span class="disabled">←</span>
+                @else
+                    <a href="{{ $diagrams->previousPageUrl() }}">←</a>
+                @endif
+
+                @foreach($diagrams->getUrlRange(1, $diagrams->lastPage()) as $page => $url)
+                    @if($page == $diagrams->currentPage())
+                        <span aria-current="page">{{ $page }}</span>
+                    @else
+                        <a href="{{ $url }}">{{ $page }}</a>
+                    @endif
+                @endforeach
+
+                @if($diagrams->hasMorePages())
+                    <a href="{{ $diagrams->nextPageUrl() }}">→</a>
+                @else
+                    <span class="disabled">→</span>
+                @endif
+            </nav>
         @endif
+    @endif
     </div>
 </section>
 

@@ -4,18 +4,20 @@ namespace App\Services;
 
 use App\Models\Diagram;
 use App\Models\User;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 
 class AdminService
 {
+    public function __construct(private readonly LibraryService $libraryService) {}
+
     public function authenticate(string $username, string $password): bool
     {
         return hash_equals('admin', $username)
             && hash_equals((string)config('app.admin_password'), $password);
     }
 
-    /** @return array{users: Collection, libraryDiagrams: Collection, registrationsByDay: array} */
+    /** @return array{users: LengthAwarePaginator, totalUsers: int, registrationsByDay: array, activityByDay: array} */
     public function getDashboardData(string $sort = 'registered'): array
     {
         $rows = DB::table('users')
@@ -65,9 +67,12 @@ class AdminService
             $usersQuery->orderBy('created_at', 'desc');
         }
 
+        $totalUsers = User::count();
+
         return [
-            'users' => $usersQuery->get(),
-            'activityByDay' => $activityByDay,
+            'users'              => $usersQuery->paginate(20)->withQueryString(),
+            'totalUsers'         => $totalUsers,
+            'activityByDay'      => $activityByDay,
             'registrationsByDay' => $days,
         ];
     }
@@ -87,6 +92,7 @@ class AdminService
         $diagram->featured = true;
         $diagram->featured_url = $url;
         $diagram->save();
+        $this->libraryService->invalidate();
     }
 
     public function unfeatureDiagram(Diagram $diagram): void
@@ -94,6 +100,7 @@ class AdminService
         $diagram->featured = false;
         $diagram->featured_url = null;
         $diagram->save();
+        $this->libraryService->invalidate();
     }
 
     public function impersonate(User $user): string

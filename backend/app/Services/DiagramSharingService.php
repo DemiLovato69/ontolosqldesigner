@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class DiagramSharingService
 {
+    public function __construct(private readonly LibraryService $libraryService) {}
     public function ensureShared(Diagram $diagram): string
     {
         if (!$diagram->share_access) {
@@ -28,6 +29,7 @@ class DiagramSharingService
         $diagram->share_access = null;
         $diagram->library = false;
         $diagram->save();
+        $this->libraryService->invalidate();
     }
 
     public function updateShareSettings(Diagram $diagram, ?string $access, ?bool $requireApproval, ?bool $library): array
@@ -48,6 +50,10 @@ class DiagramSharingService
         }
 
         $diagram->save();
+
+        if ($library !== null) {
+            $this->libraryService->invalidate();
+        }
 
         return [
             'share_access'     => $diagram->share_access,
