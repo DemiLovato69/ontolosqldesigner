@@ -241,11 +241,13 @@
 
         /* ── Sections ── */
         .lib-section {
-            max-width: var(--maxw);
-            margin: 0 auto;
             padding: clamp(2rem, 4vw, 3rem) var(--gutter);
         }
         .lib-section + .lib-section { padding-top: 0; }
+        .lib-section-inner {
+            max-width: var(--maxw);
+            margin: 0 auto;
+        }
         .section-head {
             display: flex;
             align-items: center;
@@ -286,9 +288,11 @@
         /* ── Grid ── */
         .lib-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 1rem;
         }
+        @media (max-width: 860px) { .lib-grid { grid-template-columns: repeat(2, 1fr); } }
+        @media (max-width: 480px) { .lib-grid { grid-template-columns: 1fr; } }
 
         /* ── Cards ── */
         .lib-card {
@@ -393,16 +397,18 @@
 
         /* ── Submit strip ── */
         .submit-strip {
-            max-width: var(--maxw);
-            margin: 0 auto;
             padding: clamp(2.5rem, 5vw, 3.5rem) var(--gutter);
             border-top: 1px solid var(--border-color);
+        }
+        .submit-strip-inner {
+            max-width: var(--maxw);
+            margin: 0 auto;
             display: grid;
             grid-template-columns: 1.4fr 1fr;
             gap: clamp(1.5rem, 4vw, 3rem);
             align-items: center;
         }
-        @media (max-width: 720px) { .submit-strip { grid-template-columns: 1fr; } }
+        @media (max-width: 720px) { .submit-strip-inner { grid-template-columns: 1fr; } }
         .submit-strip .section-eyebrow { margin-bottom: 0.4rem; }
         .submit-strip h2 {
             font-size: clamp(1.3rem, 2.4vw, 1.7rem);
@@ -443,94 +449,100 @@
 
 <!-- FEATURED -->
 <section class="lib-section">
-    <div class="section-head">
-        <h2 class="section-h2">Featured schemas</h2>
-        <span class="section-pill featured">Backlink exchange</span>
-    </div>
-    <p class="section-desc">Schemas embedded on the user's own site with a link back to SQL Designer. Use the <em>embed</em> code option in the share dialog, then <a href="mailto:dmitriy@sql-designer.com">contact me</a> and I'll feature your schema here with a DO FOLLOW backlink, leading to your site.</p>
+    <div class="lib-section-inner">
+        <div class="section-head">
+            <h2 class="section-h2">Featured schemas</h2>
+            <span class="section-pill featured">Backlink exchange</span>
+        </div>
+        <p class="section-desc">Schemas embedded on the user's own site with a link back to SQL Designer. Use the <em>embed</em> code option in the share dialog, then <a href="mailto:dmitriy@sql-designer.com">contact me</a> and I'll feature your schema here with a DO FOLLOW backlink, leading to your site.</p>
 
-    @if($featured->isEmpty())
-        <div class="lib-empty">
-            <div class="glyph">★</div>
-            <p>No featured schemas yet.</p>
-            <p class="hint">Embed your diagram on your site to get featured here.</p>
-        </div>
-    @else
-        <div class="lib-grid">
-            @foreach($featured as $diagram)
-                <div class="lib-card">
-                    <a href="/diagrams/{{ $diagram->share_token }}" target="_blank" rel="noopener noreferrer" class="lib-card-preview">
-                        <iframe
-                            data-src="/embed/{{ $diagram->share_token }}"
-                            title="{{ $diagram->name }} preview"
-                            tabindex="-1"
-                        ></iframe>
-                    </a>
-                    <div class="lib-card-body">
-                        <a class="lib-card-name" href="/diagrams/{{ $diagram->share_token }}" target="_blank" rel="noopener noreferrer">{{ $diagram->name }}</a>
-                        @if($diagram->featured_url)
-                            <a class="lib-card-backlink" href="{{ $diagram->featured_url }}" target="_blank" rel="dofollow noopener noreferrer">
-                                ↗ {{ parse_url($diagram->featured_url, PHP_URL_HOST) }}
-                            </a>
-                        @endif
+        @if($featured->isEmpty())
+            <div class="lib-empty">
+                <div class="glyph">★</div>
+                <p>No featured schemas yet.</p>
+                <p class="hint">Embed your diagram on your site to get featured here.</p>
+            </div>
+        @else
+            <div class="lib-grid">
+                @foreach($featured as $diagram)
+                    <div class="lib-card">
+                        <a href="/diagrams/{{ $diagram->share_token }}" target="_blank" rel="noopener noreferrer" class="lib-card-preview">
+                            <iframe
+                                data-src="/embed/{{ $diagram->share_token }}"
+                                title="{{ $diagram->name }} preview"
+                                tabindex="-1"
+                            ></iframe>
+                        </a>
+                        <div class="lib-card-body">
+                            <a class="lib-card-name" href="/diagrams/{{ $diagram->share_token }}" target="_blank" rel="noopener noreferrer">{{ $diagram->name }}</a>
+                            @if($diagram->featured_url)
+                                <a class="lib-card-backlink" href="{{ $diagram->featured_url }}" target="_blank" rel="dofollow noopener noreferrer">
+                                    ↗ {{ parse_url($diagram->featured_url, PHP_URL_HOST) }}
+                                </a>
+                            @endif
+                        </div>
                     </div>
-                </div>
-            @endforeach
-        </div>
-    @endif
+                @endforeach
+            </div>
+        @endif
+    </div>
 </section>
 
 <!-- SHARED BY USERS -->
 <section class="lib-section">
-    <div class="section-head">
-        <h2 class="section-h2">Shared by users</h2>
-    </div>
-    <p class="section-desc">Public schemas anyone can browse. To add yours, tick <em>"Share in library"</em> inside share dialog in designer.</p>
+    <div class="lib-section-inner">
+        <div class="section-head">
+            <h2 class="section-h2">Shared by users</h2>
+        </div>
+        <p class="section-desc">Public schemas anyone can browse. To add yours, tick <em>"Share in library"</em> inside share dialog in designer.</p>
 
-    @if($diagrams->isEmpty())
-        <div class="lib-empty">
-            <div class="glyph">◈</div>
-            <p>No public schemas yet.</p>
-            <p class="hint">Share a diagram and opt in to the library to be first.</p>
-        </div>
-    @else
-        <div class="lib-grid">
-            @foreach($diagrams as $diagram)
-                <a class="lib-card" href="/diagrams/{{ $diagram->share_token }}" target="_blank" rel="noopener noreferrer">
-                    <div class="lib-card-preview">
-                        <iframe
-                            data-src="/embed/{{ $diagram->share_token }}"
-                            title="{{ $diagram->name }} preview"
-                            tabindex="-1"
-                        ></iframe>
-                    </div>
-                    <div class="lib-card-body">
-                        <span class="lib-card-name">{{ $diagram->name }}</span>
-                        <div class="lib-card-meta">
-                            <span>Updated {{ $diagram->updated_at->diffForHumans() }}</span>
+        @if($diagrams->isEmpty())
+            <div class="lib-empty">
+                <div class="glyph">◈</div>
+                <p>No public schemas yet.</p>
+                <p class="hint">Share a diagram and opt in to the library to be first.</p>
+            </div>
+        @else
+            <div class="lib-grid">
+                @foreach($diagrams as $diagram)
+                    <a class="lib-card" href="/diagrams/{{ $diagram->share_token }}" target="_blank" rel="noopener noreferrer">
+                        <div class="lib-card-preview">
+                            <iframe
+                                data-src="/embed/{{ $diagram->share_token }}"
+                                title="{{ $diagram->name }} preview"
+                                tabindex="-1"
+                            ></iframe>
                         </div>
-                    </div>
-                </a>
-            @endforeach
-        </div>
-    @endif
+                        <div class="lib-card-body">
+                            <span class="lib-card-name">{{ $diagram->name }}</span>
+                            <div class="lib-card-meta">
+                                <span>Updated {{ $diagram->updated_at->diffForHumans() }}</span>
+                            </div>
+                        </div>
+                    </a>
+                @endforeach
+            </div>
+        @endif
+    </div>
 </section>
 
 <!-- SUBMIT STRIP -->
 <section class="submit-strip">
-    <div>
-        <h2>Embed your diagram, get featured.</h2>
-        <p>Drop a public diagram into your blog post or docs site with the embed snippet. Diagrams with a live backlink land in the Featured row.</p>
-        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-            <a class="btn btn-solid" href="/diagrams/new">Make a diagram</a>
+    <div class="submit-strip-inner">
+        <div>
+            <h2>Embed your diagram, get featured.</h2>
+            <p>Drop a public diagram into your blog post or docs site with the embed snippet. Diagrams with a live backlink land in the Featured row.</p>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                <a class="btn btn-solid" href="/diagrams/new">Make a diagram</a>
+            </div>
         </div>
-    </div>
-    <pre class="submit-code"><span class="tok-com">&lt;!-- paste anywhere --&gt;</span>
+        <pre class="submit-code"><span class="tok-com">&lt;!-- paste anywhere --&gt;</span>
 <span class="tok-tag">&lt;iframe</span>
   <span class="tok-attr">src</span>=<span class="tok-str">"https://sql-designer.com/embed/&lt;token&gt;"</span>
   <span class="tok-attr">width</span>=<span class="tok-str">"100%"</span>
   <span class="tok-attr">height</span>=<span class="tok-str">"480"</span>
   <span class="tok-attr">frameborder</span>=<span class="tok-str">"0"</span><span class="tok-tag">&gt;&lt;/iframe&gt;</span></pre>
+    </div>
 </section>
 
 <script>
