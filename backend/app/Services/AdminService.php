@@ -74,9 +74,10 @@ class AdminService
         $totalUsers = User::count();
 
         $returningUsers = DB::table('diagram_changelog')
+            ->selectRaw('user_id')
             ->whereNotNull('user_id')
             ->groupBy('user_id')
-            ->havingRaw('COUNT(DISTINCT DATE(created_at AT TIME ZONE \'Europe/Moscow\')) >= 2')
+            ->havingRaw("COUNT(DISTINCT DATE(created_at AT TIME ZONE 'Europe/Moscow')) >= 2")
             ->get()
             ->count();
 
