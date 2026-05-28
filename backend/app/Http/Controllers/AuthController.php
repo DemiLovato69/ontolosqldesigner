@@ -14,7 +14,6 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 use Knuckles\Scribe\Attributes\Group;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -31,9 +30,9 @@ class AuthController extends Controller
                 password: $request->input('password'),
             ));
         } catch (AuthenticationException) {
-            return response()->json(['status' => false, 'message' => 'Wrong email or password'], 401);
+            return $this->success(['status' => false, 'message' => 'Wrong email or password'], 401);
         }
-        return response()->json(['status' => true, 'token' => $token, 'message' => 'Registered successfully']);
+        return $this->created(['status' => true, 'token' => $token, 'message' => 'Registered successfully']);
     }
 
     public function login(LoginRequest $request): JsonResponse
@@ -41,14 +40,14 @@ class AuthController extends Controller
         try {
             $token = $this->authService->login($request->input('email'), $request->input('password'));
         } catch (AuthenticationException) {
-            return response()->json(['status' => false, 'message' => 'Wrong email or password'], 401);
+            return $this->success(['status' => false, 'message' => 'Wrong email or password'], 401);
         }
-        return response()->json(['status' => true, 'token' => $token, 'message' => 'Logged in successfully']);
+        return $this->success(['status' => true, 'token' => $token, 'message' => 'Logged in successfully']);
     }
 
     public function logout(Request $request): JsonResponse
     {
-        return response()->json([
+        return $this->success([
             'status'  => $this->authService->logout($request->user()),
             'message' => 'Logged out successfully',
         ]);
@@ -82,7 +81,7 @@ class AuthController extends Controller
     public function resendVerification(Request $request): JsonResponse
     {
         $sent = $this->authService->resendVerification($request->user());
-        return response()->json([
+        return $this->success([
             'message' => $sent ? 'Verification email sent' : 'Email already verified',
         ]);
     }

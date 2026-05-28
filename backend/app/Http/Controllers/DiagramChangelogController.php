@@ -12,7 +12,6 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Routing\Controller;
 use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\Subgroup;
 
@@ -56,6 +55,6 @@ class DiagramChangelogController extends Controller
             'details'    => $validated['details'] ?? null,
         ]);
 
-        return response()->json(['status' => true]);
+        return $this->created(['status' => true]);
     }
 }

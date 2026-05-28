@@ -7,7 +7,6 @@ namespace App\Http\Controllers;
 use App\Http\Requests\SupportRequest;
 use App\Jobs\SendSupportEmail;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Routing\Controller;
 
 class SupportController extends Controller
 {
@@ -17,6 +16,6 @@ class SupportController extends Controller
 
         SendSupportEmail::dispatch($data['message'], $data['email'] ?? null);
 
-        return response()->json(['status' => true]);
+        return $this->success(['status' => true]);
     }
 }

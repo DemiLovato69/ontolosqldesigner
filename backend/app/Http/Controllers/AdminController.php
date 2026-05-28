@@ -17,7 +17,6 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -66,26 +65,26 @@ class AdminController extends Controller
     {
         $this->adminService->featureDiagram($diagram, $request->input('url'));
 
-        return response()->json(['ok' => true]);
+        return $this->success(['ok' => true]);
     }
 
     public function unfeatureDiagram(Diagram $diagram): JsonResponse
     {
         $this->adminService->unfeatureDiagram($diagram);
 
-        return response()->json(['ok' => true]);
+        return $this->noContent();
     }
 
     public function impersonate(User $user): JsonResponse
     {
-        return response()->json(['token' => $this->adminService->impersonate($user)]);
+        return $this->success(['token' => $this->adminService->impersonate($user)]);
     }
 
     public function destroy(User $user): JsonResponse
     {
         $this->adminService->deleteUser($user);
 
-        return response()->json(['message' => 'User deleted']);
+        return $this->noContent();
     }
 
     public function sendEmailToAll(AdminSendEmailRequest $request): JsonResponse
@@ -96,14 +95,14 @@ class AdminController extends Controller
         $count = User::count();
         SendAdminBulkEmailBatch::dispatch($subject, $body);
 
-        return response()->json(['queued' => $count]);
+        return $this->success(['queued' => $count]);
     }
 
     public function sendEmail(User $user, AdminSendEmailRequest $request): JsonResponse
     {
         Mail::to($user->email)->send(new AdminEmailMail($request->input('subject'), $request->input('body')));
 
-        return response()->json(['ok' => true]);
+        return $this->success(['ok' => true]);
     }
 
     public function userActivity(User $user): JsonResponse
@@ -123,7 +122,7 @@ class AdminController extends Controller
             $days[$date] = $rows->has($date) ? (int) $rows[$date]->count : 0;
         }
 
-        return response()->json($days);
+        return $this->success($days);
     }
 
     public function showReviews(): Factory|View
