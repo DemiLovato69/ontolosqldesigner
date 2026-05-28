@@ -20,7 +20,7 @@ class DiagramControllerTest extends TestCase
     {
         parent::setUp();
         $this->user    = User::factory()->create(['email_verified_at' => now()]);
-        $this->diagram = Diagram::factory()->create(['user_id' => $this->user->id, 'schema' => '[]']);
+        $this->diagram = Diagram::factory()->create(['user_id' => $this->user->id, 'schema' => []]);
     }
 
     private function auth(): static
@@ -146,11 +146,10 @@ class DiagramControllerTest extends TestCase
     {
         // ZipArchive::close() deletes the temp file when no entries are added (empty schema).
         // Provide a schema with one table so the archive is non-empty and survives close().
-        $schema = json_encode([
+        $this->diagram->update(['schema' => [
             ['id' => 't1', 'type' => 'table', 'label' => 'users', 'data' => ['uniqueTogether' => [], 'fulltextIndexes' => []]],
             ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['sqlType' => 'INT', 'nullable' => false, 'unsigned' => false, 'keyMod' => 'PRIMARY KEY', 'defaultValue' => null, 'comment' => null]],
-        ]);
-        $this->diagram->update(['schema' => $schema]);
+        ]]);
 
         $this->auth()
             ->get("/api/diagrams/migration/export/{$this->diagram->id}")

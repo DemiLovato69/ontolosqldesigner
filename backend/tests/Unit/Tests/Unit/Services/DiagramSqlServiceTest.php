@@ -32,14 +32,16 @@ class DiagramSqlServiceTest extends TestCase
 
     public function testExportScript(): void
     {
-        $schema = json_encode([
-            ['id' => 't1', 'type' => 'table', 'label' => 'users'],
-            ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false]],
+        $diagram = Diagram::factory()->create([
+            'schema' => [
+                ['id' => 't1', 'type' => 'table', 'label' => 'users'],
+                ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false]],
+            ],
+            'db_type' => 'mysql',
         ]);
-        $diagram = Diagram::factory()->create(['schema' => $schema, 'db_type' => 'mysql']);
         $result = $this->service->exportScript($diagram);
-        $this->assertJson($result);
-        $this->assertStringContainsString('users', json_decode($result));
+        $this->assertIsString($result);
+        $this->assertStringContainsString('users', $result);
     }
 
     public function testCreateScriptMySQLSkipsInvalidConnection(): void

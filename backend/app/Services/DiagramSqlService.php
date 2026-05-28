@@ -23,7 +23,7 @@ class DiagramSqlService
         $diagram->save();
 
         ImportDiagramSchemaJob::dispatch($diagram);
-        broadcast(new SchemaImported($diagram->share_token, $diagram->schema, (string) $user->id));
+        broadcast(new SchemaImported($diagram->share_token, json_encode($diagram->schema), (string) $user->id));
 
         DiagramChangelog::create([
             'diagram_id' => $diagram->id,
@@ -53,19 +53,19 @@ class DiagramSqlService
 
     public function importSchema(Diagram $diagram, string $script): string
     {
-        $diagram->schema = $this->createSchema(json_decode($script));
+        $diagram->schema = json_decode($this->createSchema($script), true);
         $diagram->save();
 
-        return $diagram->schema;
+        return json_encode($diagram->schema);
     }
 
     public function exportScript(Diagram $diagram): string
     {
-        $script = json_encode($this->createScript($diagram->schema, ($diagram->db_type ?? DbType::MYSQL)->value));
-        $diagram->script = $script;
+        $sqlScript = $this->createScript(json_encode($diagram->schema), ($diagram->db_type ?? DbType::MYSQL)->value);
+        $diagram->script = $sqlScript;
         $diagram->save();
 
-        return $script;
+        return $sqlScript;
     }
 
     public function createScript(string $schema, string $dbType = 'mysql', int $chunkSize = 50): string

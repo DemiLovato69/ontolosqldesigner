@@ -33,9 +33,7 @@ class ImportDiagramSchemaJob implements ShouldQueue
         $this->diagram->save();
 
         try {
-            $schema = $service->createSchema(json_decode($this->diagram->script));
-
-            $this->diagram->schema        = $schema;
+            $this->diagram->schema        = json_decode($service->createSchema($this->diagram->script), true);
             $this->diagram->import_status = ImportStatus::DONE;
             $this->diagram->import_error  = null;
             $this->diagram->save();

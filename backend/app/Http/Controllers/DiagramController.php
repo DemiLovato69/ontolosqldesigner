@@ -142,7 +142,7 @@ class DiagramController extends Controller
         return response()->json([
             'status' => $diagram->export_status,
             'script' => $diagram->export_status === ExportStatus::DONE ? $diagram->script : null,
-            'json'   => $diagram->export_status === ExportStatus::DONE ? json_decode($diagram->export_json) : null,
+            'json'   => $diagram->export_status === ExportStatus::DONE ? $diagram->export_json : null,
             'error'  => $diagram->export_error,
         ]);
     }
@@ -155,7 +155,7 @@ class DiagramController extends Controller
     {
         $this->authorize('export', $diagram);
 
-        $files = $this->sqlService->createMigration($diagram->schema);
+        $files = $this->sqlService->createMigration(json_encode($diagram->schema));
         $tmpFile = tempnam(sys_get_temp_dir(), 'migrations_');
 
         $zip = new ZipArchive();
@@ -183,7 +183,7 @@ class DiagramController extends Controller
     {
         $this->authorize('export', $diagram);
 
-        return response()->json(json_decode($this->sqlService->createJson($diagram->schema)));
+        return response()->json(json_decode($this->sqlService->createJson(json_encode($diagram->schema))));
     }
 
     /**

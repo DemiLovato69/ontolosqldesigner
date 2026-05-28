@@ -34,11 +34,12 @@ class ExportDiagramJob implements ShouldQueue
         $this->diagram->save();
 
         try {
-            $sqlScript = $service->createScript($this->diagram->schema, ($this->diagram->db_type ?? DbType::MYSQL)->value);
-            $jsonExport = $service->createJson($this->diagram->schema);
+            $schemaJson = json_encode($this->diagram->schema);
+            $sqlScript  = $service->createScript($schemaJson, ($this->diagram->db_type ?? DbType::MYSQL)->value);
+            $jsonExport = $service->createJson($schemaJson);
 
-            $this->diagram->script        = json_encode($sqlScript);
-            $this->diagram->export_json   = $jsonExport;
+            $this->diagram->script        = $sqlScript;
+            $this->diagram->export_json   = json_decode($jsonExport, true);
             $this->diagram->export_status = ExportStatus::DONE;
             $this->diagram->export_error  = null;
             $this->diagram->save();
