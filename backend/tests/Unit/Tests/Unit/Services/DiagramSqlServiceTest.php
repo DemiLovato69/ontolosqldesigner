@@ -110,7 +110,7 @@ class DiagramSqlServiceTest extends TestCase
             ['id' => 'r2', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 't2', 'data' => ['keyMod' => null, 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false, 'defaultValue' => '', 'comment' => '']],
             ['sourceNode' => ['id' => 'r2'], 'targetNode' => ['id' => 'r1']],
         ]);
-        $result = json_decode($this->service->createJson($schema), true);
+        $result = $this->service->createJson($schema);
         $this->assertCount(2, $result['tables']);
         $this->assertCount(1, $result['foreignKeys']);
         $col = $result['tables'][0]['columns'][0];
@@ -128,7 +128,7 @@ class DiagramSqlServiceTest extends TestCase
             ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false]],
             ['sourceNode' => ['id' => 'bad'], 'targetNode' => ['id' => 'r1']],
         ]);
-        $result = json_decode($this->service->createJson($schema), true);
+        $result = $this->service->createJson($schema);
         $this->assertEmpty($result['foreignKeys']);
     }
 

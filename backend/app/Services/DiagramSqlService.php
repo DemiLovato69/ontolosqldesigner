@@ -175,7 +175,7 @@ class DiagramSqlService
         return $script;
     }
 
-    public function createJson(string $schema, int $chunkSize = 50): string
+    public function createJson(string $schema, int $chunkSize = 50): array
     {
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
         $tablesById = $tables->keyBy('id');
@@ -212,7 +212,7 @@ class DiagramSqlService
             gc_collect_cycles();
         }
 
-        return json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        return $result;
     }
 
     public function createSchema(string $script, int $chunkSize = 100): string
@@ -297,7 +297,7 @@ class DiagramSqlService
         $rows        = collect();
         $connections = collect();
 
-        foreach (json_decode($schema, true) as $item) {
+        foreach (json_decode($schema, true) ?? [] as $item) {
             match ($item['type'] ?? null) {
                 'table' => $tables->push([
                     'id'               => $item['id'],

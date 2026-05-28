@@ -208,7 +208,7 @@ class DiagramController extends Controller
     {
         $this->authorize('export', $diagram);
 
-        return response()->json(json_decode($this->sqlService->createJson(json_encode($diagram->schema))));
+        return response()->json($this->sqlService->createJson(json_encode($diagram->schema)));
     }
 
     /**
