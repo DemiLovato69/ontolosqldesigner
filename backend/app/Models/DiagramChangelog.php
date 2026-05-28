@@ -16,7 +16,7 @@ class DiagramChangelog extends Model
     protected $fillable = ['diagram_id', 'user_id', 'user_name', 'action', 'details'];
 
     protected $casts = [
-        'details'    => 'array',
+        'details' => 'array',
         'created_at' => 'datetime',
     ];
 

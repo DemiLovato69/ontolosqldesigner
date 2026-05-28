@@ -1,6 +1,6 @@
 .PHONY: install up down reinstall clean _wait_postgres _composer_install phpunit \
         install-prod up-prod down-prod build-frontend _wait_postgres_prod _composer_install_prod \
-        clean-prod reinstall-prod backup-db indexnow phpstan
+        clean-prod reinstall-prod backup-db indexnow phpstan pint
 
 ifeq ($(OS),Windows_NT)
     RM = del /f /q
@@ -137,3 +137,6 @@ backup-db:
 
 phpstan:
 	docker-compose -p snydiagram exec -T php sh -c "cd /var/www/html/backend && vendor/bin/phpstan analyse --memory-limit=512M"
+
+pint:
+	docker-compose -p snydiagram exec -T php sh -c "cd /var/www/html/backend && vendor/bin/pint"

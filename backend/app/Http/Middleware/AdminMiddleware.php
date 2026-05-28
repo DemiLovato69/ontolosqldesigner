@@ -11,7 +11,7 @@ class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): mixed
     {
-        if (!session('admin_authenticated')) {
+        if (! session('admin_authenticated')) {
             return redirect('/admin/login');
         }
 

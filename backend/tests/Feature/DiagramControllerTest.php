@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Diagram;
@@ -14,12 +16,13 @@ class DiagramControllerTest extends TestCase
     use DatabaseTransactions;
 
     private User $user;
+
     private Diagram $diagram;
 
     protected function setUp(): void
     {
         parent::setUp();
-        $this->user    = User::factory()->create(['email_verified_at' => now()]);
+        $this->user = User::factory()->create(['email_verified_at' => now()]);
         $this->diagram = Diagram::factory()->create(['user_id' => $this->user->id, 'schema' => []]);
     }
 
@@ -36,7 +39,7 @@ class DiagramControllerTest extends TestCase
     public function test_store_creates_diagram(): void
     {
         $this->auth()
-            ->postJson('/api/diagrams', ['name' => 'New ' . uniqid()])
+            ->postJson('/api/diagrams', ['name' => 'New '.uniqid()])
             ->assertStatus(201)
             ->assertJsonFragment(['status' => true]);
     }
@@ -51,7 +54,7 @@ class DiagramControllerTest extends TestCase
     public function test_update_saves_diagram(): void
     {
         $this->auth()
-            ->putJson("/api/diagrams/{$this->diagram->id}", ['name' => 'Updated ' . uniqid()])
+            ->putJson("/api/diagrams/{$this->diagram->id}", ['name' => 'Updated '.uniqid()])
             ->assertStatus(200)
             ->assertJsonFragment(['status' => true]);
     }

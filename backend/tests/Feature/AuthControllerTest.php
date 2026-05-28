@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\User;
@@ -18,7 +20,7 @@ class AuthControllerTest extends TestCase
     public function test_register_returns_token(): void
     {
         $this->postJson('/api/register', [
-            'email'    => 'reg_' . uniqid() . '@example.com',
+            'email' => 'reg_'.uniqid().'@example.com',
             'password' => 'Secret1!',
         ])->assertStatus(201)->assertJsonFragment(['status' => true])->assertJsonStructure(['token']);
     }
@@ -56,7 +58,7 @@ class AuthControllerTest extends TestCase
     {
         Queue::fake();
 
-        $email = 'verify_' . uniqid() . '@example.com';
+        $email = 'verify_'.uniqid().'@example.com';
 
         $this->postJson('/api/register', ['email' => $email, 'password' => 'Secret1!'])
             ->assertStatus(201)
@@ -66,7 +68,7 @@ class AuthControllerTest extends TestCase
         $this->assertNull($user->email_verified_at);
 
         $signedUrl = URL::signedRoute('verification.verify', [
-            'id'   => $user->id,
+            'id' => $user->id,
             'hash' => sha1($user->email),
         ]);
 
@@ -87,8 +89,8 @@ class AuthControllerTest extends TestCase
     public function test_oauth_callback_creates_user_and_redirects_with_token(): void
     {
         $oauthUser = Mockery::mock(\Laravel\Socialite\Contracts\User::class);
-        $oauthUser->shouldReceive('getId')->andReturn('google-test-id-' . uniqid());
-        $oauthUser->shouldReceive('getEmail')->andReturn('oauth_' . uniqid() . '@example.com');
+        $oauthUser->shouldReceive('getId')->andReturn('google-test-id-'.uniqid());
+        $oauthUser->shouldReceive('getEmail')->andReturn('oauth_'.uniqid().'@example.com');
 
         $provider = Mockery::mock(Provider::class);
         $provider->shouldReceive('user')->andReturn($oauthUser);

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Database\Factories;
 
 use App\Models\Diagram;
@@ -12,9 +14,9 @@ class DiagramVisitorFactory extends Factory
     {
         return [
             'diagram_id' => Diagram::factory(),
-            'user_id'    => User::factory(),
-            'status'     => 'pending',
-            'access'     => null,
+            'user_id' => User::factory(),
+            'status' => 'pending',
+            'access' => null,
         ];
     }
 }

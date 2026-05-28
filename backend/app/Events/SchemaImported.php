@@ -10,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SchemaImported implements ShouldBroadcastNow //Don't believe the IDE, every method here is used
+class SchemaImported implements ShouldBroadcastNow // Don't believe the IDE, every method here is used
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -22,7 +22,7 @@ class SchemaImported implements ShouldBroadcastNow //Don't believe the IDE, ever
 
     public function broadcastOn(): array
     {
-        return [new PresenceChannel('diagram.' . $this->shareToken)];
+        return [new PresenceChannel('diagram.'.$this->shareToken)];
     }
 
     public function broadcastAs(): string

@@ -15,7 +15,8 @@ class SendAdminBulkEmailBatch implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries   = 1;
+    public int $tries = 1;
+
     public int $timeout = 3600;
 
     public function __construct(
@@ -28,7 +29,7 @@ class SendAdminBulkEmailBatch implements ShouldQueue
     /**
      * Dispatch individual email jobs for every user, staggered 2 seconds apart.
      */
-    public function handle(): void //TODO should probably optimize this later
+    public function handle(): void // TODO should probably optimize this later
     {
         $index = 0;
 

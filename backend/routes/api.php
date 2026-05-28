@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DiagramChangelogController;
 use App\Http\Controllers\DiagramController;
-use App\Http\Controllers\SupportController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\SupportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -29,7 +31,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/review', [ReviewController::class, 'check']);
     Route::middleware('throttle:5,1')->post('/review', [ReviewController::class, 'store']);
 
-    Route::group(["prefix" => "diagrams", "middleware" => ["verified"]], function () {
+    Route::group(['prefix' => 'diagrams', 'middleware' => ['verified']], function () {
         Route::get('/', [DiagramController::class, 'index']);
         Route::get('/{diagram}', [DiagramController::class, 'show']);
         Route::post('/', [DiagramController::class, 'store']);

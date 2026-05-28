@@ -11,19 +11,20 @@ use App\Repositories\AuthRepository;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Socialite\Contracts\User as OAuthUser;
+use SensitiveParameter;
 
 class AuthService
 {
     public function __construct(private readonly AuthRepository $authRepository) {}
 
     /**
-     * @throws AuthenticationException  If authentication after creation unexpectedly fails.
+     * @throws AuthenticationException If authentication after creation unexpectedly fails.
      */
     public function register(RegisterDTO $dto): string
     {
         $this->authRepository->createNewUser($dto);
 
-        if (!Auth::attempt(['email' => $dto->email, 'password' => $dto->password])) {
+        if (! Auth::attempt(['email' => $dto->email, 'password' => $dto->password])) {
             throw new AuthenticationException('Registration succeeded but authentication failed.');
         }
 
@@ -35,11 +36,11 @@ class AuthService
     }
 
     /**
-     * @throws AuthenticationException  If the credentials are invalid.
+     * @throws AuthenticationException If the credentials are invalid.
      */
-    public function login(string $email, #[\SensitiveParameter] string $password): string
+    public function login(string $email, #[SensitiveParameter] string $password): string
     {
-        if (!Auth::attempt(['email' => $email, 'password' => $password])) {
+        if (! Auth::attempt(['email' => $email, 'password' => $password])) {
             throw new AuthenticationException('Invalid credentials.');
         }
 
@@ -54,14 +55,14 @@ class AuthService
             ?? User::where('email', $oauthUser->getEmail())->first();
 
         if ($user) {
-            if (!$user->$idField) {
+            if (! $user->$idField) {
                 $user->update([$idField => $oauthUser->getId()]);
             }
         } else {
             $user = User::create([
-                'email'             => $oauthUser->getEmail(),
-                $idField            => $oauthUser->getId(),
-                'password'          => null,
+                'email' => $oauthUser->getEmail(),
+                $idField => $oauthUser->getId(),
+                'password' => null,
                 'email_verified_at' => now(),
             ]);
         }
@@ -71,11 +72,11 @@ class AuthService
 
     public function verifyEmail(User $user, string $hash): bool
     {
-        if (!hash_equals(sha1($user->email), $hash)) {
+        if (! hash_equals(sha1($user->email), $hash)) {
             return false;
         }
 
-        if (!$user->hasVerifiedEmail()) {
+        if (! $user->hasVerifiedEmail()) {
             $user->markEmailAsVerified();
         }
 
@@ -85,7 +86,7 @@ class AuthService
     /**
      * Resend the verification email if the user is not yet verified.
      *
-     * @return bool  True if the email was sent; false if already verified.
+     * @return bool True if the email was sent; false if already verified.
      */
     public function resendVerification(User $user): bool
     {
@@ -102,6 +103,7 @@ class AuthService
     {
         $user->tokens()->delete();
         Auth::guard('web')->logout();
+
         return true;
     }
 }

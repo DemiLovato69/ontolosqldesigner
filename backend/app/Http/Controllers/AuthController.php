@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 use Knuckles\Scribe\Attributes\Group;
 use Laravel\Socialite\Facades\Socialite;
 
-#[Group("Authentication")]
+#[Group('Authentication')]
 class AuthController extends Controller
 {
     public function __construct(private readonly AuthService $authService) {}
@@ -32,6 +32,7 @@ class AuthController extends Controller
         } catch (AuthenticationException) {
             return $this->success(['status' => false, 'message' => 'Wrong email or password'], 401);
         }
+
         return $this->created(['status' => true, 'token' => $token, 'message' => 'Registered successfully']);
     }
 
@@ -42,13 +43,14 @@ class AuthController extends Controller
         } catch (AuthenticationException) {
             return $this->success(['status' => false, 'message' => 'Wrong email or password'], 401);
         }
+
         return $this->success(['status' => true, 'token' => $token, 'message' => 'Logged in successfully']);
     }
 
     public function logout(Request $request): JsonResponse
     {
         return $this->success([
-            'status'  => $this->authService->logout($request->user()),
+            'status' => $this->authService->logout($request->user()),
             'message' => 'Logged out successfully',
         ]);
     }
@@ -63,24 +65,27 @@ class AuthController extends Controller
         try {
             $oauthUser = Socialite::driver($driver)->user();
         } catch (Exception) {
-            return redirect(config('app.url') . '/login?oauth_error=1');
+            return redirect(config('app.url').'/login?oauth_error=1');
         }
         $token = $this->authService->loginWithOAuth($driver, $oauthUser);
-        return redirect(config('app.url') . '/auth/callback?token=' . $token . '&driver=' . $driver);
+
+        return redirect(config('app.url').'/auth/callback?token='.$token.'&driver='.$driver);
     }
 
     public function verifyEmail(string $id, string $hash): RedirectResponse
     {
         $user = User::findOrFail($id);
-        if (!$this->authService->verifyEmail($user, $hash)) {
+        if (! $this->authService->verifyEmail($user, $hash)) {
             abort(403);
         }
+
         return redirect('/diagrams?verified=1');
     }
 
     public function resendVerification(Request $request): JsonResponse
     {
         $sent = $this->authService->resendVerification($request->user());
+
         return $this->success([
             'message' => $sent ? 'Verification email sent' : 'Email already verified',
         ]);

@@ -40,10 +40,10 @@ class Diagram extends Model
     protected $casts = [
         'import_status' => ImportStatus::class,
         'export_status' => ExportStatus::class,
-        'db_type'       => DbType::class,
-        'schema'        => 'array',
-        'script'        => 'array',
-        'export_json'   => 'array',
+        'db_type' => DbType::class,
+        'schema' => 'array',
+        'script' => 'array',
+        'export_json' => 'array',
     ];
 
     protected static function booted(): void

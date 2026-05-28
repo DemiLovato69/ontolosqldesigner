@@ -38,8 +38,9 @@ class PostgresqlDialect implements SqlDialectInterface
 
     public function uniqueConstraintSql(string $constraintName, array $columns): string
     {
-        $quotedCols = implode(', ', array_map(fn($c) => $this->quote($c), $columns));
-        return 'CONSTRAINT ' . $this->quote($constraintName) . " UNIQUE ({$quotedCols})";
+        $quotedCols = implode(', ', array_map(fn ($c) => $this->quote($c), $columns));
+
+        return 'CONSTRAINT '.$this->quote($constraintName)." UNIQUE ({$quotedCols})";
     }
 
     public function fulltextIndexSql(string $indexName, array $columns): string

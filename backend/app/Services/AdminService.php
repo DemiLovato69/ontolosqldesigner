@@ -9,12 +9,13 @@ use App\Models\User;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
+use SensitiveParameter;
 
 class AdminService
 {
     public function __construct(private readonly LibraryService $libraryService) {}
 
-    public function authenticate(string $username, #[\SensitiveParameter] string $password): bool
+    public function authenticate(string $username, #[SensitiveParameter] string $password): bool
     {
         return hash_equals('admin', $username)
             && hash_equals((string) config('app.admin_password'), $password);
@@ -23,7 +24,7 @@ class AdminService
     /** @return array{users: LengthAwarePaginator, totalUsers: int, registrationsByDay: array<string, int>, activityByDay: array<string, int>, returningUsers: int, retentionRate: float} */
     public function getDashboardData(string $sort = 'registered'): array
     {
-        $tz     = 'Europe/Moscow';
+        $tz = 'Europe/Moscow';
         $cutoff = now($tz)->subDays(59)->startOfDay()->utc();
 
         $rows = DB::table('users')
@@ -36,7 +37,7 @@ class AdminService
 
         $days = [];
         for ($i = 59; $i >= 0; $i--) {
-            $date        = now($tz)->subDays($i)->format('Y-m-d');
+            $date = now($tz)->subDays($i)->format('Y-m-d');
             $days[$date] = $rows->has($date) ? (int) $rows[$date]->count : 0;
         }
 
@@ -51,7 +52,7 @@ class AdminService
 
         $activityByDay = [];
         for ($i = 59; $i >= 0; $i--) {
-            $date                = now($tz)->subDays($i)->format('Y-m-d');
+            $date = now($tz)->subDays($i)->format('Y-m-d');
             $activityByDay[$date] = $activityRows->has($date) ? (int) $activityRows[$date]->count : 0;
         }
 
@@ -88,12 +89,12 @@ class AdminService
         $retentionRate = $totalUsers > 0 ? round($returningUsers / $totalUsers * 100, 1) : 0;
 
         return [
-            'users'              => $usersQuery->paginate(20)->withQueryString(),
-            'totalUsers'         => $totalUsers,
-            'activityByDay'      => $activityByDay,
+            'users' => $usersQuery->paginate(20)->withQueryString(),
+            'totalUsers' => $totalUsers,
+            'activityByDay' => $activityByDay,
             'registrationsByDay' => $days,
-            'returningUsers'     => $returningUsers,
-            'retentionRate'      => $retentionRate,
+            'returningUsers' => $returningUsers,
+            'retentionRate' => $retentionRate,
         ];
     }
 
@@ -108,7 +109,7 @@ class AdminService
 
     public function featureDiagram(Diagram $diagram, string $url): void
     {
-        $diagram->featured     = true;
+        $diagram->featured = true;
         $diagram->featured_url = $url;
         $diagram->save();
         $this->libraryService->invalidate();
@@ -116,7 +117,7 @@ class AdminService
 
     public function unfeatureDiagram(Diagram $diagram): void
     {
-        $diagram->featured     = false;
+        $diagram->featured = false;
         $diagram->featured_url = null;
         $diagram->save();
         $this->libraryService->invalidate();

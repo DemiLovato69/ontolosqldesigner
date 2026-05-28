@@ -21,8 +21,11 @@ class ImportDiagramSchemaJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 300;
-    public int $tries   = 3;
+
+    public int $tries = 3;
+
     public int $backoff = 30;
+
     public bool $deleteWhenMissingModels = true;
 
     public function __construct(private Diagram $diagram)
@@ -43,21 +46,21 @@ class ImportDiagramSchemaJob implements ShouldQueue
         $this->diagram->import_status = ImportStatus::PROCESSING;
         $this->diagram->save();
 
-        $this->diagram->schema        = json_decode($service->createSchema($this->diagram->script), true);
+        $this->diagram->schema = json_decode($service->createSchema($this->diagram->script), true);
         $this->diagram->import_status = ImportStatus::DONE;
-        $this->diagram->import_error  = null;
+        $this->diagram->import_error = null;
         $this->diagram->save();
     }
 
     public function failed(Throwable $exception): void
     {
         $this->diagram->import_status = ImportStatus::FAILED;
-        $this->diagram->import_error  = $exception->getMessage();
+        $this->diagram->import_error = $exception->getMessage();
         $this->diagram->save();
 
         Log::error('ImportDiagramSchemaJob failed', [
             'diagram_id' => $this->diagram->id,
-            'error'      => $exception->getMessage(),
+            'error' => $exception->getMessage(),
         ]);
     }
 }

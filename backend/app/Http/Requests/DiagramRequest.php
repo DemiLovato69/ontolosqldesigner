@@ -7,8 +7,8 @@ namespace App\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Knuckles\Scribe\Attributes\BodyParam;
 
-#[BodyParam("name", "string", "The diagram name. Must be unique per user.", required: false, example: "My ERD")]
-#[BodyParam("db_type", "string", "The database type. Allowed: mysql, postgresql, sqlite, oracle, sqlserver, msaccess.", required: false, example: "postgresql")]
+#[BodyParam('name', 'string', 'The diagram name. Must be unique per user.', required: false, example: 'My ERD')]
+#[BodyParam('db_type', 'string', 'The database type. Allowed: mysql, postgresql, sqlite, oracle, sqlserver, msaccess.', required: false, example: 'postgresql')]
 class DiagramRequest extends FormRequest
 {
     public function rules(): array

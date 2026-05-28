@@ -11,7 +11,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class VisitorAccessChanged implements ShouldBroadcastNow //Don't believe the IDE, every method here is used
+class VisitorAccessChanged implements ShouldBroadcastNow // Don't believe the IDE, every method here is used
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -23,7 +23,7 @@ class VisitorAccessChanged implements ShouldBroadcastNow //Don't believe the IDE
 
     public function broadcastOn(): array
     {
-        return [new PresenceChannel('diagram.' . $this->shareToken)];
+        return [new PresenceChannel('diagram.'.$this->shareToken)];
     }
 
     public function broadcastAs(): string
@@ -35,7 +35,7 @@ class VisitorAccessChanged implements ShouldBroadcastNow //Don't believe the IDE
     {
         return [
             'user_id' => $this->userId,
-            'access'  => $this->access->value,
+            'access' => $this->access->value,
         ];
     }
 }

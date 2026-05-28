@@ -26,12 +26,12 @@ class DiagramRepository implements DiagramRepositoryInterface
     public function create(CreateDiagramDTO $dto): Diagram
     {
         return Diagram::create([
-            'name'         => $dto->name,
-            'db_type'      => $dto->dbType,
-            'schema'       => null,
-            'user_id'      => $dto->userId,
+            'name' => $dto->name,
+            'db_type' => $dto->dbType,
+            'schema' => null,
+            'user_id' => $dto->userId,
             'share_access' => $dto->shareAccess?->value,
-            'library'      => $dto->library,
+            'library' => $dto->library,
         ]);
     }
 

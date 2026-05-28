@@ -22,11 +22,11 @@ class DiagramSharingService
     /**
      * Ensure the diagram is shared (defaults to 'read' if not already set).
      *
-     * @return string  The current share_access value.
+     * @return string The current share_access value.
      */
     public function ensureShared(Diagram $diagram): string
     {
-        if (!$diagram->share_access) {
+        if (! $diagram->share_access) {
             $diagram->share_access = 'read';
             $diagram->save();
 
@@ -44,7 +44,7 @@ class DiagramSharingService
     public function unshare(Diagram $diagram): void
     {
         $diagram->share_access = null;
-        $diagram->library      = false;
+        $diagram->library = false;
         $diagram->save();
         $this->libraryService->invalidate();
     }
@@ -74,9 +74,9 @@ class DiagramSharingService
         }
 
         return [
-            'share_access'     => $diagram->share_access,
+            'share_access' => $diagram->share_access,
             'require_approval' => (bool) $diagram->require_approval,
-            'library'          => (bool) $diagram->library,
+            'library' => (bool) $diagram->library,
         ];
     }
 
@@ -104,7 +104,8 @@ class DiagramSharingService
                 ? ($visitor->access ?? DiagramAccess::READ)
                 : DiagramAccess::from($diagram->share_access);
             broadcast(new VisitorAccessChanged($visitor->user_id, $diagram->share_token, $access));
-        } catch (Exception) {}
+        } catch (Exception) {
+        }
 
         return $visitor;
     }
@@ -128,22 +129,18 @@ class DiagramSharingService
                 ? DiagramAccess::REVOKED
                 : ($visitor->access ?? DiagramAccess::from($diagram->share_access ?? DiagramAccess::READ->value));
             broadcast(new VisitorAccessChanged($visitor->user_id, $diagram->share_token, $broadcastAccess));
-        } catch (Exception) {}
+        } catch (Exception) {
+        }
 
         return $visitor;
     }
 
     /**
      * Save a schema update from a shared user if they have write access.
-     *
-     * @param Diagram $diagram
-     * @param User $user
-     * @param array $schema
-     * @return bool
      */
     public function saveByToken(Diagram $diagram, User $user, array $schema): bool
     {
-        if (!$this->hasWriteAccess($diagram, $user)) {
+        if (! $this->hasWriteAccess($diagram, $user)) {
             return false;
         }
 
@@ -164,12 +161,12 @@ class DiagramSharingService
             return ['status' => 'ok', 'diagram' => $diagram];
         }
 
-        if (!$diagram->share_access) {
+        if (! $diagram->share_access) {
             return ['status' => 'not_shared'];
         }
 
         $defaultStatus = $diagram->require_approval ? VisitorStatus::PENDING : VisitorStatus::APPROVED;
-        $isPerUser     = $diagram->share_access === 'per_user';
+        $isPerUser = $diagram->share_access === 'per_user';
 
         $visitor = DiagramVisitor::firstOrCreate(
             ['diagram_id' => $diagram->id, 'user_id' => $user->id],
@@ -179,16 +176,23 @@ class DiagramSharingService
         if ($visitor->wasRecentlyCreated && $diagram->require_approval) {
             try {
                 broadcast(new VisitorRequested($diagram->share_token));
-            } catch (Exception) {}
+            } catch (Exception) {
+            }
         }
 
-        if ($visitor->status === VisitorStatus::REVOKED) return ['status' => 'revoked'];
+        if ($visitor->status === VisitorStatus::REVOKED) {
+            return ['status' => 'revoked'];
+        }
 
         if ($isPerUser) {
-            if ($visitor->status !== VisitorStatus::APPROVED) return ['status' => 'pending'];
+            if ($visitor->status !== VisitorStatus::APPROVED) {
+                return ['status' => 'pending'];
+            }
             $diagram->share_access = ($visitor->access ?? DiagramAccess::READ)->value;
         } else {
-            if ($diagram->require_approval && $visitor->status !== VisitorStatus::APPROVED) return ['status' => 'pending'];
+            if ($diagram->require_approval && $visitor->status !== VisitorStatus::APPROVED) {
+                return ['status' => 'pending'];
+            }
         }
 
         return ['status' => 'ok', 'diagram' => $diagram];
@@ -209,8 +213,13 @@ class DiagramSharingService
                 ->where('user_id', $user->id)
                 ->first();
 
-            if ($visitor?->status === VisitorStatus::REVOKED) return false;
-            if ($diagram->require_approval) return $visitor?->status === VisitorStatus::APPROVED;
+            if ($visitor?->status === VisitorStatus::REVOKED) {
+                return false;
+            }
+            if ($diagram->require_approval) {
+                return $visitor?->status === VisitorStatus::APPROVED;
+            }
+
             return true;
         }
 

@@ -6,7 +6,7 @@ namespace App\Enums;
 
 enum VisitorStatus: string
 {
-    case PENDING  = 'pending';
+    case PENDING = 'pending';
     case APPROVED = 'approved';
-    case REVOKED  = 'revoked';
+    case REVOKED = 'revoked';
 }

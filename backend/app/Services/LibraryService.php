@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Cache;
 class LibraryService
 {
     private const VERSION_KEY = 'library.v';
-    private const CACHE_TTL   = 3600;
+
+    private const CACHE_TTL = 3600;
 
     public function __construct(private readonly LibraryRepository $libraryRepository) {}
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LibraryController;
@@ -10,24 +12,24 @@ Route::get('/', function () {
 });
 
 Route::prefix('/blog')->group(function () {
-    Route::get('/', fn() => view('blog.index'));
-    Route::get('/mysql-foreign-key', fn() => view('blog.mysql-foreign-key'));
-    Route::get('/mysql-data-types', fn() => view('blog.mysql-data-types'));
-    Route::get('/database-normalization', fn() => view('blog.database-normalization'));
-    Route::get('/mysql-vs-postgresql', fn() => view('blog.mysql-vs-postgresql'));
-    Route::get('/database-schema-examples', fn() => view('blog.database-schema-examples'));
-    Route::get('/database-designer', fn() => view('blog.database-designer'));
-    Route::get('/crowfoot-notation', fn() => view('blog.crowfoot-notation'));
-    Route::get('/database-ddl-comparison', fn() => view('blog.database-ddl-comparison'));
-    Route::get('/best-free-erd-tools', fn() => view('blog.best-free-erd-tools'));
-    Route::get('/postgresql-data-types', fn() => view('blog.postgresql-data-types'));
+    Route::get('/', fn () => view('blog.index'));
+    Route::get('/mysql-foreign-key', fn () => view('blog.mysql-foreign-key'));
+    Route::get('/mysql-data-types', fn () => view('blog.mysql-data-types'));
+    Route::get('/database-normalization', fn () => view('blog.database-normalization'));
+    Route::get('/mysql-vs-postgresql', fn () => view('blog.mysql-vs-postgresql'));
+    Route::get('/database-schema-examples', fn () => view('blog.database-schema-examples'));
+    Route::get('/database-designer', fn () => view('blog.database-designer'));
+    Route::get('/crowfoot-notation', fn () => view('blog.crowfoot-notation'));
+    Route::get('/database-ddl-comparison', fn () => view('blog.database-ddl-comparison'));
+    Route::get('/best-free-erd-tools', fn () => view('blog.best-free-erd-tools'));
+    Route::get('/postgresql-data-types', fn () => view('blog.postgresql-data-types'));
 });
-Route::get('/about', fn() => view('about'));
-Route::get('/features', fn() => view('features'));
+Route::get('/about', fn () => view('about'));
+Route::get('/features', fn () => view('features'));
 Route::get('/library', [LibraryController::class, 'index']);
-Route::get('/sitemap', fn() => view('sitemap'));
-Route::get('/privacy', fn() => view('privacy'));
-Route::get('/terms', fn() => view('terms'));
+Route::get('/sitemap', fn () => view('sitemap'));
+Route::get('/privacy', fn () => view('privacy'));
+Route::get('/terms', fn () => view('terms'));
 
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed', 'throttle:6,1'])
@@ -71,10 +73,3 @@ Route::get('/{any}', function ($any) {
     }
     abort(404);
 })->where('any', '.*');
-
-
-
-
-
-
-

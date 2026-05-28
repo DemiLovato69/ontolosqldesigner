@@ -53,9 +53,9 @@ class DiagramCrudService
     public function getEmbedData(Diagram $diagram): array
     {
         return [
-            'name'    => $diagram->name,
+            'name' => $diagram->name,
             'db_type' => $diagram->db_type->value,
-            'schema'  => $diagram->schema,
+            'schema' => $diagram->schema,
         ];
     }
 }

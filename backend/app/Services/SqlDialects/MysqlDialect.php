@@ -38,13 +38,15 @@ class MysqlDialect implements SqlDialectInterface
 
     public function uniqueConstraintSql(string $constraintName, array $columns): string
     {
-        $quotedCols = implode(', ', array_map(fn($c) => $this->quote($c), $columns));
-        return 'UNIQUE KEY ' . $this->quote($constraintName) . " ({$quotedCols})";
+        $quotedCols = implode(', ', array_map(fn ($c) => $this->quote($c), $columns));
+
+        return 'UNIQUE KEY '.$this->quote($constraintName)." ({$quotedCols})";
     }
 
     public function fulltextIndexSql(string $indexName, array $columns): string
     {
-        $quotedCols = implode(', ', array_map(fn($c) => $this->quote($c), $columns));
-        return 'FULLTEXT KEY ' . $this->quote($indexName) . " ({$quotedCols})";
+        $quotedCols = implode(', ', array_map(fn ($c) => $this->quote($c), $columns));
+
+        return 'FULLTEXT KEY '.$this->quote($indexName)." ({$quotedCols})";
     }
 }

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -16,7 +18,7 @@ class SupportControllerTest extends TestCase
 
         $this->postJson('/api/support', [
             'message' => 'I need help with something.',
-            'email'   => 'user@example.com',
+            'email' => 'user@example.com',
         ])->assertStatus(200)->assertJson(['status' => true]);
     }
 }

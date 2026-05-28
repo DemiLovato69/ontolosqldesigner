@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Diagram;
@@ -13,7 +15,7 @@ class DiagramChangelogControllerTest extends TestCase
 
     public function test_index_returns_changelog(): void
     {
-        $user    = User::factory()->create(['email_verified_at' => now()]);
+        $user = User::factory()->create(['email_verified_at' => now()]);
         $diagram = Diagram::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user, 'sanctum')
@@ -23,7 +25,7 @@ class DiagramChangelogControllerTest extends TestCase
 
     public function test_store_creates_entry(): void
     {
-        $user    = User::factory()->create(['email_verified_at' => now()]);
+        $user = User::factory()->create(['email_verified_at' => now()]);
         $diagram = Diagram::factory()->create(['user_id' => $user->id]);
 
         $this->actingAs($user, 'sanctum')

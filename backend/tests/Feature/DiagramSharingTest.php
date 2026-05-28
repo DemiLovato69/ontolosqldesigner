@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Diagram;
@@ -17,23 +19,23 @@ class DiagramSharingTest extends TestCase
     {
         Event::fake();
 
-        $owner   = User::factory()->create(['email_verified_at' => now()]);
+        $owner = User::factory()->create(['email_verified_at' => now()]);
         $visitor = User::factory()->create(['email_verified_at' => now()]);
         $diagram = Diagram::factory()->create([
-            'user_id'          => $owner->id,
-            'share_access'     => 'per_user',
+            'user_id' => $owner->id,
+            'share_access' => 'per_user',
             'require_approval' => true,
         ]);
 
         $this->actingAs($visitor, 'sanctum')
-            ->getJson('/api/diagrams/shared/' . $diagram->share_token)
+            ->getJson('/api/diagrams/shared/'.$diagram->share_token)
             ->assertStatus(403)
             ->assertJsonFragment(['pending_approval' => true]);
 
         $this->assertDatabaseHas('diagram_visitors', [
             'diagram_id' => $diagram->id,
-            'user_id'    => $visitor->id,
-            'status'     => 'pending',
+            'user_id' => $visitor->id,
+            'status' => 'pending',
         ]);
     }
 
@@ -41,18 +43,18 @@ class DiagramSharingTest extends TestCase
     {
         Event::fake();
 
-        $owner   = User::factory()->create(['email_verified_at' => now()]);
+        $owner = User::factory()->create(['email_verified_at' => now()]);
         $visitor = User::factory()->create(['email_verified_at' => now()]);
         $diagram = Diagram::factory()->create([
-            'user_id'          => $owner->id,
-            'share_access'     => 'per_user',
+            'user_id' => $owner->id,
+            'share_access' => 'per_user',
             'require_approval' => true,
-            'schema'           => [],
+            'schema' => [],
         ]);
 
         // Visitor requests access — creates a pending visitor record
         $this->actingAs($visitor, 'sanctum')
-            ->getJson('/api/diagrams/shared/' . $diagram->share_token)
+            ->getJson('/api/diagrams/shared/'.$diagram->share_token)
             ->assertStatus(403);
 
         $visitorRecord = DiagramVisitor::where('diagram_id', $diagram->id)
@@ -67,7 +69,7 @@ class DiagramSharingTest extends TestCase
 
         // Visitor can now access the diagram
         $this->actingAs($visitor, 'sanctum')
-            ->getJson('/api/diagrams/shared/' . $diagram->share_token)
+            ->getJson('/api/diagrams/shared/'.$diagram->share_token)
             ->assertStatus(200);
     }
 
@@ -75,18 +77,18 @@ class DiagramSharingTest extends TestCase
     {
         Event::fake();
 
-        $owner   = User::factory()->create(['email_verified_at' => now()]);
+        $owner = User::factory()->create(['email_verified_at' => now()]);
         $visitor = User::factory()->create(['email_verified_at' => now()]);
         $diagram = Diagram::factory()->create([
-            'user_id'          => $owner->id,
-            'share_access'     => 'per_user',
+            'user_id' => $owner->id,
+            'share_access' => 'per_user',
             'require_approval' => true,
-            'schema'           => [],
+            'schema' => [],
         ]);
 
         // Visitor requests access
         $this->actingAs($visitor, 'sanctum')
-            ->getJson('/api/diagrams/shared/' . $diagram->share_token);
+            ->getJson('/api/diagrams/shared/'.$diagram->share_token);
 
         $visitorRecord = DiagramVisitor::where('diagram_id', $diagram->id)
             ->where('user_id', $visitor->id)
@@ -100,7 +102,7 @@ class DiagramSharingTest extends TestCase
 
         // Visitor can save schema via shared token
         $this->actingAs($visitor, 'sanctum')
-            ->patchJson('/api/diagrams/shared/' . $diagram->share_token, ['schema' => [['id' => 'node1']]])
+            ->patchJson('/api/diagrams/shared/'.$diagram->share_token, ['schema' => [['id' => 'node1']]])
             ->assertStatus(200)
             ->assertJsonFragment(['status' => true]);
     }

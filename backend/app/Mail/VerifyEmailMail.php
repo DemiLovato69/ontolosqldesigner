@@ -15,11 +15,12 @@ class VerifyEmailMail extends Mailable
     use Queueable, SerializesModels;
 
     public $subject;
+
     public string $verificationUrl;
 
     public function __construct(User $user)
     {
-        $this->subject         = 'Verify Your Email Address';
+        $this->subject = 'Verify Your Email Address';
         $this->verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(60),

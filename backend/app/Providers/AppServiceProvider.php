@@ -33,8 +33,8 @@ class AppServiceProvider extends ServiceProvider
                     return;
                 }
                 $warmedUp = true;
-                $host     = config('mail.mailers.smtp.host');
-                $port     = config('mail.mailers.smtp.port');
+                $host = config('mail.mailers.smtp.host');
+                $port = config('mail.mailers.smtp.port');
                 if ($host && $port) {
                     $conn = @stream_socket_client("ssl://{$host}:{$port}", $e, $es, 5, STREAM_CLIENT_CONNECT);
                     if ($conn) {

@@ -12,7 +12,7 @@ class AdminSendEmailRequest extends FormRequest
     {
         return [
             'subject' => 'required|string|max:255',
-            'body'    => 'required|string|max:10000',
+            'body' => 'required|string|max:10000',
         ];
     }
 }

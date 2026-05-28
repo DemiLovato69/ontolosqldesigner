@@ -15,8 +15,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\Subgroup;
 
-#[Group("Diagrams")]
-#[Subgroup("Changelog")]
+#[Group('Diagrams')]
+#[Subgroup('Changelog')]
 class DiagramChangelogController extends Controller
 {
     use AuthorizesRequests;
@@ -43,16 +43,16 @@ class DiagramChangelogController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'action'  => 'required|string|max:100',
+            'action' => 'required|string|max:100',
             'details' => 'nullable|array',
         ]);
 
         DiagramChangelog::create([
             'diagram_id' => $diagram->id,
-            'user_id'    => $user->id,
-            'user_name'  => $user->email,
-            'action'     => $validated['action'],
-            'details'    => $validated['details'] ?? null,
+            'user_id' => $user->id,
+            'user_name' => $user->email,
+            'action' => $validated['action'],
+            'details' => $validated['details'] ?? null,
         ]);
 
         return $this->created(['status' => true]);

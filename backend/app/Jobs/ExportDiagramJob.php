@@ -22,8 +22,11 @@ class ExportDiagramJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 300;
-    public int $tries   = 3;
+
+    public int $tries = 3;
+
     public int $backoff = 30;
+
     public bool $deleteWhenMissingModels = true;
 
     public function __construct(private Diagram $diagram)
@@ -45,24 +48,24 @@ class ExportDiagramJob implements ShouldQueue
         $this->diagram->save();
 
         $schemaJson = json_encode($this->diagram->schema);
-        $sqlScript  = $service->createScript($schemaJson, ($this->diagram->db_type ?? DbType::MYSQL)->value);
+        $sqlScript = $service->createScript($schemaJson, ($this->diagram->db_type ?? DbType::MYSQL)->value);
 
-        $this->diagram->script        = $sqlScript;
-        $this->diagram->export_json   = $service->createJson($schemaJson);
+        $this->diagram->script = $sqlScript;
+        $this->diagram->export_json = $service->createJson($schemaJson);
         $this->diagram->export_status = ExportStatus::DONE;
-        $this->diagram->export_error  = null;
+        $this->diagram->export_error = null;
         $this->diagram->save();
     }
 
     public function failed(Throwable $exception): void
     {
         $this->diagram->export_status = ExportStatus::FAILED;
-        $this->diagram->export_error  = $exception->getMessage();
+        $this->diagram->export_error = $exception->getMessage();
         $this->diagram->save();
 
         Log::error('ExportDiagramJob failed', [
             'diagram_id' => $this->diagram->id,
-            'error'      => $exception->getMessage(),
+            'error' => $exception->getMessage(),
         ]);
     }
 }

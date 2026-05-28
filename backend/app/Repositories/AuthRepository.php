@@ -13,7 +13,7 @@ class AuthRepository
     public function createNewUser(RegisterDTO $dto): User
     {
         return User::create([
-            'email'    => $dto->email,
+            'email' => $dto->email,
             'password' => Hash::make($dto->password),
         ]);
     }
