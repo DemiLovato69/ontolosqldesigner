@@ -28,9 +28,9 @@ class AdminControllerTest extends TestCase
 
     public function test_dashboard_returns_ok(): void
     {
-        // AdminService::getDashboardData() calls ->toBase() on Query\Builder which
-        // is undefined — toBase() belongs to Eloquent\Builder only. Skip until fixed.
-        $this->markTestSkipped('AdminService::getDashboardData uses ->toBase() on Query\\Builder (bug)');
+        $this->withSession($this->adminSession)
+            ->get('/admin')
+            ->assertStatus(200);
     }
 
     public function test_library_returns_ok(): void

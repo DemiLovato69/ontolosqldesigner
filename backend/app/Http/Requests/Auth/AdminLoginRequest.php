@@ -11,6 +11,7 @@ use Knuckles\Scribe\Attributes\BodyParam;
 #[BodyParam('password', 'string', 'The admin password.', example: 'secret')]
 class AdminLoginRequest extends FormRequest
 {
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

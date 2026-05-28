@@ -6,8 +6,8 @@ namespace App\Services;
 
 use App\Models\Diagram;
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use SensitiveParameter;
 
@@ -21,7 +21,7 @@ class AdminService
             && hash_equals((string) config('app.admin_password'), $password);
     }
 
-    /** @return array{users: LengthAwarePaginator, totalUsers: int, registrationsByDay: array<string, int>, activityByDay: array<string, int>, returningUsers: int, retentionRate: float} */
+    /** @return array{users: LengthAwarePaginator<int, User>, totalUsers: int, registrationsByDay: array<string, int>, activityByDay: array<string, int>, returningUsers: int, retentionRate: float} */
     public function getDashboardData(string $sort = 'registered'): array
     {
         $tz = 'Europe/Moscow';
@@ -81,8 +81,7 @@ class AdminService
                 ->selectRaw('user_id')
                 ->whereNotNull('user_id')
                 ->groupBy('user_id')
-                ->havingRaw("COUNT(DISTINCT DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')) >= 2")
-                ->toBase(),
+                ->havingRaw("COUNT(DISTINCT DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')) >= 2"),
             'sub'
         )->count();
 
@@ -98,6 +97,7 @@ class AdminService
         ];
     }
 
+    /** @return Collection<int, Diagram> */
     public function getLibraryDiagrams(): Collection
     {
         return Diagram::with('user')

@@ -31,6 +31,7 @@ class VisitorAccessChanged implements ShouldBroadcastNow // Don't believe the ID
         return 'visitor.access.changed';
     }
 
+    /** @return array<string, mixed> */
     public function broadcastWith(): array
     {
         return [

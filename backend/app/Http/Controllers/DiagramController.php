@@ -20,6 +20,7 @@ use App\Http\Resources\DiagramResource;
 use App\Http\Resources\DiagramVisitorResource;
 use App\Models\Diagram;
 use App\Models\DiagramVisitor;
+use App\Models\User;
 use App\Services\DiagramCrudService;
 use App\Services\DiagramSharingService;
 use App\Services\DiagramSqlService;
@@ -29,6 +30,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
 use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\Subgroup;
 
@@ -60,6 +62,9 @@ class DiagramController extends Controller
         return new DiagramResource($diagram);
     }
 
+    /**
+     * @throws ValidationException
+     */
     #[Subgroup('CRUD')]
     public function store(DiagramRequest $request): JsonResponse
     {
@@ -68,14 +73,14 @@ class DiagramController extends Controller
         $dto = new CreateDiagramDTO(
             name: $validated['name'],
             userId: $request->user()->id,
-            dbType: isset($validated['db_type']) ? DbType::from($validated['db_type']) : DbType::MYSQL,
+            dbType: DbType::tryFrom((string) ($validated['db_type'] ?? '')) ?? DbType::MYSQL,
             shareAccess: isset($validated['share_access']) ? DiagramAccess::from($validated['share_access']) : null,
             library: (bool) ($validated['library'] ?? false),
         );
 
-        return $this->crudService->createDiagram($dto)
-            ? $this->created(['status' => true, 'message' => 'Diagram created'])
-            : $this->success(['status' => false, 'message' => 'Failed creating the diagram']);
+        $this->crudService->createDiagram($dto);
+
+        return $this->created(['status' => true, 'message' => 'Diagram created']);
     }
 
     /**
@@ -121,7 +126,9 @@ class DiagramController extends Controller
     {
         $this->authorize('import', $diagram);
 
-        $this->sqlService->startImport($diagram, $request->validated()['script'], $request->user());
+        /** @var User $user */
+        $user = $request->user();
+        $this->sqlService->startImport($diagram, $request->validated()['script'], $user);
 
         return $this->success(['status' => 'pending'], 202);
     }
@@ -149,7 +156,9 @@ class DiagramController extends Controller
     {
         $this->authorize('export', $diagram);
 
-        $this->sqlService->startExport($diagram, $request->user());
+        /** @var User $user */
+        $user = $request->user();
+        $this->sqlService->startExport($diagram, $user);
 
         return $this->success(['status' => 'pending'], 202);
     }
@@ -283,7 +292,7 @@ class DiagramController extends Controller
             abort(404);
         }
 
-        $visitor = $this->sharingService->setVisitorAccess($diagram, $visitor, $request->validated()['access']);
+        $visitor = $this->sharingService->setVisitorAccess($diagram, $visitor, DiagramAccess::from($request->validated()['access']));
 
         return $this->success(['status' => true, 'visitor_status' => $visitor->status, 'access' => $visitor->access]);
     }

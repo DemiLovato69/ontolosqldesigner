@@ -111,7 +111,7 @@
                                     </template>
                                     <button
                                         class="share-modal__vbtn share-modal__vbtn--revoke"
-                                        @click="setVisitorAccess(visitor, 'revoke')"
+                                        @click="setVisitorAccess(visitor, 'revoked')"
                                         :disabled="loading"
                                     >Revoke</button>
                                 </template>

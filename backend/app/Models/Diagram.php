@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\DbType;
+use App\Enums\DiagramAccess;
 use App\Enums\ExportStatus;
 use App\Enums\ImportStatus;
+use Database\Factories\DiagramFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,8 +16,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
+/** @property string|null $script */
 class Diagram extends Model
 {
+    /** @use HasFactory<DiagramFactory> */
     use HasFactory;
 
     protected $fillable = [
@@ -41,6 +45,7 @@ class Diagram extends Model
         'import_status' => ImportStatus::class,
         'export_status' => ExportStatus::class,
         'db_type' => DbType::class,
+        'share_access' => DiagramAccess::class,
         'schema' => 'array',
         'script' => 'array',
         'export_json' => 'array',
@@ -55,26 +60,40 @@ class Diagram extends Model
         });
     }
 
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
     public function scopeShared(Builder $query): Builder
     {
         return $query->whereNotNull('share_access');
     }
 
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
     public function scopeLibrary(Builder $query): Builder
     {
         return $query->where('library', true);
     }
 
+    /**
+     * @param  Builder<self>  $query
+     * @return Builder<self>
+     */
     public function scopeFeatured(Builder $query): Builder
     {
         return $query->where('featured', true);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<DiagramVisitor, $this> */
     public function visitors(): HasMany
     {
         return $this->hasMany(DiagramVisitor::class);

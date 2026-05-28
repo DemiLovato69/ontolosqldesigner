@@ -14,6 +14,7 @@ use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
 use App\Models\Diagram;
 use App\Models\DiagramChangelog;
+use App\Models\User;
 use App\Services\SqlDialects\MsAccessDialect;
 use App\Services\SqlDialects\MysqlDialect;
 use App\Services\SqlDialects\OracleDialect;
@@ -21,12 +22,12 @@ use App\Services\SqlDialects\PostgresqlDialect;
 use App\Services\SqlDialects\SqlDialectInterface;
 use App\Services\SqlDialects\SqliteDialect;
 use App\Services\SqlDialects\SqlServerDialect;
-use Illuminate\Contracts\Auth\Authenticatable;
+use Illuminate\Support\Collection;
 use ZipArchive;
 
 class DiagramSqlService
 {
-    public function startImport(Diagram $diagram, string $script, Authenticatable $user): void
+    public function startImport(Diagram $diagram, string $script, User $user): void
     {
         $diagram->script = $script;
         $diagram->import_status = ImportStatus::PENDING;
@@ -45,7 +46,7 @@ class DiagramSqlService
         ]);
     }
 
-    public function startExport(Diagram $diagram, Authenticatable $user): void
+    public function startExport(Diagram $diagram, User $user): void
     {
         $diagram->export_status = ExportStatus::PENDING;
         $diagram->export_error = null;
@@ -107,7 +108,7 @@ class DiagramSqlService
         $lines = [];
 
         $inlineFksByTable = $dialect->usesInlineForeignKeys()
-            ? $connections->groupBy(fn ($c) => $rowsById->get($c['target_id'])['table_id'] ?? null)
+            ? $connections->groupBy(fn (array $c): string => $rowsById->get($c['target_id'])['table_id'] ?? '')
             : collect();
 
         foreach ($tables as $table) {
@@ -200,6 +201,7 @@ class DiagramSqlService
     }
 
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
+    /** @return array{tables: list<array<string, mixed>>, foreignKeys: list<array<string, mixed>>} */
     public function createJson(string $schema): array
     {
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
@@ -298,13 +300,14 @@ class DiagramSqlService
     }
 
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
+    /** @return list<array{filename: string, content: string}> */
     public function createMigration(string $schema): array
     {
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
         $rowsById = $rows->keyBy('id');
         $tablesById = $tables->keyBy('id');
         $rowsByTable = $rows->groupBy('table_id');
-        $connsByTargetTable = $connections->groupBy(fn ($conn) => $rowsById->get($conn['target_id'])['table_id'] ?? null);
+        $connsByTargetTable = $connections->groupBy(fn (array $conn): string => $rowsById->get($conn['target_id'])['table_id'] ?? '');
         $files = [];
 
         foreach ($tables as $index => $table) {
@@ -335,6 +338,10 @@ class DiagramSqlService
 
     // --- Private helpers ---
 
+    /**
+     * @param string $schema
+     * @return array{0: \Illuminate\Support\Collection<int, array<string, mixed>>, 1: \Illuminate\Support\Collection<int, array<string, mixed>>, 2: \Illuminate\Support\Collection<int, array<string, mixed>>}
+     */
     private function parseSchemaItems(string $schema): array
     {
         if (trim($schema) === '') {
@@ -385,11 +392,13 @@ class DiagramSqlService
         return [$tables, $rows, $connections];
     }
 
+    /** @return array<int, string> */
     private function parseStatements(string $sql): array
     {
         return array_filter(array_map('trim', explode(';', $sql)));
     }
 
+    /** @return array<string, mixed> */
     private function buildTableNode(string $id, string $name, int $x, int $y = 50): array
     {
         return [
@@ -417,6 +426,10 @@ class DiagramSqlService
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     private function buildRowNode(string $id, string $tableId, string $name, int $x, int $y, int $index, array $data): array
     {
         return [
@@ -451,6 +464,7 @@ class DiagramSqlService
         ];
     }
 
+    /** @return list<string> */
     private function splitColumnDefinitions(string $content): array
     {
         $lines = [];
@@ -479,6 +493,7 @@ class DiagramSqlService
         return $lines;
     }
 
+    /** @return array{rows: list<array<string, mixed>>, uniqueTogether: list<list<string>>, fulltextIndexes: list<list<string>>} */
     private function parseColumns(string $tableContent, string $tableId, int $tableX, int $tableY = 50): array
     {
         $lines = $this->splitColumnDefinitions($tableContent);
@@ -553,6 +568,7 @@ class DiagramSqlService
         return ['rows' => $rows, 'uniqueTogether' => $uniqueTogetherConstraints, 'fulltextIndexes' => $fulltextIndexConstraints];
     }
 
+    /** @return list<array{sourceCol: string, targetTable: string, targetCol: string}> */
     private function parseInlineForeignKeys(string $tableContent): array
     {
         $fks = [];
@@ -572,6 +588,7 @@ class DiagramSqlService
         return "<?php\n\nuse Illuminate\\Database\\Migrations\\Migration;\nuse Illuminate\\Database\\Schema\\Blueprint;\nuse Illuminate\\Support\\Facades\\Schema;\n\nreturn new class extends Migration\n{\n    public function up(): void\n    {\n        Schema::create('{$tableName}', function (Blueprint {$t}) {\n{$body}\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::dropIfExists('{$tableName}');\n    }\n};\n";
     }
 
+    /** @param array<string, mixed> $col */
     private function buildLaravelColumn(array $col): ?string
     {
         $name = $col['name'];
@@ -669,6 +686,12 @@ class DiagramSqlService
         return "            \$table->{$method}{$mods};";
     }
 
+    /**
+     * @param  array<string, string>  $tableIdByName
+     * @param  array<string, string>  $tableColorById
+     * @param  array<string, array<string, array<string, mixed>>>  $rowIndex
+     * @return array<string, mixed>|null
+     */
     private function resolveConnection(array $tableIdByName, array $tableColorById, array $rowIndex, string $sourceTable, string $sourceCol, string $targetTable, string $targetCol): ?array
     {
         $sourceTableId = $tableIdByName[$sourceTable] ?? null;

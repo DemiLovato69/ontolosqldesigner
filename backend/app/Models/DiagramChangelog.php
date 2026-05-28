@@ -20,6 +20,7 @@ class DiagramChangelog extends Model
         'created_at' => 'datetime',
     ];
 
+    /** @return BelongsTo<Diagram, $this> */
     public function diagram(): BelongsTo
     {
         return $this->belongsTo(Diagram::class);

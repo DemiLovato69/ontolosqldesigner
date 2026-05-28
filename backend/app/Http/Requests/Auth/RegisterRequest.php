@@ -12,6 +12,7 @@ use Knuckles\Scribe\Attributes\BodyParam;
 #[BodyParam('password', 'string', 'The password. Min 8 chars, mixed case and numbers required.', example: 'Secret1!')]
 class RegisterRequest extends FormRequest
 {
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

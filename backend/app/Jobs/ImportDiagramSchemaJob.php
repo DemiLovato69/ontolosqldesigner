@@ -36,12 +36,20 @@ class ImportDiagramSchemaJob implements ShouldQueue
     /** @return array<int, object> */
     public function middleware(): array
     {
-        return [new WithoutOverlapping($this->diagram->id)];
+        return [new WithoutOverlapping((string) $this->diagram->id)];
     }
 
     public function handle(DiagramSqlService $service): void
     {
         ini_set('memory_limit', '512M');
+
+        if ($this->diagram->script === null) {
+            $this->diagram->import_status = ImportStatus::FAILED;
+            $this->diagram->import_error = 'No script to import.';
+            $this->diagram->save();
+
+            return;
+        }
 
         $this->diagram->import_status = ImportStatus::PROCESSING;
         $this->diagram->save();

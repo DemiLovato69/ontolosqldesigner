@@ -30,6 +30,7 @@ class SchemaImported implements ShouldBroadcastNow // Don't believe the IDE, eve
         return 'schema.imported';
     }
 
+    /** @return array<string, mixed> */
     public function broadcastWith(): array
     {
         return [

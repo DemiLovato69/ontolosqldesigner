@@ -37,7 +37,7 @@ class ExportDiagramJob implements ShouldQueue
     /** @return array<int, object> */
     public function middleware(): array
     {
-        return [new WithoutOverlapping($this->diagram->id)];
+        return [new WithoutOverlapping((string) $this->diagram->id)];
     }
 
     public function handle(DiagramSqlService $service): void

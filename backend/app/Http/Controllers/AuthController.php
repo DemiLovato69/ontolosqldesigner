@@ -55,7 +55,7 @@ class AuthController extends Controller
         ]);
     }
 
-    public function oauthRedirect(string $driver): RedirectResponse
+    public function oauthRedirect(string $driver): \Symfony\Component\HttpFoundation\RedirectResponse|RedirectResponse
     {
         return Socialite::driver($driver)->redirect();
     }

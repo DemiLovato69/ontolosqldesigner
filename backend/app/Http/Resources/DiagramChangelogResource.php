@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\DiagramChangelog;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Knuckles\Scribe\Attributes\ResponseField;
 
+/** @property DiagramChangelog $resource */
 class DiagramChangelogResource extends JsonResource
 {
+    /** @return array<string, mixed> */
     #[ResponseField('id', 'int', 'The changelog entry ID.')]
     #[ResponseField('diagram_id', 'int', 'The associated diagram ID.')]
     #[ResponseField('user_id', 'int', 'The ID of the user who made the change.')]
@@ -20,13 +23,13 @@ class DiagramChangelogResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'diagram_id' => $this->diagram_id,
-            'user_id' => $this->user_id,
-            'user_name' => $this->user_name,
-            'action' => $this->action,
-            'details' => $this->details,
-            'created_at' => $this->created_at,
+            'id' => $this->resource->id,
+            'diagram_id' => $this->resource->diagram_id,
+            'user_id' => $this->resource->user_id,
+            'user_name' => $this->resource->user_name,
+            'action' => $this->resource->action,
+            'details' => $this->resource->details,
+            'created_at' => $this->resource->created_at,
         ];
     }
 }

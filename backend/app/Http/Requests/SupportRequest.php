@@ -11,6 +11,7 @@ use Knuckles\Scribe\Attributes\BodyParam;
 #[BodyParam('message', 'string', 'The support message.', example: 'I need help with this tool!')]
 class SupportRequest extends FormRequest
 {
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

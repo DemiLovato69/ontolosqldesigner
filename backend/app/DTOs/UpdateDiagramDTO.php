@@ -28,7 +28,7 @@ readonly class UpdateDiagramDTO
             $data['db_type'] = $this->dbType;
         }
         if ($this->shareAccess !== null) {
-            $data['share_access'] = $this->shareAccess->value;
+            $data['share_access'] = $this->shareAccess;
         }
         if ($this->library !== null) {
             $data['library'] = $this->library;

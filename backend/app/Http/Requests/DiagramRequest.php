@@ -11,6 +11,7 @@ use Knuckles\Scribe\Attributes\BodyParam;
 #[BodyParam('db_type', 'string', 'The database type. Allowed: mysql, postgresql, sqlite, oracle, sqlserver, msaccess.', required: false, example: 'postgresql')]
 class DiagramRequest extends FormRequest
 {
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

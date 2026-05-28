@@ -6,8 +6,8 @@ namespace App\Services;
 
 use App\Models\Diagram;
 use App\Repositories\LibraryRepository;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Cache;
 
 class LibraryService
@@ -21,7 +21,7 @@ class LibraryService
     /**
      * Return featured and paginated library diagrams, served from cache.
      *
-     * @return array{featured: Collection<int, Diagram>, diagrams: LengthAwarePaginator}
+     * @return array{featured: Collection<int, Diagram>, diagrams: LengthAwarePaginator<int, Diagram>}
      */
     public function getLibraryData(int $page = 1): array
     {
@@ -31,6 +31,7 @@ class LibraryService
             return $this->libraryRepository->getFeatured();
         });
 
+        /** @var LengthAwarePaginator<int, Diagram> $diagrams */
         $diagrams = Cache::remember("library.diagrams.{$v}.{$page}", self::CACHE_TTL, function () {
             return $this->libraryRepository->getSharedByUsersPaginated()->withPath(url('/library'));
         });

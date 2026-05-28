@@ -26,6 +26,7 @@ class VisitorRequested implements ShouldBroadcastNow // Don't believe the IDE, e
         return 'visitor.requested';
     }
 
+    /** @return array<string, mixed> */
     public function broadcastWith(): array
     {
         return [];

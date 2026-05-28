@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\Diagram;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Knuckles\Scribe\Attributes\ResponseField;
 
+/** @property Diagram $resource */
 class DiagramResource extends JsonResource
 {
+    /** @return array<string, mixed> */
     #[ResponseField('id', 'int', 'The diagram ID.')]
     #[ResponseField('name', 'string', 'The diagram name.')]
     #[ResponseField('db_type', 'string', 'The database type.', enum: ['mysql', 'postgresql'])]
@@ -23,16 +26,16 @@ class DiagramResource extends JsonResource
     public function toArray(Request $request): array
     {
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'db_type' => $this->db_type ?? 'mysql',
-            'schema' => $this->schema,
-            'script' => $this->script,
-            'share_token' => $this->share_token,
-            'share_access' => $this->share_access,
-            'require_approval' => (bool) $this->require_approval,
-            'library' => (bool) $this->library,
-            'is_owner' => $request->user()?->id === $this->user_id,
+            'id' => $this->resource->id,
+            'name' => $this->resource->name,
+            'db_type' => $this->resource->db_type ?? 'mysql',
+            'schema' => $this->resource->schema,
+            'script' => $this->resource->script,
+            'share_token' => $this->resource->share_token,
+            'share_access' => $this->resource->share_access?->value,
+            'require_approval' => (bool) $this->resource->require_approval,
+            'library' => (bool) $this->resource->library,
+            'is_owner' => $request->user()?->id === $this->resource->user_id,
         ];
     }
 }

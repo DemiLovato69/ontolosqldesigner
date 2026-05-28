@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 interface DiagramRepositoryInterface
 {
+    /** @return Collection<int, Diagram> */
     public function all(User $user): Collection;
 
     /** @deprecated Not used anywhere */

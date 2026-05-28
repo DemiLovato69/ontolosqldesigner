@@ -16,6 +16,7 @@ class DiagramCrudService
 {
     public function __construct(protected DiagramRepositoryInterface $diagramRepository) {}
 
+    /** @return Collection<int, Diagram> */
     public function getUserDiagrams(User $user): Collection
     {
         return $this->diagramRepository->all($user);

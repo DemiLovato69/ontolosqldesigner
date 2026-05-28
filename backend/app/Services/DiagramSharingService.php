@@ -27,7 +27,7 @@ class DiagramSharingService
     public function ensureShared(Diagram $diagram): string
     {
         if (! $diagram->share_access) {
-            $diagram->share_access = 'read';
+            $diagram->share_access = DiagramAccess::READ;
             $diagram->save();
 
             if ($diagram->library) {
@@ -35,7 +35,7 @@ class DiagramSharingService
             }
         }
 
-        return $diagram->share_access;
+        return ($diagram->share_access ?? DiagramAccess::READ)->value;
     }
 
     /**
@@ -53,7 +53,7 @@ class DiagramSharingService
     public function updateShareSettings(Diagram $diagram, ShareSettingsDTO $dto): array
     {
         if ($dto->access !== null) {
-            $diagram->share_access = $dto->access->value;
+            $diagram->share_access = $dto->access;
         }
 
         if ($dto->requireApproval !== null) {
@@ -62,8 +62,8 @@ class DiagramSharingService
 
         if ($dto->library !== null) {
             $diagram->library = $dto->library;
-            if ($dto->library && $diagram->share_access !== DiagramAccess::PER_USER->value) {
-                $diagram->share_access = DiagramAccess::PER_USER->value;
+            if ($dto->library && $diagram->share_access !== DiagramAccess::PER_USER) {
+                $diagram->share_access = DiagramAccess::PER_USER;
             }
         }
 
@@ -74,7 +74,7 @@ class DiagramSharingService
         }
 
         return [
-            'share_access' => $diagram->share_access,
+            'share_access' => $diagram->share_access?->value,
             'require_approval' => (bool) $diagram->require_approval,
             'library' => (bool) $diagram->library,
         ];
@@ -82,6 +82,8 @@ class DiagramSharingService
 
     /**
      * Return all visitors for a diagram, newest first.
+     *
+     * @return Collection<int, DiagramVisitor>
      */
     public function getVisitors(Diagram $diagram): Collection
     {
@@ -94,15 +96,15 @@ class DiagramSharingService
     public function approveVisitor(Diagram $diagram, DiagramVisitor $visitor): DiagramVisitor
     {
         $visitor->status = VisitorStatus::APPROVED;
-        if ($diagram->share_access === 'per_user') {
+        if ($diagram->share_access === DiagramAccess::PER_USER) {
             $visitor->access = $visitor->access ?? DiagramAccess::READ;
         }
         $visitor->save();
 
         try {
-            $access = $diagram->share_access === 'per_user'
+            $access = $diagram->share_access === DiagramAccess::PER_USER
                 ? ($visitor->access ?? DiagramAccess::READ)
-                : DiagramAccess::from($diagram->share_access);
+                : ($diagram->share_access ?? DiagramAccess::READ);
             broadcast(new VisitorAccessChanged($visitor->user_id, $diagram->share_token, $access));
         } catch (Exception) {
         }
@@ -113,21 +115,21 @@ class DiagramSharingService
     /**
      * Set a visitor's access level (or revoke it) and broadcast the change.
      */
-    public function setVisitorAccess(Diagram $diagram, DiagramVisitor $visitor, string $access): DiagramVisitor
+    public function setVisitorAccess(Diagram $diagram, DiagramVisitor $visitor, DiagramAccess $access): DiagramVisitor
     {
-        if ($access === 'revoke') {
+        if ($access === DiagramAccess::REVOKED) {
             $visitor->status = VisitorStatus::REVOKED;
             $visitor->access = null;
         } else {
             $visitor->status = VisitorStatus::APPROVED;
-            $visitor->access = DiagramAccess::from($access);
+            $visitor->access = $access;
         }
         $visitor->save();
 
         try {
             $broadcastAccess = $visitor->status === VisitorStatus::REVOKED
                 ? DiagramAccess::REVOKED
-                : ($visitor->access ?? DiagramAccess::from($diagram->share_access ?? DiagramAccess::READ->value));
+                : ($visitor->access ?? $diagram->share_access ?? DiagramAccess::READ);
             broadcast(new VisitorAccessChanged($visitor->user_id, $diagram->share_token, $broadcastAccess));
         } catch (Exception) {
         }
@@ -137,6 +139,8 @@ class DiagramSharingService
 
     /**
      * Save a schema update from a shared user if they have write access.
+     *
+     * @param  array<string, mixed>  $schema
      */
     public function saveByToken(Diagram $diagram, User $user, array $schema): bool
     {
@@ -166,7 +170,7 @@ class DiagramSharingService
         }
 
         $defaultStatus = $diagram->require_approval ? VisitorStatus::PENDING : VisitorStatus::APPROVED;
-        $isPerUser = $diagram->share_access === 'per_user';
+        $isPerUser = $diagram->share_access === DiagramAccess::PER_USER;
 
         $visitor = DiagramVisitor::firstOrCreate(
             ['diagram_id' => $diagram->id, 'user_id' => $user->id],
@@ -188,7 +192,7 @@ class DiagramSharingService
             if ($visitor->status !== VisitorStatus::APPROVED) {
                 return ['status' => 'pending'];
             }
-            $diagram->share_access = ($visitor->access ?? DiagramAccess::READ)->value;
+            $diagram->share_access = $visitor->access ?? DiagramAccess::READ;
         } else {
             if ($diagram->require_approval && $visitor->status !== VisitorStatus::APPROVED) {
                 return ['status' => 'pending'];
@@ -200,7 +204,7 @@ class DiagramSharingService
 
     private function hasWriteAccess(Diagram $diagram, User $user): bool
     {
-        if ($diagram->share_access === 'per_user') {
+        if ($diagram->share_access === DiagramAccess::PER_USER) {
             return DiagramVisitor::where('diagram_id', $diagram->id)
                 ->where('user_id', $user->id)
                 ->where('status', VisitorStatus::APPROVED)
@@ -208,7 +212,7 @@ class DiagramSharingService
                 ->exists();
         }
 
-        if ($diagram->share_access === 'write') {
+        if ($diagram->share_access === DiagramAccess::WRITE) {
             $visitor = DiagramVisitor::where('diagram_id', $diagram->id)
                 ->where('user_id', $user->id)
                 ->first();

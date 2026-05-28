@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Collection;
 
 class DiagramRepository implements DiagramRepositoryInterface
 {
+    /** @return Collection<int, Diagram> */
     public function all(User $user): Collection
     {
         return $user->diagrams()->get();
@@ -30,7 +31,7 @@ class DiagramRepository implements DiagramRepositoryInterface
             'db_type' => $dto->dbType,
             'schema' => null,
             'user_id' => $dto->userId,
-            'share_access' => $dto->shareAccess?->value,
+            'share_access' => $dto->shareAccess,
             'library' => $dto->library,
         ]);
     }

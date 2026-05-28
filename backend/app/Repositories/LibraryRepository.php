@@ -5,14 +5,14 @@ declare(strict_types=1);
 namespace App\Repositories;
 
 use App\Models\Diagram;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 class LibraryRepository
 {
     /**
-     * Return all featured, shared diagrams ordered by most recently updated.
+     * @return Collection<int, Diagram>
      */
     public function getFeatured(): Collection
     {
@@ -23,6 +23,8 @@ class LibraryRepository
 
     /**
      * Return a paginated list of non-featured, user-shared library diagrams.
+     *
+     * @return LengthAwarePaginator<int, Diagram>
      */
     public function getSharedByUsersPaginated(int $perPage = 24): LengthAwarePaginator
     {
@@ -30,6 +32,7 @@ class LibraryRepository
             ->paginate($perPage, ['name', 'share_token', 'updated_at']);
     }
 
+    /** @return Builder<Diagram> */
     private function baseQuery(): Builder
     {
         return Diagram::library()

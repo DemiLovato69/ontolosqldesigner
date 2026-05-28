@@ -84,8 +84,6 @@ class AuthService
     }
 
     /**
-     * Resend the verification email if the user is not yet verified.
-     *
      * @return bool True if the email was sent; false if already verified.
      */
     public function resendVerification(User $user): bool
