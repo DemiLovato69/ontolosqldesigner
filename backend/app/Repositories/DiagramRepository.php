@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Repositories;
 
+use App\DTOs\CreateDiagramDTO;
+use App\DTOs\UpdateDiagramDTO;
 use App\Models\Diagram;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,23 +23,21 @@ class DiagramRepository implements DiagramRepositoryInterface
         return Diagram::find($id);
     }
 
-    /** @param  array<string, mixed>  $data */
-    public function create(array $data): Diagram
+    public function create(CreateDiagramDTO $dto): Diagram
     {
         return Diagram::create([
-            'name'         => $data['name'],
-            'db_type'      => $data['db_type'] ?? 'mysql',
+            'name'         => $dto->name,
+            'db_type'      => $dto->dbType,
             'schema'       => null,
-            'user_id'      => $data['user_id'],
-            'share_access' => $data['share_access'] ?? null,
-            'library'      => $data['library'] ?? false,
+            'user_id'      => $dto->userId,
+            'share_access' => $dto->shareAccess?->value,
+            'library'      => $dto->library,
         ]);
     }
 
-    /** @param  array<string, mixed>  $data */
-    public function update(Diagram $diagram, array $data): bool
+    public function update(Diagram $diagram, UpdateDiagramDTO $dto): bool
     {
-        return $diagram->update($data);
+        return $diagram->update($dto->toArray());
     }
 
     public function delete(Diagram $diagram): bool

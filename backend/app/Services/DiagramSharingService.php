@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DTOs\ShareSettingsDTO;
 use App\Enums\DiagramAccess;
 use App\Enums\VisitorStatus;
 use App\Events\VisitorAccessChanged;
@@ -49,26 +50,26 @@ class DiagramSharingService
     }
 
     /** @return array{share_access: string|null, require_approval: bool, library: bool} */
-    public function updateShareSettings(Diagram $diagram, ?string $access, ?bool $requireApproval, ?bool $library): array
+    public function updateShareSettings(Diagram $diagram, ShareSettingsDTO $dto): array
     {
-        if ($access !== null) {
-            $diagram->share_access = $access;
+        if ($dto->access !== null) {
+            $diagram->share_access = $dto->access->value;
         }
 
-        if ($requireApproval !== null) {
-            $diagram->require_approval = $requireApproval;
+        if ($dto->requireApproval !== null) {
+            $diagram->require_approval = $dto->requireApproval;
         }
 
-        if ($library !== null) {
-            $diagram->library = $library;
-            if ($library && $diagram->share_access !== 'per_user') {
-                $diagram->share_access = 'per_user';
+        if ($dto->library !== null) {
+            $diagram->library = $dto->library;
+            if ($dto->library && $diagram->share_access !== DiagramAccess::PER_USER->value) {
+                $diagram->share_access = DiagramAccess::PER_USER->value;
             }
         }
 
         $diagram->save();
 
-        if ($library !== null) {
+        if ($dto->library !== null) {
             $this->libraryService->invalidate();
         }
 

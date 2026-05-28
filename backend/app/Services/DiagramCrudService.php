@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DTOs\CreateDiagramDTO;
+use App\DTOs\UpdateDiagramDTO;
 use App\Models\Diagram;
 use App\Models\User;
 use App\Repositories\DiagramRepositoryInterface;
@@ -20,30 +22,26 @@ class DiagramCrudService
     }
 
     /**
-     * @param  array<string, mixed>  $data
      * @throws ValidationException
      */
-    public function createDiagram(array $data): Diagram
+    public function createDiagram(CreateDiagramDTO $dto): Diagram
     {
-        if (isset($data['name']) && isset($data['user_id'])) {
-            $exists = Diagram::where('user_id', $data['user_id'])
-                ->where('name', $data['name'])
-                ->exists();
+        $exists = Diagram::where('user_id', $dto->userId)
+            ->where('name', $dto->name)
+            ->exists();
 
-            if ($exists) {
-                throw ValidationException::withMessages([
-                    'name' => ['A diagram with this name already exists.'],
-                ]);
-            }
+        if ($exists) {
+            throw ValidationException::withMessages([
+                'name' => ['A diagram with this name already exists.'],
+            ]);
         }
 
-        return $this->diagramRepository->create($data);
+        return $this->diagramRepository->create($dto);
     }
 
-    /** @param  array<string, mixed>  $data */
-    public function updateDiagram(Diagram $diagram, array $data): bool
+    public function updateDiagram(Diagram $diagram, UpdateDiagramDTO $dto): bool
     {
-        return $this->diagramRepository->update($diagram, $data);
+        return $this->diagramRepository->update($diagram, $dto);
     }
 
     public function deleteDiagram(Diagram $diagram): bool

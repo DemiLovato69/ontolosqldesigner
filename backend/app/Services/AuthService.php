@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\DTOs\RegisterDTO;
 use App\Jobs\SendVerificationEmail;
 use App\Models\User;
 use App\Repositories\AuthRepository;
@@ -16,15 +17,13 @@ class AuthService
     public function __construct(private readonly AuthRepository $authRepository) {}
 
     /**
-     * @param  array{email: string, password: string}  $data
-     *
      * @throws AuthenticationException  If authentication after creation unexpectedly fails.
      */
-    public function register(array $data): string
+    public function register(RegisterDTO $dto): string
     {
-        $this->authRepository->createNewUser($data);
+        $this->authRepository->createNewUser($dto);
 
-        if (!Auth::attempt(['email' => $data['email'], 'password' => $data['password']])) {
+        if (!Auth::attempt(['email' => $dto->email, 'password' => $dto->password])) {
             throw new AuthenticationException('Registration succeeded but authentication failed.');
         }
 

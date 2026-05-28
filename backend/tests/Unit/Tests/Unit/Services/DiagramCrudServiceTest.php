@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Services;
 
+use App\DTOs\CreateDiagramDTO;
+use App\DTOs\UpdateDiagramDTO;
 use App\Models\Diagram;
 use App\Models\User;
 use App\Services\DiagramCrudService;
@@ -29,13 +31,13 @@ class DiagramCrudServiceTest extends TestCase
 
     public function testCreateDiagram(): void
     {
-        $data = ['name' => 'test', 'user_id' => User::factory()->create()->id];
-        $this->assertDatabaseHas(Diagram::class, $this->service->createDiagram($data)->toArray());
+        $dto = new CreateDiagramDTO(name: 'test', userId: User::factory()->create()->id);
+        $this->assertDatabaseHas(Diagram::class, $this->service->createDiagram($dto)->only(['name', 'user_id']));
     }
 
     public function testUpdateDiagram(): void
     {
-        $this->assertTrue($this->service->updateDiagram(Diagram::factory()->create(), ['name' => 'Updated']));
+        $this->assertTrue($this->service->updateDiagram(Diagram::factory()->create(), new UpdateDiagramDTO(name: 'Updated')));
     }
 
     public function testDeleteDiagram(): void
