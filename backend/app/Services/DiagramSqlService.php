@@ -13,6 +13,13 @@ use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
 use App\Models\Diagram;
 use App\Models\DiagramChangelog;
+use App\Services\SqlDialects\MsAccessDialect;
+use App\Services\SqlDialects\MysqlDialect;
+use App\Services\SqlDialects\OracleDialect;
+use App\Services\SqlDialects\PostgresqlDialect;
+use App\Services\SqlDialects\SqlDialectInterface;
+use App\Services\SqlDialects\SqliteDialect;
+use App\Services\SqlDialects\SqlServerDialect;
 use Illuminate\Contracts\Auth\Authenticatable;
 
 class DiagramSqlService
@@ -72,31 +79,15 @@ class DiagramSqlService
 
     public function createScript(string $schema, string $dbType = 'mysql', int $chunkSize = 50): string
     {
-        $isMysql     = $dbType === 'mysql';
-        $isSqlite    = $dbType === 'sqlite';
-        $isOracle    = $dbType === 'oracle';
-        $isSqlserver = $dbType === 'sqlserver';
-        $isMsaccess  = $dbType === 'msaccess';
-
-        // SQL Server and MS Access use [name], MySQL uses `name`, everything else uses "name"
-        if ($isSqlserver || $isMsaccess) {
-            $qOpen  = '[';
-            $qClose = ']';
-        } elseif ($isMysql) {
-            $qOpen = $qClose = '`';
-        } else {
-            $qOpen = $qClose = '"';
-        }
-
-        $qi = fn(string $name) => "{$qOpen}{$name}{$qClose}";
+        $dialect = $this->resolveDialect($dbType);
+        $qi      = fn(string $name) => $dialect->quote($name);
 
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
         $tablesById = $tables->keyBy('id');
         $rowsById   = $rows->keyBy('id');
-        $script     = '';
+        $lines      = [];
 
-        // SQLite requires FK constraints inline in CREATE TABLE; pre-group by the FK-bearing table.
-        $sqliteFksByTable = $isSqlite
+        $inlineFksByTable = $dialect->usesInlineForeignKeys()
             ? $connections->groupBy(fn($c) => $rowsById->get($c['target_id'])['table_id'] ?? null)
             : collect();
 
@@ -105,42 +96,38 @@ class DiagramSqlService
                 $tableRows        = $rows->where('table_id', $table['id']);
                 $tableColumnNames = $tableRows->pluck('name')->all();
 
-                $allDefs = $tableRows->map(function ($row) use ($isMysql, $qi) {
+                $allDefs = $tableRows->map(function ($row) use ($dialect, $qi) {
                     $typeWord = strtoupper(preg_replace('/[\s(].*/', '', $row['sql_type']));
                     if (in_array($typeWord, ['INDEX', 'KEY', 'CONSTRAINT', 'FOREIGN', 'CHECK', 'PRIMARY', 'UNIQUE'])) return null;
                     $parts = ['  ' . $qi($row['name']) . " {$row['sql_type']}"];
-                    if ($isMysql && $row['unsigned']) $parts[] = 'UNSIGNED';
+                    if ($dialect->supportsUnsigned() && $row['unsigned']) $parts[] = 'UNSIGNED';
                     $parts[] = $row['nullable'] ? 'NULL' : 'NOT NULL';
                     if ($row['key_mod'] && $row['key_mod'] !== 'FOREIGN KEY') $parts[] = $row['key_mod'];
                     if ($row['default_value'] !== null && $row['default_value'] !== '') $parts[] = "DEFAULT '{$row['default_value']}'";
-                    if ($isMysql && $row['comment'] !== null && $row['comment'] !== '') $parts[] = "COMMENT '{$row['comment']}'";
+                    if ($dialect->supportsColumnComment() && $row['comment'] !== null && $row['comment'] !== '') $parts[] = "COMMENT '{$row['comment']}'";
                     return implode(' ', array_filter($parts));
                 })->filter()->values()->all();
 
                 foreach ($table['unique_together'] as $constraintCols) {
                     $validCols = array_values(array_filter($constraintCols, fn($c) => in_array($c, $tableColumnNames)));
                     if (count($validCols) >= 2) {
-                        $quotedCols     = implode(', ', array_map($qi, $validCols));
                         $constraintName = 'uq_' . $table['name'] . '_' . implode('_', $validCols);
-                        $allDefs[]      = $isMysql
-                            ? '  UNIQUE KEY ' . $qi($constraintName) . " ({$quotedCols})"
-                            : '  CONSTRAINT ' . $qi($constraintName) . " UNIQUE ({$quotedCols})";
+                        $allDefs[]      = '  ' . $dialect->uniqueConstraintSql($constraintName, $validCols);
                     }
                 }
 
-                if ($isMysql) {
+                if ($dialect->supportsFulltext()) {
                     foreach ($table['fulltext_indexes'] as $ftCols) {
                         $validCols = array_values(array_filter($ftCols, fn($c) => in_array($c, $tableColumnNames)));
                         if (count($validCols) >= 1) {
-                            $quotedCols = implode(', ', array_map(fn($c) => "`{$c}`", $validCols));
-                            $indexName  = 'ft_' . $table['name'] . '_' . implode('_', $validCols);
-                            $allDefs[]  = "  FULLTEXT KEY `{$indexName}` ({$quotedCols})";
+                            $indexName = 'ft_' . $table['name'] . '_' . implode('_', $validCols);
+                            $allDefs[] = '  ' . $dialect->fulltextIndexSql($indexName, $validCols);
                         }
                     }
                 }
 
-                if ($isSqlite) {
-                    foreach ($sqliteFksByTable->get($table['id'], collect()) as $connection) {
+                if ($dialect->usesInlineForeignKeys()) {
+                    foreach ($inlineFksByTable->get($table['id'], collect()) as $connection) {
                         $sourceRow = $rowsById->get($connection['source_id']);
                         $targetRow = $rowsById->get($connection['target_id']);
                         if (!$sourceRow || !$targetRow) continue;
@@ -149,16 +136,13 @@ class DiagramSqlService
                     }
                 }
 
-                // Oracle, SQL Server, and MS Access don't support IF NOT EXISTS
-                $ifNotExists = ($isOracle || $isSqlserver || $isMsaccess) ? '' : 'IF NOT EXISTS ';
-                $script .= 'CREATE TABLE ' . $ifNotExists . $qi($table['name']) . " (\n";
-                $script .= implode(",\n", $allDefs) . "\n";
-                $script .= ");\n\n";
+                $ifNotExists = $dialect->supportsIfNotExists() ? 'IF NOT EXISTS ' : '';
+                $lines[]     = 'CREATE TABLE ' . $ifNotExists . $qi($table['name']) . " (\n" . implode(",\n", $allDefs) . "\n);";
             }
             gc_collect_cycles();
         }
 
-        if (!$isSqlite) {
+        if (!$dialect->usesInlineForeignKeys()) {
             foreach (array_chunk($connections->all(), $chunkSize) as $connectionChunk) {
                 foreach ($connectionChunk as $connection) {
                     $sourceRow = $rowsById->get($connection['source_id']);
@@ -166,13 +150,25 @@ class DiagramSqlService
                     if (!$sourceRow || !$targetRow) continue;
                     $tableName       = $tablesById->get($sourceRow['table_id'])['name'];
                     $targetTableName = $tablesById->get($targetRow['table_id'])['name'];
-                    $script .= 'ALTER TABLE ' . $qi($targetTableName) . "\nADD FOREIGN KEY (" . $qi($targetRow['name']) . ') REFERENCES ' . $qi($tableName) . '(' . $qi($sourceRow['name']) . ");\n\n";
+                    $lines[]         = 'ALTER TABLE ' . $qi($targetTableName) . "\nADD FOREIGN KEY (" . $qi($targetRow['name']) . ') REFERENCES ' . $qi($tableName) . '(' . $qi($sourceRow['name']) . ');';
                 }
                 gc_collect_cycles();
             }
         }
 
-        return $script;
+        return implode("\n\n", $lines) . (count($lines) > 0 ? "\n" : '');
+    }
+
+    private function resolveDialect(string $dbType): SqlDialectInterface
+    {
+        return match ($dbType) {
+            DbType::POSTGRESQL->value => new PostgresqlDialect(),
+            DbType::SQLITE->value     => new SqliteDialect(),
+            DbType::ORACLE->value     => new OracleDialect(),
+            DbType::SQLSERVER->value  => new SqlServerDialect(),
+            DbType::MSACCESS->value   => new MsAccessDialect(),
+            default                   => new MysqlDialect(),
+        };
     }
 
     public function createJson(string $schema, int $chunkSize = 50): array
