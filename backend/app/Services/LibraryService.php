@@ -22,7 +22,7 @@ class LibraryService
      *
      * @return array{featured: Collection<int, Diagram>, diagrams: LengthAwarePaginator}
      */
-    public function getLibraryData(): array
+    public function getLibraryData(int $page = 1): array
     {
         $v = (int) Cache::get(self::VERSION_KEY, 0);
 
@@ -30,7 +30,6 @@ class LibraryService
             return $this->libraryRepository->getFeatured();
         });
 
-        $page     = max(1, (int) request('page', 1));
         $diagrams = Cache::remember("library.diagrams.{$v}.{$page}", self::CACHE_TTL, function () {
             return $this->libraryRepository->getSharedByUsersPaginated()->withPath(url('/library'));
         });
