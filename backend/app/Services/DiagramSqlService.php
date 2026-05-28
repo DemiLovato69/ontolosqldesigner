@@ -22,6 +22,7 @@ use App\Services\SqlDialects\SqlDialectInterface;
 use App\Services\SqlDialects\SqliteDialect;
 use App\Services\SqlDialects\SqlServerDialect;
 use Illuminate\Contracts\Auth\Authenticatable;
+use ZipArchive;
 
 class DiagramSqlService
 {
@@ -76,6 +77,21 @@ class DiagramSqlService
         $diagram->save();
 
         return $sqlScript;
+    }
+
+    public function createMigrationZip(Diagram $diagram): string
+    {
+        $files   = $this->createMigration(json_encode($diagram->schema));
+        $tmpPath = tempnam(sys_get_temp_dir(), 'migrations_');
+
+        $zip = new ZipArchive();
+        $zip->open($tmpPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        foreach ($files as $file) {
+            $zip->addFromString("migrations/{$file['filename']}", $file['content']);
+        }
+        $zip->close();
+
+        return $tmpPath;
     }
 
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)

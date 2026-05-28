@@ -31,7 +31,6 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\Subgroup;
-use ZipArchive;
 
 #[Group("Diagrams")]
 class DiagramController extends Controller
@@ -179,18 +178,9 @@ class DiagramController extends Controller
     {
         $this->authorize('export', $diagram);
 
-        $files   = $this->sqlService->createMigration(json_encode($diagram->schema));
-        $tmpFile = tempnam(sys_get_temp_dir(), 'migrations_');
-
-        $zip = new ZipArchive();
-        $zip->open($tmpFile, ZipArchive::CREATE | ZipArchive::OVERWRITE);
-        foreach ($files as $file) {
-            $zip->addFromString("migrations/{$file['filename']}", $file['content']);
-        }
-        $zip->close();
-
-        $content  = file_get_contents($tmpFile);
-        unlink($tmpFile);
+        $zipPath  = $this->sqlService->createMigrationZip($diagram);
+        $content  = file_get_contents($zipPath);
+        unlink($zipPath);
         $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $diagram->name) . '_migrations.zip';
 
         return response($content, 200, [
