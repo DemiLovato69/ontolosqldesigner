@@ -2,6 +2,8 @@
 
 namespace App\Jobs;
 
+use App\Enums\DbType;
+use App\Enums\ExportStatus;
 use App\Models\Diagram;
 use App\Services\DiagramSqlService;
 use Illuminate\Bus\Queueable;
@@ -28,20 +30,20 @@ class ExportDiagramJob implements ShouldQueue
     {
         ini_set('memory_limit', '512M');
 
-        $this->diagram->export_status = 'processing';
+        $this->diagram->export_status = ExportStatus::PROCESSING;
         $this->diagram->save();
 
         try {
-            $sqlScript = $service->createScript($this->diagram->schema, $this->diagram->db_type ?? 'mysql');
+            $sqlScript = $service->createScript($this->diagram->schema, ($this->diagram->db_type ?? DbType::MYSQL)->value);
             $jsonExport = $service->createJson($this->diagram->schema);
 
             $this->diagram->script        = json_encode($sqlScript);
             $this->diagram->export_json   = $jsonExport;
-            $this->diagram->export_status = 'done';
+            $this->diagram->export_status = ExportStatus::DONE;
             $this->diagram->export_error  = null;
             $this->diagram->save();
         } catch (Throwable $e) {
-            $this->diagram->export_status = 'failed';
+            $this->diagram->export_status = ExportStatus::FAILED;
             $this->diagram->export_error  = $e->getMessage();
             $this->diagram->save();
         }

@@ -2,6 +2,10 @@
 
 namespace App\Services;
 
+use App\Enums\ChangelogAction;
+use App\Enums\DbType;
+use App\Enums\ExportStatus;
+use App\Enums\ImportStatus;
 use App\Events\SchemaImported;
 use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
@@ -14,7 +18,7 @@ class DiagramSqlService
     public function startImport(Diagram $diagram, string $script, Authenticatable $user): void
     {
         $diagram->script        = $script;
-        $diagram->import_status = 'pending';
+        $diagram->import_status = ImportStatus::PENDING;
         $diagram->import_error  = null;
         $diagram->save();
 
@@ -25,14 +29,14 @@ class DiagramSqlService
             'diagram_id' => $diagram->id,
             'user_id'    => $user->id,
             'user_name'  => $user->email,
-            'action'     => 'import_sql',
+            'action'     => ChangelogAction::IMPORT_SQL,
             'details'    => null,
         ]);
     }
 
     public function startExport(Diagram $diagram, Authenticatable $user): void
     {
-        $diagram->export_status = 'pending';
+        $diagram->export_status = ExportStatus::PENDING;
         $diagram->export_error  = null;
         $diagram->save();
 
@@ -42,7 +46,7 @@ class DiagramSqlService
             'diagram_id' => $diagram->id,
             'user_id'    => $user->id,
             'user_name'  => $user->email,
-            'action'     => 'export_sql',
+            'action'     => ChangelogAction::EXPORT_SQL,
             'details'    => null,
         ]);
     }
@@ -57,7 +61,7 @@ class DiagramSqlService
 
     public function exportScript(Diagram $diagram): string
     {
-        $script = json_encode($this->createScript($diagram->schema, $diagram->db_type ?? 'mysql'));
+        $script = json_encode($this->createScript($diagram->schema, ($diagram->db_type ?? DbType::MYSQL)->value));
         $diagram->script = $script;
         $diagram->save();
 

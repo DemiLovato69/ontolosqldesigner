@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\VisitorStatus;
 use App\Http\Resources\DiagramChangelogResource;
 use App\Models\Diagram;
 use App\Models\DiagramChangelog;
@@ -65,7 +66,7 @@ class DiagramChangelogController extends Controller
 
         return DiagramVisitor::where('diagram_id', $diagram->id)
             ->where('user_id', $user->id)
-            ->where('status', 'approved')
+            ->where('status', VisitorStatus::APPROVED)
             ->exists();
     }
 
@@ -82,7 +83,7 @@ class DiagramChangelogController extends Controller
         if ($diagram->share_access === 'per_user') {
             return DiagramVisitor::where('diagram_id', $diagram->id)
                 ->where('user_id', $user->id)
-                ->where('status', 'approved')
+                ->where('status', VisitorStatus::APPROVED)
                 ->where('access', 'write')
                 ->exists();
         }

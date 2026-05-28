@@ -37,7 +37,7 @@ class DiagramCrudService
     {
         return [
             'name'    => $diagram->name,
-            'db_type' => $diagram->db_type,
+            'db_type' => $diagram->db_type->value,
             'schema'  => $diagram->schema,
         ];
     }

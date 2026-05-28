@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Enums\ImportStatus;
 use App\Models\Diagram;
 use App\Services\DiagramSqlService;
 use Illuminate\Bus\Queueable;
@@ -28,18 +29,18 @@ class ImportDiagramSchemaJob implements ShouldQueue
     {
         ini_set('memory_limit', '512M');
 
-        $this->diagram->import_status = 'processing';
+        $this->diagram->import_status = ImportStatus::PROCESSING;
         $this->diagram->save();
 
         try {
             $schema = $service->createSchema(json_decode($this->diagram->script));
 
             $this->diagram->schema        = $schema;
-            $this->diagram->import_status = 'done';
+            $this->diagram->import_status = ImportStatus::DONE;
             $this->diagram->import_error  = null;
             $this->diagram->save();
         } catch (Throwable $e) {
-            $this->diagram->import_status = 'failed';
+            $this->diagram->import_status = ImportStatus::FAILED;
             $this->diagram->import_error  = $e->getMessage();
             $this->diagram->save();
         }

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\ImportStatus;
+use App\Enums\ExportStatus;
 use App\Http\Requests\DiagramRequest;
 use App\Http\Resources\DiagramResource;
 use App\Http\Resources\DiagramVisitorResource;
@@ -111,7 +113,7 @@ class DiagramController extends Controller
 
         return response()->json([
             'status' => $diagram->import_status,
-            'schema' => $diagram->import_status === 'done' ? $diagram->schema : null,
+            'schema' => $diagram->import_status === ImportStatus::DONE ? $diagram->schema : null,
             'error'  => $diagram->import_error,
         ]);
     }
@@ -139,8 +141,8 @@ class DiagramController extends Controller
 
         return response()->json([
             'status' => $diagram->export_status,
-            'script' => $diagram->export_status === 'done' ? $diagram->script : null,
-            'json'   => $diagram->export_status === 'done' ? json_decode($diagram->export_json) : null,
+            'script' => $diagram->export_status === ExportStatus::DONE ? $diagram->script : null,
+            'json'   => $diagram->export_status === ExportStatus::DONE ? json_decode($diagram->export_json) : null,
             'error'  => $diagram->export_error,
         ]);
     }

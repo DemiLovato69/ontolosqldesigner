@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\DiagramAccess;
+use App\Enums\VisitorStatus;
 use App\Events\VisitorAccessChanged;
 use App\Events\VisitorRequested;
 use App\Models\Diagram;
@@ -73,15 +74,17 @@ class DiagramSharingService
 
     public function approveVisitor(Diagram $diagram, DiagramVisitor $visitor): DiagramVisitor
     {
-        $visitor->status = 'approved';
+        $visitor->status = VisitorStatus::APPROVED;
         if ($diagram->share_access === 'per_user') {
-            $visitor->access = $visitor->access ?? 'read';
+            $visitor->access = $visitor->access ?? DiagramAccess::READ;
         }
         $visitor->save();
 
         try {
-            $accessStr = $diagram->share_access === 'per_user' ? ($visitor->access ?? 'read') : $diagram->share_access;
-            broadcast(new VisitorAccessChanged($visitor->user_id, $diagram->share_token, DiagramAccess::from($accessStr)));
+            $access = $diagram->share_access === 'per_user'
+                ? ($visitor->access ?? DiagramAccess::READ)
+                : DiagramAccess::from($diagram->share_access);
+            broadcast(new VisitorAccessChanged($visitor->user_id, $diagram->share_token, $access));
         } catch (Exception) {}
 
         return $visitor;
@@ -90,17 +93,19 @@ class DiagramSharingService
     public function setVisitorAccess(Diagram $diagram, DiagramVisitor $visitor, string $access): DiagramVisitor
     {
         if ($access === 'revoke') {
-            $visitor->status = 'revoked';
+            $visitor->status = VisitorStatus::REVOKED;
             $visitor->access = null;
         } else {
-            $visitor->status = 'approved';
-            $visitor->access = $access;
+            $visitor->status = VisitorStatus::APPROVED;
+            $visitor->access = DiagramAccess::from($access);
         }
         $visitor->save();
 
         try {
-            $broadcastAccessStr = $visitor->status === 'revoked' ? 'revoked' : ($visitor->access ?? $diagram->share_access ?? 'read');
-            broadcast(new VisitorAccessChanged($visitor->user_id, $diagram->share_token, DiagramAccess::from($broadcastAccessStr)));
+            $broadcastAccess = $visitor->status === VisitorStatus::REVOKED
+                ? DiagramAccess::REVOKED
+                : ($visitor->access ?? DiagramAccess::from($diagram->share_access ?? DiagramAccess::READ->value));
+            broadcast(new VisitorAccessChanged($visitor->user_id, $diagram->share_token, $broadcastAccess));
         } catch (Exception) {}
 
         return $visitor;
@@ -128,12 +133,12 @@ class DiagramSharingService
             return ['status' => 'not_shared'];
         }
 
-        $defaultStatus = $diagram->require_approval ? 'pending' : 'approved';
+        $defaultStatus = $diagram->require_approval ? VisitorStatus::PENDING : VisitorStatus::APPROVED;
         $isPerUser     = $diagram->share_access === 'per_user';
 
         $visitor = DiagramVisitor::firstOrCreate(
             ['diagram_id' => $diagram->id, 'user_id' => $user->id],
-            $isPerUser ? ['status' => $defaultStatus, 'access' => 'read'] : ['status' => $defaultStatus]
+            $isPerUser ? ['status' => $defaultStatus, 'access' => DiagramAccess::READ] : ['status' => $defaultStatus]
         );
 
         if ($visitor->wasRecentlyCreated && $diagram->require_approval) {
@@ -142,13 +147,13 @@ class DiagramSharingService
             } catch (Exception) {}
         }
 
-        if ($visitor->status === 'revoked') return ['status' => 'revoked'];
+        if ($visitor->status === VisitorStatus::REVOKED) return ['status' => 'revoked'];
 
         if ($isPerUser) {
-            if ($visitor->status !== 'approved') return ['status' => 'pending'];
-            $diagram->share_access = $visitor->access ?? 'read';
+            if ($visitor->status !== VisitorStatus::APPROVED) return ['status' => 'pending'];
+            $diagram->share_access = ($visitor->access ?? DiagramAccess::READ)->value;
         } else {
-            if ($diagram->require_approval && $visitor->status !== 'approved') return ['status' => 'pending'];
+            if ($diagram->require_approval && $visitor->status !== VisitorStatus::APPROVED) return ['status' => 'pending'];
         }
 
         return ['status' => 'ok', 'diagram' => $diagram];
@@ -159,8 +164,8 @@ class DiagramSharingService
         if ($diagram->share_access === 'per_user') {
             return DiagramVisitor::where('diagram_id', $diagram->id)
                 ->where('user_id', $user->id)
-                ->where('status', 'approved')
-                ->where('access', 'write')
+                ->where('status', VisitorStatus::APPROVED)
+                ->where('access', DiagramAccess::WRITE)
                 ->exists();
         }
 
@@ -169,8 +174,8 @@ class DiagramSharingService
                 ->where('user_id', $user->id)
                 ->first();
 
-            if ($visitor?->status === 'revoked') return false;
-            if ($diagram->require_approval) return $visitor?->status === 'approved';
+            if ($visitor?->status === VisitorStatus::REVOKED) return false;
+            if ($diagram->require_approval) return $visitor?->status === VisitorStatus::APPROVED;
             return true;
         }
 

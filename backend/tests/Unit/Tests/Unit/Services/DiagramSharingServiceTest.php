@@ -2,6 +2,8 @@
 
 namespace Tests\Unit\Services;
 
+use App\Enums\DiagramAccess;
+use App\Enums\VisitorStatus;
 use App\Models\Diagram;
 use App\Models\DiagramVisitor;
 use App\Models\User;
@@ -86,7 +88,7 @@ class DiagramSharingServiceTest extends TestCase
         $visitors = $this->service->getVisitors($diagram);
         $this->assertCount(1, $visitors);
         $this->assertEquals($user->id, $visitors[0]['user_id']);
-        $this->assertEquals('approved', $visitors[0]['status']);
+        $this->assertEquals(VisitorStatus::APPROVED, $visitors[0]['status']);
     }
 
     // --- approveVisitor ---
@@ -95,7 +97,7 @@ class DiagramSharingServiceTest extends TestCase
     {
         $diagram = Diagram::factory()->create(['share_access' => 'read']);
         $visitor = DiagramVisitor::factory()->create(['diagram_id' => $diagram->id, 'status' => 'pending']);
-        $this->assertEquals('approved', $this->service->approveVisitor($diagram, $visitor)->status);
+        $this->assertEquals(VisitorStatus::APPROVED, $this->service->approveVisitor($diagram, $visitor)->status);
     }
 
     public function testApproveVisitorPerUserSetsAccessRead(): void
@@ -103,8 +105,8 @@ class DiagramSharingServiceTest extends TestCase
         $diagram = Diagram::factory()->create(['share_access' => 'per_user']);
         $visitor = DiagramVisitor::factory()->create(['diagram_id' => $diagram->id, 'status' => 'pending', 'access' => null]);
         $result = $this->service->approveVisitor($diagram, $visitor);
-        $this->assertEquals('approved', $result->status);
-        $this->assertEquals('read', $result->access);
+        $this->assertEquals(VisitorStatus::APPROVED, $result->status);
+        $this->assertEquals(DiagramAccess::READ, $result->access);
     }
 
     // --- setVisitorAccess ---
@@ -114,8 +116,8 @@ class DiagramSharingServiceTest extends TestCase
         $diagram = Diagram::factory()->create();
         $visitor = DiagramVisitor::factory()->create(['diagram_id' => $diagram->id]);
         $result = $this->service->setVisitorAccess($diagram, $visitor, 'write');
-        $this->assertEquals('approved', $result->status);
-        $this->assertEquals('write', $result->access);
+        $this->assertEquals(VisitorStatus::APPROVED, $result->status);
+        $this->assertEquals(DiagramAccess::WRITE, $result->access);
     }
 
     public function testSetVisitorAccessRevoke(): void
@@ -123,7 +125,7 @@ class DiagramSharingServiceTest extends TestCase
         $diagram = Diagram::factory()->create();
         $visitor = DiagramVisitor::factory()->create(['diagram_id' => $diagram->id, 'status' => 'approved', 'access' => 'read']);
         $result = $this->service->setVisitorAccess($diagram, $visitor, 'revoke');
-        $this->assertEquals('revoked', $result->status);
+        $this->assertEquals(VisitorStatus::REVOKED, $result->status);
         $this->assertNull($result->access);
     }
 

@@ -2,6 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\DbType;
+use App\Enums\ExportStatus;
+use App\Enums\ImportStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -29,6 +32,12 @@ class Diagram extends Model
         'export_status',
         'export_error',
         'export_json',
+    ];
+
+    protected $casts = [
+        'import_status' => ImportStatus::class,
+        'export_status' => ExportStatus::class,
+        'db_type'       => DbType::class,
     ];
 
     protected static function booted(): void
