@@ -467,6 +467,7 @@
             opacity: 0.35;
             cursor: default;
         }
+        .lib-pagination span.dots { border: none; background: none; }
     </style>
 @endsection
 
@@ -558,29 +559,7 @@
                     </a>
                 @endforeach
             </div>
-        @if($diagrams->lastPage() > 1)
-            <nav class="lib-pagination" aria-label="Diagrams pagination">
-                @if($diagrams->onFirstPage())
-                    <span class="disabled">←</span>
-                @else
-                    <a href="{{ $diagrams->previousPageUrl() }}">←</a>
-                @endif
-
-                @foreach($diagrams->getUrlRange(1, $diagrams->lastPage()) as $page => $url)
-                    @if($page == $diagrams->currentPage())
-                        <span aria-current="page">{{ $page }}</span>
-                    @else
-                        <a href="{{ $url }}">{{ $page }}</a>
-                    @endif
-                @endforeach
-
-                @if($diagrams->hasMorePages())
-                    <a href="{{ $diagrams->nextPageUrl() }}">→</a>
-                @else
-                    <span class="disabled">→</span>
-                @endif
-            </nav>
-        @endif
+        {{ $diagrams->links('components.pagination', ['navClass' => 'lib-pagination']) }}
     @endif
     </div>
 </section>

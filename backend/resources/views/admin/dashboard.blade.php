@@ -371,12 +371,13 @@
             transition: border-color .2s, color .2s;
         }
         .pagination a:hover { border-color: #aaa; color: #2c3e50; }
-        .pagination .active span {
+        .pagination span[aria-current="page"] {
             background: #fff5f5;
             border-color: #8f2f2f;
             color: #8f2f2f;
         }
-        .pagination .disabled span { opacity: .35; cursor: default; }
+        .pagination span.disabled { opacity: .35; cursor: default; }
+        .pagination span.dots { border: none; background: none; }
     </style>
 </head>
 <body>
@@ -503,29 +504,7 @@
             <p class="empty">No users yet.</p>
         @endforelse
 
-        @if($users->lastPage() > 1)
-            <nav class="pagination" aria-label="Users pagination">
-                @if($users->onFirstPage())
-                    <span class="disabled"><span>←</span></span>
-                @else
-                    <a href="{{ $users->previousPageUrl() }}">←</a>
-                @endif
-
-                @foreach($users->getUrlRange(1, $users->lastPage()) as $page => $url)
-                    @if($page == $users->currentPage())
-                        <span class="active"><span>{{ $page }}</span></span>
-                    @else
-                        <a href="{{ $url }}">{{ $page }}</a>
-                    @endif
-                @endforeach
-
-                @if($users->hasMorePages())
-                    <a href="{{ $users->nextPageUrl() }}">→</a>
-                @else
-                    <span class="disabled"><span>→</span></span>
-                @endif
-            </nav>
-        @endif
+        {{ $users->links('components.pagination', ['navClass' => 'pagination']) }}
     </main>
 
     <div class="toast" id="toast"></div>

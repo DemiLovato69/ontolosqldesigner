@@ -4,6 +4,7 @@ namespace App\Repositories;
 
 use App\Models\Diagram;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 
 class LibraryRepository
@@ -16,21 +17,17 @@ class LibraryRepository
             ->get(['name', 'share_token', 'featured_url', 'updated_at']);
     }
 
-    public function getSharedByUsers(): Collection
-    {
-        return Diagram::where('library', true)
-            ->where('featured', false)
-            ->whereNotNull('share_access')
-            ->orderByDesc('updated_at')
-            ->get(['name', 'share_token', 'updated_at']);
-    }
-
     public function getSharedByUsersPaginated(int $perPage = 24): LengthAwarePaginator
     {
+        return $this->baseQuery()
+            ->paginate($perPage, ['name', 'share_token', 'updated_at']);
+    }
+
+    private function baseQuery(): Builder
+    {
         return Diagram::where('library', true)
             ->where('featured', false)
             ->whereNotNull('share_access')
-            ->orderByDesc('updated_at')
-            ->paginate($perPage, ['name', 'share_token', 'updated_at']);
+            ->orderByDesc('updated_at');
     }
 }

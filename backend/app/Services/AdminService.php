@@ -73,13 +73,15 @@ class AdminService
 
         $totalUsers = User::count();
 
-        $returningUsers = DB::table('diagram_changelog')
-            ->selectRaw('user_id')
-            ->whereNotNull('user_id')
-            ->groupBy('user_id')
-            ->havingRaw("COUNT(DISTINCT DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')) >= 2")
-            ->get()
-            ->count();
+        $returningUsers = DB::table(
+            DB::table('diagram_changelog')
+                ->selectRaw('user_id')
+                ->whereNotNull('user_id')
+                ->groupBy('user_id')
+                ->havingRaw("COUNT(DISTINCT DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')) >= 2")
+                ->toBase(),
+            'sub'
+        )->count();
 
         $retentionRate = $totalUsers > 0 ? round($returningUsers / $totalUsers * 100, 1) : 0;
 

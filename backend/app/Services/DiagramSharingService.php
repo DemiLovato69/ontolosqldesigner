@@ -19,6 +19,10 @@ class DiagramSharingService
         if (!$diagram->share_access) {
             $diagram->share_access = 'read';
             $diagram->save();
+
+            if ($diagram->library) {
+                $this->libraryService->invalidate();
+            }
         }
 
         return $diagram->share_access;
