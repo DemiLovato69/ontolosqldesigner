@@ -26,7 +26,7 @@ class ReviewControllerTest extends TestCase
 
         $this->actingAs($user, 'sanctum')
             ->postJson('/api/review', ['stars' => 5, 'message' => 'Great tool!'])
-            ->assertStatus(200)
+            ->assertStatus(201)
             ->assertJson(['status' => true]);
     }
 }

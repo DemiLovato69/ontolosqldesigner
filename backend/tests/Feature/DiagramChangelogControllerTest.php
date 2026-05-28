@@ -28,7 +28,7 @@ class DiagramChangelogControllerTest extends TestCase
 
         $this->actingAs($user, 'sanctum')
             ->postJson("/api/diagrams/{$diagram->id}/changelog", ['action' => 'save'])
-            ->assertStatus(200)
+            ->assertStatus(201)
             ->assertJson(['status' => true]);
     }
 }

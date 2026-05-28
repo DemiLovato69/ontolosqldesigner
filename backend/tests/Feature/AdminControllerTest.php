@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Diagram;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Config;
 use Tests\TestCase;
 
 class AdminControllerTest extends TestCase
@@ -69,8 +70,7 @@ class AdminControllerTest extends TestCase
 
         $this->withSession($this->adminSession)
             ->deleteJson("/admin/diagrams/{$diagram->id}/feature")
-            ->assertStatus(200)
-            ->assertJson(['ok' => true]);
+            ->assertStatus(204);
     }
 
     public function test_logout_redirects(): void
@@ -78,5 +78,23 @@ class AdminControllerTest extends TestCase
         $this->withSession($this->adminSession)
             ->post('/admin/logout')
             ->assertRedirect('/admin/login');
+    }
+
+    public function test_login_with_correct_credentials_sets_session_and_redirects(): void
+    {
+        Config::set('app.admin_password', 'test-admin-secret');
+
+        $this->post('/admin/login', ['username' => 'admin', 'password' => 'test-admin-secret'])
+            ->assertRedirect('/admin');
+
+        $this->assertTrue(session('admin_authenticated') === true);
+    }
+
+    public function test_login_with_wrong_credentials_returns_errors(): void
+    {
+        Config::set('app.admin_password', 'correct-secret');
+
+        $this->post('/admin/login', ['username' => 'admin', 'password' => 'wrong-secret'])
+            ->assertSessionHasErrors(['credentials']);
     }
 }

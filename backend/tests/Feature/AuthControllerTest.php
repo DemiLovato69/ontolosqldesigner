@@ -4,6 +4,11 @@ namespace Tests\Feature;
 
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\URL;
+use Laravel\Socialite\Contracts\Provider;
+use Laravel\Socialite\Facades\Socialite;
+use Mockery;
 use Tests\TestCase;
 
 class AuthControllerTest extends TestCase
@@ -15,7 +20,7 @@ class AuthControllerTest extends TestCase
         $this->postJson('/api/register', [
             'email'    => 'reg_' . uniqid() . '@example.com',
             'password' => 'Secret1!',
-        ])->assertStatus(200)->assertJsonFragment(['status' => true])->assertJsonStructure(['token']);
+        ])->assertStatus(201)->assertJsonFragment(['status' => true])->assertJsonStructure(['token']);
     }
 
     public function test_login_returns_token(): void
@@ -45,5 +50,53 @@ class AuthControllerTest extends TestCase
             ->postJson('/api/email/resend')
             ->assertStatus(200)
             ->assertJsonStructure(['message']);
+    }
+
+    public function test_register_then_verify_email(): void
+    {
+        Queue::fake();
+
+        $email = 'verify_' . uniqid() . '@example.com';
+
+        $this->postJson('/api/register', ['email' => $email, 'password' => 'Secret1!'])
+            ->assertStatus(201)
+            ->assertJsonStructure(['token']);
+
+        $user = User::where('email', $email)->firstOrFail();
+        $this->assertNull($user->email_verified_at);
+
+        $signedUrl = URL::signedRoute('verification.verify', [
+            'id'   => $user->id,
+            'hash' => sha1($user->email),
+        ]);
+
+        $this->get($signedUrl)->assertRedirect('/diagrams?verified=1');
+
+        $this->assertTrue($user->fresh()->hasVerifiedEmail());
+    }
+
+    public function test_login_fails_with_wrong_credentials(): void
+    {
+        $user = User::factory()->create(['password' => bcrypt('correct-pass')]);
+
+        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'wrong-pass'])
+            ->assertStatus(401)
+            ->assertJsonFragment(['status' => false]);
+    }
+
+    public function test_oauth_callback_creates_user_and_redirects_with_token(): void
+    {
+        $oauthUser = Mockery::mock(\Laravel\Socialite\Contracts\User::class);
+        $oauthUser->shouldReceive('getId')->andReturn('google-test-id-' . uniqid());
+        $oauthUser->shouldReceive('getEmail')->andReturn('oauth_' . uniqid() . '@example.com');
+
+        $provider = Mockery::mock(Provider::class);
+        $provider->shouldReceive('user')->andReturn($oauthUser);
+
+        Socialite::shouldReceive('driver')->with('google')->andReturn($provider);
+
+        $this->get('/auth/google/callback')
+            ->assertRedirect()
+            ->assertRedirectContains('/auth/callback?token=');
     }
 }

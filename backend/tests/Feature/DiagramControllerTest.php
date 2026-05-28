@@ -37,7 +37,7 @@ class DiagramControllerTest extends TestCase
     {
         $this->auth()
             ->postJson('/api/diagrams', ['name' => 'New ' . uniqid()])
-            ->assertStatus(200)
+            ->assertStatus(201)
             ->assertJsonFragment(['status' => true]);
     }
 
@@ -62,8 +62,7 @@ class DiagramControllerTest extends TestCase
 
         $this->auth()
             ->deleteJson("/api/diagrams/{$diagram->id}")
-            ->assertStatus(200)
-            ->assertJsonFragment(['status' => true]);
+            ->assertStatus(204);
     }
 
     public function test_share_returns_access(): void
@@ -78,8 +77,7 @@ class DiagramControllerTest extends TestCase
     {
         $this->auth()
             ->deleteJson("/api/diagrams/{$this->diagram->id}/share")
-            ->assertStatus(200)
-            ->assertJsonFragment(['status' => true]);
+            ->assertStatus(204);
     }
 
     public function test_update_share_access_succeeds(): void
@@ -170,5 +168,32 @@ class DiagramControllerTest extends TestCase
         $this->auth()
             ->getJson("/api/diagrams/shared/{$this->diagram->share_token}")
             ->assertStatus(200);
+    }
+
+    public function test_show_returns_403_for_non_owner(): void
+    {
+        $other = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($other, 'sanctum')
+            ->getJson("/api/diagrams/{$this->diagram->id}")
+            ->assertStatus(403);
+    }
+
+    public function test_update_returns_403_for_non_owner(): void
+    {
+        $other = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($other, 'sanctum')
+            ->putJson("/api/diagrams/{$this->diagram->id}", ['name' => 'Hijacked'])
+            ->assertStatus(403);
+    }
+
+    public function test_destroy_returns_403_for_non_owner(): void
+    {
+        $other = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($other, 'sanctum')
+            ->deleteJson("/api/diagrams/{$this->diagram->id}")
+            ->assertStatus(403);
     }
 }
