@@ -419,8 +419,8 @@
             <span>Users — {{ $totalUsers }}</span>
             <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
                 <div class="sort-toggle">
-                    <a href="?sort=registered" class="sort-btn {{ $sort === 'registered' ? 'active' : '' }}">Registered</a>
-                    <a href="?sort=last_action" class="sort-btn {{ $sort === 'last_action' ? 'active' : '' }}">Last Action</a>
+                    <a href="{{ request()->fullUrlWithQuery(['sort' => 'registered', 'page' => 1]) }}" class="sort-btn {{ $sort === 'registered' ? 'active' : '' }}">Registered</a>
+                    <a href="{{ request()->fullUrlWithQuery(['sort' => 'last_action', 'page' => 1]) }}" class="sort-btn {{ $sort === 'last_action' ? 'active' : '' }}">Last Action</a>
                 </div>
                 <button class="feature-btn" style="font-size:10px;padding:5px 12px;" onclick="openBulkEmailModal()">Email All</button>
             </div>

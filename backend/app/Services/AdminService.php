@@ -22,7 +22,7 @@ class AdminService
     public function getDashboardData(string $sort = 'registered'): array
     {
         $tz = 'Europe/Moscow';
-        $cutoff = now()->subDays(59)->startOfDay();
+        $cutoff = now($tz)->subDays(59)->startOfDay()->utc();
 
         $rows = DB::table('users')
             ->selectRaw("DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow') as day, COUNT(*) as count")

@@ -25,7 +25,7 @@ class LibraryService
 
         $page     = max(1, (int) request('page', 1));
         $diagrams = Cache::remember("library.diagrams.{$v}.{$page}", self::CACHE_TTL, function () {
-            return $this->libraryRepository->getSharedByUsersPaginated();
+            return $this->libraryRepository->getSharedByUsersPaginated()->withPath(url('/library'));
         });
 
         return compact('featured', 'diagrams');
