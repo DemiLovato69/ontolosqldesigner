@@ -4,12 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Enums\VisitorStatus;
 use App\Http\Resources\DiagramChangelogResource;
 use App\Models\Diagram;
 use App\Models\DiagramChangelog;
-use App\Models\DiagramVisitor;
-use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -21,13 +20,14 @@ use Knuckles\Scribe\Attributes\Subgroup;
 #[Subgroup("Changelog")]
 class DiagramChangelogController extends Controller
 {
-    public function index(Diagram $diagram, Request $request): AnonymousResourceCollection|JsonResponse
-    {
-        $user = $request->user();
+    use AuthorizesRequests;
 
-        if (!$this->userCanAccess($diagram, $user)) {
-            abort(403);
-        }
+    /**
+     * @throws AuthorizationException
+     */
+    public function index(Diagram $diagram, Request $request): AnonymousResourceCollection
+    {
+        $this->authorize('viewChangelog', $diagram);
 
         $entries = DiagramChangelog::where('diagram_id', $diagram->id)
             ->orderByDesc('created_at')
@@ -39,11 +39,9 @@ class DiagramChangelogController extends Controller
 
     public function store(Diagram $diagram, Request $request): JsonResponse
     {
-        $user = $request->user();
+        $this->authorize('addChangelog', $diagram);
 
-        if (!$this->userCanWrite($diagram, $user)) {
-            abort(403);
-        }
+        $user = $request->user();
 
         $validated = $request->validate([
             'action'  => 'required|string|max:100',
@@ -59,38 +57,5 @@ class DiagramChangelogController extends Controller
         ]);
 
         return response()->json(['status' => true]);
-    }
-
-    private function userCanAccess(Diagram $diagram, User $user): bool
-    {
-        if ($diagram->user_id === $user->id) {
-            return true;
-        }
-
-        return DiagramVisitor::where('diagram_id', $diagram->id)
-            ->where('user_id', $user->id)
-            ->where('status', VisitorStatus::APPROVED)
-            ->exists();
-    }
-
-    private function userCanWrite(Diagram $diagram, User $user): bool
-    {
-        if ($diagram->user_id === $user->id) {
-            return true;
-        }
-
-        if ($diagram->share_access === 'write') {
-            return true;
-        }
-
-        if ($diagram->share_access === 'per_user') {
-            return DiagramVisitor::where('diagram_id', $diagram->id)
-                ->where('user_id', $user->id)
-                ->where('status', VisitorStatus::APPROVED)
-                ->where('access', 'write')
-                ->exists();
-        }
-
-        return false;
     }
 }
