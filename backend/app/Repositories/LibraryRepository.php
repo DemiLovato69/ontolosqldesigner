@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Models\Diagram;
@@ -9,6 +11,9 @@ use Illuminate\Database\Eloquent\Collection;
 
 class LibraryRepository
 {
+    /**
+     * Return all featured, shared diagrams ordered by most recently updated.
+     */
     public function getFeatured(): Collection
     {
         return Diagram::where('featured', true)
@@ -17,6 +22,9 @@ class LibraryRepository
             ->get(['name', 'share_token', 'featured_url', 'updated_at']);
     }
 
+    /**
+     * Return a paginated list of non-featured, user-shared library diagrams.
+     */
     public function getSharedByUsersPaginated(int $perPage = 24): LengthAwarePaginator
     {
         return $this->baseQuery()

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Enums\DiagramAccess;
@@ -15,6 +17,12 @@ use Illuminate\Database\Eloquent\Collection;
 class DiagramSharingService
 {
     public function __construct(private readonly LibraryService $libraryService) {}
+
+    /**
+     * Ensure the diagram is shared (defaults to 'read' if not already set).
+     *
+     * @return string  The current share_access value.
+     */
     public function ensureShared(Diagram $diagram): string
     {
         if (!$diagram->share_access) {
@@ -29,14 +37,18 @@ class DiagramSharingService
         return $diagram->share_access;
     }
 
+    /**
+     * Remove sharing and library visibility from the diagram.
+     */
     public function unshare(Diagram $diagram): void
     {
         $diagram->share_access = null;
-        $diagram->library = false;
+        $diagram->library      = false;
         $diagram->save();
         $this->libraryService->invalidate();
     }
 
+    /** @return array{share_access: string|null, require_approval: bool, library: bool} */
     public function updateShareSettings(Diagram $diagram, ?string $access, ?bool $requireApproval, ?bool $library): array
     {
         if ($access !== null) {
@@ -67,11 +79,17 @@ class DiagramSharingService
         ];
     }
 
+    /**
+     * Return all visitors for a diagram, newest first.
+     */
     public function getVisitors(Diagram $diagram): Collection
     {
         return $diagram->visitors()->with('user')->orderByDesc('created_at')->get();
     }
 
+    /**
+     * Approve a visitor and broadcast the access change.
+     */
     public function approveVisitor(Diagram $diagram, DiagramVisitor $visitor): DiagramVisitor
     {
         $visitor->status = VisitorStatus::APPROVED;
@@ -90,6 +108,9 @@ class DiagramSharingService
         return $visitor;
     }
 
+    /**
+     * Set a visitor's access level (or revoke it) and broadcast the change.
+     */
     public function setVisitorAccess(Diagram $diagram, DiagramVisitor $visitor, string $access): DiagramVisitor
     {
         if ($access === 'revoke') {
@@ -111,6 +132,11 @@ class DiagramSharingService
         return $visitor;
     }
 
+    /**
+     * Save a schema update from a shared user if they have write access.
+     *
+     * @param  string  $schema  JSON-encoded schema string.
+     */
     public function saveByToken(Diagram $diagram, User $user, string $schema): bool
     {
         if (!$this->hasWriteAccess($diagram, $user)) {
@@ -123,6 +149,11 @@ class DiagramSharingService
         return true;
     }
 
+    /**
+     * Resolve the shared access for a user and return the diagram if permitted.
+     *
+     * @return array{status: string, diagram?: Diagram}
+     */
     public function resolveSharedAccess(Diagram $diagram, User $user): array
     {
         if ($user->id === $diagram->user_id) {

@@ -1,9 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
-use App\Enums\ImportStatus;
 use App\Enums\ExportStatus;
+use App\Enums\ImportStatus;
 use App\Http\Requests\DiagramRequest;
 use App\Http\Resources\DiagramResource;
 use App\Http\Resources\DiagramVisitorResource;
@@ -32,9 +34,7 @@ class DiagramController extends Controller
         private readonly DiagramCrudService    $crudService,
         private readonly DiagramSharingService $sharingService,
         private readonly DiagramSqlService     $sqlService,
-    )
-    {
-    }
+    ) {}
 
     #[Subgroup("CRUD")]
     public function index(Request $request): AnonymousResourceCollection
@@ -56,8 +56,8 @@ class DiagramController extends Controller
     #[Subgroup("CRUD")]
     public function store(DiagramRequest $request): JsonResponse
     {
-        $data = $request->validated();
-        $data['user_id'] = $request->user()->id;
+        $data             = $request->validated();
+        $data['user_id']  = $request->user()->id;
 
         return $this->crudService->createDiagram($data)
             ? response()->json(['status' => true, 'message' => 'Diagram created'])
@@ -155,7 +155,7 @@ class DiagramController extends Controller
     {
         $this->authorize('export', $diagram);
 
-        $files = $this->sqlService->createMigration(json_encode($diagram->schema));
+        $files   = $this->sqlService->createMigration(json_encode($diagram->schema));
         $tmpFile = tempnam(sys_get_temp_dir(), 'migrations_');
 
         $zip = new ZipArchive();
@@ -165,12 +165,12 @@ class DiagramController extends Controller
         }
         $zip->close();
 
-        $content = file_get_contents($tmpFile);
+        $content  = file_get_contents($tmpFile);
         unlink($tmpFile);
         $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $diagram->name) . '_migrations.zip';
 
         return response($content, 200, [
-            'Content-Type' => 'application/zip',
+            'Content-Type'        => 'application/zip',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
         ]);
     }
@@ -223,8 +223,8 @@ class DiagramController extends Controller
             return response()->json(['message' => 'Invalid access type'], 422);
         }
 
-        $requireApproval = $request->has('require_approval') ? (bool)$request->input('require_approval') : null;
-        $library = $request->has('library') ? (bool)$request->input('library') : null;
+        $requireApproval = $request->has('require_approval') ? (bool) $request->input('require_approval') : null;
+        $library         = $request->has('library') ? (bool) $request->input('library') : null;
 
         return response()->json($this->sharingService->updateShareSettings($diagram, $access, $requireApproval, $library));
     }
@@ -307,7 +307,7 @@ class DiagramController extends Controller
     public function showByToken(string $token, Request $request): DiagramResource|JsonResponse
     {
         $diagram = Diagram::where('share_token', $token)->firstOrFail();
-        $result = $this->sharingService->resolveSharedAccess($diagram, $request->user());
+        $result  = $this->sharingService->resolveSharedAccess($diagram, $request->user());
 
         if ($result['status'] === 'not_shared') abort(403, 'This diagram is not shared.');
         if ($result['status'] === 'revoked') return response()->json(['message' => 'Access revoked.'], 403);

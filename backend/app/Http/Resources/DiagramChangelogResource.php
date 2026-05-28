@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Knuckles\Scribe\Attributes\ResponseField;
 
@@ -14,7 +17,7 @@ class DiagramChangelogResource extends JsonResource
     #[ResponseField("action", "string", "The action performed (e.g. table_added, column_removed).")]
     #[ResponseField("details", "object", "Additional details about the action.", required: false)]
     #[ResponseField("created_at", "string", "ISO 8601 timestamp of when the change was recorded.")]
-    public function toArray($request): array
+    public function toArray(Request $request): array
     {
         return [
             'id'         => $this->id,

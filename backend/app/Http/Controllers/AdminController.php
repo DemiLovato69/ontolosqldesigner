@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Admin\AdminSendEmailRequest;
@@ -117,7 +119,7 @@ class AdminController extends Controller
 
         $days = [];
         for ($i = 59; $i >= 0; $i--) {
-            $date = now()->subDays($i)->format('Y-m-d');
+            $date        = now()->subDays($i)->format('Y-m-d');
             $days[$date] = $rows->has($date) ? (int) $rows[$date]->count : 0;
         }
 

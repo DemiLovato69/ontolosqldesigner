@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Console\Commands;
 
 use Google\Client;
+use Google\Exception;
 use Google\Service\Indexing;
 use Google\Service\Indexing\UrlNotification;
 use Illuminate\Console\Command;
@@ -10,9 +13,12 @@ use Illuminate\Support\Facades\Http;
 
 class SeoIndexNow extends Command
 {
-    protected $signature = 'seo:indexnow';
+    protected $signature   = 'seo:indexnow';
     protected $description = 'Submit all sitemap URLs to IndexNow and Google Indexing API';
 
+    /**
+     * @throws Exception
+     */
     public function handle(): void
     {
         $xml  = simplexml_load_file(public_path('sitemap.xml'));
@@ -21,6 +27,9 @@ class SeoIndexNow extends Command
         $this->submitToGoogleIndexing($urls);
     }
 
+    /**
+     * @param  string[]  $urls
+     */
     private function submitToIndexNow(array $urls): void
     {
         $key  = config('app.indexnow_key');
@@ -40,6 +49,10 @@ class SeoIndexNow extends Command
         }
     }
 
+    /**
+     * @param string[] $urls
+     * @throws Exception
+     */
     private function submitToGoogleIndexing(array $urls): void
     {
         $keyPath = config('app.google_indexing_sa_key_path');

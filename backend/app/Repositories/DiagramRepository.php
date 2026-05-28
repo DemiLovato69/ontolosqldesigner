@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Repositories;
 
 use App\Models\Diagram;
@@ -13,11 +15,13 @@ class DiagramRepository implements DiagramRepositoryInterface
         return $user->diagrams()->get();
     }
 
-    public function find(int $id): Diagram //not used
+    /** @deprecated Not used anywhere */
+    public function find(int $id): Diagram
     {
         return Diagram::find($id);
     }
 
+    /** @param  array<string, mixed>  $data */
     public function create(array $data): Diagram
     {
         return Diagram::create([
@@ -30,7 +34,8 @@ class DiagramRepository implements DiagramRepositoryInterface
         ]);
     }
 
-    public function update(Diagram $diagram, $data): bool
+    /** @param  array<string, mixed>  $data */
+    public function update(Diagram $diagram, array $data): bool
     {
         return $diagram->update($data);
     }

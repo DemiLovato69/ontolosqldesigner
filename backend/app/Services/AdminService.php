@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Diagram;
@@ -12,16 +14,16 @@ class AdminService
 {
     public function __construct(private readonly LibraryService $libraryService) {}
 
-    public function authenticate(string $username, string $password): bool
+    public function authenticate(string $username, #[\SensitiveParameter] string $password): bool
     {
         return hash_equals('admin', $username)
-            && hash_equals((string)config('app.admin_password'), $password);
+            && hash_equals((string) config('app.admin_password'), $password);
     }
 
-    /** @return array{users: LengthAwarePaginator, totalUsers: int, registrationsByDay: array, activityByDay: array} */
+    /** @return array{users: LengthAwarePaginator, totalUsers: int, registrationsByDay: array<string, int>, activityByDay: array<string, int>, returningUsers: int, retentionRate: float} */
     public function getDashboardData(string $sort = 'registered'): array
     {
-        $tz = 'Europe/Moscow';
+        $tz     = 'Europe/Moscow';
         $cutoff = now($tz)->subDays(59)->startOfDay()->utc();
 
         $rows = DB::table('users')
@@ -34,7 +36,7 @@ class AdminService
 
         $days = [];
         for ($i = 59; $i >= 0; $i--) {
-            $date = now($tz)->subDays($i)->format('Y-m-d');
+            $date        = now($tz)->subDays($i)->format('Y-m-d');
             $days[$date] = $rows->has($date) ? (int) $rows[$date]->count : 0;
         }
 
@@ -49,7 +51,7 @@ class AdminService
 
         $activityByDay = [];
         for ($i = 59; $i >= 0; $i--) {
-            $date = now($tz)->subDays($i)->format('Y-m-d');
+            $date                = now($tz)->subDays($i)->format('Y-m-d');
             $activityByDay[$date] = $activityRows->has($date) ? (int) $activityRows[$date]->count : 0;
         }
 
@@ -107,7 +109,7 @@ class AdminService
 
     public function featureDiagram(Diagram $diagram, string $url): void
     {
-        $diagram->featured = true;
+        $diagram->featured     = true;
         $diagram->featured_url = $url;
         $diagram->save();
         $this->libraryService->invalidate();
@@ -115,7 +117,7 @@ class AdminService
 
     public function unfeatureDiagram(Diagram $diagram): void
     {
-        $diagram->featured = false;
+        $diagram->featured     = false;
         $diagram->featured_url = null;
         $diagram->save();
         $this->libraryService->invalidate();
@@ -126,6 +128,9 @@ class AdminService
         return $user->createToken('admin-impersonate')->plainTextToken;
     }
 
+    /**
+     * Delete a user along with all their diagrams and tokens.
+     */
     public function deleteUser(User $user): void
     {
         $user->diagrams()->delete();

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
 use App\Mail\SupportMail;
@@ -14,7 +16,7 @@ class SendSupportEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $tries = 3;
+    public int $tries   = 3;
     public int $timeout = 30;
     public int $backoff = 60;
 

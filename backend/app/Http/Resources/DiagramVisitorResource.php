@@ -1,7 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources;
 
+use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Knuckles\Scribe\Attributes\ResponseField;
 
@@ -13,7 +16,7 @@ class DiagramVisitorResource extends JsonResource
     #[ResponseField("email", "string", "The visitor's email address.")]
     #[ResponseField("status", "string", "Approval status.", enum: ["pending", "approved"])]
     #[ResponseField("access", "string", "Access level granted to this visitor.", enum: ["read", "write", "revoke"])]
-    public function toArray($request): array
+    public function toArray(Request $request): array
     {
         return [
             'id'      => $this->id,

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Enums\VisitorStatus;
@@ -7,6 +9,7 @@ use App\Http\Resources\DiagramChangelogResource;
 use App\Models\Diagram;
 use App\Models\DiagramChangelog;
 use App\Models\DiagramVisitor;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -43,22 +46,22 @@ class DiagramChangelogController extends Controller
         }
 
         $validated = $request->validate([
-            'action' => 'required|string|max:100',
+            'action'  => 'required|string|max:100',
             'details' => 'nullable|array',
         ]);
 
         DiagramChangelog::create([
             'diagram_id' => $diagram->id,
-            'user_id' => $user->id,
-            'user_name' => $user->email,
-            'action' => $validated['action'],
-            'details' => $validated['details'] ?? null,
+            'user_id'    => $user->id,
+            'user_name'  => $user->email,
+            'action'     => $validated['action'],
+            'details'    => $validated['details'] ?? null,
         ]);
 
         return response()->json(['status' => true]);
     }
 
-    private function userCanAccess(Diagram $diagram, $user): bool
+    private function userCanAccess(Diagram $diagram, User $user): bool
     {
         if ($diagram->user_id === $user->id) {
             return true;
@@ -70,7 +73,7 @@ class DiagramChangelogController extends Controller
             ->exists();
     }
 
-    private function userCanWrite(Diagram $diagram, $user): bool
+    private function userCanWrite(Diagram $diagram, User $user): bool
     {
         if ($diagram->user_id === $user->id) {
             return true;

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use App\Models\User;
@@ -17,7 +19,7 @@ class VerifyEmailMail extends Mailable
 
     public function __construct(User $user)
     {
-        $this->subject = 'Verify Your Email Address';
+        $this->subject         = 'Verify Your Email Address';
         $this->verificationUrl = URL::temporarySignedRoute(
             'verification.verify',
             now()->addMinutes(60),

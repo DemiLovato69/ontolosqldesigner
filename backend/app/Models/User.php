@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -21,7 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'github_id',
         'gitlab_id',
-        'current_diagram_id'
+        'current_diagram_id',
     ];
 
     protected $hidden = [
@@ -33,7 +35,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password'          => 'hashed',
         ];
     }
 
