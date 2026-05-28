@@ -16,8 +16,7 @@ class LibraryRepository
      */
     public function getFeatured(): Collection
     {
-        return Diagram::where('featured', true)
-            ->whereNotNull('share_access')
+        return Diagram::featured()
             ->orderByDesc('updated_at')
             ->get(['name', 'share_token', 'featured_url', 'updated_at']);
     }
@@ -33,9 +32,9 @@ class LibraryRepository
 
     private function baseQuery(): Builder
     {
-        return Diagram::where('library', true)
+        return Diagram::library()
             ->where('featured', false)
-            ->whereNotNull('share_access')
+            ->shared()
             ->orderByDesc('updated_at');
     }
 }

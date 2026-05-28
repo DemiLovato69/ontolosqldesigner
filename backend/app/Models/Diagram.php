@@ -7,6 +7,7 @@ namespace App\Models;
 use App\Enums\DbType;
 use App\Enums\ExportStatus;
 use App\Enums\ImportStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,6 +53,21 @@ class Diagram extends Model
                 $diagram->share_token = Str::uuid()->toString();
             }
         });
+    }
+
+    public function scopeShared(Builder $query): Builder
+    {
+        return $query->whereNotNull('share_access');
+    }
+
+    public function scopeLibrary(Builder $query): Builder
+    {
+        return $query->where('library', true);
+    }
+
+    public function scopeFeatured(Builder $query): Builder
+    {
+        return $query->where('featured', true);
     }
 
     public function user(): BelongsTo

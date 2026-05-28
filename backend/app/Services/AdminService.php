@@ -100,8 +100,7 @@ class AdminService
     public function getLibraryDiagrams(): Collection
     {
         return Diagram::with('user')
-            ->where('library', true)
-            ->whereNotNull('share_access')
+            ->library()
             ->orderByDesc('featured')
             ->orderByDesc('updated_at')
             ->get();
