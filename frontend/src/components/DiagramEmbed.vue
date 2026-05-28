@@ -76,7 +76,7 @@ onMounted(async () => {
     try {
         const { data } = await axios.get(`/api/diagrams/embed/${token}`)
         dbType.value = data.db_type ?? 'mysql'
-        schema.value = data.schema ? JSON.parse(data.schema) : []
+        schema.value = data.schema ?? []
     } catch (e) {
         const status = e.response?.status
         if (status === 404) error.value = 'Diagram not found.'

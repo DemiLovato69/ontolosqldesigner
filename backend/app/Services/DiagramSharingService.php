@@ -135,9 +135,12 @@ class DiagramSharingService
     /**
      * Save a schema update from a shared user if they have write access.
      *
-     * @param  string  $schema  JSON-encoded schema string.
+     * @param Diagram $diagram
+     * @param User $user
+     * @param array $schema
+     * @return bool
      */
-    public function saveByToken(Diagram $diagram, User $user, string $schema): bool
+    public function saveByToken(Diagram $diagram, User $user, array $schema): bool
     {
         if (!$this->hasWriteAccess($diagram, $user)) {
             return false;
