@@ -6,7 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
 
-class FeedbackMail extends Mailable
+class SupportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
@@ -17,12 +17,12 @@ class FeedbackMail extends Mailable
         public readonly ?string $senderEmail,
     ) {
         $this->subject = $senderEmail
-            ? "Feedback from $senderEmail"
-            : 'Anonymous Feedback';
+            ? "Support request from $senderEmail"
+            : 'Anonymous Support Request';
     }
 
     public function build(): self
     {
-        return $this->view('mail.feedback')->subject($this->subject);
+        return $this->view('mail.support')->subject($this->subject);
     }
 }

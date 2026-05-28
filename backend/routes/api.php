@@ -3,7 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DiagramChangelogController;
 use App\Http\Controllers\DiagramController;
-use App\Http\Controllers\FeedbackController;
+use App\Http\Controllers\SupportController;
 use App\Http\Controllers\ReviewController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -12,7 +12,7 @@ Route::middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login', [AuthController::class, 'login']);
 });
-Route::middleware('throttle:5,1')->post('/feedback', [FeedbackController::class, 'send']);
+Route::middleware('throttle:5,1')->post('/support', [SupportController::class, 'send']);
 
 Route::get('/diagrams/embed/{token}', [DiagramController::class, 'showEmbed']);
 

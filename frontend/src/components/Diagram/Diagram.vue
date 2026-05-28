@@ -121,9 +121,9 @@
                     <ChickenFootEdge v-bind="props" />
                 </template>
 
-                <Panel position="bottom-left" class="feedback-panel">
-                    <button class="feedback-panel__btn" @click.stop="openFeedbackModal" title="Send feedback">
-                        <SvgIcon name="chat" :size="16" />
+                <Panel position="bottom-right" class="support-panel">
+                    <button class="support-panel__btn" @click.stop="openSupportModal" title="Support">
+                        ?
                     </button>
                 </Panel>
 
@@ -192,10 +192,10 @@
             @capture-png="capturePng"
         />
 
-        <FeedbackModal
-            v-if="showFeedbackModal"
-            :user-email="feedbackUserEmail"
-            @close="showFeedbackModal = false"
+        <SupportModal
+            v-if="showSupportModal"
+            :user-email="supportUserEmail"
+            @close="showSupportModal = false"
         />
 
         <ChangelogModal
@@ -231,7 +231,7 @@ import RelationshipModal from '../Modal/RelationshipModal.vue'
 import SqlModal from '../Modal/SqlModal.vue'
 import ExportModal from '../Modal/ExportModal.vue'
 import RemoteCursor from '../RemoteCursor.vue'
-import FeedbackModal from '../Modal/FeedbackModal.vue'
+import SupportModal from '../Modal/SupportModal.vue'
 import ChangelogModal from '../Modal/ChangelogModal.vue'
 import { useElementSize } from '@vueuse/core'
 import { useToast } from 'vue-toast-notification'
@@ -315,20 +315,20 @@ const isValidConnection = ({ source, target }) => {
     return sourceNode?.parentNode !== targetNode?.parentNode
 }
 
-// --- Table navigator & feedback ---
+// --- Table navigator & support ---
 
 const tableNavOpen = ref(false)
-const showFeedbackModal = ref(false)
-const feedbackUserEmail = ref('')
+const showSupportModal = ref(false)
+const supportUserEmail = ref('')
 
-const openFeedbackModal = async () => {
-    if (!feedbackUserEmail.value) {
+const openSupportModal = async () => {
+    if (!supportUserEmail.value) {
         try {
             const { data } = await axios.get('/api/user')
-            feedbackUserEmail.value = data.email ?? ''
+            supportUserEmail.value = data.email ?? ''
         } catch { /* guest */ }
     }
-    showFeedbackModal.value = true
+    showSupportModal.value = true
 }
 
 const navigateToTable = (tableId) => {
@@ -657,32 +657,29 @@ onUnmounted(() => {
     filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }
 
-/* ── Feedback panel ──────────────────────────────────────────── */
-.feedback-panel {
-    margin: 0 0 12px 12px;
+/* ── Support panel ───────────────────────────────────────────── */
+.support-panel {
+    margin: 0 12px 12px 0;
 }
 
-.feedback-panel__btn {
+.support-panel__btn {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
     border: 1px solid var(--border-color);
-    border-radius: 6px;
+    border-radius: 50%;
     background: var(--bg-surface);
-    font-size: 13px;
-    color: var(--text-primary);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-secondary);
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-    white-space: nowrap;
 }
 
-.feedback-panel__btn:hover {
+.support-panel__btn:hover {
     background: var(--hover-bg-alt);
-}
-
-.feedback-panel__btn {
-    color: var(--text-secondary);
 }
 
 /* ── Table navigator ─────────────────────────────────────────── */

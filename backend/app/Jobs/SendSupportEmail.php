@@ -2,7 +2,7 @@
 
 namespace App\Jobs;
 
-use App\Mail\FeedbackMail;
+use App\Mail\SupportMail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -10,7 +10,7 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Mail;
 
-class SendFeedbackEmail implements ShouldQueue
+class SendSupportEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
@@ -27,6 +27,6 @@ class SendFeedbackEmail implements ShouldQueue
 
     public function handle(): void
     {
-        Mail::to(config('mail.mailers.smtp.username'))->send(new FeedbackMail($this->body, $this->senderEmail));
+        Mail::to(config('mail.mailers.smtp.username'))->send(new SupportMail($this->body, $this->senderEmail));
     }
 }

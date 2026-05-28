@@ -5,7 +5,7 @@
 @section('content')
 
 <p style="margin:0 0 8px;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:600;color:#1c1c1c;letter-spacing:0.04em;text-transform:uppercase;">
-    User Feedback
+    Support Request
 </p>
 
 <hr style="border:none;border-top:1px solid #eeeeee;margin:0 0 24px;">
