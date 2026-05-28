@@ -9,6 +9,7 @@ use App\Enums\DbType;
 use App\Enums\ExportStatus;
 use App\Enums\ImportStatus;
 use App\Events\SchemaImported;
+use App\Exceptions\InvalidSchemaException;
 use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
 use App\Models\Diagram;
@@ -289,11 +290,25 @@ class DiagramSqlService
 
     private function parseSchemaItems(string $schema): array
     {
+        if (trim($schema) === '') {
+            throw InvalidSchemaException::emptySchema();
+        }
+
+        $decoded = json_decode($schema, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw InvalidSchemaException::malformedJson();
+        }
+
+        if (!is_array($decoded)) {
+            throw InvalidSchemaException::notAnArray();
+        }
+
         $tables      = collect();
         $rows        = collect();
         $connections = collect();
 
-        foreach (json_decode($schema, true) ?? [] as $item) {
+        foreach ($decoded as $item) {
             match ($item['type'] ?? null) {
                 'table' => $tables->push([
                     'id'               => $item['id'],
