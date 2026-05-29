@@ -64,7 +64,7 @@ class AdminController extends Controller
 
     public function featureDiagram(Diagram $diagram, FeatureDiagramRequest $request): JsonResponse
     {
-        $this->adminService->featureDiagram($diagram, $request->input('url'));
+        $this->adminService->featureDiagram($diagram, $request->input('url') ?: null);
 
         return $this->success(['ok' => true]);
     }

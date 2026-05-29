@@ -107,7 +107,7 @@ class AdminService
             ->get();
     }
 
-    public function featureDiagram(Diagram $diagram, string $url): void
+    public function featureDiagram(Diagram $diagram, ?string $url): void
     {
         $diagram->featured = true;
         $diagram->featured_url = $url;

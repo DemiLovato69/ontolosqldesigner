@@ -12,7 +12,7 @@ class FeatureDiagramRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'url' => 'required|url|max:500',
+            'url' => 'nullable|url|max:500',
         ];
     }
 }

@@ -197,7 +197,7 @@
                         <div class="lib-diagram-meta">
                             {{ $diagram->user->email ?? '—' }} &nbsp;&middot;&nbsp;
                             <a href="/diagrams/{{ $diagram->share_token }}" target="_blank">View</a>
-                            @if ($diagram->featured && $diagram->featured_url)
+                            @if ($diagram->featured_url)
                                 &nbsp;&middot;&nbsp;
                                 <a href="{{ $diagram->featured_url }}" target="_blank" rel="noopener noreferrer">{{ $diagram->featured_url }}</a>
                             @endif
@@ -212,7 +212,7 @@
                             <input
                                 class="url-input"
                                 type="url"
-                                placeholder="https://their-site.com/page-with-embed"
+                                placeholder="https://backlink-url (optional)"
                                 id="url-{{ $diagram->id }}"
                             />
                             <button class="feature-btn" onclick="feature({{ $diagram->id }}, this)">Feature</button>
@@ -239,7 +239,6 @@
 
         async function feature(diagramId, btn) {
             const url = document.getElementById('url-' + diagramId).value.trim();
-            if (!url) { showToast('Enter a URL first', true); return; }
 
             btn.disabled = true;
             btn.textContent = '...';
