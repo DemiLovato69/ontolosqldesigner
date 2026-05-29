@@ -14,6 +14,7 @@ readonly class UpdateDiagramDTO
         public ?DbType $dbType = null,
         public ?DiagramAccess $shareAccess = null,
         public ?bool $library = null,
+        public ?array $schema = null,
     ) {}
 
     /** @return array<string, mixed> */
@@ -32,6 +33,9 @@ readonly class UpdateDiagramDTO
         }
         if ($this->library !== null) {
             $data['library'] = $this->library;
+        }
+        if ($this->schema !== null) {
+            $data['schema'] = $this->schema;
         }
 
         return $data;

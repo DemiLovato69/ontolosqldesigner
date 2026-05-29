@@ -47,7 +47,6 @@ class Diagram extends Model
         'db_type' => DbType::class,
         'share_access' => DiagramAccess::class,
         'schema' => 'array',
-        'script' => 'array',
         'export_json' => 'array',
     ];
 

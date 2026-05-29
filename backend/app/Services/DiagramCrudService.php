@@ -10,7 +10,6 @@ use App\Models\Diagram;
 use App\Models\User;
 use App\Repositories\DiagramRepositoryInterface;
 use Illuminate\Database\Eloquent\Collection;
-use Illuminate\Validation\ValidationException;
 
 class DiagramCrudService
 {
@@ -22,21 +21,8 @@ class DiagramCrudService
         return $this->diagramRepository->all($user);
     }
 
-    /**
-     * @throws ValidationException
-     */
     public function createDiagram(CreateDiagramDTO $dto): Diagram
     {
-        $exists = Diagram::where('user_id', $dto->userId)
-            ->where('name', $dto->name)
-            ->exists();
-
-        if ($exists) {
-            throw ValidationException::withMessages([
-                'name' => ['A diagram with this name already exists.'],
-            ]);
-        }
-
         return $this->diagramRepository->create($dto);
     }
 

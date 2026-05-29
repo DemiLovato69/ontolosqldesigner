@@ -30,7 +30,6 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
-use Illuminate\Validation\ValidationException;
 use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\Subgroup;
 
@@ -62,9 +61,6 @@ class DiagramController extends Controller
         return new DiagramResource($diagram);
     }
 
-    /**
-     * @throws ValidationException
-     */
     #[Subgroup('CRUD')]
     public function store(DiagramRequest $request): JsonResponse
     {
@@ -98,6 +94,7 @@ class DiagramController extends Controller
             dbType: isset($validated['db_type']) ? DbType::from($validated['db_type']) : null,
             shareAccess: isset($validated['share_access']) ? DiagramAccess::from($validated['share_access']) : null,
             library: isset($validated['library']) ? (bool) $validated['library'] : null,
+            schema: $validated['schema'] ?? null,
         );
 
         return $this->crudService->updateDiagram($diagram, $dto)
