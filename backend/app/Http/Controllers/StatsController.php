@@ -13,8 +13,8 @@ class StatsController extends Controller
 {
     public function index(): JsonResponse
     {
-        $users = Cache::store('redis')->remember('stats:users', 3600, fn () => User::count());
-        $diagrams = Cache::store('redis')->remember('stats:diagrams', 3600, fn () => Diagram::count());
+        $users = Cache::remember('stats:users', 3600, fn () => User::count());
+        $diagrams = Cache::remember('stats:diagrams', 3600, fn () => Diagram::count());
         $online = User::where('last_seen_at', '>=', now()->subMinutes(5))->count();
 
         return response()->json(compact('users', 'diagrams', 'online'));

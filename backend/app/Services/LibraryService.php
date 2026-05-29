@@ -44,6 +44,7 @@ class LibraryService
      */
     public function invalidate(): void
     {
-        Cache::increment(self::VERSION_KEY);
+        $v = (int) Cache::get(self::VERSION_KEY, 0);
+        Cache::forever(self::VERSION_KEY, $v + 1);
     }
 }
