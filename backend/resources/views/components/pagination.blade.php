@@ -1,4 +1,14 @@
-@php $navClass = $navClass ?? 'pagination'; @endphp
+@php
+    $navClass = $navClass ?? 'pagination';
+    $window = \Illuminate\Pagination\UrlWindow::make($paginator);
+    $elements = array_filter([
+        $window['first'],
+        is_array($window['slider']) ? '...' : null,
+        $window['slider'],
+        is_array($window['last']) ? '...' : null,
+        $window['last'],
+    ]);
+@endphp
 @if($paginator->hasPages())
 <nav class="{{ $navClass }}" aria-label="Pagination">
     @if($paginator->onFirstPage())
@@ -7,7 +17,7 @@
         <a href="{{ $paginator->previousPageUrl() }}" rel="prev">←</a>
     @endif
 
-    @foreach($paginator->elements() as $element)
+    @foreach($elements as $element)
         @if(is_string($element))
             <span class="dots">{{ $element }}</span>
         @elseif(is_array($element))
