@@ -6,9 +6,12 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DiagramChangelogController;
 use App\Http\Controllers\DiagramController;
 use App\Http\Controllers\ReviewController;
+use App\Http\Controllers\StatsController;
 use App\Http\Controllers\SupportController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+
+Route::get('/stats', [StatsController::class, 'index'])->middleware('throttle:60,1');
 
 Route::middleware('throttle:10,1')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
@@ -18,7 +21,7 @@ Route::middleware('throttle:5,1')->post('/support', [SupportController::class, '
 
 Route::get('/diagrams/embed/{token}', [DiagramController::class, 'showEmbed']);
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'track.seen'])->group(function () {
     Route::get('/diagrams/shared/{token}', [DiagramController::class, 'showByToken']);
     Route::patch('/diagrams/shared/{token}', [DiagramController::class, 'saveByToken']);
 

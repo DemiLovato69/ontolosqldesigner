@@ -27,6 +27,7 @@ class User extends Authenticatable implements MustVerifyEmail
         'google_id',
         'github_id',
         'gitlab_id',
+        'last_seen_at',
     ];
 
     protected $hidden = [
@@ -38,6 +39,7 @@ class User extends Authenticatable implements MustVerifyEmail
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_seen_at' => 'datetime',
             'password' => 'hashed',
         ];
     }

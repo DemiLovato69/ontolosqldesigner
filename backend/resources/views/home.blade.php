@@ -344,6 +344,32 @@
         .blog-card p { margin: 0; color: var(--text-secondary); font-size: 0.88rem; line-height: 1.55; }
         .blog-card .read { margin-top: 0.4rem; color: var(--color-primary-text); font-size: 0.85rem; font-family: 'JetBrains Mono', monospace; }
 
+        /* ── Stats ───────────────────────────────────────── */
+        .stats-bar-inner {
+            display: flex; justify-content: center; gap: clamp(2rem, 6vw, 4rem);
+            flex-wrap: wrap;
+        }
+        .stat-item {
+            display: flex; flex-direction: column; align-items: center; gap: 0.15rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .stat-value {
+            font-size: clamp(1.4rem, 3vw, 2rem);
+            font-weight: 700; letter-spacing: -0.03em;
+            color: var(--color-primary-text);
+        }
+        .stat-label {
+            font-size: 0.72rem; letter-spacing: 0.1em; text-transform: uppercase;
+            color: var(--text-muted);
+        }
+        .stat-online .stat-value::before {
+            content: ''; display: inline-block;
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--color-primary-text);
+            box-shadow: 0 0 6px var(--color-primary-text);
+            margin-right: 0.4rem; vertical-align: middle;
+        }
+
         /* ── Final CTA ──────────────────────────────────── */
         .final-cta {
             text-align: center;
@@ -381,6 +407,20 @@
             <span><span class="tick">✓</span> Free</span>
             <span><span class="tick">✓</span> Open source</span>
         </div>
+        <div class="stats-bar-inner" style="margin-top:1.6rem;">
+            <div class="stat-item">
+                <span class="stat-value" id="stat-users">—</span>
+                <span class="stat-label">Registered users</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-value" id="stat-diagrams">—</span>
+                <span class="stat-label">Diagrams created</span>
+            </div>
+            <div class="stat-item stat-online">
+                <span class="stat-value" id="stat-online">—</span>
+                <span class="stat-label">Online now</span>
+            </div>
+        </div>
     </div>
     <div class="hero-screenshot">
         <picture>
@@ -400,6 +440,11 @@
             document.getElementById('hero-btn-authed').style.display = 'inline-flex';
             document.getElementById('hero-btn-register').style.display = 'none';
         }
+        fetch('/api/stats').then(function(r){ return r.json(); }).then(function(d){
+            document.getElementById('stat-users').textContent    = d.users.toLocaleString();
+            document.getElementById('stat-diagrams').textContent = d.diagrams.toLocaleString();
+            document.getElementById('stat-online').textContent   = d.online.toLocaleString();
+        }).catch(function(){});
     </script>
 </section>
 

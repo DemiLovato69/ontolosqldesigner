@@ -339,8 +339,7 @@ class DiagramSqlService
     // --- Private helpers ---
 
     /**
-     * @param string $schema
-     * @return array{0: \Illuminate\Support\Collection<int, array<string, mixed>>, 1: \Illuminate\Support\Collection<int, array<string, mixed>>, 2: \Illuminate\Support\Collection<int, array<string, mixed>>}
+     * @return array{0: Collection<int, array<string, mixed>>, 1: Collection<int, array<string, mixed>>, 2: Collection<int, array<string, mixed>>}
      */
     private function parseSchemaItems(string $schema): array
     {
