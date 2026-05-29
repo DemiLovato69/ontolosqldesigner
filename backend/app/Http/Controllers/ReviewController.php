@@ -1,12 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ReviewRequest;
 use App\Models\Review;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Routing\Controller;
 
 class ReviewController extends Controller
 {
@@ -14,7 +15,7 @@ class ReviewController extends Controller
     {
         $reviewed = Review::where('user_id', $request->user()->id)->exists();
 
-        return response()->json(['reviewed' => $reviewed]);
+        return $this->success(['reviewed' => $reviewed]);
     }
 
     public function store(ReviewRequest $request): JsonResponse
@@ -24,6 +25,6 @@ class ReviewController extends Controller
             'user_id' => $request->user()?->id,
         ]);
 
-        return response()->json(['status' => true]);
+        return $this->created(['status' => true]);
     }
 }

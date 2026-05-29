@@ -68,7 +68,7 @@ export const Diagram = {
 
     save: (id, schema) =>
         request(async () => {
-            const response = await axios.put(`/api/diagrams/${id}`, { id, schema: JSON.stringify(schema) })
+            const response = await axios.put(`/api/diagrams/${id}`, { id, schema })
             $toast.success(response.data.message)
         }),
 
@@ -85,7 +85,7 @@ export const Diagram = {
 
     saveByToken: (token, schema) =>
         request(async () => {
-            await axios.patch(`/api/diagrams/shared/${token}`, { schema: JSON.stringify(schema) })
+            await axios.patch(`/api/diagrams/shared/${token}`, { schema })
         }),
 
     updateShareAccess: (id, payload) =>

@@ -1,20 +1,23 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rules\Password;
 use Knuckles\Scribe\Attributes\BodyParam;
 
-#[BodyParam("email", "string", "The user's email address. Must be unique.", example: "user@example.com")]
-#[BodyParam("password", "string", "The password. Min 8 chars, mixed case and numbers required.", example: "Secret1!")]
+#[BodyParam('email', 'string', "The user's email address. Must be unique.", example: 'user@example.com')]
+#[BodyParam('password', 'string', 'The password. Min 8 chars, mixed case and numbers required.', example: 'Secret1!')]
 class RegisterRequest extends FormRequest
 {
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
             'email' => 'required|string|email|max:255|unique:users',
-            'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()]
+            'password' => ['required', Password::min(8)->letters()->mixedCase()->numbers()],
         ];
     }
 }

@@ -1,28 +1,31 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
 use App\Models\Diagram;
 use App\Models\User;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use SensitiveParameter;
 
 class AdminService
 {
     public function __construct(private readonly LibraryService $libraryService) {}
 
-    public function authenticate(string $username, string $password): bool
+    public function authenticate(string $username, #[SensitiveParameter] string $password): bool
     {
         return hash_equals('admin', $username)
-            && hash_equals((string)config('app.admin_password'), $password);
+            && hash_equals((string) config('app.admin_password'), $password);
     }
 
-    /** @return array{users: LengthAwarePaginator, totalUsers: int, registrationsByDay: array, activityByDay: array} */
+    /** @return array{users: LengthAwarePaginator<int, User>, totalUsers: int, registrationsByDay: array<string, int>, activityByDay: array<string, int>, returningUsers: int, retentionRate: float} */
     public function getDashboardData(string $sort = 'registered'): array
     {
         $tz = 'Europe/Moscow';
-        $cutoff = now()->subDays(59)->startOfDay();
+        $cutoff = now($tz)->subDays(59)->startOfDay()->utc();
 
         $rows = DB::table('users')
             ->selectRaw("DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow') as day, COUNT(*) as count")
@@ -73,31 +76,32 @@ class AdminService
 
         $totalUsers = User::count();
 
-        $returningUsers = DB::table('diagram_changelog')
-            ->selectRaw('user_id')
-            ->whereNotNull('user_id')
-            ->groupBy('user_id')
-            ->havingRaw("COUNT(DISTINCT DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')) >= 2")
-            ->get()
-            ->count();
+        $returningUsers = DB::table(
+            DB::table('diagram_changelog')
+                ->selectRaw('user_id')
+                ->whereNotNull('user_id')
+                ->groupBy('user_id')
+                ->havingRaw("COUNT(DISTINCT DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')) >= 2"),
+            'sub'
+        )->count();
 
         $retentionRate = $totalUsers > 0 ? round($returningUsers / $totalUsers * 100, 1) : 0;
 
         return [
-            'users'              => $usersQuery->paginate(20)->withQueryString(),
-            'totalUsers'         => $totalUsers,
-            'activityByDay'      => $activityByDay,
+            'users' => $usersQuery->paginate(20)->withQueryString(),
+            'totalUsers' => $totalUsers,
+            'activityByDay' => $activityByDay,
             'registrationsByDay' => $days,
-            'returningUsers'     => $returningUsers,
-            'retentionRate'      => $retentionRate,
+            'returningUsers' => $returningUsers,
+            'retentionRate' => $retentionRate,
         ];
     }
 
+    /** @return Collection<int, Diagram> */
     public function getLibraryDiagrams(): Collection
     {
         return Diagram::with('user')
-            ->where('library', true)
-            ->whereNotNull('share_access')
+            ->library()
             ->orderByDesc('featured')
             ->orderByDesc('updated_at')
             ->get();
@@ -124,6 +128,9 @@ class AdminService
         return $user->createToken('admin-impersonate')->plainTextToken;
     }
 
+    /**
+     * Delete a user along with all their diagrams and tokens.
+     */
     public function deleteUser(User $user): void
     {
         $user->diagrams()->delete();

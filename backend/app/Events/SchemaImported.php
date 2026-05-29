@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -8,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class SchemaImported implements ShouldBroadcastNow
+class SchemaImported implements ShouldBroadcastNow // Don't believe the IDE, every method here is used
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -20,7 +22,7 @@ class SchemaImported implements ShouldBroadcastNow
 
     public function broadcastOn(): array
     {
-        return [new PresenceChannel('diagram.' . $this->shareToken)];
+        return [new PresenceChannel('diagram.'.$this->shareToken)];
     }
 
     public function broadcastAs(): string
@@ -28,6 +30,7 @@ class SchemaImported implements ShouldBroadcastNow
         return 'schema.imported';
     }
 
+    /** @return array<string, mixed> */
     public function broadcastWith(): array
     {
         return [

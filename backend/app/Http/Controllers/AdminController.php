@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Admin\AdminSendEmailRequest;
@@ -15,13 +17,12 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Routing\Controller;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Knuckles\Scribe\Attributes\Group;
 
-#[Group("Admin")]
+#[Group('Admin')]
 class AdminController extends Controller
 {
     public function __construct(private readonly AdminService $adminService) {}
@@ -39,6 +40,7 @@ class AdminController extends Controller
     {
         if ($this->adminService->authenticate($request->input('username'), $request->input('password'))) {
             session(['admin_authenticated' => true]);
+
             return redirect('/admin');
         }
 
@@ -64,53 +66,53 @@ class AdminController extends Controller
     {
         $this->adminService->featureDiagram($diagram, $request->input('url'));
 
-        return response()->json(['ok' => true]);
+        return $this->success(['ok' => true]);
     }
 
     public function unfeatureDiagram(Diagram $diagram): JsonResponse
     {
         $this->adminService->unfeatureDiagram($diagram);
 
-        return response()->json(['ok' => true]);
+        return $this->noContent();
     }
 
     public function impersonate(User $user): JsonResponse
     {
-        return response()->json(['token' => $this->adminService->impersonate($user)]);
+        return $this->success(['token' => $this->adminService->impersonate($user)]);
     }
 
     public function destroy(User $user): JsonResponse
     {
         $this->adminService->deleteUser($user);
 
-        return response()->json(['message' => 'User deleted']);
+        return $this->noContent();
     }
 
     public function sendEmailToAll(AdminSendEmailRequest $request): JsonResponse
     {
         $subject = $request->input('subject');
-        $body    = $request->input('body');
+        $body = $request->input('body');
 
         $count = User::count();
         SendAdminBulkEmailBatch::dispatch($subject, $body);
 
-        return response()->json(['queued' => $count]);
+        return $this->success(['queued' => $count]);
     }
 
     public function sendEmail(User $user, AdminSendEmailRequest $request): JsonResponse
     {
         Mail::to($user->email)->send(new AdminEmailMail($request->input('subject'), $request->input('body')));
 
-        return response()->json(['ok' => true]);
+        return $this->success(['ok' => true]);
     }
 
     public function userActivity(User $user): JsonResponse
     {
         $rows = DB::table('diagram_changelog')
-            ->selectRaw("DATE(created_at) as day, COUNT(*) as count")
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as count')
             ->where('user_id', $user->id)
             ->where('created_at', '>=', now()->subDays(59)->startOfDay())
-            ->groupByRaw("DATE(created_at)")
+            ->groupByRaw('DATE(created_at)')
             ->orderBy('day')
             ->get()
             ->keyBy('day');
@@ -121,7 +123,7 @@ class AdminController extends Controller
             $days[$date] = $rows->has($date) ? (int) $rows[$date]->count : 0;
         }
 
-        return response()->json($days);
+        return $this->success($days);
     }
 
     public function showReviews(): Factory|View

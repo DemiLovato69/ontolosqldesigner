@@ -1,14 +1,17 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Knuckles\Scribe\Attributes\BodyParam;
 
-#[BodyParam("username", "string", "The admin username.", example: "admin")]
-#[BodyParam("password", "string", "The admin password.", example: "secret")]
+#[BodyParam('username', 'string', 'The admin username.', example: 'admin')]
+#[BodyParam('password', 'string', 'The admin password.', example: 'secret')]
 class AdminLoginRequest extends FormRequest
 {
+    /** @return array<string, mixed> */
     public function rules(): array
     {
         return [

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Events;
 
 use Illuminate\Broadcasting\InteractsWithSockets;
@@ -8,7 +10,7 @@ use Illuminate\Contracts\Broadcasting\ShouldBroadcastNow;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
 
-class VisitorRequested implements ShouldBroadcastNow //Don't believe the IDE, every method here is used
+class VisitorRequested implements ShouldBroadcastNow // Don't believe the IDE, every method here is used
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
@@ -16,7 +18,7 @@ class VisitorRequested implements ShouldBroadcastNow //Don't believe the IDE, ev
 
     public function broadcastOn(): array
     {
-        return [new PresenceChannel('diagram.' . $this->shareToken)];
+        return [new PresenceChannel('diagram.'.$this->shareToken)];
     }
 
     public function broadcastAs(): string
@@ -24,6 +26,7 @@ class VisitorRequested implements ShouldBroadcastNow //Don't believe the IDE, ev
         return 'visitor.requested';
     }
 
+    /** @return array<string, mixed> */
     public function broadcastWith(): array
     {
         return [];

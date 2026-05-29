@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Mail;
 
 use App\Models\User;
@@ -13,6 +15,7 @@ class VerifyEmailMail extends Mailable
     use Queueable, SerializesModels;
 
     public $subject;
+
     public string $verificationUrl;
 
     public function __construct(User $user)

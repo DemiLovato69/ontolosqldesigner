@@ -359,7 +359,7 @@ const importSql = async () => {
     }
 
     const applySchema = (schemaJson) => {
-        schema.value = JSON.parse(schemaJson)
+        schema.value = schemaJson
         importLoading.value = false
         $toast.success('Imported successfully')
         isSaved.value = false
@@ -489,7 +489,8 @@ const getDiagram = async () => {
     diagramDbType.value = diagramInfo.db_type ?? 'mysql'
     diagramName.value = diagramInfo.name ?? ''
 
-    schema.value = diagramInfo.schema ? JSON.parse(diagramInfo.schema) : [{
+
+    schema.value = diagramInfo.schema ?? [{
         id: '1',
         type: 'table',
         label: 'users',

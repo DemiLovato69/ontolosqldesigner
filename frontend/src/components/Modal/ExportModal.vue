@@ -211,7 +211,7 @@ const generateSql = () => new Promise((resolve, reject) => {
     Diagram.export(props.diagramId).then(result => {
         if (!result) { reject(new Error('Export failed')); return }
         if (result.status === 'done' && result.script) {
-            sqlCache.value = JSON.parse(result.script)
+            sqlCache.value = result.script
             resolve(sqlCache.value)
             return
         }
@@ -227,7 +227,7 @@ const generateSql = () => new Promise((resolve, reject) => {
             if (!status) return
             if (status.status === 'done') {
                 clearInterval(poll)
-                sqlCache.value = JSON.parse(status.script)
+                sqlCache.value = status.script
                 resolve(sqlCache.value)
             } else if (status.status === 'failed') {
                 clearInterval(poll)

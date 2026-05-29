@@ -1,280 +1,333 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Services;
 
+use App\Enums\ChangelogAction;
+use App\Enums\DbType;
+use App\Enums\ExportStatus;
+use App\Enums\ImportStatus;
 use App\Events\SchemaImported;
+use App\Exceptions\InvalidSchemaException;
 use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
 use App\Models\Diagram;
 use App\Models\DiagramChangelog;
-use Illuminate\Contracts\Auth\Authenticatable;
+use App\Models\User;
+use App\Services\SqlDialects\MsAccessDialect;
+use App\Services\SqlDialects\MysqlDialect;
+use App\Services\SqlDialects\OracleDialect;
+use App\Services\SqlDialects\PostgresqlDialect;
+use App\Services\SqlDialects\SqlDialectInterface;
+use App\Services\SqlDialects\SqliteDialect;
+use App\Services\SqlDialects\SqlServerDialect;
+use Illuminate\Support\Collection;
+use ZipArchive;
 
 class DiagramSqlService
 {
-    public function startImport(Diagram $diagram, string $script, Authenticatable $user): void
+    public function startImport(Diagram $diagram, string $script, User $user): void
     {
-        $diagram->script        = $script;
-        $diagram->import_status = 'pending';
-        $diagram->import_error  = null;
+        $diagram->script = $script;
+        $diagram->import_status = ImportStatus::PENDING;
+        $diagram->import_error = null;
         $diagram->save();
 
         ImportDiagramSchemaJob::dispatch($diagram);
-        broadcast(new SchemaImported($diagram->share_token, $diagram->schema, (string) $user->id));
+        broadcast(new SchemaImported($diagram->share_token, json_encode($diagram->schema), (string) $user->id));
 
         DiagramChangelog::create([
             'diagram_id' => $diagram->id,
-            'user_id'    => $user->id,
-            'user_name'  => $user->email,
-            'action'     => 'import_sql',
-            'details'    => null,
+            'user_id' => $user->id,
+            'user_name' => $user->email,
+            'action' => ChangelogAction::IMPORT_SQL,
+            'details' => null,
         ]);
     }
 
-    public function startExport(Diagram $diagram, Authenticatable $user): void
+    public function startExport(Diagram $diagram, User $user): void
     {
-        $diagram->export_status = 'pending';
-        $diagram->export_error  = null;
+        $diagram->export_status = ExportStatus::PENDING;
+        $diagram->export_error = null;
         $diagram->save();
 
         ExportDiagramJob::dispatch($diagram);
 
         DiagramChangelog::create([
             'diagram_id' => $diagram->id,
-            'user_id'    => $user->id,
-            'user_name'  => $user->email,
-            'action'     => 'export_sql',
-            'details'    => null,
+            'user_id' => $user->id,
+            'user_name' => $user->email,
+            'action' => ChangelogAction::EXPORT_SQL,
+            'details' => null,
         ]);
     }
 
     public function importSchema(Diagram $diagram, string $script): string
     {
-        $diagram->schema = $this->createSchema(json_decode($script));
+        $diagram->schema = json_decode($this->createSchema($script), true);
         $diagram->save();
 
-        return $diagram->schema;
+        return json_encode($diagram->schema);
     }
 
     public function exportScript(Diagram $diagram): string
     {
-        $script = json_encode($this->createScript($diagram->schema, $diagram->db_type ?? 'mysql'));
-        $diagram->script = $script;
+        $sqlScript = $this->createScript(json_encode($diagram->schema), ($diagram->db_type ?? DbType::MYSQL)->value);
+        $diagram->script = $sqlScript;
         $diagram->save();
 
-        return $script;
+        return $sqlScript;
     }
 
-    public function createScript(string $schema, string $dbType = 'mysql', int $chunkSize = 50): string
+    public function createMigrationZip(Diagram $diagram): string
     {
-        $isMysql     = $dbType === 'mysql';
-        $isSqlite    = $dbType === 'sqlite';
-        $isOracle    = $dbType === 'oracle';
-        $isSqlserver = $dbType === 'sqlserver';
-        $isMsaccess  = $dbType === 'msaccess';
+        $files = $this->createMigration(json_encode($diagram->schema));
+        $tmpPath = tempnam(sys_get_temp_dir(), 'migrations_');
 
-        // SQL Server and MS Access use [name], MySQL uses `name`, everything else uses "name"
-        if ($isSqlserver || $isMsaccess) {
-            $qOpen  = '[';
-            $qClose = ']';
-        } elseif ($isMysql) {
-            $qOpen = $qClose = '`';
-        } else {
-            $qOpen = $qClose = '"';
+        $zip = new ZipArchive;
+        $zip->open($tmpPath, ZipArchive::CREATE | ZipArchive::OVERWRITE);
+        foreach ($files as $file) {
+            $zip->addFromString("migrations/{$file['filename']}", $file['content']);
         }
+        $zip->close();
 
-        $qi = fn(string $name) => "{$qOpen}{$name}{$qClose}";
+        return $tmpPath;
+    }
+
+    // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
+    public function createScript(string $schema, string $dbType = 'mysql'): string
+    {
+        $dialect = $this->resolveDialect($dbType);
+        $qi = fn (string $name) => $dialect->quote($name);
 
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
         $tablesById = $tables->keyBy('id');
-        $rowsById   = $rows->keyBy('id');
-        $script     = '';
+        $rowsById = $rows->keyBy('id');
+        $rowsByTable = $rows->groupBy('table_id');
+        $lines = [];
 
-        // SQLite requires FK constraints inline in CREATE TABLE; pre-group by the FK-bearing table.
-        $sqliteFksByTable = $isSqlite
-            ? $connections->groupBy(fn($c) => $rowsById->get($c['target_id'])['table_id'] ?? null)
+        $inlineFksByTable = $dialect->usesInlineForeignKeys()
+            ? $connections->groupBy(fn (array $c): string => $rowsById->get($c['target_id'])['table_id'] ?? '')
             : collect();
 
-        foreach (array_chunk($tables->all(), $chunkSize) as $tableChunk) {
-            foreach ($tableChunk as $table) {
-                $tableRows        = $rows->where('table_id', $table['id']);
-                $tableColumnNames = $tableRows->pluck('name')->all();
+        foreach ($tables as $table) {
+            $tableRows = $rowsByTable->get($table['id'], collect());
+            $tableColumnNames = $tableRows->pluck('name')->all();
 
-                $allDefs = $tableRows->map(function ($row) use ($isMysql, $qi) {
-                    $typeWord = strtoupper(preg_replace('/[\s(].*/', '', $row['sql_type']));
-                    if (in_array($typeWord, ['INDEX', 'KEY', 'CONSTRAINT', 'FOREIGN', 'CHECK', 'PRIMARY', 'UNIQUE'])) return null;
-                    $parts = ['  ' . $qi($row['name']) . " {$row['sql_type']}"];
-                    if ($isMysql && $row['unsigned']) $parts[] = 'UNSIGNED';
-                    $parts[] = $row['nullable'] ? 'NULL' : 'NOT NULL';
-                    if ($row['key_mod'] && $row['key_mod'] !== 'FOREIGN KEY') $parts[] = $row['key_mod'];
-                    if ($row['default_value'] !== null && $row['default_value'] !== '') $parts[] = "DEFAULT '{$row['default_value']}'";
-                    if ($isMysql && $row['comment'] !== null && $row['comment'] !== '') $parts[] = "COMMENT '{$row['comment']}'";
-                    return implode(' ', array_filter($parts));
-                })->filter()->values()->all();
-
-                foreach ($table['unique_together'] as $constraintCols) {
-                    $validCols = array_values(array_filter($constraintCols, fn($c) => in_array($c, $tableColumnNames)));
-                    if (count($validCols) >= 2) {
-                        $quotedCols     = implode(', ', array_map($qi, $validCols));
-                        $constraintName = 'uq_' . $table['name'] . '_' . implode('_', $validCols);
-                        $allDefs[]      = $isMysql
-                            ? '  UNIQUE KEY ' . $qi($constraintName) . " ({$quotedCols})"
-                            : '  CONSTRAINT ' . $qi($constraintName) . " UNIQUE ({$quotedCols})";
-                    }
+            $allDefs = $tableRows->map(function ($row) use ($dialect, $qi) {
+                $typeWord = strtoupper(preg_replace('/[\s(].*/', '', $row['sql_type']));
+                if (in_array($typeWord, ['INDEX', 'KEY', 'CONSTRAINT', 'FOREIGN', 'CHECK', 'PRIMARY', 'UNIQUE'])) {
+                    return null;
+                }
+                $parts = ['  '.$qi($row['name'])." {$row['sql_type']}"];
+                if ($dialect->supportsUnsigned() && $row['unsigned']) {
+                    $parts[] = 'UNSIGNED';
+                }
+                $parts[] = $row['nullable'] ? 'NULL' : 'NOT NULL';
+                if ($row['key_mod'] && $row['key_mod'] !== 'FOREIGN KEY') {
+                    $parts[] = $row['key_mod'];
+                }
+                if ($row['default_value'] !== null && $row['default_value'] !== '') {
+                    $parts[] = "DEFAULT '{$row['default_value']}'";
+                }
+                if ($dialect->supportsColumnComment() && $row['comment'] !== null && $row['comment'] !== '') {
+                    $parts[] = "COMMENT '{$row['comment']}'";
                 }
 
-                if ($isMysql) {
-                    foreach ($table['fulltext_indexes'] as $ftCols) {
-                        $validCols = array_values(array_filter($ftCols, fn($c) => in_array($c, $tableColumnNames)));
-                        if (count($validCols) >= 1) {
-                            $quotedCols = implode(', ', array_map(fn($c) => "`{$c}`", $validCols));
-                            $indexName  = 'ft_' . $table['name'] . '_' . implode('_', $validCols);
-                            $allDefs[]  = "  FULLTEXT KEY `{$indexName}` ({$quotedCols})";
-                        }
-                    }
-                }
+                return implode(' ', array_filter($parts));
+            })->filter()->values()->all();
 
-                if ($isSqlite) {
-                    foreach ($sqliteFksByTable->get($table['id'], collect()) as $connection) {
-                        $sourceRow = $rowsById->get($connection['source_id']);
-                        $targetRow = $rowsById->get($connection['target_id']);
-                        if (!$sourceRow || !$targetRow) continue;
-                        $referencedTable = $tablesById->get($sourceRow['table_id'])['name'];
-                        $allDefs[] = '  FOREIGN KEY (' . $qi($targetRow['name']) . ') REFERENCES ' . $qi($referencedTable) . '(' . $qi($sourceRow['name']) . ')';
-                    }
+            foreach ($table['unique_together'] as $constraintCols) {
+                $validCols = array_values(array_filter($constraintCols, fn ($c) => in_array($c, $tableColumnNames)));
+                if (count($validCols) >= 2) {
+                    $constraintName = 'uq_'.$table['name'].'_'.implode('_', $validCols);
+                    $allDefs[] = '  '.$dialect->uniqueConstraintSql($constraintName, $validCols);
                 }
-
-                // Oracle, SQL Server, and MS Access don't support IF NOT EXISTS
-                $ifNotExists = ($isOracle || $isSqlserver || $isMsaccess) ? '' : 'IF NOT EXISTS ';
-                $script .= 'CREATE TABLE ' . $ifNotExists . $qi($table['name']) . " (\n";
-                $script .= implode(",\n", $allDefs) . "\n";
-                $script .= ");\n\n";
             }
-            gc_collect_cycles();
-        }
 
-        if (!$isSqlite) {
-            foreach (array_chunk($connections->all(), $chunkSize) as $connectionChunk) {
-                foreach ($connectionChunk as $connection) {
+            if ($dialect->supportsFulltext()) {
+                foreach ($table['fulltext_indexes'] as $ftCols) {
+                    $validCols = array_values(array_filter($ftCols, fn ($c) => in_array($c, $tableColumnNames)));
+                    if (count($validCols) >= 1) {
+                        $indexName = 'ft_'.$table['name'].'_'.implode('_', $validCols);
+                        $allDefs[] = '  '.$dialect->fulltextIndexSql($indexName, $validCols);
+                    }
+                }
+            }
+
+            if ($dialect->usesInlineForeignKeys()) {
+                foreach ($inlineFksByTable->get($table['id'], collect()) as $connection) {
                     $sourceRow = $rowsById->get($connection['source_id']);
                     $targetRow = $rowsById->get($connection['target_id']);
-                    if (!$sourceRow || !$targetRow) continue;
-                    $tableName       = $tablesById->get($sourceRow['table_id'])['name'];
-                    $targetTableName = $tablesById->get($targetRow['table_id'])['name'];
-                    $script .= 'ALTER TABLE ' . $qi($targetTableName) . "\nADD FOREIGN KEY (" . $qi($targetRow['name']) . ') REFERENCES ' . $qi($tableName) . '(' . $qi($sourceRow['name']) . ");\n\n";
+                    if (! $sourceRow || ! $targetRow) {
+                        continue;
+                    }
+                    $referencedTable = $tablesById->get($sourceRow['table_id'])['name'];
+                    $allDefs[] = '  FOREIGN KEY ('.$qi($targetRow['name']).') REFERENCES '.$qi($referencedTable).'('.$qi($sourceRow['name']).')';
                 }
-                gc_collect_cycles();
+            }
+
+            $ifNotExists = $dialect->supportsIfNotExists() ? 'IF NOT EXISTS ' : '';
+            $lines[] = 'CREATE TABLE '.$ifNotExists.$qi($table['name'])." (\n".implode(",\n", $allDefs)."\n);";
+        }
+
+        if (! $dialect->usesInlineForeignKeys()) {
+            foreach ($connections as $connection) {
+                $sourceRow = $rowsById->get($connection['source_id']);
+                $targetRow = $rowsById->get($connection['target_id']);
+                if (! $sourceRow || ! $targetRow) {
+                    continue;
+                }
+                $tableName = $tablesById->get($sourceRow['table_id'])['name'];
+                $targetTableName = $tablesById->get($targetRow['table_id'])['name'];
+                $lines[] = 'ALTER TABLE '.$qi($targetTableName)."\nADD FOREIGN KEY (".$qi($targetRow['name']).') REFERENCES '.$qi($tableName).'('.$qi($sourceRow['name']).');';
             }
         }
 
-        return $script;
+        return implode("\n\n", $lines).(count($lines) > 0 ? "\n" : '');
     }
 
-    public function createJson(string $schema, int $chunkSize = 50): string
+    private function resolveDialect(string $dbType): SqlDialectInterface
+    {
+        return match ($dbType) {
+            DbType::POSTGRESQL->value => new PostgresqlDialect,
+            DbType::SQLITE->value => new SqliteDialect,
+            DbType::ORACLE->value => new OracleDialect,
+            DbType::SQLSERVER->value => new SqlServerDialect,
+            DbType::MSACCESS->value => new MsAccessDialect,
+            default => new MysqlDialect,
+        };
+    }
+
+    // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
+    /** @return array{tables: list<array<string, mixed>>, foreignKeys: list<array<string, mixed>>} */
+    public function createJson(string $schema): array
     {
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
         $tablesById = $tables->keyBy('id');
-        $rowsById   = $rows->keyBy('id');
-        $result     = ['tables' => [], 'foreignKeys' => []];
+        $rowsById = $rows->keyBy('id');
+        $rowsByTable = $rows->groupBy('table_id');
+        $result = ['tables' => [], 'foreignKeys' => []];
 
-        foreach (array_chunk($tables->all(), $chunkSize) as $tableChunk) {
-            foreach ($tableChunk as $table) {
-                $columns = $rows->where('table_id', $table['id'])->map(function ($row) {
-                    $col = ['name' => $row['name'], 'type' => $row['sql_type'], 'nullable' => $row['nullable']];
-                    if ($row['unsigned'])      $col['unsigned']      = true;
-                    if ($row['key_mod'])       $col['key']           = $row['key_mod'];
-                    if ($row['default_value']) $col['default_value'] = $row['default_value'];
-                    if ($row['comment'])       $col['comment']       = $row['comment'];
-                    return $col;
-                })->values()->all();
-                $result['tables'][] = ['name' => $table['name'], 'columns' => $columns];
-            }
-            gc_collect_cycles();
+        foreach ($tables as $table) {
+            $columns = $rowsByTable->get($table['id'], collect())->map(function ($row) {
+                $col = ['name' => $row['name'], 'type' => $row['sql_type'], 'nullable' => $row['nullable']];
+                if ($row['unsigned']) {
+                    $col['unsigned'] = true;
+                }
+                if ($row['key_mod']) {
+                    $col['key'] = $row['key_mod'];
+                }
+                if ($row['default_value']) {
+                    $col['default_value'] = $row['default_value'];
+                }
+                if ($row['comment']) {
+                    $col['comment'] = $row['comment'];
+                }
+
+                return $col;
+            })->values()->all();
+            $result['tables'][] = ['name' => $table['name'], 'columns' => $columns];
         }
 
-        foreach (array_chunk($connections->all(), $chunkSize) as $connectionChunk) {
-            foreach ($connectionChunk as $connection) {
-                $sourceRow = $rowsById->get($connection['source_id']);
-                $targetRow = $rowsById->get($connection['target_id']);
-                if (!$sourceRow || !$targetRow) continue;
-                $result['foreignKeys'][] = [
-                    'table'            => $tablesById->get($sourceRow['table_id'])['name'],
-                    'column'           => $sourceRow['name'],
-                    'referencesTable'  => $tablesById->get($targetRow['table_id'])['name'],
-                    'referencesColumn' => $targetRow['name'],
-                ];
+        foreach ($connections as $connection) {
+            $sourceRow = $rowsById->get($connection['source_id']);
+            $targetRow = $rowsById->get($connection['target_id']);
+            if (! $sourceRow || ! $targetRow) {
+                continue;
             }
-            gc_collect_cycles();
+            $result['foreignKeys'][] = [
+                'table' => $tablesById->get($sourceRow['table_id'])['name'],
+                'column' => $sourceRow['name'],
+                'referencesTable' => $tablesById->get($targetRow['table_id'])['name'],
+                'referencesColumn' => $targetRow['name'],
+            ];
         }
 
-        return json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
+        return $result;
     }
 
-    public function createSchema(string $script, int $chunkSize = 100): string
+    // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
+    public function createSchema(string $script): string
     {
-        $tables      = [];
-        $rows        = [];
+        $tables = [];
+        $rows = [];
         $connections = [];
-        $tableX      = 50;
-        $pendingFks  = [];
+        $tableX = 50;
+        $pendingFks = [];
+        $tableIdByName = [];
+        $tableColorById = [];
+        $rowIndex = [];
 
-        foreach (array_chunk($this->parseStatements($script), $chunkSize) as $chunk) {
-            foreach ($chunk as $statement) {
-                if (preg_match('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?(\w+)["`]?\s*\((.*)\)/is', $statement, $m)) {
-                    $tableX  += 400;
-                    $tableId  = uniqid();
-                    $tables[] = $this->buildTableNode($tableId, $m[1], $tableX);
-                    $parsed   = $this->parseColumns($m[2], $tableId, $tableX);
-                    array_push($rows, ...$parsed['rows']);
-                    if (!empty($parsed['uniqueTogether'])) {
-                        $tables[count($tables) - 1]['data']['uniqueTogether'] = $parsed['uniqueTogether'];
-                    }
-                    if (!empty($parsed['fulltextIndexes'])) {
-                        $tables[count($tables) - 1]['data']['fulltextIndexes'] = $parsed['fulltextIndexes'];
-                    }
-                    foreach ($this->parseInlineForeignKeys($m[2]) as $fk) {
-                        $pendingFks[] = array_merge($fk, ['sourceTable' => $m[1]]);
-                    }
-                } elseif (preg_match('/ALTER\s+TABLE\s+["`]?(\w+)["`]?\s+ADD\s+(?:CONSTRAINT\s+["`]?\w+["`]?\s+)?FOREIGN\s+KEY\s*\(["`]?(\w+)["`]?\)\s+REFERENCES\s+["`]?(\w+)["`]?\s*\(["`]?(\w+)["`]?\)/i', $statement, $m)) {
-                    $connection = $this->resolveConnection($tables, $rows, $m[1], $m[2], $m[3], $m[4]);
-                    if ($connection) $connections[] = $connection;
+        foreach ($this->parseStatements($script) as $statement) {
+            if (preg_match('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?(\w+)["`]?\s*\((.*)\)/is', $statement, $m)) {
+                $tableX += 400;
+                $tableId = uniqid();
+                $node = $this->buildTableNode($tableId, $m[1], $tableX);
+                $tables[] = $node;
+                $tableIdByName[$m[1]] = $tableId;
+                $tableColorById[$tableId] = $node['data']['color'];
+
+                $parsed = $this->parseColumns($m[2], $tableId, $tableX);
+                array_push($rows, ...$parsed['rows']);
+                foreach ($parsed['rows'] as $row) {
+                    $rowIndex[$tableId][$row['label']] = $row;
                 }
+
+                if (! empty($parsed['uniqueTogether'])) {
+                    $tables[count($tables) - 1]['data']['uniqueTogether'] = $parsed['uniqueTogether'];
+                }
+                if (! empty($parsed['fulltextIndexes'])) {
+                    $tables[count($tables) - 1]['data']['fulltextIndexes'] = $parsed['fulltextIndexes'];
+                }
+                foreach ($this->parseInlineForeignKeys($m[2]) as $fk) {
+                    $pendingFks[] = ['sourceTable' => $m[1], 'sourceCol' => $fk['sourceCol'], 'targetTable' => $fk['targetTable'], 'targetCol' => $fk['targetCol']];
+                }
+            } elseif (preg_match('/ALTER\s+TABLE\s+["`]?(\w+)["`]?\s+ADD\s+(?:CONSTRAINT\s+["`]?\w+["`]?\s+)?FOREIGN\s+KEY\s*\(["`]?(\w+)["`]?\)\s+REFERENCES\s+["`]?(\w+)["`]?\s*\(["`]?(\w+)["`]?\)/i', $statement, $m)) {
+                $pendingFks[] = ['sourceTable' => $m[1], 'sourceCol' => $m[2], 'targetTable' => $m[3], 'targetCol' => $m[4]];
             }
-            gc_collect_cycles();
         }
 
         foreach ($pendingFks as $fk) {
-            $connection = $this->resolveConnection($tables, $rows, $fk['sourceTable'], $fk['sourceCol'], $fk['targetTable'], $fk['targetCol']);
-            if ($connection) $connections[] = $connection;
+            $connection = $this->resolveConnection($tableIdByName, $tableColorById, $rowIndex, $fk['sourceTable'], $fk['sourceCol'], $fk['targetTable'], $fk['targetCol']);
+            if ($connection) {
+                $connections[] = $connection;
+            }
         }
 
         return json_encode(array_merge($tables, $rows, $connections), JSON_PRETTY_PRINT);
     }
 
+    // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
+    /** @return list<array{filename: string, content: string}> */
     public function createMigration(string $schema): array
     {
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
-        $rowsById   = $rows->keyBy('id');
+        $rowsById = $rows->keyBy('id');
         $tablesById = $tables->keyBy('id');
-        $files      = [];
+        $rowsByTable = $rows->groupBy('table_id');
+        $connsByTargetTable = $connections->groupBy(fn (array $conn): string => $rowsById->get($conn['target_id'])['table_id'] ?? '');
+        $files = [];
 
         foreach ($tables as $index => $table) {
-            $tableRows = $rows->where('table_id', $table['id']);
+            $colLines = $rowsByTable->get($table['id'], collect())
+                ->map(fn ($row) => $this->buildLaravelColumn($row))->filter()->values()->all();
 
-            $colLines = $tableRows->map(fn($row) => $this->buildLaravelColumn($row))->filter()->values()->all();
+            $fkLines = $connsByTargetTable->get($table['id'], collect())
+                ->map(function ($conn) use ($rowsById, $tablesById) {
+                    $sourceRow = $rowsById->get($conn['source_id']);
+                    $targetRow = $rowsById->get($conn['target_id']);
+                    if (! $sourceRow || ! $targetRow) {
+                        return null;
+                    }
+                    $sourceTable = $tablesById->get($sourceRow['table_id'])['name'];
 
-            $fkLines = $connections->filter(function ($conn) use ($rowsById, $tablesById, $table) {
-                $targetRow = $rowsById->get($conn['target_id']);
-                return $targetRow && ($tablesById->get($targetRow['table_id'])['name'] ?? null) === $table['name'];
-            })->map(function ($conn) use ($rowsById, $tablesById) {
-                $sourceRow = $rowsById->get($conn['source_id']);
-                $targetRow = $rowsById->get($conn['target_id']);
-                if (!$sourceRow || !$targetRow) return null;
-                $sourceTable = $tablesById->get($sourceRow['table_id'])['name'];
-                return "            \$table->foreign('{$targetRow['name']}')->references('{$sourceRow['name']}')->on('{$sourceTable}');";
-            })->filter()->values()->all();
+                    return "            \$table->foreign('{$targetRow['name']}')->references('{$sourceRow['name']}')->on('{$sourceTable}');";
+                })->filter()->values()->all();
 
-            $body     = implode("\n", array_merge($colLines, $fkLines));
-            $pad      = str_pad((string) ($index + 1), 6, '0', STR_PAD_LEFT);
+            $body = implode("\n", array_merge($colLines, $fkLines));
+            $pad = str_pad((string) ($index + 1), 6, '0', STR_PAD_LEFT);
             $filename = "2025_01_01_{$pad}_create_{$table['name']}_table.php";
 
             $files[] = ['filename' => $filename, 'content' => $this->buildMigrationFileContent($table['name'], $body)];
@@ -285,30 +338,50 @@ class DiagramSqlService
 
     // --- Private helpers ---
 
+    /**
+     * @param string $schema
+     * @return array{0: \Illuminate\Support\Collection<int, array<string, mixed>>, 1: \Illuminate\Support\Collection<int, array<string, mixed>>, 2: \Illuminate\Support\Collection<int, array<string, mixed>>}
+     */
     private function parseSchemaItems(string $schema): array
     {
-        $tables      = collect();
-        $rows        = collect();
+        if (trim($schema) === '') {
+            throw InvalidSchemaException::emptySchema();
+        }
+
+        $decoded = json_decode($schema, true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw InvalidSchemaException::malformedJson();
+        }
+
+        if (! is_array($decoded)) {
+            throw InvalidSchemaException::notAnArray();
+        }
+
+        $tables = collect();
+        $rows = collect();
         $connections = collect();
 
-        foreach (json_decode($schema, true) as $item) {
+        foreach ($decoded as $item) {
             match ($item['type'] ?? null) {
                 'table' => $tables->push([
-                    'id'               => $item['id'],
-                    'name'             => $item['label'],
-                    'unique_together'  => $item['data']['uniqueTogether'] ?? [],
+                    'id' => $item['id'],
+                    'name' => $item['label'],
+                    'unique_together' => $item['data']['uniqueTogether'] ?? [],
                     'fulltext_indexes' => $item['data']['fulltextIndexes'] ?? [],
                 ]),
                 'row' => $rows->push([
-                    'id'            => $item['id'],
-                    'name'          => $item['label'],
-                    'table_id'      => $item['parentNode'],
-                    'key_mod'       => match ($item['data']['keyMod'] ?? null) { null, 'None' => null, default => $item['data']['keyMod'] },
-                    'sql_type'      => $item['data']['sqlType'] ?? 'VARCHAR(255)',
-                    'nullable'      => $item['data']['nullable'] ?? false,
-                    'unsigned'      => $item['data']['unsigned'] ?? false,
+                    'id' => $item['id'],
+                    'name' => $item['label'],
+                    'table_id' => $item['parentNode'],
+                    'key_mod' => match ($item['data']['keyMod'] ?? null) {
+                        null, 'None' => null, default => $item['data']['keyMod']
+                    },
+                    'sql_type' => $item['data']['sqlType'] ?? 'VARCHAR(255)',
+                    'nullable' => $item['data']['nullable'] ?? false,
+                    'unsigned' => $item['data']['unsigned'] ?? false,
                     'default_value' => $item['data']['defaultValue'] ?? null,
-                    'comment'       => $item['data']['comment'] ?? null,
+                    'comment' => $item['data']['comment'] ?? null,
                 ]),
                 default => isset($item['sourceNode']['id'], $item['targetNode']['id'])
                     ? $connections->push(['source_id' => $item['sourceNode']['id'], 'target_id' => $item['targetNode']['id']])
@@ -319,29 +392,31 @@ class DiagramSqlService
         return [$tables, $rows, $connections];
     }
 
+    /** @return array<int, string> */
     private function parseStatements(string $sql): array
     {
         return array_filter(array_map('trim', explode(';', $sql)));
     }
 
+    /** @return array<string, mixed> */
     private function buildTableNode(string $id, string $name, int $x, int $y = 50): array
     {
         return [
-            'id'               => $id,
-            'type'             => 'table',
-            'dimensions'       => ['width' => 350, 'height' => 40],
+            'id' => $id,
+            'type' => 'table',
+            'dimensions' => ['width' => 350, 'height' => 40],
             'computedPosition' => ['x' => $x, 'y' => $y, 'z' => 1000],
-            'handleBounds'     => ['source' => null, 'target' => null],
-            'selected'         => false,
-            'dragging'         => false,
-            'resizing'         => false,
-            'initialized'      => false,
-            'isParent'         => true,
-            'position'         => ['x' => $x, 'y' => $y],
-            'data'             => ['toolbarPosition' => 'top', 'toolbarVisible' => true, 'editing' => false, 'color' => '#3d7a5c', 'uniqueTogether' => [], 'fulltextIndexes' => []],
-            'events'           => (object)[],
-            'label'            => $name,
-            'style'            => [
+            'handleBounds' => ['source' => null, 'target' => null],
+            'selected' => false,
+            'dragging' => false,
+            'resizing' => false,
+            'initialized' => false,
+            'isParent' => true,
+            'position' => ['x' => $x, 'y' => $y],
+            'data' => ['toolbarPosition' => 'top', 'toolbarVisible' => true, 'editing' => false, 'color' => '#3d7a5c', 'uniqueTogether' => [], 'fulltextIndexes' => []],
+            'events' => (object) [],
+            'label' => $name,
+            'style' => [
                 'display' => 'flex', 'border' => '1px solid #3d7a5c',
                 'background' => '#3d7a5c', 'borderColor' => '#3d7a5c', 'color' => 'white',
                 'width' => '350px', 'height' => '40px',
@@ -351,79 +426,90 @@ class DiagramSqlService
         ];
     }
 
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
     private function buildRowNode(string $id, string $tableId, string $name, int $x, int $y, int $index, array $data): array
     {
         return [
-            'id'               => $id,
-            'type'             => 'row',
-            'dimensions'       => ['width' => 350, 'height' => 40],
+            'id' => $id,
+            'type' => 'row',
+            'dimensions' => ['width' => 350, 'height' => 40],
             'computedPosition' => ['x' => $x, 'y' => $y, 'z' => 1001],
-            'handleBounds'     => [
+            'handleBounds' => [
                 'source' => [
                     ['id' => null, 'type' => 'source', 'nodeId' => $id, 'position' => 'right', 'x' => 345, 'y' => 16, 'width' => 8, 'height' => 8],
                     ['id' => null, 'type' => 'source', 'nodeId' => $id, 'position' => 'left',  'x' => -3,  'y' => 16, 'width' => 8, 'height' => 8],
                 ],
                 'target' => null,
             ],
-            'draggable'        => false,
-            'selected'         => false,
-            'dragging'         => false,
-            'resizing'         => false,
-            'initialized'      => false,
-            'isParent'         => false,
-            'position'         => ['x' => 0, 'y' => 40 + ($index * 40)],
-            'data'             => $data,
-            'events'           => (object)[],
-            'label'            => $name,
-            'style'            => [
+            'draggable' => false,
+            'selected' => false,
+            'dragging' => false,
+            'resizing' => false,
+            'initialized' => false,
+            'isParent' => false,
+            'position' => ['x' => 0, 'y' => 40 + ($index * 40)],
+            'data' => $data,
+            'events' => (object) [],
+            'label' => $name,
+            'style' => [
                 'display' => 'flex', 'border' => '1px solid #898989',
                 'borderColor' => '#898989', 'background' => '#ffffff', 'color' => '#000000',
                 'width' => '350px', 'height' => '40px',
                 'alignItems' => 'center', 'justifyContent' => 'space-between',
             ],
-            'parentNode'       => $tableId,
+            'parentNode' => $tableId,
         ];
     }
 
+    /** @return list<string> */
     private function splitColumnDefinitions(string $content): array
     {
-        $lines   = [];
+        $lines = [];
         $current = '';
-        $depth   = 0;
+        $depth = 0;
 
         foreach (str_split(preg_replace('/\s+/', ' ', trim($content))) as $char) {
-            if ($char === '(') $depth++;
-            elseif ($char === ')') $depth--;
+            if ($char === '(') {
+                $depth++;
+            } elseif ($char === ')') {
+                $depth--;
+            }
 
             if ($char === ',' && $depth === 0) {
-                $lines[]  = trim($current);
+                $lines[] = trim($current);
                 $current = '';
             } else {
                 $current .= $char;
             }
         }
 
-        if ($current !== '') $lines[] = trim($current);
+        if ($current !== '') {
+            $lines[] = trim($current);
+        }
 
         return $lines;
     }
 
+    /** @return array{rows: list<array<string, mixed>>, uniqueTogether: list<list<string>>, fulltextIndexes: list<list<string>>} */
     private function parseColumns(string $tableContent, string $tableId, int $tableX, int $tableY = 50): array
     {
-        $lines                     = $this->splitColumnDefinitions($tableContent);
-        $constraints               = [];
+        $lines = $this->splitColumnDefinitions($tableContent);
+        $constraints = [];
         $uniqueTogetherConstraints = [];
-        $fulltextIndexConstraints  = [];
-        $usedNames                 = [];
-        $rows                      = [];
-        $index                     = 0;
+        $fulltextIndexConstraints = [];
+        $usedNames = [];
+        $rows = [];
+        $index = 0;
 
         foreach ($lines as $line) {
             if (preg_match('/^(?:CONSTRAINT\s+["`]?\w+["`]?\s+)?PRIMARY\s+KEY\s*\(\s*["`]?(\w+)["`]?\s*\)/i', $line, $m)) {
                 $constraints[$m[1]] = 'PRIMARY KEY';
             } elseif (preg_match('/^(?:CONSTRAINT\s+["`]?\w+["`]?\s+)?UNIQUE(?:\s+KEY(?:\s+["`]?\w+["`]?)?)?\s*\(\s*([^)]+)\s*\)/i', $line, $m)) {
                 $cols = array_values(array_filter(array_map(
-                    fn($c) => trim(str_replace(['`', '"'], '', $c)),
+                    fn ($c) => trim(str_replace(['`', '"'], '', $c)),
                     explode(',', $m[1])
                 )));
                 if (count($cols) === 1) {
@@ -433,7 +519,7 @@ class DiagramSqlService
                 }
             } elseif (preg_match('/^FULLTEXT\s+(?:KEY|INDEX)\s+["`]?\w+["`]?\s*\(\s*([^)]+)\s*\)/i', $line, $m)) {
                 $cols = array_values(array_filter(array_map(
-                    fn($c) => trim(str_replace(['`', '"'], '', $c)),
+                    fn ($c) => trim(str_replace(['`', '"'], '', $c)),
                     explode(',', $m[1])
                 )));
                 if (count($cols) >= 1) {
@@ -443,27 +529,36 @@ class DiagramSqlService
         }
 
         foreach ($lines as $line) {
-            if (preg_match('/^(?:CONSTRAINT\s|PRIMARY\s+KEY|UNIQUE\s+(?:KEY|INDEX)|UNIQUE\s*\(|FOREIGN\s+KEY|KEY\s|INDEX\s|FULLTEXT\s|CHECK\s*\()/i', $line)) continue;
-            if (!preg_match('/^["`]?(\w+)["`]?\s+([a-zA-Z]+)(?:\(([^)]+)\))?(?:\s+(UNSIGNED))?(?:\s+(NOT\s+NULL|NULL))?(?:\s+(PRIMARY\s+KEY|UNIQUE))?(?:\s+DEFAULT\s+\'([^\']*)\')?(?:\s+COMMENT\s+\'([^\']*)\')?/i', $line, $m)) continue;
-            if (strtoupper($m[2]) === 'SET') { $m[2] = 'VARCHAR'; $m[3] = '255'; }
+            if (preg_match('/^(?:CONSTRAINT\s|PRIMARY\s+KEY|UNIQUE\s+(?:KEY|INDEX)|UNIQUE\s*\(|FOREIGN\s+KEY|KEY\s|INDEX\s|FULLTEXT\s|CHECK\s*\()/i', $line)) {
+                continue;
+            }
+            if (! preg_match('/^["`]?(\w+)["`]?\s+([a-zA-Z]+)(?:\(([^)]+)\))?(?:\s+(UNSIGNED))?(?:\s+(NOT\s+NULL|NULL))?(?:\s+(PRIMARY\s+KEY|UNIQUE))?(?:\s+DEFAULT\s+\'([^\']*)\')?(?:\s+COMMENT\s+\'([^\']*)\')?/i', $line, $m)) {
+                continue;
+            }
+            if (strtoupper($m[2]) === 'SET') {
+                $m[2] = 'VARCHAR';
+                $m[3] = '255';
+            }
 
             $baseName = $m[1];
-            $name     = $baseName;
-            $counter  = 1;
-            while (in_array($name, $usedNames)) $name = $baseName . '_' . $counter++;
+            $name = $baseName;
+            $counter = 1;
+            while (in_array($name, $usedNames)) {
+                $name = $baseName.'_'.$counter++;
+            }
             $usedNames[] = $name;
 
-            $sqlType      = strtoupper($m[2]) . (isset($m[3]) && $m[3] !== '' ? "($m[3])" : '');
-            $unsigned     = isset($m[4]) && strtoupper($m[4]) === 'UNSIGNED';
-            $nullable     = isset($m[5]) ? strtoupper($m[5]) === 'NULL' : true;
-            $keyMod       = isset($m[6]) ? strtoupper(preg_replace('/\s+/', ' ', $m[6])) : ($constraints[$baseName] ?? null);
+            $sqlType = strtoupper($m[2]).(isset($m[3]) && $m[3] !== '' ? "($m[3])" : '');
+            $unsigned = isset($m[4]) && strtoupper($m[4]) === 'UNSIGNED';
+            $nullable = isset($m[5]) ? strtoupper($m[5]) === 'NULL' : true;
+            $keyMod = isset($m[6]) ? strtoupper(preg_replace('/\s+/', ' ', $m[6])) : ($constraints[$baseName] ?? null);
             $defaultValue = $m[7] ?? '';
-            $comment      = $m[8] ?? '';
+            $comment = $m[8] ?? '';
 
             $rowId = uniqid();
             $rows[] = $this->buildRowNode($rowId, $tableId, $name, $tableX, $tableY + 40 + ($index * 40), $index, [
                 'editing' => false, 'showModal' => false, 'showOptionsModal' => false,
-                'keyMod'  => $keyMod ?? 'None',
+                'keyMod' => $keyMod ?? 'None',
                 'sqlType' => $sqlType, 'nullable' => $nullable, 'unsigned' => $unsigned,
                 'defaultValue' => $defaultValue, 'comment' => $comment,
             ]);
@@ -473,6 +568,7 @@ class DiagramSqlService
         return ['rows' => $rows, 'uniqueTogether' => $uniqueTogetherConstraints, 'fulltextIndexes' => $fulltextIndexConstraints];
     }
 
+    /** @return list<array{sourceCol: string, targetTable: string, targetCol: string}> */
     private function parseInlineForeignKeys(string $tableContent): array
     {
         $fks = [];
@@ -481,23 +577,28 @@ class DiagramSqlService
                 $fks[] = ['sourceCol' => $m[1], 'targetTable' => $m[2], 'targetCol' => $m[3]];
             }
         }
+
         return $fks;
     }
 
     private function buildMigrationFileContent(string $tableName, string $body): string
     {
         $t = '$table';
+
         return "<?php\n\nuse Illuminate\\Database\\Migrations\\Migration;\nuse Illuminate\\Database\\Schema\\Blueprint;\nuse Illuminate\\Support\\Facades\\Schema;\n\nreturn new class extends Migration\n{\n    public function up(): void\n    {\n        Schema::create('{$tableName}', function (Blueprint {$t}) {\n{$body}\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::dropIfExists('{$tableName}');\n    }\n};\n";
     }
 
+    /** @param array<string, mixed> $col */
     private function buildLaravelColumn(array $col): ?string
     {
-        $name      = $col['name'];
-        $rawType   = trim($col['sql_type'] ?? 'VARCHAR(255)');
+        $name = $col['name'];
+        $rawType = trim($col['sql_type'] ?? 'VARCHAR(255)');
         $typeUpper = strtoupper($rawType);
         $firstWord = strtoupper(preg_replace('/[\s(].*/', '', $typeUpper));
 
-        if (in_array($firstWord, ['INDEX', 'KEY', 'CONSTRAINT', 'FOREIGN', 'CHECK', 'PRIMARY', 'UNIQUE'])) return null;
+        if (in_array($firstWord, ['INDEX', 'KEY', 'CONSTRAINT', 'FOREIGN', 'CHECK', 'PRIMARY', 'UNIQUE'])) {
+            return null;
+        }
 
         preg_match('/\(([^)]+)\)/', $rawType, $sizeMatch);
         $sizeStr = $sizeMatch[1] ?? null;
@@ -562,7 +663,9 @@ class DiagramSqlService
         }
 
         $mods = '';
-        if ($col['nullable']) $mods .= '->nullable()';
+        if ($col['nullable']) {
+            $mods .= '->nullable()';
+        }
         if ($col['default_value'] !== null && $col['default_value'] !== '') {
             $dv = $col['default_value'];
             if ($dv === 'NULL') {
@@ -570,40 +673,48 @@ class DiagramSqlService
             } elseif (is_numeric($dv)) {
                 $mods .= "->default({$dv})";
             } else {
-                $mods .= "->default('" . str_replace("'", "\\'", $dv) . "')";
+                $mods .= "->default('".str_replace("'", "\\'", $dv)."')";
             }
         }
-        if ($col['key_mod'] === 'PRIMARY KEY') $mods .= '->primary()';
-        if ($col['comment']) $mods .= "->comment('" . str_replace("'", "\\'", $col['comment']) . "')";
+        if ($col['key_mod'] === 'PRIMARY KEY') {
+            $mods .= '->primary()';
+        }
+        if ($col['comment']) {
+            $mods .= "->comment('".str_replace("'", "\\'", $col['comment'])."')";
+        }
 
         return "            \$table->{$method}{$mods};";
     }
 
-    private function resolveConnection(array $tables, array $rows, string $sourceTable, string $sourceCol, string $targetTable, string $targetCol): ?array
+    /**
+     * @param  array<string, string>  $tableIdByName
+     * @param  array<string, string>  $tableColorById
+     * @param  array<string, array<string, array<string, mixed>>>  $rowIndex
+     * @return array<string, mixed>|null
+     */
+    private function resolveConnection(array $tableIdByName, array $tableColorById, array $rowIndex, string $sourceTable, string $sourceCol, string $targetTable, string $targetCol): ?array
     {
-        $findTableId = fn(string $name) => collect($tables)->where('label', $name)->value('id');
-        $findRow     = fn(?string $tableId, string $col) => $tableId
-            ? collect($rows)->first(fn($r) => $r['parentNode'] === $tableId && $r['label'] === $col)
-            : null;
+        $sourceTableId = $tableIdByName[$sourceTable] ?? null;
+        $targetTableId = $tableIdByName[$targetTable] ?? null;
+        $sourceRow = $sourceTableId ? ($rowIndex[$sourceTableId][$sourceCol] ?? null) : null;
+        $targetRow = $targetTableId ? ($rowIndex[$targetTableId][$targetCol] ?? null) : null;
 
-        $sourceRow = $findRow($findTableId($sourceTable), $sourceCol);
-        $targetRow = $findRow($findTableId($targetTable), $targetCol);
+        if (! $sourceRow || ! $targetRow) {
+            return null;
+        }
 
-        if (!$sourceRow || !$targetRow) return null;
-
-        $targetTableNode = collect($tables)->first(fn($t) => $t['id'] === $targetRow['parentNode']);
-        $color = $targetTableNode['data']['color'] ?? '#3d7a5c';
+        $color = $tableColorById[$targetRow['parentNode']] ?? '#3d7a5c';
 
         return [
-            'id'           => uniqid('e-'),
-            'type'         => 'chickenFoot',
-            'source'       => $sourceRow['id'],
-            'target'       => $targetRow['id'],
+            'id' => uniqid('e-'),
+            'type' => 'chickenFoot',
+            'source' => $sourceRow['id'],
+            'target' => $targetRow['id'],
             'sourceHandle' => 'source-right',
             'targetHandle' => 'target-left',
-            'updatable'    => true,
-            'style'        => ['stroke' => $color],
-            'data'         => ['relationshipType' => 'one-to-many', 'markerStart' => 'url(#chickenFoot)', 'markerEnd' => 'none', 'color' => $color],
+            'updatable' => true,
+            'style' => ['stroke' => $color],
+            'data' => ['relationshipType' => 'one-to-many', 'markerStart' => 'url(#chickenFoot)', 'markerEnd' => 'none', 'color' => $color],
         ];
     }
 }

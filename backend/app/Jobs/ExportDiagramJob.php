@@ -1,14 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Jobs;
 
+use App\Enums\DbType;
+use App\Enums\ExportStatus;
 use App\Models\Diagram;
 use App\Services\DiagramSqlService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Throwable;
 
 class ExportDiagramJob implements ShouldQueue
@@ -16,7 +22,11 @@ class ExportDiagramJob implements ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $timeout = 300;
-    public int $tries   = 1;
+
+    public int $tries = 3;
+
+    public int $backoff = 30;
+
     public bool $deleteWhenMissingModels = true;
 
     public function __construct(private Diagram $diagram)
@@ -24,26 +34,38 @@ class ExportDiagramJob implements ShouldQueue
         $this->onQueue('diagrams');
     }
 
+    /** @return array<int, object> */
+    public function middleware(): array
+    {
+        return [new WithoutOverlapping((string) $this->diagram->id)];
+    }
+
     public function handle(DiagramSqlService $service): void
     {
         ini_set('memory_limit', '512M');
 
-        $this->diagram->export_status = 'processing';
+        $this->diagram->export_status = ExportStatus::PROCESSING;
         $this->diagram->save();
 
-        try {
-            $sqlScript = $service->createScript($this->diagram->schema, $this->diagram->db_type ?? 'mysql');
-            $jsonExport = $service->createJson($this->diagram->schema);
+        $schemaJson = json_encode($this->diagram->schema);
+        $sqlScript = $service->createScript($schemaJson, ($this->diagram->db_type ?? DbType::MYSQL)->value);
 
-            $this->diagram->script        = json_encode($sqlScript);
-            $this->diagram->export_json   = $jsonExport;
-            $this->diagram->export_status = 'done';
-            $this->diagram->export_error  = null;
-            $this->diagram->save();
-        } catch (Throwable $e) {
-            $this->diagram->export_status = 'failed';
-            $this->diagram->export_error  = $e->getMessage();
-            $this->diagram->save();
-        }
+        $this->diagram->script = $sqlScript;
+        $this->diagram->export_json = $service->createJson($schemaJson);
+        $this->diagram->export_status = ExportStatus::DONE;
+        $this->diagram->export_error = null;
+        $this->diagram->save();
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        $this->diagram->export_status = ExportStatus::FAILED;
+        $this->diagram->export_error = $exception->getMessage();
+        $this->diagram->save();
+
+        Log::error('ExportDiagramJob failed', [
+            'diagram_id' => $this->diagram->id,
+            'error' => $exception->getMessage(),
+        ]);
     }
 }

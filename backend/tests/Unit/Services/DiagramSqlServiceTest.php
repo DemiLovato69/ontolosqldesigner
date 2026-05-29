@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Unit\Services;
 
 use App\Models\Diagram;
@@ -13,7 +15,7 @@ class DiagramSqlServiceTest extends TestCase
 
     private DiagramSqlService $service;
 
-    public function setUp(): void
+    protected function setUp(): void
     {
         parent::setUp();
         $this->service = app(DiagramSqlService::class);
@@ -21,28 +23,30 @@ class DiagramSqlServiceTest extends TestCase
 
     // --- importSchema / exportScript ---
 
-    public function testImportSchema(): void
+    public function test_import_schema(): void
     {
         $diagram = Diagram::factory()->create();
-        $sql = "CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(255) NOT NULL);";
+        $sql = 'CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(255) NOT NULL);';
         $schema = $this->service->importSchema($diagram, json_encode($sql));
         $arr = json_decode($schema, true);
-        $this->assertCount(1, array_filter($arr, fn($i) => ($i['type'] ?? null) === 'table'));
+        $this->assertCount(1, array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'table'));
     }
 
-    public function testExportScript(): void
+    public function test_export_script(): void
     {
-        $schema = json_encode([
-            ['id' => 't1', 'type' => 'table', 'label' => 'users'],
-            ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false]],
+        $diagram = Diagram::factory()->create([
+            'schema' => [
+                ['id' => 't1', 'type' => 'table', 'label' => 'users'],
+                ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false]],
+            ],
+            'db_type' => 'mysql',
         ]);
-        $diagram = Diagram::factory()->create(['schema' => $schema, 'db_type' => 'mysql']);
         $result = $this->service->exportScript($diagram);
-        $this->assertJson($result);
-        $this->assertStringContainsString('users', json_decode($result));
+        $this->assertIsString($result);
+        $this->assertStringContainsString('users', $result);
     }
 
-    public function testCreateScriptMySQLSkipsInvalidConnection(): void
+    public function test_create_script_my_sql_skips_invalid_connection(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'users'],
@@ -54,7 +58,7 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertStringNotContainsString('FOREIGN KEY', $script);
     }
 
-    public function testCreateScriptMySQLUniqueTogetherInvalidColsSkipped(): void
+    public function test_create_script_my_sql_unique_together_invalid_cols_skipped(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'things', 'data' => ['uniqueTogether' => [['nonexistent']]]],
@@ -63,7 +67,7 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertStringNotContainsString('UNIQUE KEY', $this->service->createScript($schema));
     }
 
-    public function testCreateScriptSkipsIndexLikeRows(): void
+    public function test_create_script_skips_index_like_rows(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'tbl'],
@@ -76,7 +80,7 @@ class DiagramSqlServiceTest extends TestCase
 
     // --- createScript PostgreSQL ---
 
-    public function testCreateScriptPostgresqlIdentifiers(): void
+    public function test_create_script_postgresql_identifiers(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'users'],
@@ -87,7 +91,7 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertStringNotContainsString('`', $script);
     }
 
-    public function testCreateScriptPostgresqlStripsUnsigned(): void
+    public function test_create_script_postgresql_strips_unsigned(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'products'],
@@ -96,10 +100,9 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertStringNotContainsString('UNSIGNED', $this->service->createScript($schema, 'postgresql'));
     }
 
-
     // --- createJson ---
 
-    public function testCreateJson(): void
+    public function test_create_json(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'users'],
@@ -108,7 +111,7 @@ class DiagramSqlServiceTest extends TestCase
             ['id' => 'r2', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 't2', 'data' => ['keyMod' => null, 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false, 'defaultValue' => '', 'comment' => '']],
             ['sourceNode' => ['id' => 'r2'], 'targetNode' => ['id' => 'r1']],
         ]);
-        $result = json_decode($this->service->createJson($schema), true);
+        $result = $this->service->createJson($schema);
         $this->assertCount(2, $result['tables']);
         $this->assertCount(1, $result['foreignKeys']);
         $col = $result['tables'][0]['columns'][0];
@@ -119,140 +122,140 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertEquals('posts', $result['foreignKeys'][0]['table']);
     }
 
-    public function testCreateJsonSkipsInvalidConnection(): void
+    public function test_create_json_skips_invalid_connection(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'users'],
             ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false]],
             ['sourceNode' => ['id' => 'bad'], 'targetNode' => ['id' => 'r1']],
         ]);
-        $result = json_decode($this->service->createJson($schema), true);
+        $result = $this->service->createJson($schema);
         $this->assertEmpty($result['foreignKeys']);
     }
 
     // --- createSchema MySQL ---
 
-    public function testCreateSchemaMySQLBasic(): void
+    public function test_create_schema_my_sql_basic(): void
     {
-        $sql = "CREATE TABLE users (id INT UNSIGNED NOT NULL PRIMARY KEY, name VARCHAR(255) NOT NULL, email VARCHAR(255) NOT NULL UNIQUE);
+        $sql = 'CREATE TABLE users (id INT UNSIGNED NOT NULL PRIMARY KEY, name VARCHAR(255) NOT NULL, email VARCHAR(255) NOT NULL UNIQUE);
                 CREATE TABLE posts (id INT UNSIGNED NOT NULL PRIMARY KEY, user_id INT UNSIGNED NOT NULL);
-                ALTER TABLE posts ADD FOREIGN KEY (user_id) REFERENCES users(id);";
+                ALTER TABLE posts ADD FOREIGN KEY (user_id) REFERENCES users(id);';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $this->assertCount(2, array_filter($arr, fn($i) => ($i['type'] ?? null) === 'table'));
-        $this->assertCount(5, array_filter($arr, fn($i) => ($i['type'] ?? null) === 'row'));
-        $this->assertCount(1, array_filter($arr, fn($i) => isset($i['source'], $i['target'])));
+        $this->assertCount(2, array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'table'));
+        $this->assertCount(5, array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'));
+        $this->assertCount(1, array_filter($arr, fn ($i) => isset($i['source'], $i['target'])));
     }
 
-    public function testCreateSchemaMySQLSeparateConstraints(): void
+    public function test_create_schema_my_sql_separate_constraints(): void
     {
-        $sql = "CREATE TABLE products (id INT NOT NULL, name VARCHAR(100) NOT NULL, PRIMARY KEY (id), UNIQUE (name));";
+        $sql = 'CREATE TABLE products (id INT NOT NULL, name VARCHAR(100) NOT NULL, PRIMARY KEY (id), UNIQUE (name));';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $rows = array_column(array_filter($arr, fn($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertEquals('PRIMARY KEY', $rows['id']['data']['keyMod']);
         $this->assertEquals('UNIQUE', $rows['name']['data']['keyMod']);
     }
 
-    public function testCreateSchemaMySQLUniqueTogether(): void
+    public function test_create_schema_my_sql_unique_together(): void
     {
-        $sql = "CREATE TABLE t (id INT NOT NULL, a INT NOT NULL, b INT NOT NULL, PRIMARY KEY (id), UNIQUE (a, b));";
+        $sql = 'CREATE TABLE t (id INT NOT NULL, a INT NOT NULL, b INT NOT NULL, PRIMARY KEY (id), UNIQUE (a, b));';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $tables = array_filter($arr, fn($i) => ($i['type'] ?? null) === 'table');
+        $tables = array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'table');
         $table = reset($tables);
         $this->assertCount(2, $table['data']['uniqueTogether'][0]);
     }
 
-    public function testCreateSchemaMySQLNullable(): void
+    public function test_create_schema_my_sql_nullable(): void
     {
-        $sql = "CREATE TABLE items (id INT PRIMARY KEY, name VARCHAR(100) NOT NULL, note TEXT NULL);";
+        $sql = 'CREATE TABLE items (id INT PRIMARY KEY, name VARCHAR(100) NOT NULL, note TEXT NULL);';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $rows = array_column(array_filter($arr, fn($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertFalse($rows['name']['data']['nullable']);
         $this->assertTrue($rows['note']['data']['nullable']);
     }
 
-    public function testCreateSchemaMySQLComplexTypes(): void
+    public function test_create_schema_my_sql_complex_types(): void
     {
         $sql = "CREATE TABLE t (id BIGINT UNSIGNED NOT NULL PRIMARY KEY, amt DECIMAL(12,4) NOT NULL, status ENUM('a','b') NOT NULL, meta JSON NULL, ts DATETIME(6) NOT NULL);";
         $arr = json_decode($this->service->createSchema($sql), true);
-        $rows = array_column(array_filter($arr, fn($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertEquals('DECIMAL(12,4)', $rows['amt']['data']['sqlType']);
         $this->assertEquals("ENUM('a','b')", $rows['status']['data']['sqlType']);
         $this->assertEquals('DATETIME(6)', $rows['ts']['data']['sqlType']);
     }
 
-    public function testCreateSchemaMySQLIfNotExists(): void
+    public function test_create_schema_my_sql_if_not_exists(): void
     {
-        $sql = "CREATE TABLE IF NOT EXISTS users (id INT PRIMARY KEY, name VARCHAR(100) NOT NULL);";
+        $sql = 'CREATE TABLE IF NOT EXISTS users (id INT PRIMARY KEY, name VARCHAR(100) NOT NULL);';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $tables = array_filter($arr, fn($i) => ($i['type'] ?? null) === 'table');
+        $tables = array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'table');
         $this->assertCount(1, $tables);
         $this->assertEquals('users', reset($tables)['label']);
     }
 
-    public function testCreateSchemaMySQLBackticks(): void
+    public function test_create_schema_my_sql_backticks(): void
     {
-        $sql = "CREATE TABLE `users` (`id` INT UNSIGNED NOT NULL PRIMARY KEY, `full_name` VARCHAR(255) NOT NULL);";
+        $sql = 'CREATE TABLE `users` (`id` INT UNSIGNED NOT NULL PRIMARY KEY, `full_name` VARCHAR(255) NOT NULL);';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $rows = array_column(array_filter($arr, fn($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertEquals('INT', $rows['id']['data']['sqlType']);
         $this->assertEquals('VARCHAR(255)', $rows['full_name']['data']['sqlType']);
     }
 
-    public function testCreateSchemaMySQLInlineForeignKey(): void
+    public function test_create_schema_my_sql_inline_foreign_key(): void
     {
-        $sql = "CREATE TABLE users (id INT PRIMARY KEY);
-                CREATE TABLE posts (id INT PRIMARY KEY, user_id INT, FOREIGN KEY (user_id) REFERENCES users(id));";
+        $sql = 'CREATE TABLE users (id INT PRIMARY KEY);
+                CREATE TABLE posts (id INT PRIMARY KEY, user_id INT, FOREIGN KEY (user_id) REFERENCES users(id));';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $this->assertCount(1, array_filter($arr, fn($i) => isset($i['source'], $i['target'])));
+        $this->assertCount(1, array_filter($arr, fn ($i) => isset($i['source'], $i['target'])));
     }
 
-    public function testCreateSchemaMySQLEmpty(): void
+    public function test_create_schema_my_sql_empty(): void
     {
         $this->assertEquals('[]', $this->service->createSchema(''));
     }
 
-    public function testCreateSchemaMySQLInvalid(): void
+    public function test_create_schema_my_sql_invalid(): void
     {
         $this->assertEquals('[]', $this->service->createSchema('INVALID SQL'));
     }
 
     // --- createSchema PostgreSQL ---
 
-    public function testCreateSchemaPostgresqlBasic(): void
+    public function test_create_schema_postgresql_basic(): void
     {
         $sql = 'CREATE TABLE IF NOT EXISTS "users" ("id" SERIAL NOT NULL PRIMARY KEY, "name" VARCHAR(255) NOT NULL);
                 CREATE TABLE IF NOT EXISTS "posts" ("id" SERIAL NOT NULL PRIMARY KEY, "user_id" INTEGER NOT NULL);
                 ALTER TABLE "posts" ADD FOREIGN KEY ("user_id") REFERENCES "users"("id");';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $this->assertCount(2, array_filter($arr, fn($i) => ($i['type'] ?? null) === 'table'));
-        $this->assertCount(1, array_filter($arr, fn($i) => isset($i['source'], $i['target'])));
+        $this->assertCount(2, array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'table'));
+        $this->assertCount(1, array_filter($arr, fn ($i) => isset($i['source'], $i['target'])));
     }
 
-    public function testCreateSchemaPostgresqlTypes(): void
+    public function test_create_schema_postgresql_types(): void
     {
         $sql = 'CREATE TABLE "items" ("id" BIGSERIAL NOT NULL PRIMARY KEY, "score" NUMERIC(10,2) NOT NULL, "active" BOOLEAN NOT NULL, "meta" JSONB NULL);';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $rows = array_column(array_filter($arr, fn($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertEquals('BIGSERIAL', $rows['id']['data']['sqlType']);
         $this->assertEquals('NUMERIC(10,2)', $rows['score']['data']['sqlType']);
         $this->assertTrue($rows['meta']['data']['nullable']);
         $this->assertFalse($rows['active']['data']['nullable']);
     }
 
-    public function testCreateSchemaPostgresqlTableConstraints(): void
+    public function test_create_schema_postgresql_table_constraints(): void
     {
         $sql = 'CREATE TABLE "products" ("id" INTEGER NOT NULL, "sku" VARCHAR(64) NOT NULL, PRIMARY KEY ("id"), UNIQUE ("sku"));';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $rows = array_column(array_filter($arr, fn($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertEquals('PRIMARY KEY', $rows['id']['data']['keyMod']);
         $this->assertEquals('UNIQUE', $rows['sku']['data']['keyMod']);
     }
 
     // --- createMigration ---
 
-    public function testCreateMigrationAllColumnTypes(): void
+    public function test_create_migration_all_column_types(): void
     {
-        $row = fn(string $id, string $label, string $type, bool $nullable = false, bool $unsigned = false, string $key = null) => [
+        $row = fn (string $id, string $label, string $type, bool $nullable = false, bool $unsigned = false, ?string $key = null) => [
             'id' => $id, 'type' => 'row', 'label' => $label, 'parentNode' => 't1',
             'data' => ['keyMod' => $key, 'sqlType' => $type, 'nullable' => $nullable, 'unsigned' => $unsigned, 'defaultValue' => null, 'comment' => null],
         ];
@@ -334,12 +337,12 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertStringContainsString("binary('c_blob')", $content);
         $this->assertStringContainsString("enum('c_enum',", $content);
         $this->assertStringContainsString("string('c_serial')", $content);
-        $this->assertStringContainsString("->nullable()", $content);
-        $this->assertStringContainsString("->primary()", $content);
-        $this->assertStringNotContainsString("c_idx", $content);
+        $this->assertStringContainsString('->nullable()', $content);
+        $this->assertStringContainsString('->primary()', $content);
+        $this->assertStringNotContainsString('c_idx', $content);
     }
 
-    public function testCreateMigrationColumnModifiers(): void
+    public function test_create_migration_column_modifiers(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'orders'],
@@ -350,11 +353,11 @@ class DiagramSqlServiceTest extends TestCase
         $content = $this->service->createMigration($schema)[0]['content'];
         $this->assertStringContainsString("->default('pending')", $content);
         $this->assertStringContainsString("->comment('order status')", $content);
-        $this->assertStringContainsString("->default(1)", $content);
-        $this->assertStringContainsString("->default(null)", $content);
+        $this->assertStringContainsString('->default(1)', $content);
+        $this->assertStringContainsString('->default(null)', $content);
     }
 
-    public function testCreateMigrationWithForeignKeys(): void
+    public function test_create_migration_with_foreign_keys(): void
     {
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'users'],
@@ -366,7 +369,7 @@ class DiagramSqlServiceTest extends TestCase
         ]);
         $files = $this->service->createMigration($schema);
         $this->assertCount(2, $files);
-        $postsFile = collect($files)->first(fn($f) => str_contains($f['filename'], 'posts'));
+        $postsFile = collect($files)->first(fn ($f) => str_contains($f['filename'], 'posts'));
         $this->assertStringContainsString("foreign('user_id')", $postsFile['content']);
         $this->assertStringContainsString("references('id')->on('users')", $postsFile['content']);
     }

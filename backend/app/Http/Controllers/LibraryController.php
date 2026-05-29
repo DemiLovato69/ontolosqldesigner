@@ -1,19 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Services\LibraryService;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
-use Illuminate\Routing\Controller;
+use Illuminate\Http\Request;
 
 class LibraryController extends Controller
 {
     public function __construct(private readonly LibraryService $libraryService) {}
 
-    public function index(): View|Factory
+    public function index(Request $request): View|Factory
     {
-        ['featured' => $featured, 'diagrams' => $diagrams] = $this->libraryService->getLibraryData();
+        ['featured' => $featured, 'diagrams' => $diagrams] = $this->libraryService->getLibraryData($request->integer('page', 1));
 
         return view('library', compact('featured', 'diagrams'));
     }

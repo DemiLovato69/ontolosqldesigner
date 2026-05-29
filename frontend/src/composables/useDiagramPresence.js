@@ -95,7 +95,7 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, can
             .listen('.schema.imported', async ({ imported_by }) => {
                 if (String(imported_by) === ownerIdentity.value?.id) return
                 const result = await Diagram.getByToken(token)
-                if (result?.schema) schema.value = JSON.parse(result.schema)
+                if (result?.schema) schema.value = result.schema
             })
             .listen('.visitor.requested', () => {
                 if (onVisitorRequested) onVisitorRequested()
