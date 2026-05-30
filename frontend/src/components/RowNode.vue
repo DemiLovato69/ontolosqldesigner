@@ -11,7 +11,7 @@
         class="input input_designer_row ml-5 mr-5"
         :value="label"
         @mousedown.stop
-        @click="canEdit && (data.editing = true)"
+        @focus="(e) => { if (!canEdit) return; data.editing = true; e.target.select(); }"
         @blur="(e) => { data.editing = false; $emit('update-label', id, label); e.target.scrollLeft = 0; }"
         @input="$emit('update-label', id, $event.target.value)"
         :readonly="!data.editing || !canEdit"
