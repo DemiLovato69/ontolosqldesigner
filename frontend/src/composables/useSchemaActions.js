@@ -268,10 +268,9 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
 
     // --- Relationship modal ---
 
-    const openRelationshipModal = ({ edge }) => {
+    const openRelationshipModal = ({ edge, event }) => {
         selectedEdge.value = edge
-        const { left, top, width, height } = document.querySelector(`[id="${edge.id}"]`).getBoundingClientRect()
-        modalPosition.value = { x: left + window.scrollX + width / 2, y: top + window.scrollY + height / 2 }
+        modalPosition.value = { x: event.clientX + window.scrollX, y: event.clientY + window.scrollY }
         showRelationshipModal.value = true
     }
 
