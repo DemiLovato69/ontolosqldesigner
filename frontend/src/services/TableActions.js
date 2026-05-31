@@ -108,7 +108,7 @@ export const TableActions = {
         return newTableId
     },
 
-    addTable(schemaRef, name, position, dbType = 'mysql') {
+    addTable(schemaRef, name, position, dbType = 'mysql', color = '#3d7a5c') {
         const schema = schemaRef.value
         const tableId = Math.random().toString()
         const existingTables = schema.filter(el => el.type === 'table')
@@ -121,9 +121,9 @@ export const TableActions = {
             type: 'table',
             label: tableName,
             zIndex,
-            data: { toolbarPosition: Position.Top, toolbarVisible: true, color: '#2e5c45' },
+            data: { toolbarPosition: Position.Top, toolbarVisible: true, color },
             position,
-            style: TABLE_STYLE
+            style: { ...TABLE_STYLE, background: color, borderColor: color },
         }]
 
         this.addRow(schemaRef, { id: tableId, data: {} }, {
@@ -178,7 +178,7 @@ export const TableActions = {
         return id
     },
 
-    createPivotTable(schemaRef, edge, dbType = 'mysql') {
+    createPivotTable(schemaRef, edge, dbType = 'mysql', color = '#3d7a5c') {
         const schema = schemaRef.value
 
         const sourceRow = schema.find(el => el.id === edge.source)
@@ -195,7 +195,7 @@ export const TableActions = {
         }
 
         const pivotName = `${sourceTable.label}_${targetTable.label}`
-        const pivotTableId = this.addTable(schemaRef, pivotName, position, dbType)
+        const pivotTableId = this.addTable(schemaRef, pivotName, position, dbType, color)
 
         const sourceFkRowId = this.addRow(schemaRef, { id: pivotTableId, data: {} }, {
             rowName: `${sourceTable.label}_id`,

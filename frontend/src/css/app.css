@@ -6,7 +6,7 @@
 
 /* ── Theme variables ─────────────────────────────────────────── */
 :root {
-    --color-primary:         rgb(61, 122, 92);
+    --color-primary:         #3d7a5c;
     --color-primary-hover:   #224436;
     --color-primary-text:    #5db583;
     --color-primary-border:  #c4ddd3;

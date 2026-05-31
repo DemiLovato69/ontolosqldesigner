@@ -412,7 +412,6 @@ const sqlTypeForSelect = computed({
     height: 18px;
     padding: 2px;
     color: var(--color-primary);
-    transform: translateX(-2px);
 }
 
 /* ── Drag handle ─────────────────────────────────────────────── */

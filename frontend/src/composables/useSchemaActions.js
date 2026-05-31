@@ -1,7 +1,7 @@
 import { ref, nextTick } from 'vue'
 import { TableActions, defaultIntType } from '@/services/TableActions.js'
 
-export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction = () => {} }) {
+export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction = () => {}, defaultTableColor, defaultConnectionColor }) {
     const isPlacingTable = ref(false)
     const isConnecting = ref(false)
     const copyingTableId = ref(null)
@@ -33,7 +33,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
             tableId = TableActions.copyTable(schema, sourceTableId, position)
             copyingTableId.value = null
         } else {
-            tableId = TableActions.addTable(schema, 'new_table', position, diagramDbType.value)
+            tableId = TableActions.addTable(schema, 'new_table', position, diagramDbType.value, defaultTableColor?.value)
         }
         isSaved.value = false
         if (sourceTableId) {
@@ -118,10 +118,10 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         const tgtRow = schema.value.find(el => el.id === params.target)
         const srcTable = schema.value.find(el => el.id === srcRow?.parentNode)
         const tgtTable = schema.value.find(el => el.id === tgtRow?.parentNode)
-        const tableColor = tgtTable?.data?.color
-        if (tableColor) {
-            params.style = { stroke: tableColor }
-            params.data = { ...params.data, color: tableColor }
+        const connColor = defaultConnectionColor?.value
+        if (connColor) {
+            params.style = { stroke: connColor }
+            params.data = { ...params.data, color: connColor }
         }
         addEdges([params])
         isSaved.value = false
@@ -176,7 +176,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
     const updateConnectionLineType = (relationshipType) => {
         snapshot()
         if (relationshipType === 'many-to-many') {
-            const result = TableActions.createPivotTable(schema, selectedEdge.value, diagramDbType.value)
+            const result = TableActions.createPivotTable(schema, selectedEdge.value, diagramDbType.value, defaultTableColor?.value)
             showRelationshipModal.value = false
             isSaved.value = false
             if (result) {

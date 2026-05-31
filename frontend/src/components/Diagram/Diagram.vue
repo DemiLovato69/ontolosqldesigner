@@ -103,9 +103,21 @@
                 :class="['diagram-canvas', { 'is-placing-table': isPlacingTable, 'is-connecting': isConnecting }]"
             >
                 <Panel position="top-left" class="table-navigator">
-                    <button class="table-navigator__toggle" @click.stop="tableNavOpen = !tableNavOpen" title="Tables">
-                        <SvgIcon name="table-list" :size="18" />
-                    </button>
+                    <div class="table-navigator__row">
+                        <button class="table-navigator__toggle" @click.stop="tableNavOpen = !tableNavOpen" title="Tables">
+                            <SvgIcon name="table-list" :size="18" />
+                        </button>
+                        <template v-if="canEdit">
+                            <label class="table-navigator__color-btn" title="Default table color">
+                                <span class="table-navigator__color-swatch table-navigator__color-swatch--table" :style="{ background: defaultTableColor }"></span>
+                                <input type="color" v-model="defaultTableColor" class="table-navigator__color-input" />
+                            </label>
+                            <label class="table-navigator__color-btn" title="Default connection color">
+                                <span class="table-navigator__color-swatch table-navigator__color-swatch--line" :style="{ background: defaultConnectionColor }"></span>
+                                <input type="color" v-model="defaultConnectionColor" class="table-navigator__color-input" />
+                            </label>
+                        </template>
+                    </div>
                     <div v-if="tableNavOpen" class="table-navigator__list">
                         <button
                             v-for="t in schema.filter(el => el.type === 'table')"
@@ -116,6 +128,7 @@
                         <span v-if="!schema.filter(el => el.type === 'table').length" class="table-navigator__empty">No tables</span>
                     </div>
                 </Panel>
+
 
                 <template #edge-chickenFoot="props">
                     <ChickenFootEdge v-bind="props" />
@@ -299,6 +312,9 @@ const logAction = (action, details = null) => {
     Diagram.addChangelogEntry(diagramId.value, action, details)
 }
 
+const defaultTableColor = ref('#3d7a5c')
+const defaultConnectionColor = ref('#4a7a9b')
+
 const {
     isPlacingTable, isConnecting, copyingTableId,
     selectedEdge, showRelationshipModal, modalPosition,
@@ -307,7 +323,7 @@ const {
     updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor,
     onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
     openRelationshipModal, closeRelationshipModal,
-} = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction })
+} = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction, defaultTableColor, defaultConnectionColor })
 
 const isValidConnection = ({ source, target }) => {
     const sourceNode = findNode(source)
@@ -690,6 +706,12 @@ onUnmounted(() => {
     margin: 12px;
 }
 
+.table-navigator__row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+}
+
 .table-navigator__toggle {
     width: 32px;
     height: 32px;
@@ -702,14 +724,58 @@ onUnmounted(() => {
     align-items: center;
     justify-content: center;
     box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-}
-
-.table-navigator__toggle {
     color: var(--text-secondary);
 }
 
 .table-navigator__toggle:hover {
     background: var(--hover-bg-alt);
+}
+
+.table-navigator__color-btn {
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+    position: relative;
+    overflow: hidden;
+}
+
+.table-navigator__color-btn:hover {
+    background: var(--hover-bg-alt);
+}
+
+.table-navigator__color-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    border: none;
+    padding: 0;
+}
+
+.table-navigator__color-swatch {
+    display: block;
+    border-radius: 3px;
+    pointer-events: none;
+}
+
+.table-navigator__color-swatch--table {
+    width: 14px;
+    height: 14px;
+}
+
+.table-navigator__color-swatch--line {
+    width: 16px;
+    height: 3px;
+    border-radius: 2px;
 }
 
 .table-navigator__list {
