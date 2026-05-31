@@ -1,7 +1,7 @@
 import { ref, nextTick } from 'vue'
 import { TableActions, defaultIntType } from '@/services/TableActions.js'
 
-export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, snapshot, logAction = () => {} }) {
+export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction = () => {} }) {
     const isPlacingTable = ref(false)
     const isConnecting = ref(false)
     const copyingTableId = ref(null)
@@ -131,8 +131,32 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
                 el.source === params.source && el.target === params.target &&
                 el.sourceHandle === params.sourceHandle && el.targetHandle === params.targetHandle
             )
-            if (newEdge) whisper('schema-patch', { add: [newEdge] })
+            if (newEdge) {
+                whisper('schema-patch', { add: [newEdge] })
+                // Defer past the click event that completes the connection,
+                // otherwise the modal's onClickOutside closes it immediately.
+                setTimeout(() => openRelationshipModalAtEdgeCenter(newEdge), 0)
+            }
         })
+    }
+
+    const openRelationshipModalAtEdgeCenter = (edge) => {
+        const srcNode = findNode(edge.source)
+        const tgtNode = findNode(edge.target)
+        if (!srcNode || !tgtNode) return
+        const center = (node) => ({
+            x: node.computedPosition.x + (node.dimensions.width / 2),
+            y: node.computedPosition.y + (node.dimensions.height / 2),
+        })
+        const src = center(srcNode)
+        const tgt = center(tgtNode)
+        const screen = flowToScreenCoordinate({
+            x: (src.x + tgt.x) / 2,
+            y: (src.y + tgt.y) / 2,
+        })
+        selectedEdge.value = edge
+        modalPosition.value = { x: screen.x + window.scrollX, y: screen.y + window.scrollY }
+        showRelationshipModal.value = true
     }
 
     const onEdgeUpdate = ({ edge, connection }) => {

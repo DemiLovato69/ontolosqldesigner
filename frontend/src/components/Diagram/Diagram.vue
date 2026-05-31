@@ -245,7 +245,7 @@ import '@/css/header.css'
 
 const props = defineProps({ isDemo: { type: Boolean, default: false } })
 
-const { updateEdge, addEdges, viewport, screenToFlowCoordinate, findNode, fitView } = useVueFlow()
+const { updateEdge, addEdges, viewport, screenToFlowCoordinate, flowToScreenCoordinate, findNode, fitView } = useVueFlow()
 const store = useStore()
 store.dispatch('initializeAuth')
 const router = useRouter()
@@ -307,7 +307,7 @@ const {
     updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor,
     onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
     openRelationshipModal, closeRelationshipModal,
-} = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, snapshot, logAction })
+} = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction })
 
 const isValidConnection = ({ source, target }) => {
     const sourceNode = findNode(source)
