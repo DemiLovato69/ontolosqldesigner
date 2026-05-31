@@ -39,7 +39,17 @@
     />
 
     <!-- SQL Type -->
-    <div>
+    <div class="type_cell">
+        <input
+            v-if="isLengthType"
+            type="number"
+            class="length_input"
+            :value="typeLengthValue"
+            min="1"
+            :disabled="!canEdit"
+            @mousedown.stop
+            @change="onLengthChange"
+        />
         <select v-model="sqlTypeForSelect" @change="emitChange()" :disabled="!canEdit">
             <optgroup v-for="(options, groupLabel) in typeGroups" :key="groupLabel" :label="groupLabel">
                 <option v-for="opt in options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
@@ -342,11 +352,44 @@ const gearBtnRef = ref(null)
 
 watch(isEnum, (val) => { if (!val) showEnumModal.value = false })
 
+// Types that take a single integer length param, e.g. VARCHAR(32)
+const LENGTH_TYPE_RE = /^(CHAR|VARCHAR|NCHAR|NVARCHAR|BINARY|VARBINARY|VARCHAR2|NVARCHAR2|TEXT|RAW)\((\d+)\)$/i
+
+const isLengthType = computed(() => LENGTH_TYPE_RE.test(props.data.sqlType))
+
+const typeLengthValue = computed(() => {
+    const m = props.data.sqlType?.match(LENGTH_TYPE_RE)
+    return m ? parseInt(m[2]) : 255
+})
+
+const onLengthChange = (e) => {
+    const num = parseInt(e.target.value)
+    if (!num || num < 1) { e.target.value = typeLengthValue.value; return }
+    const m = props.data.sqlType?.match(LENGTH_TYPE_RE)
+    if (!m) return
+    props.data.sqlType = `${m[1].toUpperCase()}(${num})`
+    emitChange()
+}
+
 const sqlTypeForSelect = computed({
     get() {
-        return isEnum.value ? "ENUM('')" : props.data.sqlType
+        if (isEnum.value) return "ENUM('')"
+        const m = props.data.sqlType?.match(LENGTH_TYPE_RE)
+        if (m) {
+            const baseName = m[1].toUpperCase()
+            for (const group of Object.values(typeGroups.value)) {
+                for (const opt of group) {
+                    if (new RegExp(`^${baseName}\\(`, 'i').test(opt.value)) return opt.value
+                }
+            }
+        }
+        return props.data.sqlType
     },
     set(val) {
+        const newMatch = val?.match(LENGTH_TYPE_RE)
+        const curMatch = props.data.sqlType?.match(LENGTH_TYPE_RE)
+        // Same base type — preserve the user's custom length
+        if (newMatch && curMatch && newMatch[1].toUpperCase() === curMatch[1].toUpperCase()) return
         props.data.sqlType = val
     }
 })
@@ -412,6 +455,47 @@ const sqlTypeForSelect = computed({
 .badge--idx         { background: #6b7280; color: #fff; }
 .badge--uq-together { background: #10b981; color: #fff; }
 .badge--ft          { background: #f97316; color: #fff; }
+
+.type_cell {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.length_input {
+    width: 38px;
+    padding: 4px 6px;
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    color: var(--text-primary);
+    font-size: 12px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s;
+    -moz-appearance: textfield;
+}
+
+.length_input::-webkit-outer-spin-button,
+.length_input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+.length_input:hover {
+    border-color: var(--border-strong);
+    background-color: var(--hover-bg-alt);
+}
+
+.length_input:focus {
+    outline: none;
+    border-color: var(--border-strong);
+    cursor: text;
+}
+
+.length_input:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
 
 .enum_empty_wrapper {
     position: relative;
