@@ -373,4 +373,76 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertStringContainsString("foreign('user_id')", $postsFile['content']);
         $this->assertStringContainsString("references('id')->on('users')", $postsFile['content']);
     }
+
+    // --- ENUM export ---
+
+    public function test_create_script_mysql_enum_inline(): void
+    {
+        $schema = json_encode([
+            ['id' => 't1', 'type' => 'table', 'label' => 'orders', 'data' => ['uniqueTogether' => [], 'fulltextIndexes' => []]],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'status', 'parentNode' => 't1', 'data' => ['keyMod' => null, 'sqlType' => "ENUM('pending','active','done')", 'nullable' => false, 'unsigned' => false, 'defaultValue' => null, 'comment' => null]],
+        ]);
+        $script = $this->service->createScript($schema, 'mysql');
+        // MySQL keeps enum inline — no CREATE TYPE, values appear verbatim
+        $this->assertStringNotContainsString('CREATE TYPE', $script);
+        $this->assertStringContainsString("ENUM('pending','active','done')", $script);
+    }
+
+    public function test_create_script_postgresql_enum_generates_create_type(): void
+    {
+        $schema = json_encode([
+            ['id' => 't1', 'type' => 'table', 'label' => 'orders', 'data' => ['uniqueTogether' => [], 'fulltextIndexes' => []]],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'status', 'parentNode' => 't1', 'data' => ['keyMod' => null, 'sqlType' => "ENUM('pending','active','done')", 'nullable' => false, 'unsigned' => false, 'defaultValue' => null, 'comment' => null]],
+        ]);
+        $script = $this->service->createScript($schema, 'postgresql');
+        // PostgreSQL emits a separate CREATE TYPE ... AS ENUM before the table
+        $this->assertStringContainsString("CREATE TYPE \"orders_status\" AS ENUM ('pending','active','done')", $script);
+        $this->assertStringContainsString('"status" "orders_status"', $script);
+        $this->assertStringNotContainsString('VARCHAR(255)', $script);
+    }
+
+    // --- ENUM import ---
+
+    public function test_create_schema_mysql_enum_import(): void
+    {
+        $sql = "CREATE TABLE orders (`id` INT NOT NULL PRIMARY KEY, `status` ENUM('pending','active','done') NOT NULL);";
+        $arr = json_decode($this->service->createSchema($sql), true);
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $this->assertEquals("ENUM('pending','active','done')", $rows['status']['data']['sqlType']);
+    }
+
+    public function test_create_schema_postgresql_enum_import_via_create_type(): void
+    {
+        $sql = "CREATE TYPE \"orders_status\" AS ENUM ('pending','active','done');
+                CREATE TABLE IF NOT EXISTS \"orders\" (\"id\" SERIAL NOT NULL PRIMARY KEY, \"status\" \"orders_status\" NOT NULL);";
+        $arr = json_decode($this->service->createSchema($sql), true);
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $this->assertEquals("ENUM('pending','active','done')", $rows['status']['data']['sqlType']);
+    }
+
+    public function test_create_schema_postgresql_enum_roundtrip(): void
+    {
+        // Build schema with an ENUM column
+        $schema = json_encode([
+            ['id' => 't1', 'type' => 'table', 'label' => 'orders', 'data' => ['uniqueTogether' => [], 'fulltextIndexes' => []]],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'SERIAL', 'nullable' => false, 'unsigned' => false, 'defaultValue' => null, 'comment' => null]],
+            ['id' => 'r2', 'type' => 'row', 'label' => 'status', 'parentNode' => 't1', 'data' => ['keyMod' => null, 'sqlType' => "ENUM('pending','active')", 'nullable' => false, 'unsigned' => false, 'defaultValue' => null, 'comment' => null]],
+        ]);
+        // Export to PostgreSQL SQL — generates CREATE TYPE ... AS ENUM
+        $sql = $this->service->createScript($schema, 'postgresql');
+        // Re-import: status is resolved back to ENUM via the CREATE TYPE statement
+        $arr = json_decode($this->service->createSchema($sql), true);
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $this->assertEquals("ENUM('pending','active')", $rows['status']['data']['sqlType']);
+    }
+
+    public function test_create_migration_enum_values(): void
+    {
+        $schema = json_encode([
+            ['id' => 't1', 'type' => 'table', 'label' => 'orders'],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'status', 'parentNode' => 't1', 'data' => ['keyMod' => null, 'sqlType' => "ENUM('pending','active','done')", 'nullable' => false, 'unsigned' => false, 'defaultValue' => null, 'comment' => null]],
+        ]);
+        $content = $this->service->createMigration($schema)[0]['content'];
+        $this->assertStringContainsString("enum('status', ['pending','active','done'])", $content);
+    }
 }

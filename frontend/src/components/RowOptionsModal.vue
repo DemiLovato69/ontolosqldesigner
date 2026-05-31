@@ -29,11 +29,6 @@
             <p class="modal_text">Comment</p>
             <input type="text" class="modal_text_input" @mousedown.stop v-model="data.comment" @change="$emit('change')" placeholder="">
         </div>
-        <div v-if="isEnum" class="options_modal_row">
-            <p class="modal_text">Values</p>
-            <input type="text" class="modal_text_input" @mousedown.stop v-model="enumValuesText" placeholder="'A','B','C'">
-        </div>
-
         <!-- Unique Together section -->
         <div class="options_modal_divider"></div>
         <p class="options_modal_section_label">Unique Together</p>
@@ -95,28 +90,16 @@ const props = defineProps({
     tableColumns: { type: Array, default: () => [] },
     tableUniqueTogether: { type: Array, default: () => [] },
     tableFulltextIndexes: { type: Array, default: () => [] },
+    ignore: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['change', 'close', 'update-table-constraints', 'update-table-fulltext'])
 
 const modalRef = ref(null)
-onClickOutside(modalRef, () => emit('close'))
+onClickOutside(modalRef, () => emit('close'), { ignore: props.ignore })
 
 const toggleNullable = () => { props.data.nullable = !props.data.nullable; emit('change') }
 const toggleUnsigned = () => { props.data.unsigned = !props.data.unsigned; emit('change') }
-
-const isEnum = computed(() => /^ENUM\(/i.test(props.data.sqlType))
-
-const enumValuesText = computed({
-    get() {
-        const m = props.data.sqlType.match(/^ENUM\((.*)\)$/i)
-        return m ? m[1] : ''
-    },
-    set(val) {
-        props.data.sqlType = `ENUM(${val})`
-        emit('change')
-    }
-})
 
 // --- Unique Together ---
 

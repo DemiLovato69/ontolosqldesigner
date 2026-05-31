@@ -49,4 +49,14 @@ class MysqlDialect implements SqlDialectInterface
 
         return 'FULLTEXT KEY '.$this->quote($indexName)." ({$quotedCols})";
     }
+
+    public function enumTypeDeclaration(string $typeName, string $enumValues): string
+    {
+        return '';
+    }
+
+    public function enumColumnType(string $typeName, string $sqlType): string
+    {
+        return $sqlType;
+    }
 }

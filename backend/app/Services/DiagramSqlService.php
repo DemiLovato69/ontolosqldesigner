@@ -115,12 +115,27 @@ class DiagramSqlService
             $tableRows = $rowsByTable->get($table['id'], collect());
             $tableColumnNames = $tableRows->pluck('name')->all();
 
-            $allDefs = $tableRows->map(function ($row) use ($dialect, $qi) {
+            // Collect enum type declarations (e.g. PostgreSQL CREATE TYPE ... AS ENUM)
+            $enumTypeDecls = [];
+            $enumTypeMap = []; // row_id => effective column type string
+            foreach ($tableRows as $row) {
+                if (preg_match('/^ENUM\s*\((.+)\)$/is', $row['sql_type'], $em)) {
+                    $typeName = $table['name'].'_'.$row['name'];
+                    $decl = $dialect->enumTypeDeclaration($typeName, $em[1]);
+                    if ($decl !== '') {
+                        $enumTypeDecls[] = $decl;
+                    }
+                    $enumTypeMap[$row['id']] = $dialect->enumColumnType($typeName, $row['sql_type']);
+                }
+            }
+
+            $allDefs = $tableRows->map(function ($row) use ($dialect, $qi, $enumTypeMap) {
                 $typeWord = strtoupper(preg_replace('/[\s(].*/', '', $row['sql_type']));
                 if (in_array($typeWord, ['INDEX', 'KEY', 'CONSTRAINT', 'FOREIGN', 'CHECK', 'PRIMARY', 'UNIQUE'])) {
                     return null;
                 }
-                $parts = ['  '.$qi($row['name'])." {$row['sql_type']}"];
+                $colType = $enumTypeMap[$row['id']] ?? $row['sql_type'];
+                $parts = ['  '.$qi($row['name'])." {$colType}"];
                 if ($dialect->supportsUnsigned() && $row['unsigned']) {
                     $parts[] = 'UNSIGNED';
                 }
@@ -168,6 +183,9 @@ class DiagramSqlService
                 }
             }
 
+            foreach ($enumTypeDecls as $decl) {
+                $lines[] = $decl;
+            }
             $ifNotExists = $dialect->supportsIfNotExists() ? 'IF NOT EXISTS ' : '';
             $lines[] = 'CREATE TABLE '.$ifNotExists.$qi($table['name'])." (\n".implode(",\n", $allDefs)."\n);";
         }
@@ -259,8 +277,15 @@ class DiagramSqlService
         $tableIdByName = [];
         $tableColorById = [];
         $rowIndex = [];
+        $enumTypes = []; // type_name (lowercase) => "ENUM('val1','val2')"
 
         foreach ($this->parseStatements($script) as $statement) {
+            // Parse PostgreSQL-style: CREATE TYPE name AS ENUM ('val1', 'val2')
+            if (preg_match('/CREATE\s+TYPE\s+["`]?(\w+)["`]?\s+AS\s+ENUM\s*\(([^)]+)\)/is', $statement, $em)) {
+                $enumTypes[strtolower($em[1])] = "ENUM({$em[2]})";
+
+                continue;
+            }
             if (preg_match('/CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["`]?(\w+)["`]?\s*\((.*)\)/is', $statement, $m)) {
                 $tableX += 400;
                 $tableId = uniqid();
@@ -269,7 +294,7 @@ class DiagramSqlService
                 $tableIdByName[$m[1]] = $tableId;
                 $tableColorById[$tableId] = $node['data']['color'];
 
-                $parsed = $this->parseColumns($m[2], $tableId, $tableX);
+                $parsed = $this->parseColumns($m[2], $tableId, $tableX, 50, $enumTypes);
                 array_push($rows, ...$parsed['rows']);
                 foreach ($parsed['rows'] as $row) {
                     $rowIndex[$tableId][$row['label']] = $row;
@@ -492,8 +517,11 @@ class DiagramSqlService
         return $lines;
     }
 
-    /** @return array{rows: list<array<string, mixed>>, uniqueTogether: list<list<string>>, fulltextIndexes: list<list<string>>} */
-    private function parseColumns(string $tableContent, string $tableId, int $tableX, int $tableY = 50): array
+    /**
+     * @param  array<string, string>  $enumTypes  lowercase type_name => "ENUM('val1','val2')" (from CREATE TYPE statements)
+     * @return array{rows: list<array<string, mixed>>, uniqueTogether: list<list<string>>, fulltextIndexes: list<list<string>>}
+     */
+    private function parseColumns(string $tableContent, string $tableId, int $tableX, int $tableY = 50, array $enumTypes = []): array
     {
         $lines = $this->splitColumnDefinitions($tableContent);
         $constraints = [];
@@ -531,7 +559,7 @@ class DiagramSqlService
             if (preg_match('/^(?:CONSTRAINT\s|PRIMARY\s+KEY|UNIQUE\s+(?:KEY|INDEX)|UNIQUE\s*\(|FOREIGN\s+KEY|KEY\s|INDEX\s|FULLTEXT\s|CHECK\s*\()/i', $line)) {
                 continue;
             }
-            if (! preg_match('/^["`]?(\w+)["`]?\s+([a-zA-Z]+)(?:\(([^)]+)\))?(?:\s+(UNSIGNED))?(?:\s+(NOT\s+NULL|NULL))?(?:\s+(PRIMARY\s+KEY|UNIQUE))?(?:\s+DEFAULT\s+\'([^\']*)\')?(?:\s+COMMENT\s+\'([^\']*)\')?/i', $line, $m)) {
+            if (! preg_match('/^["`]?(\w+)["`]?\s+["`]?([a-zA-Z_]\w*)["`]?(?:\(([^)]+)\))?(?:\s+(UNSIGNED))?(?:\s+(NOT\s+NULL|NULL))?(?:\s+(PRIMARY\s+KEY|UNIQUE))?(?:\s+DEFAULT\s+\'([^\']*)\')?(?:\s+COMMENT\s+\'([^\']*)\')?/i', $line, $m)) {
                 continue;
             }
             if (strtoupper($m[2]) === 'SET') {
@@ -547,7 +575,9 @@ class DiagramSqlService
             }
             $usedNames[] = $name;
 
-            $sqlType = strtoupper($m[2]).(isset($m[3]) && $m[3] !== '' ? "($m[3])" : '');
+            // Resolve enum types declared via CREATE TYPE ... AS ENUM (PostgreSQL import)
+            $resolvedEnumType = $enumTypes[strtolower($m[2])] ?? null;
+            $sqlType = $resolvedEnumType ?? strtoupper($m[2]).(isset($m[3]) && $m[3] !== '' ? "($m[3])" : '');
             $unsigned = isset($m[4]) && strtoupper($m[4]) === 'UNSIGNED';
             $nullable = isset($m[5]) ? strtoupper($m[5]) === 'NULL' : true;
             $keyMod = isset($m[6]) ? strtoupper(preg_replace('/\s+/', ' ', $m[6])) : ($constraints[$baseName] ?? null);
@@ -655,7 +685,7 @@ class DiagramSqlService
         } elseif (preg_match('/^(BLOB|BINARY|VARBINARY)/i', $typeUpper)) {
             $method = "binary('{$name}')";
         } elseif (preg_match('/^ENUM/i', $typeUpper)) {
-            preg_match('/ENUM\s*\(([^)]+)\)/i', $rawType, $enumMatch);
+            preg_match('/ENUM\s*\((.+)\)/i', $rawType, $enumMatch);
             $method = $enumMatch ? "enum('{$name}', [{$enumMatch[1]}])" : "string('{$name}')";
         } else {
             $method = "string('{$name}')";

@@ -47,4 +47,14 @@ class PostgresqlDialect implements SqlDialectInterface
     {
         return '';
     }
+
+    public function enumTypeDeclaration(string $typeName, string $enumValues): string
+    {
+        return "CREATE TYPE \"{$typeName}\" AS ENUM ({$enumValues});";
+    }
+
+    public function enumColumnType(string $typeName, string $sqlType): string
+    {
+        return "\"{$typeName}\"";
+    }
 }

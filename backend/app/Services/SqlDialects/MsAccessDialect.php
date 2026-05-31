@@ -47,4 +47,14 @@ class MsAccessDialect implements SqlDialectInterface
     {
         return '';
     }
+
+    public function enumTypeDeclaration(string $typeName, string $enumValues): string
+    {
+        return '';
+    }
+
+    public function enumColumnType(string $typeName, string $sqlType): string
+    {
+        return $sqlType;
+    }
 }

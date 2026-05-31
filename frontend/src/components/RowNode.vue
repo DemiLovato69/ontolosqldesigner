@@ -17,10 +17,26 @@
         :readonly="!data.editing || !canEdit"
     />
 
-    <!-- Constraint badges -->
-    <div v-if="badges.length" class="constraint_badges">
+    <!-- Constraint badges + enum button grouped together -->
+    <div v-if="badges.length || (isEnum && canEdit)" class="constraint_badges">
         <span v-for="b in badges" :key="b.label" :class="['constraint_badge', b.cls]">{{ b.label }}</span>
+        <button v-if="isEnum && canEdit" ref="enumBtnRef" class="table_button enum_values_btn" @mousedown.stop @click="showEnumModal = !showEnumModal" title="Edit enum values">
+            <SvgIcon name="list" :size="13" />
+        </button>
+        <span v-if="isEnum && isEnumEmpty && canEdit" class="enum_empty_wrapper">
+            <SvgIcon name="warning" :size="13" stroke="#ef4444" />
+        </span>
     </div>
+
+    <!-- Enum values modal -->
+    <EnumValuesModal
+        v-if="isEnum && showEnumModal"
+        :data="data"
+        :dbType="dbType"
+        :ignore="[enumBtnRef]"
+        @change="emitChange()"
+        @close="showEnumModal = false"
+    />
 
     <!-- SQL Type -->
     <div>
@@ -33,7 +49,7 @@
     </div>
 
     <!-- Options -->
-    <button v-if="canEdit" class="table_button" @mousedown.stop @click="$emit('toggle-options-modal', id)">
+    <button v-if="canEdit" ref="gearBtnRef" class="table_button" @mousedown.stop @click="$emit('toggle-options-modal', id)">
         <SvgIcon name="gear" :size="13" />
     </button>
 
@@ -46,6 +62,7 @@
         :tableColumns="tableColumns"
         :tableUniqueTogether="tableUniqueTogether"
         :tableFulltextIndexes="tableFulltextIndexes"
+        :ignore="[gearBtnRef]"
         @change="emitChange()"
         @close="$emit('toggle-options-modal', id)"
         @update-table-constraints="$emit('update-table-constraints', $event)"
@@ -67,10 +84,11 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { Handle } from '@vue-flow/core'
 import SvgIcon from './SvgIcon.vue'
 import RowOptionsModal from './RowOptionsModal.vue'
+import EnumValuesModal from './EnumValuesModal.vue'
 
 const props = defineProps({
     id: String,
@@ -166,6 +184,7 @@ const POSTGRESQL_TYPES = {
         { value: 'VARCHAR(255)', label: 'VARCHAR' },
         { value: 'TEXT', label: 'TEXT' },
         { value: 'BYTEA', label: 'BYTEA' },
+        { value: "ENUM('')", label: 'ENUM' },
     ],
     'Date & Time': [
         { value: 'DATE', label: 'DATE' },
@@ -306,6 +325,23 @@ const typeGroups = computed(() => {
 
 const isEnum = computed(() => /^ENUM\(/i.test(props.data.sqlType))
 
+const isEnumEmpty = computed(() => {
+    const m = props.data.sqlType.match(/^ENUM\((.*)\)$/i)
+    if (!m) return false
+    const re = /'([^']*)'|"([^"]*)"/g
+    let match
+    while ((match = re.exec(m[1])) !== null) {
+        if ((match[1] ?? match[2]).trim() !== '') return false
+    }
+    return true
+})
+
+const showEnumModal = ref(false)
+const enumBtnRef = ref(null)
+const gearBtnRef = ref(null)
+
+watch(isEnum, (val) => { if (!val) showEnumModal.value = false })
+
 const sqlTypeForSelect = computed({
     get() {
         return isEnum.value ? "ENUM('')" : props.data.sqlType
@@ -327,6 +363,14 @@ const sqlTypeForSelect = computed({
 
 .ml-5 { margin-left: 5px; }
 .mr-5 { margin-right: 5px; }
+
+.enum_values_btn {
+    width: 18px;
+    height: 18px;
+    padding: 2px;
+    color: var(--color-primary);
+    transform: translateX(-2px);
+}
 
 /* ── Drag handle ─────────────────────────────────────────────── */
 .drag_handle_icon {
@@ -368,4 +412,35 @@ const sqlTypeForSelect = computed({
 .badge--idx         { background: #6b7280; color: #fff; }
 .badge--uq-together { background: #10b981; color: #fff; }
 .badge--ft          { background: #f97316; color: #fff; }
+
+.enum_empty_wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-shrink: 0;
+    cursor: default;
+}
+
+.enum_empty_wrapper::after {
+    content: 'ENUM must have at least one value';
+    position: absolute;
+    left: 50%;
+    bottom: calc(100% + 6px);
+    transform: translateX(-50%);
+    background: var(--bg-surface);
+    border: 1px solid var(--border-strong);
+    color: var(--text-primary);
+    font-size: 11px;
+    white-space: nowrap;
+    padding: 4px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 100;
+}
+
+.enum_empty_wrapper:hover::after {
+    opacity: 1;
+}
 </style>
