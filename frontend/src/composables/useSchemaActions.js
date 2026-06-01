@@ -67,6 +67,29 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         whisper('schema-patch', patch)
     }
 
+    const addRowAfter = (rowId) => {
+        const row = schema.value.find(el => el.id === rowId)
+        if (!row) return
+        snapshot()
+        const parentTable = schema.value.find(el => el.id === row.parentNode)
+        const shiftedRows = schema.value.filter(el => el.parentNode === row.parentNode && el.type === 'row' && el.position.y > row.position.y)
+        const newId = TableActions.insertRowAfter(schema, row.parentNode, row.position.y, {
+            rowName: 'new_row',
+            keyMod: 'None',
+            sqlType: defaultIntType(diagramDbType.value),
+            nullable: false,
+            unsigned: false,
+        })
+        isSaved.value = false
+        logAction('column_added', { table_name: parentTable?.label })
+        const newRow = schema.value.find(el => el.id === newId)
+        const button = schema.value.find(el => el.type === 'add-row-button' && el.parentNode === row.parentNode)
+        const updatedShifted = shiftedRows.map(el => schema.value.find(s => s.id === el.id)).filter(Boolean).map(el => ({ id: el.id, position: el.position }))
+        const patch = { add: [newRow], update: updatedShifted }
+        if (button) patch.update = [...(patch.update ?? []), { id: button.id, position: button.position }]
+        whisper('schema-patch', patch)
+    }
+
     const deleteEdge = () => {
         snapshot()
         const edgeId = selectedEdge.value.id
@@ -306,7 +329,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         isPlacingTable, isConnecting, copyingTableId,
         selectedEdge, showRelationshipModal, modalPosition,
         addTable, copyTable, onPaneClick,
-        addRow, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
+        addRow, addRowAfter, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
         updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor,
         onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
         openRelationshipModal, closeRelationshipModal,

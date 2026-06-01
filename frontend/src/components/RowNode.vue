@@ -14,6 +14,10 @@
         @focus="(e) => { if (!canEdit) return; data.editing = true; e.target.select(); }"
         @blur="(e) => { data.editing = false; $emit('update-label', id, label); e.target.scrollLeft = 0; }"
         @input="$emit('update-label', id, $event.target.value)"
+        @keydown="(e) => {
+            if (e.shiftKey && e.key === 'Enter' && canEdit) { e.preventDefault(); $emit('add-row-after', id) }
+            else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); $emit('tab-prev', id) }
+        }"
         :readonly="!data.editing || !canEdit"
     />
 
@@ -80,7 +84,7 @@
     />
 
     <!-- Delete row -->
-    <button v-if="canEdit" class="table_button" @mousedown.stop @click="$emit('delete-node', id)">
+    <button v-if="canEdit" class="table_button" @mousedown.stop @click="$emit('delete-node', id)" @keydown="(e) => { if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); $emit('tab-next', id) } }">
         <SvgIcon name="trash" :size="13" />
     </button>
 
@@ -111,7 +115,7 @@ const props = defineProps({
     tableFulltextIndexes: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext'])
+const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev'])
 
 const emitChange = () => emit('change', props.id)
 

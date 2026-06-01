@@ -168,6 +168,9 @@
                         @update-label="updateLabel"
                         @toggle-options-modal="toggleOptionsModal"
                         @delete-node="deleteNode"
+                        @add-row-after="addRowAfter"
+                        @tab-next="tabToRow($event, 'next')"
+                        @tab-prev="tabToRow($event, 'prev')"
                         @change="onRowChange($event)"
                         @row-drag-start="startRowDrag"
                         @update-table-constraints="onTableConstraintsChange(nodeProps.parentNodeId, $event)"
@@ -319,11 +322,32 @@ const {
     isPlacingTable, isConnecting, copyingTableId,
     selectedEdge, showRelationshipModal, modalPosition,
     addTable, copyTable, onPaneClick,
-    addRow, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
+    addRow, addRowAfter, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
     updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor,
     onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
     openRelationshipModal, closeRelationshipModal,
 } = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction, defaultTableColor, defaultConnectionColor })
+
+const tabToRow = (rowId, direction) => {
+    const row = schema.value?.find(el => el.id === rowId)
+    if (!row) return
+    const siblings = schema.value
+        .filter(el => el.parentNode === row.parentNode && el.type === 'row')
+        .sort((a, b) => a.position.y - b.position.y)
+    const idx = siblings.findIndex(el => el.id === rowId)
+    const target = siblings[direction === 'next' ? idx + 1 : idx - 1]
+    if (!target) return
+    nextTick(() => {
+        const nodeEl = document.querySelector(`.vue-flow__node[data-id="${target.id}"]`)
+        if (!nodeEl) return
+        if (direction === 'next') {
+            nodeEl.querySelector('.input_designer_row')?.focus()
+        } else {
+            const focusables = nodeEl.querySelectorAll('input:not([disabled]), select:not([disabled]), button:not([disabled])')
+            focusables[focusables.length - 1]?.focus()
+        }
+    })
+}
 
 const isValidConnection = ({ source, target }) => {
     const sourceNode = findNode(source)

@@ -137,6 +137,48 @@ export const TableActions = {
         return tableId
     },
 
+    insertRowAfter(schemaRef, tableId, afterY, rowProps) {
+        const schema = schemaRef.value
+        const existingRows = schema.filter(el => el.parentNode === tableId && el.type === 'row')
+        const tableNode = schema.find(el => el.id === tableId)
+        const rowName = uniqueName(rowProps.rowName, existingRows.map(r => r.label))
+        const id = Math.floor(Math.random() * 100000).toString()
+        const rowStyle = tableNode?.style?.width ? { ...ROW_STYLE, width: tableNode.style.width } : ROW_STYLE
+        const newY = afterY + 40
+
+        // Shift rows below the insertion point down by 40
+        schema
+            .filter(el => el.parentNode === tableId && el.type === 'row' && el.position.y > afterY)
+            .forEach(row => { row.position.y += 40 })
+
+        schemaRef.value = [...schema, {
+            id,
+            type: 'row',
+            label: rowName,
+            zIndex: tableNode?.zIndex ?? 1,
+            position: { x: 0, y: newY },
+            style: rowStyle,
+            draggable: false,
+            parentNode: tableId,
+            data: {
+                editing: false,
+                showModal: false,
+                showOptionsModal: false,
+                keyMod: rowProps.keyMod,
+                sqlType: rowProps.sqlType,
+                nullable: rowProps.nullable,
+                unsigned: rowProps.unsigned,
+                defaultValue: rowProps.defaultValue ?? '',
+                comment: rowProps.comment ?? ''
+            }
+        }]
+
+        const button = schemaRef.value.find(el => el.type === 'add-row-button' && el.parentNode === tableId)
+        if (button) button.position = { x: 0, y: 40 + 40 * schemaRef.value.filter(el => el.parentNode === tableId && el.type === 'row').length }
+
+        return id
+    },
+
     addRow(schemaRef, nodeProps, rowProps) {
         const schema = schemaRef.value
         const existingRows = schema.filter(el => el.parentNode === nodeProps.id && el.type === 'row')
