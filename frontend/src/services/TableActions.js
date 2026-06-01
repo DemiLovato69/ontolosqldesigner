@@ -271,6 +271,7 @@ export const TableActions = {
             schemaRef.value = schema.filter(el => el.id !== nodeId)
             schema
                 .filter(el => el.parentNode === nodeToDelete.parentNode && el.type === 'row' && el.position.y > nodeToDelete.position.y)
+                .sort((a, b) => a.position.y - b.position.y)
                 .forEach((row, index) => { row.position.y = nodeToDelete.position.y + 40 * index })
 
             const remainingRows = schemaRef.value.filter(el => el.parentNode === nodeToDelete.parentNode && el.type === 'row')
