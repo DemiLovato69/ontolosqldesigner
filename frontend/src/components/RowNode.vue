@@ -133,6 +133,9 @@ const badges = computed(() => {
     if (props.tableFulltextIndexes?.some(g => g.includes(props.label))) {
         result.push({ label: 'FT', cls: 'badge--ft' })
     }
+    if (props.data.nullable) {
+        result.push({ label: 'NULL', cls: 'badge--null' })
+    }
     return result
 })
 
@@ -458,6 +461,7 @@ const sqlTypeForSelect = computed({
 .badge--idx         { background: #6b7280; color: #fff; }
 .badge--uq-together { background: #10b981; color: #fff; }
 .badge--ft          { background: #f97316; color: #fff; }
+.badge--null        { background: #7c3aed; color: #fff; }
 
 .type_cell {
     display: flex;

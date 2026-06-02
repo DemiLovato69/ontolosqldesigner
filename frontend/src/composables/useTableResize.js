@@ -1,4 +1,4 @@
-const MIN_TABLE_WIDTH = 350
+const MIN_TABLE_WIDTH = 400
 
 export function useTableResize({ schema, viewport, whisper, isSaved, snapshot }) {
     const startTableResize = (tableId, event, side) => {
