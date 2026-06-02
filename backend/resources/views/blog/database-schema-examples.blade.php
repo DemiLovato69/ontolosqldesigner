@@ -167,7 +167,6 @@
 
         <div class="schema-section">
             <h2 id="ecommerce">1. E-Commerce Schema</h2>
-            <!-- [PERSONAL EXPERIENCE] -->
             <p>
                 A production e-commerce schema typically requires joining at least 5 tables even for a simple product listing query — categories, products, customers, orders, and order line items. The highest-leverage design decision isn't which ORM to use; it's whether you snapshot the price on each order line. You must. Don't look it up from <code>products</code> at query time, or a price change will silently rewrite every historical order total.
             </p>
@@ -232,7 +231,6 @@ CREATE TABLE order_items (
 
         <div class="schema-section">
             <h2 id="blog-cms">2. Blog / CMS Schema</h2>
-            <!-- [PERSONAL EXPERIENCE] -->
             <p>
                 The most common modelling mistake in blog schemas is treating posts-to-tags as one-to-many. It isn't. A post can have many tags, and a tag applies to many posts. That's many-to-many, and it needs a junction table. The schema below adds <code>post_tags</code> with a composite primary key. It also handles threaded comments with a <code>parent_id</code> self-reference, and draft/scheduled posts via a nullable <code>published_at</code>.
             </p>

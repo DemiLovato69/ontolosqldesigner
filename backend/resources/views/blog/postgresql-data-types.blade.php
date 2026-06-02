@@ -293,7 +293,6 @@
     verified   BOOLEAN NOT NULL DEFAULT false
 );</code></pre>
 
-        <!-- [PERSONAL EXPERIENCE] -->
         <p>In practice, stick to <code>TRUE</code>/<code>FALSE</code> literals in application code. PostgreSQL accepts the abbreviated forms, but explicit literals are clearer in queries and migrations. ORMs like Django, Rails, and Laravel all handle PostgreSQL's BOOLEAN type natively without extra column configuration. Contrast this with MySQL, where ORM-level boolean columns silently map to <code>TINYINT(1)</code> and can store values other than 0 and 1. Building SQL Designer's schema export tool, we ran into exactly this gap when generating MySQL DDL from PostgreSQL boolean columns: the types don't map 1:1, and that difference shows up at runtime.</p>
 
         <div class="citation-capsule">

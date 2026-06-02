@@ -519,6 +519,7 @@ employee_projects(emp_id, project_id)</code></pre>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Symbols Explained &rarr;</a></li>
                 <li><a href="/blog/database-designer">Free Online Database Designer — design your normalized schema visually &rarr;</a></li>
                 <li><a href="/blog/database-schema-examples">Database Schema Examples — MySQL &amp; PostgreSQL Templates &rarr;</a></li>
+                <li><a href="/blog/postgresql-data-types">PostgreSQL Data Types — TIMESTAMPTZ, JSONB, UUID, Arrays &rarr;</a></li>
             </ul>
         </nav>
     </article>

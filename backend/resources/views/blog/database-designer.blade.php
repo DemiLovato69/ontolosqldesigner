@@ -205,7 +205,6 @@
         <p>
             SQL export is locked behind a paid plan on most commonly evaluated database designer tools. That's the most consequential restriction — you can design your schema visually, but you can't download the DDL to run it. With 79% of IT teams managing more than one database platform (<a href="https://www.red-gate.com/solutions/state-of-database-landscape/2024/">Redgate 2024</a>), hitting an export paywall mid-project is genuinely disruptive. Always check the pricing page before committing.
         </p>
-        <!-- [PERSONAL EXPERIENCE] -->
         <p>
             Common restrictions worth checking for on free tiers:
         </p>
@@ -258,7 +257,6 @@
         </figure>
 
         <h2 id="sql-designer">SQL Designer — Free Online Database Designer</h2>
-        <!-- [UNIQUE INSIGHT] -->
         <p>
             Most database designer tools are built around diagramming first, with SQL export as a secondary feature. SQL Designer inverts that: the DDL is the source of truth, and the visual canvas is the interface for editing it. That means every visual change produces valid, runnable SQL — not an approximation of it. PostgreSQL and MySQL each get their own type system, so the column dropdowns only show types that are actually valid for your chosen database.
         </p>
@@ -274,7 +272,6 @@
             Create a free account with your email and start designing immediately. No credit card, no diagram limits, no table limits.
         </p>
         <div class="citation-capsule">
-            <!-- [PERSONAL EXPERIENCE] -->
             Building SQL Designer required implementing separate column type systems for MySQL and PostgreSQL — the types shown in the column editor depend entirely on the database target you've selected. This prevents a common class of export errors where a tool generates DDL using MySQL-specific syntax against a PostgreSQL target, producing scripts that fail on the first run.
         </div>
 
@@ -294,7 +291,6 @@
             Not ready to sign up? The <a href="/demo">demo</a> loads a sample schema so you can try the designer without creating an account.
         </p>
         <div class="citation-capsule">
-            <!-- [PERSONAL EXPERIENCE] -->
             Designing a database from scratch with a visual tool changes how you think about the schema. Spotting a missing foreign key on a canvas is immediate — finding it in 300 lines of DDL is not. The step from "draw relationships" to "export SQL" is where purpose-built designers earn their keep over generic tools, because the exported script reflects exactly what you drew.
         </div>
 

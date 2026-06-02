@@ -190,6 +190,10 @@
             <strong>Disclosure:</strong> SQL Designer is my product — we built it and I run this site. I ranked it #1 because I believe it is the strongest free option for designing a schema from scratch with no free-tier restrictions. I've tried to be specific about where each competitor has a genuine advantage: DrawSQL has a more polished UI, DBeaver is better for documenting an existing live database, ChartDB is stronger for AI-assisted schema explanation. Read the Limitations paragraph under each tool and judge for yourself. As an open-source project, the complete source code and commit history are publicly verifiable at <a href="https://github.com/Snydi/sqldesigner" target="_blank" rel="noopener noreferrer">github.com/Snydi/sqldesigner</a>.
         </p>
 
+        <div class="citation-capsule">
+            PostgreSQL is now used by 55.6% of developers and MySQL by 40.5%, per the Stack Overflow Developer Survey 2025 (89,000+ respondents) — together they cover over 90% of professional database workloads. Every SQL-aware tool in this list supports at least one of these two dialects, making SQL export fidelity the most consequential evaluation criterion for most teams (<a href="https://survey.stackoverflow.co/2025/technology/" target="_blank" rel="noopener">Stack Overflow Developer Survey 2025</a>).
+        </div>
+
         <div class="tldr-box">
             <strong class="tldr-label">Quick answer</strong>
             <ul>
@@ -461,6 +465,10 @@
             By that standard, the tools with no meaningful free restrictions are: SQL Designer, draw.io, ERDPlus, ChartDB (self-hosted), and DBeaver Community Edition. Of those, only SQL Designer and ChartDB are SQL-aware design tools that can also export DDL.
         </p>
 
+        <div class="citation-capsule">
+            According to the Redgate State of the Database Landscape 2024 (n=3,849 practitioners), 79% of IT teams run more than one database platform — up from 62% in 2020. For those teams, SQL export is not a bonus feature: it's the step that converts a visual diagram into runnable DDL for whichever database engine the project targets (<a href="https://www.red-gate.com/solutions/state-of-database-landscape/2024/" target="_blank" rel="noopener">Redgate 2024</a>).
+        </div>
+
         <section class="faq-section" aria-label="Frequently asked questions">
             <h2 id="faq">Frequently Asked Questions</h2>
 
@@ -524,6 +532,7 @@
                 <li><a href="/blog/database-schema-examples">Database Schema Examples — MySQL &amp; PostgreSQL Templates &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization Explained — 1NF, 2NF, 3NF &rarr;</a></li>
                 <li><a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL — Key Differences for Schema Design &rarr;</a></li>
+                <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax, Examples, and Best Practices &rarr;</a></li>
             </ul>
         </nav>
     </article>
