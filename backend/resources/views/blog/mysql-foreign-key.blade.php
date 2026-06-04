@@ -392,29 +392,29 @@ SET FOREIGN_KEY_CHECKS = 1;</code></pre>
             If you're working with a larger schema, the <a href="/blog/mysql-vs-postgresql">MySQL vs PostgreSQL comparison</a> covers engine-level differences that affect how foreign keys behave across databases, which matters if you're targeting both platforms.
         </p>
 
-        <h2 id="faq">Frequently Asked Questions</h2>
-        <ul class="faq-list">
-            <li class="faq-item">
+        <section class="faq-section" aria-label="Frequently asked questions">
+            <h2 id="faq">Frequently Asked Questions</h2>
+            <div class="faq-item">
                 <p class="faq-q">What is the MySQL foreign key syntax?</p>
                 <p class="faq-a">The full syntax is: <code>CONSTRAINT constraint_name FOREIGN KEY (child_column) REFERENCES parent_table(parent_column) ON DELETE action ON UPDATE action</code>. Place it inside <code>CREATE TABLE</code> or add it with <code>ALTER TABLE</code>. The constraint name is optional but strongly recommended for readability and easier debugging.</p>
-            </li>
-            <li class="faq-item">
+            </div>
+            <div class="faq-item">
                 <p class="faq-q">What does ON DELETE CASCADE do in MySQL?</p>
                 <p class="faq-a"><code>ON DELETE CASCADE</code> automatically deletes child rows when the parent row is deleted. If you delete an order, all associated <code>order_items</code> rows are removed automatically. Use it when child records have no meaning independent of the parent, and you're certain you want that automatic cleanup behaviour.</p>
-            </li>
-            <li class="faq-item">
+            </div>
+            <div class="faq-item">
                 <p class="faq-q">What is the difference between ON DELETE CASCADE and ON DELETE SET NULL?</p>
                 <p class="faq-a"><code>CASCADE</code> removes the child row when the parent is deleted. <code>SET NULL</code> instead sets the foreign key column to <code>NULL</code>, leaving the child row in place. <code>SET NULL</code> requires the foreign key column to be nullable. Use it when the child record can exist independently, such as a comment whose author account was deleted.</p>
-            </li>
-            <li class="faq-item">
+            </div>
+            <div class="faq-item">
                 <p class="faq-q">Why does MySQL return error 1215 when adding a foreign key?</p>
                 <p class="faq-a">Error 1215 almost always means one of three things: the child and parent column types don't match exactly (including <code>UNSIGNED</code>), the referenced column isn't indexed, or the tables use different storage engines. Run <code>SHOW ENGINE INNODB STATUS\G</code> and look for the <code>LATEST FOREIGN KEY ERROR</code> section for the exact cause.</p>
-            </li>
-            <li class="faq-item">
+            </div>
+            <div class="faq-item">
                 <p class="faq-q">Does MySQL require the referenced column to be a primary key?</p>
                 <p class="faq-a">No. The referenced column must have a <code>UNIQUE</code> index or be the primary key, but it doesn't have to be the primary key. MySQL requires uniqueness on the referenced column to guarantee that each foreign key value maps to exactly one parent row.</p>
-            </li>
-        </ul>
+            </div>
+        </section>
 
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
@@ -423,6 +423,7 @@ SET FOREIGN_KEY_CHECKS = 1;</code></pre>
                 <li><a href="/blog/database-normalization">Database Normalization: 1NF, 2NF, and 3NF &rarr;</a></li>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation Explained &rarr;</a></li>
                 <li><a href="/blog/database-schema-examples">Database Schema Examples &rarr;</a></li>
+                <li><a href="/blog/postgresql-data-types">PostgreSQL Data Types — TIMESTAMPTZ, JSONB, UUID, Arrays &rarr;</a></li>
             </ul>
         </nav>
     </article>
