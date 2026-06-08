@@ -56,6 +56,50 @@ class AdminControllerTest extends TestCase
             ->assertStatus(200);
     }
 
+    public function test_admin_can_verify_user(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => null]);
+
+        $this->withSession($this->adminSession)
+            ->postJson("/admin/users/{$user->id}/verify")
+            ->assertOk()
+            ->assertJson([
+                'verified' => true,
+                'changed' => true,
+            ]);
+
+        $this->assertNotNull($user->fresh()->email_verified_at);
+    }
+
+    public function test_verifying_user_is_idempotent(): void
+    {
+        $verifiedAt = now()->subDay()->startOfSecond();
+        $user = User::factory()->create(['email_verified_at' => $verifiedAt]);
+
+        $this->withSession($this->adminSession)
+            ->postJson("/admin/users/{$user->id}/verify")
+            ->assertOk()
+            ->assertJson([
+                'verified' => true,
+                'changed' => false,
+            ]);
+
+        $this->assertEquals(
+            $verifiedAt->format('Y-m-d H:i:s'),
+            $user->fresh()->email_verified_at->format('Y-m-d H:i:s'),
+        );
+    }
+
+    public function test_verify_user_requires_admin_session(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => null]);
+
+        $this->postJson("/admin/users/{$user->id}/verify")
+            ->assertRedirect('/admin/login');
+
+        $this->assertNull($user->fresh()->email_verified_at);
+    }
+
     public function test_feature_diagram_returns_ok(): void
     {
         $diagram = Diagram::factory()->create();

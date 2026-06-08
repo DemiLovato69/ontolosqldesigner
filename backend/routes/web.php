@@ -44,6 +44,7 @@ Route::prefix('/admin')->group(function () {
         Route::get('/library', [AdminController::class, 'showLibrary'])->name('admin.library');
         Route::get('/reviews', [AdminController::class, 'showReviews'])->name('admin.reviews');
         Route::post('/impersonate/{user}', [AdminController::class, 'impersonate'])->name('admin.impersonate');
+        Route::post('/users/{user}/verify', [AdminController::class, 'verifyUser'])->name('admin.users.verify');
         Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('admin.users.destroy');
         Route::post('/diagrams/{diagram}/feature', [AdminController::class, 'featureDiagram'])->name('admin.diagrams.feature');
         Route::delete('/diagrams/{diagram}/feature', [AdminController::class, 'unfeatureDiagram'])->name('admin.diagrams.unfeature');

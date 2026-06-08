@@ -57,6 +57,7 @@ Route::middleware(['auth:sanctum', 'track.seen'])->group(function () {
 
         Route::get('/json/export/{diagram}', [DiagramController::class, 'exportJson']);
         Route::get('/migration/export/{diagram}', [DiagramController::class, 'exportMigration']);
+        Route::get('/ontology/export/{diagram}', [DiagramController::class, 'exportOntology']);
 
         Route::get('/{diagram}/changelog', [DiagramChangelogController::class, 'index']);
         Route::post('/{diagram}/changelog', [DiagramChangelogController::class, 'store']);

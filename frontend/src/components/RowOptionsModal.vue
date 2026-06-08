@@ -25,8 +25,8 @@
             <p class="modal_text">Default</p>
             <input type="text" class="modal_text_input" @mousedown.stop v-model="data.defaultValue" @change="$emit('change')" placeholder="NULL">
         </div>
-        <div v-if="dbType === 'mysql'" class="options_modal_row">
-            <p class="modal_text">Comment</p>
+        <div class="options_modal_row">
+            <p class="modal_text">Note</p>
             <input type="text" class="modal_text_input" @mousedown.stop v-model="data.comment" @change="$emit('change')" placeholder="">
         </div>
         <!-- Unique Together section -->

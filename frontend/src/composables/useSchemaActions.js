@@ -232,8 +232,18 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         isSaved.value = false
         const node = schema.value.find(el => el.id === id)
         if (node) whisper('schema-patch', {
-            update: [{ id, data: { sqlType: node.data.sqlType, keyMod: node.data.keyMod, nullable: node.data.nullable, unsigned: node.data.unsigned } }]
+            update: [{ id, data: { sqlType: node.data.sqlType, keyMod: node.data.keyMod, nullable: node.data.nullable, unsigned: node.data.unsigned, defaultValue: node.data.defaultValue, comment: node.data.comment } }]
         })
+    }
+
+    const updateNote = (id, note) => {
+        snapshot(`note-${id}`)
+        const node = schema.value.find(el => el.id === id)
+        if (!node) return
+        const key = node.type === 'table' ? 'note' : 'comment'
+        node.data = { ...node.data, [key]: note }
+        isSaved.value = false
+        whisper('schema-patch', { update: [{ id, data: { [key]: note } }] })
     }
 
     const updateLabel = (id, newLabel) => {
@@ -330,7 +340,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         selectedEdge, showRelationshipModal, modalPosition,
         addTable, copyTable, onPaneClick,
         addRow, addRowAfter, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
-        updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor,
+        updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor, updateNote,
         onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
         openRelationshipModal, closeRelationshipModal,
     }

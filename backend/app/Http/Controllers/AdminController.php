@@ -81,6 +81,17 @@ class AdminController extends Controller
         return $this->success(['token' => $this->adminService->impersonate($user)]);
     }
 
+    public function verifyUser(User $user): JsonResponse
+    {
+        $verified = $this->adminService->verifyUser($user);
+
+        return $this->success([
+            'verified' => true,
+            'changed' => $verified,
+            'email_verified_at' => $user->fresh()->email_verified_at?->toISOString(),
+        ]);
+    }
+
     public function destroy(User $user): JsonResponse
     {
         $this->adminService->deleteUser($user);

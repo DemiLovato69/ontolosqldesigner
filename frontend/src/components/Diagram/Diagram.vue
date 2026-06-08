@@ -152,6 +152,7 @@
                         @add-row="addRow({ id: $event, data: {} })"
                         @resize-start="startTableResize"
                         @update-color="updateTableColor"
+                        @update-note="updateNote"
                     />
                 </template>
 
@@ -175,6 +176,7 @@
                         @row-drag-start="startRowDrag"
                         @update-table-constraints="onTableConstraintsChange(nodeProps.parentNodeId, $event)"
                         @update-table-fulltext="onTableFulltextChange(nodeProps.parentNodeId, $event)"
+                        @update-note="updateNote"
                     />
                 </template>
 
@@ -204,6 +206,7 @@
             v-if="showExportModal"
             :filename="diagramName"
             :diagramId="diagramId"
+            :dbType="diagramDbType"
             @close="showExportModal = false"
             @capture-png="capturePng"
         />
@@ -323,7 +326,7 @@ const {
     selectedEdge, showRelationshipModal, modalPosition,
     addTable, copyTable, onPaneClick,
     addRow, addRowAfter, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
-    updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor,
+    updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor, updateNote,
     onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
     openRelationshipModal, closeRelationshipModal,
 } = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction, defaultTableColor, defaultConnectionColor })

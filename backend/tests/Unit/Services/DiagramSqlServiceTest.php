@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Services;
 
 use App\Models\Diagram;
+use App\Jobs\ImportDiagramSchemaJob;
 use App\Services\DiagramSqlService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -44,6 +45,39 @@ class DiagramSqlServiceTest extends TestCase
         $result = $this->service->exportScript($diagram);
         $this->assertIsString($result);
         $this->assertStringContainsString('users', $result);
+    }
+
+    public function test_create_script_emits_table_and_row_notes(): void
+    {
+        $schema = json_encode([
+            ['id' => 't1', 'type' => 'table', 'label' => 'users', 'data' => ['note' => "Application users\nManaged locally"]],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'name', 'parentNode' => 't1', 'data' => [
+                'sqlType' => 'VARCHAR(255)',
+                'nullable' => false,
+                'comment' => "User's display name",
+            ]],
+        ]);
+
+        $script = $this->service->createScript($schema, 'mysql');
+
+        $this->assertStringContainsString("-- Application users\n-- Managed locally", $script);
+        $this->assertStringContainsString("COMMENT 'User''s display name'", $script);
+    }
+
+    public function test_export_script_for_ontology_diagram_returns_maker_module(): void
+    {
+        $diagram = Diagram::factory()->create([
+            'schema' => [
+                ['id' => 't1', 'type' => 'table', 'label' => 'users'],
+                ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'STRING', 'nullable' => false, 'unsigned' => false]],
+            ],
+            'db_type' => 'ontology',
+        ]);
+
+        $result = $this->service->exportScript($diagram);
+
+        $this->assertStringContainsString('import { defineObject } from "@osdk/maker";', $result);
+        $this->assertStringContainsString('export const users = defineObject({', $result);
     }
 
     public function test_create_script_my_sql_skips_invalid_connection(): void
@@ -434,6 +468,58 @@ class DiagramSqlServiceTest extends TestCase
         $arr = json_decode($this->service->createSchema($sql), true);
         $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertEquals("ENUM('pending','active')", $rows['status']['data']['sqlType']);
+    }
+
+    public function test_create_schema_for_ontology_normalizes_imported_sql_types(): void
+    {
+        $sql = "CREATE TABLE assets (
+            id BIGSERIAL PRIMARY KEY,
+            active TINYINT(1) NOT NULL,
+            score NUMERIC(12,4),
+            payload JSONB,
+            photo BYTEA,
+            located_at TIMESTAMP,
+            status ENUM('draft','published'),
+            tags SET('internal','external')
+        );";
+
+        $arr = json_decode($this->service->createSchema($sql, 'ontology'), true);
+        $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+
+        $this->assertEquals('LONG', $rows['id']['data']['sqlType']);
+        $this->assertEquals('BOOLEAN', $rows['active']['data']['sqlType']);
+        $this->assertEquals('DECIMAL(12,4)', $rows['score']['data']['sqlType']);
+        $this->assertEquals('STRING', $rows['payload']['data']['sqlType']);
+        $this->assertEquals('ATTACHMENT', $rows['photo']['data']['sqlType']);
+        $this->assertEquals('TIMESTAMP', $rows['located_at']['data']['sqlType']);
+        $this->assertEquals("ENUM('draft','published')", $rows['status']['data']['sqlType']);
+        $this->assertEquals("ENUM('internal','external')", $rows['tags']['data']['sqlType']);
+    }
+
+    public function test_import_schema_for_ontology_normalizes_imported_sql_types(): void
+    {
+        $diagram = Diagram::factory()->create(['db_type' => 'ontology']);
+
+        $this->service->importSchema($diagram, 'CREATE TABLE users (id INT PRIMARY KEY, name VARCHAR(255), created_at DATETIME);');
+
+        $rows = array_column(array_filter($diagram->refresh()->schema, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $this->assertEquals('INTEGER', $rows['id']['data']['sqlType']);
+        $this->assertEquals('STRING', $rows['name']['data']['sqlType']);
+        $this->assertEquals('TIMESTAMP', $rows['created_at']['data']['sqlType']);
+    }
+
+    public function test_import_job_for_ontology_normalizes_imported_sql_types(): void
+    {
+        $diagram = Diagram::factory()->create([
+            'db_type' => 'ontology',
+            'script' => 'CREATE TABLE users (id BIGINT PRIMARY KEY, birth_date DATE);',
+        ]);
+
+        (new ImportDiagramSchemaJob($diagram))->handle($this->service);
+
+        $rows = array_column(array_filter($diagram->refresh()->schema, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
+        $this->assertEquals('LONG', $rows['id']['data']['sqlType']);
+        $this->assertEquals('DATE', $rows['birth_date']['data']['sqlType']);
     }
 
     public function test_create_migration_enum_values(): void

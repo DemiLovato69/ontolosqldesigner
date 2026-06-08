@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Jobs;
 
+use App\Enums\DbType;
 use App\Enums\ImportStatus;
 use App\Models\Diagram;
 use App\Services\DiagramSqlService;
@@ -54,7 +55,10 @@ class ImportDiagramSchemaJob implements ShouldQueue
         $this->diagram->import_status = ImportStatus::PROCESSING;
         $this->diagram->save();
 
-        $this->diagram->schema = json_decode($service->createSchema($this->diagram->script), true);
+        $this->diagram->schema = json_decode(
+            $service->createSchema($this->diagram->script, ($this->diagram->db_type ?? DbType::MYSQL)->value),
+            true
+        );
         $this->diagram->import_status = ImportStatus::DONE;
         $this->diagram->import_error = null;
         $this->diagram->save();

@@ -24,6 +24,7 @@ use App\Models\User;
 use App\Services\DiagramCrudService;
 use App\Services\DiagramSharingService;
 use App\Services\DiagramSqlService;
+use App\Services\OntologyMakerService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -42,6 +43,7 @@ class DiagramController extends Controller
         private readonly DiagramCrudService $crudService,
         private readonly DiagramSharingService $sharingService,
         private readonly DiagramSqlService $sqlService,
+        private readonly OntologyMakerService $ontologyMakerService,
     ) {}
 
     #[Subgroup('CRUD')]
@@ -74,9 +76,16 @@ class DiagramController extends Controller
             library: (bool) ($validated['library'] ?? false),
         );
 
-        $this->crudService->createDiagram($dto);
+        $diagram = $this->crudService->createDiagram($dto);
 
-        return $this->created(['status' => true, 'message' => 'Diagram created']);
+        return $this->created([
+            'status' => true,
+            'message' => 'Diagram created',
+            'diagram' => [
+                'id' => $diagram->id,
+                'share_token' => $diagram->share_token,
+            ],
+        ]);
     }
 
     /**
@@ -204,6 +213,23 @@ class DiagramController extends Controller
         $this->authorize('export', $diagram);
 
         return $this->success($this->sqlService->createJson(json_encode($diagram->schema)));
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    #[Subgroup('Ontology')]
+    public function exportOntology(Diagram $diagram): Response
+    {
+        $this->authorize('export', $diagram);
+
+        $module = $this->ontologyMakerService->createModule(json_encode($diagram->schema));
+        $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $diagram->name).'.mts';
+
+        return response($module, 200, [
+            'Content-Type' => 'text/typescript; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$filename}\"",
+        ]);
     }
 
     /**

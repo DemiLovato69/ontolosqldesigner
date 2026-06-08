@@ -15,7 +15,7 @@ class DiagramResource extends JsonResource
     /** @return array<string, mixed> */
     #[ResponseField('id', 'int', 'The diagram ID.')]
     #[ResponseField('name', 'string', 'The diagram name.')]
-    #[ResponseField('db_type', 'string', 'The database type.', enum: ['mysql', 'postgresql'])]
+    #[ResponseField('db_type', 'string', 'The diagram output type.', enum: ['mysql', 'postgresql', 'sqlite', 'oracle', 'sqlserver', 'msaccess', 'ontology'])]
     #[ResponseField('schema', 'object', 'The diagram schema (tables, columns, relations).')]
     #[ResponseField('script', 'string', 'The raw SQL script.')]
     #[ResponseField('share_token', 'string', 'Token used to share the diagram publicly.')]

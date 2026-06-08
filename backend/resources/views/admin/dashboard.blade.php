@@ -206,6 +206,24 @@
             transition: background .2s, border-color .2s;
         }
         .email-btn:hover { background: #f0f5ff; border-color: #2c5f8f; }
+        .verify-btn {
+            background: none;
+            border: 1px solid #9bc8ae;
+            border-radius: 4px;
+            color: #2e7d52;
+            padding: 7px 14px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+            cursor: pointer;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background .2s, border-color .2s;
+        }
+        .verify-btn:hover { background: #effaf4; border-color: #2e7d52; }
+        .verify-btn:disabled { opacity: .4; cursor: default; }
         .modal-overlay {
             position: fixed;
             inset: 0;
@@ -335,7 +353,7 @@
             .user-header { flex-wrap: wrap; gap: .6rem; }
             .user-info { width: 100%; min-width: 0; }
             .user-header > div:last-child { width: 100%; flex-wrap: wrap; }
-            .impersonate-btn, .email-btn, .delete-btn { flex: 1 1 calc(50% - 4px); text-align: center; }
+            .impersonate-btn, .email-btn, .verify-btn, .delete-btn { flex: 1 1 calc(50% - 4px); text-align: center; }
 
             .section-heading { flex-wrap: wrap; gap: 6px; }
             .section-heading > div { width: 100%; justify-content: flex-start !important; }
@@ -447,7 +465,7 @@
                             @if ($user->email_verified_at)
                                 <span class="verified">Verified</span>
                             @else
-                                <span class="unverified">Unverified</span>
+                                <span class="unverified" id="verification-status-{{ $user->id }}">Unverified</span>
                             @endif
                             &nbsp;&middot;&nbsp;
                             Registered: {{ $user->created_at->setTimezone('Europe/Moscow')->format('d M Y H:i') }} MSK
@@ -456,6 +474,14 @@
                         </div>
                     </div>
                     <div style="display:flex;gap:8px">
+                        @if (! $user->email_verified_at)
+                            <button
+                                class="verify-btn"
+                                onclick="verifyUser({{ $user->id }}, '{{ addslashes($user->email) }}', this)"
+                            >
+                                Verify
+                            </button>
+                        @endif
                         <button
                             class="impersonate-btn"
                             onclick="impersonate({{ $user->id }}, this)"
@@ -632,6 +658,33 @@
                 showToast('Error: ' + e.message, true);
                 btn.disabled = false;
                 btn.textContent = 'Login As';
+            }
+        }
+
+        async function verifyUser(userId, email, btn) {
+            if (!confirm(`Mark ${email} as verified?`)) return;
+
+            btn.disabled = true;
+            btn.textContent = '...';
+
+            try {
+                const res = await fetch(`/admin/users/${userId}/verify`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Accept': 'application/json' },
+                });
+                if (!res.ok) throw new Error('Server error');
+
+                const status = document.getElementById(`verification-status-${userId}`);
+                if (status) {
+                    status.textContent = 'Verified';
+                    status.className = 'verified';
+                }
+                btn.remove();
+                showToast('Account verified');
+            } catch (e) {
+                showToast('Error: ' + e.message, true);
+                btn.disabled = false;
+                btn.textContent = 'Verify';
             }
         }
 

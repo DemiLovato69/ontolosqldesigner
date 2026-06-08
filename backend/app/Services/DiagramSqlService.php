@@ -27,6 +27,8 @@ use ZipArchive;
 
 class DiagramSqlService
 {
+    public function __construct(private readonly OntologyMakerService $ontologyMakerService) {}
+
     public function startImport(Diagram $diagram, string $script, User $user): void
     {
         $diagram->script = $script;
@@ -65,7 +67,7 @@ class DiagramSqlService
 
     public function importSchema(Diagram $diagram, string $script): string
     {
-        $diagram->schema = json_decode($this->createSchema($script), true);
+        $diagram->schema = json_decode($this->createSchema($script, ($diagram->db_type ?? DbType::MYSQL)->value), true);
         $diagram->save();
 
         return json_encode($diagram->schema);
@@ -73,11 +75,14 @@ class DiagramSqlService
 
     public function exportScript(Diagram $diagram): string
     {
-        $sqlScript = $this->createScript(json_encode($diagram->schema), ($diagram->db_type ?? DbType::MYSQL)->value);
-        $diagram->script = $sqlScript;
+        $dbType = $diagram->db_type ?? DbType::MYSQL;
+        $script = $dbType === DbType::ONTOLOGY
+            ? $this->ontologyMakerService->createModule(json_encode($diagram->schema))
+            : $this->createScript(json_encode($diagram->schema), $dbType->value);
+        $diagram->script = $script;
         $diagram->save();
 
-        return $sqlScript;
+        return $script;
     }
 
     public function createMigrationZip(Diagram $diagram): string
@@ -147,7 +152,7 @@ class DiagramSqlService
                     $parts[] = "DEFAULT '{$row['default_value']}'";
                 }
                 if ($dialect->supportsColumnComment() && $row['comment'] !== null && $row['comment'] !== '') {
-                    $parts[] = "COMMENT '{$row['comment']}'";
+                    $parts[] = "COMMENT '".str_replace("'", "''", $row['comment'])."'";
                 }
 
                 return implode(' ', array_filter($parts));
@@ -185,6 +190,13 @@ class DiagramSqlService
 
             foreach ($enumTypeDecls as $decl) {
                 $lines[] = $decl;
+            }
+            if ($table['note'] !== '') {
+                $noteLines = array_map(
+                    fn (string $noteLine): string => '-- '.trim($noteLine),
+                    preg_split('/\R/', $table['note']) ?: []
+                );
+                $lines[] = implode("\n", $noteLines);
             }
             $ifNotExists = $dialect->supportsIfNotExists() ? 'IF NOT EXISTS ' : '';
             $lines[] = 'CREATE TABLE '.$ifNotExists.$qi($table['name'])." (\n".implode(",\n", $allDefs)."\n);";
@@ -267,7 +279,7 @@ class DiagramSqlService
     }
 
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
-    public function createSchema(string $script): string
+    public function createSchema(string $script, string $dbType = 'mysql'): string
     {
         $tables = [];
         $rows = [];
@@ -294,7 +306,7 @@ class DiagramSqlService
                 $tableIdByName[$m[1]] = $tableId;
                 $tableColorById[$tableId] = $node['data']['color'];
 
-                $parsed = $this->parseColumns($m[2], $tableId, $tableX, 50, $enumTypes);
+                $parsed = $this->parseColumns($m[2], $tableId, $tableX, 50, $enumTypes, $dbType);
                 array_push($rows, ...$parsed['rows']);
                 foreach ($parsed['rows'] as $row) {
                     $rowIndex[$tableId][$row['label']] = $row;
@@ -391,6 +403,7 @@ class DiagramSqlService
                 'table' => $tables->push([
                     'id' => $item['id'],
                     'name' => $item['label'],
+                    'note' => trim((string) ($item['data']['note'] ?? '')),
                     'unique_together' => $item['data']['uniqueTogether'] ?? [],
                     'fulltext_indexes' => $item['data']['fulltextIndexes'] ?? [],
                 ]),
@@ -521,7 +534,7 @@ class DiagramSqlService
      * @param  array<string, string>  $enumTypes  lowercase type_name => "ENUM('val1','val2')" (from CREATE TYPE statements)
      * @return array{rows: list<array<string, mixed>>, uniqueTogether: list<list<string>>, fulltextIndexes: list<list<string>>}
      */
-    private function parseColumns(string $tableContent, string $tableId, int $tableX, int $tableY = 50, array $enumTypes = []): array
+    private function parseColumns(string $tableContent, string $tableId, int $tableX, int $tableY = 50, array $enumTypes = [], string $dbType = 'mysql'): array
     {
         $lines = $this->splitColumnDefinitions($tableContent);
         $constraints = [];
@@ -562,7 +575,7 @@ class DiagramSqlService
             if (! preg_match('/^["`]?(\w+)["`]?\s+["`]?([a-zA-Z_]\w*)["`]?(?:\(([^)]+)\))?(?:\s+(UNSIGNED))?(?:\s+(NOT\s+NULL|NULL))?(?:\s+(PRIMARY\s+KEY|UNIQUE))?(?:\s+DEFAULT\s+\'([^\']*)\')?(?:\s+COMMENT\s+\'([^\']*)\')?/i', $line, $m)) {
                 continue;
             }
-            if (strtoupper($m[2]) === 'SET') {
+            if (strtoupper($m[2]) === 'SET' && $dbType !== DbType::ONTOLOGY->value) {
                 $m[2] = 'VARCHAR';
                 $m[3] = '255';
             }
@@ -578,6 +591,10 @@ class DiagramSqlService
             // Resolve enum types declared via CREATE TYPE ... AS ENUM (PostgreSQL import)
             $resolvedEnumType = $enumTypes[strtolower($m[2])] ?? null;
             $sqlType = $resolvedEnumType ?? strtoupper($m[2]).(isset($m[3]) && $m[3] !== '' ? "($m[3])" : '');
+            if ($dbType === DbType::ONTOLOGY->value && str_starts_with(strtoupper($sqlType), 'SET(')) {
+                $sqlType = 'ENUM'.substr($sqlType, 3);
+            }
+            $sqlType = $this->normalizeImportedSqlType($sqlType, $dbType);
             $unsigned = isset($m[4]) && strtoupper($m[4]) === 'UNSIGNED';
             $nullable = isset($m[5]) ? strtoupper($m[5]) === 'NULL' : true;
             $keyMod = isset($m[6]) ? strtoupper(preg_replace('/\s+/', ' ', $m[6])) : ($constraints[$baseName] ?? null);
@@ -595,6 +612,60 @@ class DiagramSqlService
         }
 
         return ['rows' => $rows, 'uniqueTogether' => $uniqueTogetherConstraints, 'fulltextIndexes' => $fulltextIndexConstraints];
+    }
+
+    private function normalizeImportedSqlType(string $sqlType, string $dbType): string
+    {
+        if ($dbType !== DbType::ONTOLOGY->value) {
+            return $sqlType;
+        }
+
+        $type = strtolower(trim($sqlType));
+        $base = preg_replace('/\s*\(.*/', '', $type);
+
+        if (str_starts_with($base, 'enum')) {
+            return $sqlType;
+        }
+        if ($type === 'tinyint(1)' || in_array($base, ['bool', 'boolean', 'yesno', 'bit'], true)) {
+            return 'BOOLEAN';
+        }
+        if (in_array($base, ['tinyint', 'byte'], true)) {
+            return 'BYTE';
+        }
+        if (in_array($base, ['smallint', 'int2', 'short', 'smallserial'], true)) {
+            return 'SHORT';
+        }
+        if (in_array($base, ['mediumint', 'int', 'integer', 'int4', 'serial', 'long', 'autoincrement'], true)) {
+            return 'INTEGER';
+        }
+        if (in_array($base, ['bigint', 'int8', 'bigserial'], true)) {
+            return 'LONG';
+        }
+        if (in_array($base, ['decimal', 'numeric', 'number', 'currency', 'money', 'smallmoney'], true)) {
+            return preg_match('/\((\d+)\s*,\s*(\d+)\)/', $type, $matches)
+                ? sprintf('DECIMAL(%d,%d)', $matches[1], $matches[2])
+                : 'DECIMAL(10,2)';
+        }
+        if (in_array($base, ['float', 'real', 'single', 'float4', 'binary_float'], true)) {
+            return 'FLOAT';
+        }
+        if (in_array($base, ['double', 'double precision', 'float8', 'binary_double'], true)) {
+            return 'DOUBLE';
+        }
+        if ($base === 'date') {
+            return 'DATE';
+        }
+        if (str_starts_with($base, 'timestamp') || in_array($base, ['datetime', 'datetime2', 'smalldatetime', 'datetimeoffset'], true)) {
+            return 'TIMESTAMP';
+        }
+        if (in_array($base, ['blob', 'tinyblob', 'mediumblob', 'longblob', 'bytea', 'binary', 'varbinary', 'raw', 'oleobject', 'attachment'], true)) {
+            return 'ATTACHMENT';
+        }
+        if (in_array($base, ['geopoint', 'geoshape', 'mediareference', 'geotimeseries'], true)) {
+            return strtoupper($base);
+        }
+
+        return 'STRING';
     }
 
     /** @return list<array{sourceCol: string, targetTable: string, targetCol: string}> */

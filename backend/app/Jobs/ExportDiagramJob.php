@@ -8,6 +8,7 @@ use App\Enums\DbType;
 use App\Enums\ExportStatus;
 use App\Models\Diagram;
 use App\Services\DiagramSqlService;
+use App\Services\OntologyMakerService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -40,7 +41,7 @@ class ExportDiagramJob implements ShouldQueue
         return [new WithoutOverlapping((string) $this->diagram->id)];
     }
 
-    public function handle(DiagramSqlService $service): void
+    public function handle(DiagramSqlService $service, OntologyMakerService $ontologyMakerService): void
     {
         ini_set('memory_limit', '512M');
 
@@ -48,9 +49,12 @@ class ExportDiagramJob implements ShouldQueue
         $this->diagram->save();
 
         $schemaJson = json_encode($this->diagram->schema);
-        $sqlScript = $service->createScript($schemaJson, ($this->diagram->db_type ?? DbType::MYSQL)->value);
+        $dbType = $this->diagram->db_type ?? DbType::MYSQL;
+        $script = $dbType === DbType::ONTOLOGY
+            ? $ontologyMakerService->createModule($schemaJson)
+            : $service->createScript($schemaJson, $dbType->value);
 
-        $this->diagram->script = $sqlScript;
+        $this->diagram->script = $script;
         $this->diagram->export_json = $service->createJson($schemaJson);
         $this->diagram->export_status = ExportStatus::DONE;
         $this->diagram->export_error = null;

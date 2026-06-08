@@ -26,9 +26,30 @@
         <SvgIcon name="copy" :size="13" />
     </button>
 
+    <button
+        v-if="canEdit || data.note"
+        ref="noteBtnRef"
+        :class="['table_button', 'table_button--note', { 'table_button--has-note': data.note }]"
+        @mousedown.stop
+        @click="showNote = !showNote"
+        :title="data.note || 'Add table note'"
+    >
+        <SvgIcon name="note" :size="13" />
+    </button>
+
     <button v-if="canEdit" class="table_button" @mousedown.stop @click="$emit('delete-node', id)">
         <SvgIcon name="trash" :size="13" />
     </button>
+
+    <NodeNoteModal
+        v-if="showNote"
+        title="Table note"
+        :note="data.note ?? ''"
+        :canEdit="canEdit"
+        :ignore="[noteBtnRef]"
+        @save="$emit('update-note', id, $event)"
+        @close="showNote = false"
+    />
 
     <template v-if="canEdit">
         <div class="table_resize_handle table_resize_handle--left" @mousedown.stop="$emit('resize-start', id, $event, 'left')"></div>
@@ -37,7 +58,9 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import SvgIcon from '../SvgIcon.vue'
+import NodeNoteModal from '../NodeNoteModal.vue'
 
 defineProps({
     id: String,
@@ -46,7 +69,10 @@ defineProps({
     canEdit: { type: Boolean, default: true },
 })
 
-defineEmits(['delete-node', 'update-label', 'copy-table', 'add-row', 'resize-start', 'update-color'])
+defineEmits(['delete-node', 'update-label', 'copy-table', 'add-row', 'resize-start', 'update-color', 'update-note'])
+
+const showNote = ref(false)
+const noteBtnRef = ref(null)
 </script>
 
 <style scoped>

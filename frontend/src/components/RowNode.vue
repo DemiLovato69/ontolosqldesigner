@@ -63,9 +63,30 @@
     </div>
 
     <!-- Options -->
+    <button
+        v-if="canEdit || data.comment"
+        ref="noteBtnRef"
+        :class="['table_button', { 'table_button--has-note': data.comment }]"
+        @mousedown.stop
+        @click="showNote = !showNote"
+        :title="data.comment || 'Add row note'"
+    >
+        <SvgIcon name="note" :size="13" />
+    </button>
+
     <button v-if="canEdit" ref="gearBtnRef" class="table_button" @mousedown.stop @click="$emit('toggle-options-modal', id)">
         <SvgIcon name="gear" :size="13" />
     </button>
+
+    <NodeNoteModal
+        v-if="showNote"
+        title="Row note"
+        :note="data.comment ?? ''"
+        :canEdit="canEdit"
+        :ignore="[noteBtnRef]"
+        @save="$emit('update-note', id, $event)"
+        @close="showNote = false"
+    />
 
     <!-- Options modal -->
     <RowOptionsModal
@@ -103,6 +124,7 @@ import { Handle } from '@vue-flow/core'
 import SvgIcon from './SvgIcon.vue'
 import RowOptionsModal from './RowOptionsModal.vue'
 import EnumValuesModal from './EnumValuesModal.vue'
+import NodeNoteModal from './NodeNoteModal.vue'
 
 const props = defineProps({
     id: String,
@@ -115,7 +137,7 @@ const props = defineProps({
     tableFulltextIndexes: { type: Array, default: () => [] },
 })
 
-const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev'])
+const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev', 'update-note'])
 
 const emitChange = () => emit('change', props.id)
 
@@ -331,7 +353,32 @@ const SQLITE_TYPES = {
     ],
 }
 
+const ONTOLOGY_TYPES = {
+    'Primitive': [
+        { value: 'BOOLEAN', label: 'BOOLEAN' },
+        { value: 'BYTE', label: 'BYTE' },
+        { value: 'SHORT', label: 'SHORT' },
+        { value: 'INTEGER', label: 'INTEGER' },
+        { value: 'LONG', label: 'LONG' },
+        { value: 'FLOAT', label: 'FLOAT' },
+        { value: 'DOUBLE', label: 'DOUBLE' },
+        { value: 'DECIMAL(10,2)', label: 'DECIMAL' },
+        { value: 'STRING', label: 'STRING' },
+        { value: "ENUM('')", label: 'ENUM / VALUE TYPE' },
+        { value: 'DATE', label: 'DATE' },
+        { value: 'TIMESTAMP', label: 'TIMESTAMP' },
+        { value: 'ATTACHMENT', label: 'ATTACHMENT' },
+    ],
+    'Geospatial & Media': [
+        { value: 'GEOPOINT', label: 'GEOPOINT' },
+        { value: 'GEOSHAPE', label: 'GEOSHAPE' },
+        { value: 'MEDIAREFERENCE', label: 'MEDIA REFERENCE' },
+        { value: 'GEOTIMESERIES', label: 'GEOTIME SERIES' },
+    ],
+}
+
 const typeGroups = computed(() => {
+    if (props.dbType === 'ontology') return ONTOLOGY_TYPES
     if (props.dbType === 'postgresql') return POSTGRESQL_TYPES
     if (props.dbType === 'sqlite') return SQLITE_TYPES
     if (props.dbType === 'oracle') return ORACLE_TYPES
@@ -354,8 +401,10 @@ const isEnumEmpty = computed(() => {
 })
 
 const showEnumModal = ref(false)
+const showNote = ref(false)
 const enumBtnRef = ref(null)
 const gearBtnRef = ref(null)
+const noteBtnRef = ref(null)
 
 watch(isEnum, (val) => { if (!val) showEnumModal.value = false })
 

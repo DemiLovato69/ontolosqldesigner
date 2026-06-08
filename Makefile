@@ -58,6 +58,8 @@ _wait_postgres:
 _composer_install:
 	docker-compose -p snydiagram exec -T php sh -c "\
 		cd /var/www/html/backend && \
+		mkdir -p bootstrap/cache storage/framework/sessions storage/framework/views storage/framework/cache storage/logs && \
+		find bootstrap/cache storage -type d -exec chmod 777 {} \; && \
 		composer clear-cache && \
 		composer install --no-interaction --prefer-dist --no-suggest --no-progress --optimize-autoloader"
 

@@ -41,7 +41,24 @@ class DiagramControllerTest extends TestCase
         $this->auth()
             ->postJson('/api/diagrams', ['name' => 'New '.uniqid()])
             ->assertStatus(201)
+            ->assertJsonFragment(['status' => true])
+            ->assertJsonStructure(['diagram' => ['id', 'share_token']]);
+    }
+
+    public function test_store_creates_ontology_diagram(): void
+    {
+        $name = 'Ontology '.uniqid();
+
+        $this->auth()
+            ->postJson('/api/diagrams', ['name' => $name, 'db_type' => 'ontology'])
+            ->assertStatus(201)
             ->assertJsonFragment(['status' => true]);
+
+        $this->assertDatabaseHas('diagrams', [
+            'name' => $name,
+            'db_type' => 'ontology',
+            'user_id' => $this->user->id,
+        ]);
     }
 
     public function test_show_returns_diagram(): void

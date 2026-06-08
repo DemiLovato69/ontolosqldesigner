@@ -12,4 +12,5 @@ enum DbType: string
     case ORACLE = 'oracle';
     case SQLSERVER = 'sqlserver';
     case MSACCESS = 'msaccess';
+    case ONTOLOGY = 'ontology';
 }

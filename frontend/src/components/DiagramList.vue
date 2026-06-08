@@ -52,9 +52,16 @@
                         <span
                             v-else
                             class="diagram-card__name"
-                            @click.stop="startRename(diagram)"
-                            title="Click to rename"
+                            title="Open diagram"
                         >{{ diagram.name }}</span>
+                        <button
+                            v-if="renamingId !== diagram.id"
+                            class="diagram-card__rename"
+                            @click.stop="startRename(diagram)"
+                            title="Rename"
+                        >
+                            <SvgIcon name="edit" :size="13" />
+                        </button>
                     </div>
                 </div>
             </div>
@@ -151,6 +158,7 @@ import sqliteIcon from '../icons/sqlite.svg'
 import oracleIcon from '../icons/oracle.svg'
 import sqlserverIcon from '../icons/sqlserver.svg'
 import msaccessIcon from '../icons/msaccess.svg'
+import ontologyIcon from '../icons/ontology.svg'
 
 const $toast = useToast()
 
@@ -166,7 +174,7 @@ export default {
             showNewForm: false,
             renamingId: null,
             originalName: null,
-            dbIcons: { mysql: mysqlIcon, postgresql: postgresqlIcon, sqlite: sqliteIcon, oracle: oracleIcon, sqlserver: sqlserverIcon, msaccess: msaccessIcon },
+            dbIcons: { mysql: mysqlIcon, postgresql: postgresqlIcon, sqlite: sqliteIcon, oracle: oracleIcon, sqlserver: sqlserverIcon, msaccess: msaccessIcon, ontology: ontologyIcon },
             dbOptions: [
                 { type: 'mysql', label: 'MySQL' },
                 { type: 'postgresql', label: 'PostgreSQL' },
@@ -174,6 +182,7 @@ export default {
                 { type: 'oracle', label: 'Oracle' },
                 { type: 'sqlserver', label: 'SQL Server' },
                 { type: 'msaccess', label: 'MS Access' },
+                { type: 'ontology', label: 'Ontology' },
             ]
         }
     },
@@ -202,8 +211,11 @@ export default {
                 this.newDiagramPublic = true
                 this.newDiagramInLibrary = true
                 this.showNewForm = false
-                await this.fetchDiagrams()
                 $toast.success(response.data.message)
+                await router.push({
+                    name: 'diagram.show',
+                    params: { token: response.data.diagram.share_token }
+                })
             } catch (error) {
                 const errors = error.response?.data?.errors
                 if (errors?.name) {
@@ -421,7 +433,30 @@ export default {
     white-space: nowrap;
     flex: 0 1 50%;
     text-align: center;
-    cursor: text;
+}
+
+.diagram-card__rename {
+    position: absolute;
+    right: 0.65rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.25rem;
+    border: 0;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    opacity: 0;
+    transition: color 120ms, opacity 120ms;
+}
+
+.diagram-card:hover .diagram-card__rename,
+.diagram-card__rename:focus-visible {
+    opacity: 1;
+}
+
+.diagram-card__rename:hover {
+    color: var(--text-primary);
 }
 
 .diagram-card__db-icon {

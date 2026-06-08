@@ -128,6 +128,15 @@ class AdminService
         return $user->createToken('admin-impersonate')->plainTextToken;
     }
 
+    public function verifyUser(User $user): bool
+    {
+        if ($user->hasVerifiedEmail()) {
+            return false;
+        }
+
+        return $user->markEmailAsVerified();
+    }
+
     /**
      * Delete a user along with all their diagrams and tokens.
      */

@@ -66,6 +66,11 @@ export const Diagram = {
         return response.data
     },
 
+    exportOntology: async (id) => {
+        const response = await axios.get(`/api/diagrams/ontology/export/${id}`, { responseType: 'blob' })
+        return response.data
+    },
+
     save: (id, schema) =>
         request(async () => {
             const response = await axios.put(`/api/diagrams/${id}`, { id, schema })

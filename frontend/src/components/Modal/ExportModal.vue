@@ -24,21 +24,21 @@
                         </svg>
                         <span v-else class="export-spinner"></span>
                     </div>
-                    <span class="export-card__label">Copy SQL</span>
+                    <span class="export-card__label">{{ isOntology ? 'Copy Ontology' : 'Copy SQL' }}</span>
                     <span class="export-card__desc">{{ activeExport === 'copy' ? 'Copying…' : 'Copy to clipboard' }}</span>
                 </button>
 
-                <button class="export-card" :class="{ 'export-card--active': activeExport === 'sql' }" :disabled="isExporting" @click="downloadSql('sql')">
+                <button class="export-card" :class="{ 'export-card--active': activeExport === 'sql' }" :disabled="isExporting" @click="downloadScript">
                     <div class="export-card__icon">
                         <svg v-if="activeExport !== 'sql'" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M10 6h20l10 10v26a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="var(--bg-surface-alt)" stroke="var(--color-primary)" stroke-width="2"/>
                             <path d="M30 6v10h10" stroke="var(--color-primary)" stroke-width="2" stroke-linejoin="round"/>
-                            <text x="24" y="35" text-anchor="middle" font-size="10" font-weight="700" font-family="monospace" fill="var(--color-primary)">.sql</text>
+                            <text x="24" y="35" text-anchor="middle" font-size="10" font-weight="700" font-family="monospace" fill="var(--color-primary)">{{ isOntology ? '.mts' : '.sql' }}</text>
                         </svg>
                         <span v-else class="export-spinner"></span>
                     </div>
-                    <span class="export-card__label">.sql</span>
-                    <span class="export-card__desc">{{ activeExport === 'sql' ? 'Downloading…' : 'SQL script file' }}</span>
+                    <span class="export-card__label">{{ isOntology ? '.mts' : '.sql' }}</span>
+                    <span class="export-card__desc">{{ activeExport === 'sql' ? 'Downloading…' : (isOntology ? 'Foundry Maker module' : 'SQL script file') }}</span>
                 </button>
 
                 <button class="export-card" :class="{ 'export-card--active': activeExport === 'json' }" :disabled="isExporting" @click="downloadJson">
@@ -52,6 +52,22 @@
                     </div>
                     <span class="export-card__label">.json</span>
                     <span class="export-card__desc">{{ activeExport === 'json' ? 'Downloading…' : 'Diagram JSON backup' }}</span>
+                </button>
+
+                <button v-if="!isOntology" class="export-card" :class="{ 'export-card--active': activeExport === 'ontology' }" :disabled="isExporting" @click="downloadOntology">
+                    <div class="export-card__icon">
+                        <svg v-if="activeExport !== 'ontology'" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 6h20l10 10v26a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="var(--bg-surface-alt)" stroke="var(--color-primary)" stroke-width="2"/>
+                            <path d="M30 6v10h10" stroke="var(--color-primary)" stroke-width="2" stroke-linejoin="round"/>
+                            <circle cx="17" cy="27" r="3" fill="var(--color-primary)"/>
+                            <circle cx="31" cy="22" r="3" fill="var(--color-primary)"/>
+                            <circle cx="31" cy="34" r="3" fill="var(--color-primary)"/>
+                            <path d="M20 26l8-3M20 28l8 5" stroke="var(--color-primary)" stroke-width="2"/>
+                        </svg>
+                        <span v-else class="export-spinner"></span>
+                    </div>
+                    <span class="export-card__label">Ontology</span>
+                    <span class="export-card__desc">{{ activeExport === 'ontology' ? 'Generating…' : 'Foundry Maker (.mts)' }}</span>
                 </button>
 
                 <button class="export-card export-card--png" :class="{ 'export-card--active': activeExport === 'png' }" :disabled="isExporting" @click="capturePng">
@@ -145,7 +161,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import axios from '@/axios.js'
 import { useToast } from 'vue-toast-notification'
 import { Diagram } from '@/services/Diagram.js'
@@ -155,8 +171,10 @@ const $toast = useToast()
 const props = defineProps({
     filename:  { type: String, default: 'schema' },
     diagramId: { type: Number, default: null },
+    dbType:    { type: String, default: 'mysql' },
 })
 
+const isOntology = computed(() => props.dbType === 'ontology')
 const isExporting  = ref(false)
 const activeExport = ref(null)
 const sqlCache     = ref(null)
@@ -243,13 +261,14 @@ const copyText = () => withExporting('copy', async () => {
     $toast.success('Copied to clipboard')
 })
 
-const downloadSql = (ext) => withExporting('sql', async () => {
-    const sql = await generateSql()
-    const blob = new Blob([sql], { type: 'text/plain' })
+const downloadScript = () => withExporting('sql', async () => {
+    const script = await generateSql()
+    const extension = isOntology.value ? 'mts' : 'sql'
+    const blob = new Blob([script], { type: isOntology.value ? 'text/typescript' : 'text/plain' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${props.filename}.${ext}`
+    a.download = `${props.filename}.${extension}`
     a.click()
     URL.revokeObjectURL(url)
 })
@@ -279,6 +298,16 @@ const downloadLaravelMigrations = () => withExporting('laravel', async () => {
     const a = document.createElement('a')
     a.href = url
     a.download = `${props.filename}_migrations.zip`
+    a.click()
+    URL.revokeObjectURL(url)
+})
+
+const downloadOntology = () => withExporting('ontology', async () => {
+    const blob = await Diagram.exportOntology(props.diagramId)
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${props.filename}.mts`
     a.click()
     URL.revokeObjectURL(url)
 })

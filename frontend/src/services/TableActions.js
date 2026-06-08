@@ -33,6 +33,7 @@ const MARKER = {
 }
 
 export function defaultIntType(dbType) {
+    if (dbType === 'ontology') return 'STRING'
     if (dbType === 'postgresql' || dbType === 'sqlite') return 'INTEGER'
     if (dbType === 'oracle') return 'NUMBER'
     if (dbType === 'sqlserver') return 'INT'
@@ -121,7 +122,7 @@ export const TableActions = {
             type: 'table',
             label: tableName,
             zIndex,
-            data: { toolbarPosition: Position.Top, toolbarVisible: true, color },
+            data: { toolbarPosition: Position.Top, toolbarVisible: true, color, note: '' },
             position,
             style: { ...TABLE_STYLE, background: color, borderColor: color },
         }]
