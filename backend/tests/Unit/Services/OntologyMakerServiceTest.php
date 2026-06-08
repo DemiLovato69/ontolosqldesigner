@@ -40,6 +40,64 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('oneOf: { values: ["draft", "published"], useIgnoreCase: false }', $module);
         $this->assertStringContainsString('export const userToPosts = defineLink({', $module);
         $this->assertStringContainsString('manyForeignKeyProperty: "userId"', $module);
+        $this->assertStringContainsString('cardinality: "OneToMany"', $module);
+    }
+
+    public function test_respects_one_to_one_relationship_type(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'profiles', 'type' => 'table', 'label' => 'profiles'],
+            ['id' => 'profile_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'profiles', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'profile_user_id', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 'profiles', 'data' => ['keyMod' => 'FOREIGN KEY', 'sqlType' => 'LONG']],
+            ['source' => 'user_id', 'target' => 'profile_user_id', 'data' => ['relationshipType' => 'one-to-one']],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('export const userToProfiles = defineLink({', $module);
+        $this->assertStringContainsString('manyForeignKeyProperty: "userId"', $module);
+        $this->assertStringContainsString('cardinality: "OneToOne"', $module);
+    }
+
+    public function test_respects_many_to_one_relationship_type(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'posts', 'type' => 'table', 'label' => 'posts'],
+            ['id' => 'post_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'posts', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'post_user_id', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 'posts', 'data' => ['keyMod' => 'FOREIGN KEY', 'sqlType' => 'LONG']],
+            ['source' => 'post_user_id', 'target' => 'user_id', 'data' => ['relationshipType' => 'many-to-one']],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('export const userToPosts = defineLink({', $module);
+        $this->assertStringContainsString('object: users', $module);
+        $this->assertStringContainsString('object: posts', $module);
+        $this->assertStringContainsString('manyForeignKeyProperty: "userId"', $module);
+        $this->assertStringContainsString('cardinality: "OneToMany"', $module);
+    }
+
+    public function test_respects_many_to_many_relationship_type(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'groups', 'type' => 'table', 'label' => 'groups'],
+            ['id' => 'group_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'groups', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['source' => 'user_id', 'target' => 'group_id', 'data' => ['relationshipType' => 'many-to-many']],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('export const userToGroups = defineLink({', $module);
+        $this->assertStringContainsString('  many: {', $module);
+        $this->assertStringContainsString('  toMany: {', $module);
+        $this->assertStringNotContainsString('manyForeignKeyProperty', $module);
+        $this->assertStringNotContainsString('cardinality:', $module);
     }
 
     public function test_generates_synthetic_composite_primary_key(): void
@@ -56,14 +114,46 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('"playlistIdTrackIdKey": { type: "string"', $module);
     }
 
+    public function test_does_not_emit_actions_by_default(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringNotContainsString('defineCreateObjectAction', $module);
+        $this->assertStringNotContainsString('defineModifyObjectAction', $module);
+        $this->assertStringNotContainsString('defineDeleteObjectAction', $module);
+    }
+
+    public function test_emits_only_enabled_crud_actions(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users', 'data' => [
+                'ontologyActions' => ['create' => true, 'modify' => false, 'delete' => true],
+            ]],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('import { defineCreateObjectAction, defineDeleteObjectAction, defineObject } from "@osdk/maker";', $module);
+        $this->assertStringContainsString('export const createUsersAction = defineCreateObjectAction({', $module);
+        $this->assertStringContainsString('export const deleteUsersAction = defineDeleteObjectAction({', $module);
+        $this->assertStringContainsString('objectType: users', $module);
+        $this->assertStringNotContainsString('defineModifyObjectAction', $module);
+    }
+
     public function test_emits_table_and_row_notes_as_descriptions(): void
     {
         $schema = json_encode([
-            ['id' => 'users', 'type' => 'table', 'label' => 'users', 'data' => ['note' => 'Application users']],
+            ['id' => 'users', 'type' => 'table', 'label' => 'users', 'data' => ['description' => 'Application users']],
             ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => [
                 'keyMod' => 'PRIMARY KEY',
                 'sqlType' => 'LONG',
-                'comment' => 'Stable user identifier',
+                'description' => 'Stable user identifier',
             ]],
         ]);
 
@@ -71,6 +161,106 @@ class OntologyMakerServiceTest extends TestCase
 
         $this->assertStringContainsString('description: "Application users"', $module);
         $this->assertStringContainsString('description: "Stable user identifier"', $module);
+    }
+
+    public function test_emits_explicit_indexed_for_search_setting(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'LONG',
+                'nullable' => false,
+            ]],
+            ['id' => 'email', 'type' => 'row', 'label' => 'email', 'parentNode' => 'users', 'data' => [
+                'sqlType' => 'STRING',
+                'nullable' => true,
+                'indexed' => true,
+            ]],
+            ['id' => 'nickname', 'type' => 'row', 'label' => 'nickname', 'parentNode' => 'users', 'data' => [
+                'sqlType' => 'STRING',
+                'nullable' => true,
+                'indexed' => false,
+            ]],
+            ['id' => 'city', 'type' => 'row', 'label' => 'city', 'parentNode' => 'users', 'data' => [
+                'sqlType' => 'STRING',
+                'nullable' => true,
+            ]],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('"email": { type: "string", displayName: "Email", indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"city": { type: "string", displayName: "City", indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"nickname": { type: "string", displayName: "Nickname" }', $module);
+    }
+
+    public function test_emits_supported_primary_key_and_nullability_constraints(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'LONG',
+                'nullable' => false,
+            ]],
+            ['id' => 'name', 'type' => 'row', 'label' => 'full_name', 'parentNode' => 'users', 'data' => [
+                'sqlType' => 'STRING',
+                'nullable' => false,
+            ]],
+            ['id' => 'nickname', 'type' => 'row', 'label' => 'nickname', 'parentNode' => 'users', 'data' => [
+                'sqlType' => 'STRING',
+                'nullable' => true,
+            ]],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('primaryKeyPropertyApiName: "id"', $module);
+        $this->assertStringContainsString('"id": { type: "long", displayName: "Id", nullability: { noNulls: true, noEmptyCollections: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"fullName": { type: "string", displayName: "Full Name", nullability: { noNulls: true, noEmptyCollections: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"nickname": { type: "string", displayName: "Nickname", indexedForSearch: true }', $module);
+    }
+
+    public function test_emits_constraint_metadata_for_uniques_and_indexes(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users', 'data' => [
+                'uniqueTogether' => [['tenant_id', 'external_id']],
+                'fulltextIndexes' => [['full_name']],
+            ]],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG', 'nullable' => false]],
+            ['id' => 'tenant', 'type' => 'row', 'label' => 'tenant_id', 'parentNode' => 'users', 'data' => ['sqlType' => 'LONG', 'nullable' => false]],
+            ['id' => 'external', 'type' => 'row', 'label' => 'external_id', 'parentNode' => 'users', 'data' => ['keyMod' => 'UNIQUE', 'sqlType' => 'STRING', 'nullable' => false]],
+            ['id' => 'name', 'type' => 'row', 'label' => 'full_name', 'parentNode' => 'users', 'data' => ['keyMod' => 'INDEX', 'sqlType' => 'STRING', 'nullable' => true]],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('// - unique: external_id', $module);
+        $this->assertStringContainsString('// - index: full_name', $module);
+        $this->assertStringContainsString('// - unique together: tenant_id, external_id', $module);
+        $this->assertStringContainsString('// - fulltext index: full_name', $module);
+        $this->assertStringContainsString('"externalId": { type: "string", displayName: "External Id", nullability: { noNulls: true, noEmptyCollections: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"fullName": { type: "string", displayName: "Full Name", indexedForSearch: true }', $module);
+    }
+
+    public function test_skips_invalid_columns_in_table_level_constraints(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users', 'data' => [
+                'uniqueTogether' => [['tenant_id', 'missing_column']],
+                'fulltextIndexes' => [['missing_column']],
+            ]],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG', 'nullable' => false]],
+            ['id' => 'tenant', 'type' => 'row', 'label' => 'tenant_id', 'parentNode' => 'users', 'data' => ['sqlType' => 'LONG', 'nullable' => false]],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringNotContainsString('missing_column', $module);
+        $this->assertStringNotContainsString('unique together: tenant_id', $module);
+        $this->assertStringContainsString('"tenantId": { type: "long", displayName: "Tenant Id", nullability: { noNulls: true, noEmptyCollections: true }, indexedForSearch: true }', $module);
     }
 
     #[DataProvider('sqlTypeProvider')]
@@ -92,7 +282,8 @@ class OntologyMakerServiceTest extends TestCase
             'byte' => ['TINYINT', '"byte"'],
             'short' => ['SMALLINT', '"short"'],
             'integer' => ['INTEGER', '"integer"'],
-            'long' => ['BIGINT', '"long"'],
+            'long' => ['LONG', '"long"'],
+            'bigint' => ['BIGINT', '"long"'],
             'decimal' => ['DECIMAL(10,2)', '{ type: "decimal", precision: 10, scale: 2 }'],
             'float' => ['REAL', '"float"'],
             'double' => ['DOUBLE PRECISION', '"double"'],

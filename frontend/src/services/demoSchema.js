@@ -5,7 +5,7 @@ const table = (id, label, x, y, color) => ({
     id,
     type: 'table',
     label,
-    data: { toolbarPosition: Position.Top, toolbarVisible: true, color },
+    data: { toolbarPosition: Position.Top, toolbarVisible: true, color, description: '', ontologyActions: { create: false, modify: false, delete: false } },
     position: { x, y },
     style: { ...TABLE_STYLE, background: color, border: `1px solid ${color}`, borderColor: color },
 })
@@ -18,7 +18,7 @@ const row = (id, label, y, parentNode, keyMod, sqlType) => ({
     style: ROW_STYLE,
     draggable: false,
     parentNode,
-    data: { editing: false, showModal: false, showOptionsModal: false, keyMod, sqlType, nullable: false, unsigned: false },
+    data: { editing: false, showModal: false, showOptionsModal: false, keyMod, sqlType, nullable: false, indexed: true, unsigned: false, description: '' },
 })
 
 const edge = (id, source, target, color) => ({

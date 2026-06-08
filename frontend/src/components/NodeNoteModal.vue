@@ -1,36 +1,40 @@
 <template>
-    <div
-        ref="modalRef"
-        class="node-note-modal"
-        @mousedown.stop
-        @pointerdown.stop
-    >
-        <label class="node-note-modal__label">{{ title }}</label>
-        <textarea
-            ref="textareaRef"
-            v-model="draft"
-            class="node-note-modal__input"
-            :readonly="!canEdit"
-            :placeholder="canEdit ? 'Add a note…' : 'No note'"
-            rows="4"
-            @keydown.meta.enter.prevent="save"
-            @keydown.ctrl.enter.prevent="save"
-        />
-        <div class="node-note-modal__actions">
-            <button v-if="canEdit" class="node-note-modal__save" @click="save">Save</button>
-            <button class="node-note-modal__close" @click="emit('close')">{{ canEdit ? 'Cancel' : 'Close' }}</button>
+    <Teleport to="body">
+        <div
+            ref="modalRef"
+            class="node-note-modal"
+            :style="modalStyle"
+            @mousedown.stop
+            @pointerdown.stop
+        >
+            <label class="node-note-modal__label">{{ title }}</label>
+            <textarea
+                ref="textareaRef"
+                v-model="draft"
+                class="node-note-modal__input"
+                :readonly="!canEdit"
+                :placeholder="canEdit ? 'Add a description...' : 'No description'"
+                rows="4"
+                @keydown.meta.enter.prevent="save"
+                @keydown.ctrl.enter.prevent="save"
+            />
+            <div class="node-note-modal__actions">
+                <button v-if="canEdit" class="node-note-modal__save" @click="save">Save</button>
+                <button class="node-note-modal__close" @click="emit('close')">{{ canEdit ? 'Cancel' : 'Close' }}</button>
+            </div>
         </div>
-    </div>
+    </Teleport>
 </template>
 
 <script setup>
-import { nextTick, onMounted, ref } from 'vue'
+import { computed, nextTick, onMounted, ref } from 'vue'
 import { onClickOutside } from '@vueuse/core'
 
 const props = defineProps({
-    title: { type: String, default: 'Note' },
+    title: { type: String, default: 'Description' },
     note: { type: String, default: '' },
     canEdit: { type: Boolean, default: true },
+    anchor: { type: Object, default: null },
     ignore: { type: Array, default: () => [] },
 })
 
@@ -38,10 +42,24 @@ const emit = defineEmits(['save', 'close'])
 const modalRef = ref(null)
 const textareaRef = ref(null)
 const draft = ref(props.note)
+const position = ref({ top: 0, left: 0 })
+
+const modalStyle = computed(() => ({
+    top: `${position.value.top}px`,
+    left: `${position.value.left}px`,
+}))
 
 onClickOutside(modalRef, () => emit('close'), { ignore: props.ignore })
 
 onMounted(() => {
+    const rect = props.anchor?.getBoundingClientRect()
+    if (rect) {
+        const width = 260
+        position.value = {
+            top: rect.bottom + 8,
+            left: Math.max(12, Math.min(rect.right - width, window.innerWidth - width - 12)),
+        }
+    }
     if (props.canEdit) nextTick(() => textareaRef.value?.focus())
 })
 
@@ -53,10 +71,8 @@ const save = () => {
 
 <style scoped>
 .node-note-modal {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    z-index: 30;
+    position: fixed;
+    z-index: 1000;
     width: 260px;
     padding: 10px;
     border: 1px solid var(--border-strong);

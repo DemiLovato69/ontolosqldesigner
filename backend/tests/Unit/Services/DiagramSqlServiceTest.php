@@ -50,18 +50,37 @@ class DiagramSqlServiceTest extends TestCase
     public function test_create_script_emits_table_and_row_notes(): void
     {
         $schema = json_encode([
-            ['id' => 't1', 'type' => 'table', 'label' => 'users', 'data' => ['note' => "Application users\nManaged locally"]],
+            ['id' => 't1', 'type' => 'table', 'label' => 'users', 'data' => ['description' => "Application users\nManaged locally"]],
             ['id' => 'r1', 'type' => 'row', 'label' => 'name', 'parentNode' => 't1', 'data' => [
                 'sqlType' => 'VARCHAR(255)',
                 'nullable' => false,
-                'comment' => "User's display name",
+                'description' => "User's display name",
             ]],
         ]);
 
         $script = $this->service->createScript($schema, 'mysql');
 
-        $this->assertStringContainsString("-- Application users\n-- Managed locally", $script);
+        $this->assertStringContainsString("-- Table users: Application users\n-- Managed locally", $script);
+        $this->assertStringContainsString("-- Column users.name: User's display name", $script);
         $this->assertStringContainsString("COMMENT 'User''s display name'", $script);
+    }
+
+    public function test_create_script_exports_notes_as_sql_comments_for_dialects_without_inline_comments(): void
+    {
+        $schema = json_encode([
+            ['id' => 't1', 'type' => 'table', 'label' => 'users', 'data' => ['description' => 'Application users']],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'name', 'parentNode' => 't1', 'data' => [
+                'sqlType' => 'VARCHAR(255)',
+                'nullable' => false,
+                'description' => 'Display name',
+            ]],
+        ]);
+
+        $script = $this->service->createScript($schema, 'postgresql');
+
+        $this->assertStringContainsString('-- Table users: Application users', $script);
+        $this->assertStringContainsString('-- Column users.name: Display name', $script);
+        $this->assertStringNotContainsString('COMMENT \'Display name\'', $script);
     }
 
     public function test_export_script_for_ontology_diagram_returns_maker_module(): void
@@ -141,8 +160,8 @@ class DiagramSqlServiceTest extends TestCase
         $schema = json_encode([
             ['id' => 't1', 'type' => 'table', 'label' => 'users'],
             ['id' => 't2', 'type' => 'table', 'label' => 'posts'],
-            ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => true, 'defaultValue' => '5', 'comment' => 'pk']],
-            ['id' => 'r2', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 't2', 'data' => ['keyMod' => null, 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false, 'defaultValue' => '', 'comment' => '']],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => true, 'defaultValue' => '5', 'description' => 'pk']],
+            ['id' => 'r2', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 't2', 'data' => ['keyMod' => null, 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false, 'defaultValue' => '', 'description' => '']],
             ['sourceNode' => ['id' => 'r2'], 'targetNode' => ['id' => 'r1']],
         ]);
         $result = $this->service->createJson($schema);
@@ -205,6 +224,7 @@ class DiagramSqlServiceTest extends TestCase
         $rows = array_column(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertFalse($rows['name']['data']['nullable']);
         $this->assertTrue($rows['note']['data']['nullable']);
+        $this->assertTrue($rows['name']['data']['indexed']);
     }
 
     public function test_create_schema_my_sql_complex_types(): void

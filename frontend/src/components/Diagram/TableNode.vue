@@ -27,14 +27,25 @@
     </button>
 
     <button
-        v-if="canEdit || data.note"
+        v-if="canEdit || description"
         ref="noteBtnRef"
-        :class="['table_button', 'table_button--note', { 'table_button--has-note': data.note }]"
+        :class="['table_button', 'table_button--note', { 'table_button--has-note': description }]"
         @mousedown.stop
-        @click="showNote = !showNote"
-        :title="data.note || 'Add table note'"
+        @click.stop.prevent="showNote = !showNote"
+        :title="description || 'Add table description'"
     >
         <SvgIcon name="note" :size="13" />
+    </button>
+
+    <button
+        v-if="dbType === 'ontology' && (canEdit || hasOntologyActions)"
+        ref="settingsBtnRef"
+        :class="['table_button', 'table_button--settings', { 'table_button--has-actions': hasOntologyActions }]"
+        @mousedown.stop
+        @click.stop.prevent="showSettings = !showSettings"
+        :title="hasOntologyActions ? 'Ontology actions enabled' : 'Ontology action settings'"
+    >
+        <SvgIcon name="gear" :size="13" />
     </button>
 
     <button v-if="canEdit" class="table_button" @mousedown.stop @click="$emit('delete-node', id)">
@@ -43,12 +54,23 @@
 
     <NodeNoteModal
         v-if="showNote"
-        title="Table note"
-        :note="data.note ?? ''"
+        title="Table description"
+        :note="description"
         :canEdit="canEdit"
+        :anchor="noteBtnRef"
         :ignore="[noteBtnRef]"
         @save="$emit('update-note', id, $event)"
         @close="showNote = false"
+    />
+
+    <TableSettingsModal
+        v-if="showSettings"
+        :actions="ontologyActions"
+        :canEdit="canEdit"
+        :anchor="settingsBtnRef"
+        :ignore="[settingsBtnRef]"
+        @change="$emit('update-actions', id, $event)"
+        @close="showSettings = false"
     />
 
     <template v-if="canEdit">
@@ -58,21 +80,28 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import SvgIcon from '../SvgIcon.vue'
 import NodeNoteModal from '../NodeNoteModal.vue'
+import TableSettingsModal from '../TableSettingsModal.vue'
 
-defineProps({
+const props = defineProps({
     id: String,
     data: Object,
     label: String,
+    dbType: { type: String, default: 'mysql' },
     canEdit: { type: Boolean, default: true },
 })
 
-defineEmits(['delete-node', 'update-label', 'copy-table', 'add-row', 'resize-start', 'update-color', 'update-note'])
+defineEmits(['delete-node', 'update-label', 'copy-table', 'add-row', 'resize-start', 'update-color', 'update-note', 'update-actions'])
 
 const showNote = ref(false)
+const showSettings = ref(false)
 const noteBtnRef = ref(null)
+const settingsBtnRef = ref(null)
+const ontologyActions = computed(() => props.data?.ontologyActions ?? {})
+const hasOntologyActions = computed(() => !!(ontologyActions.value.create || ontologyActions.value.modify || ontologyActions.value.delete))
+const description = computed(() => props.data?.description ?? props.data?.note ?? '')
 </script>
 
 <style scoped>

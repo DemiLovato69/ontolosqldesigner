@@ -21,13 +21,25 @@
             <p class="modal_text">Nullable</p>
             <input type="checkbox" :checked="data.nullable" @change="toggleNullable">
         </label>
+        <label class="options_modal_row" @mousedown.stop>
+            <p class="modal_text">Indexed</p>
+            <input type="checkbox" :checked="data.indexed ?? true" @change="toggleIndexed">
+        </label>
         <div class="options_modal_row">
             <p class="modal_text">Default</p>
             <input type="text" class="modal_text_input" @mousedown.stop v-model="data.defaultValue" @change="$emit('change')" placeholder="NULL">
         </div>
         <div class="options_modal_row">
-            <p class="modal_text">Note</p>
-            <input type="text" class="modal_text_input" @mousedown.stop v-model="data.comment" @change="$emit('change')" placeholder="">
+            <p class="modal_text">Description</p>
+            <input
+                type="text"
+                class="modal_text_input"
+                @mousedown.stop
+                :value="data.description ?? data.comment ?? ''"
+                @input="data.description = $event.target.value"
+                @change="$emit('change')"
+                placeholder=""
+            >
         </div>
         <!-- Unique Together section -->
         <div class="options_modal_divider"></div>
@@ -99,6 +111,7 @@ const modalRef = ref(null)
 onClickOutside(modalRef, () => emit('close'), { ignore: props.ignore })
 
 const toggleNullable = () => { props.data.nullable = !props.data.nullable; emit('change') }
+const toggleIndexed = () => { props.data.indexed = !(props.data.indexed ?? true); emit('change') }
 const toggleUnsigned = () => { props.data.unsigned = !props.data.unsigned; emit('change') }
 
 // --- Unique Together ---

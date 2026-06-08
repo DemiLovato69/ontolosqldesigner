@@ -56,6 +56,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
             keyMod: 'None',
             sqlType: defaultIntType(diagramDbType.value),
             nullable: false,
+            indexed: true,
             unsigned: false,
         })
         isSaved.value = false
@@ -78,6 +79,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
             keyMod: 'None',
             sqlType: defaultIntType(diagramDbType.value),
             nullable: false,
+            indexed: true,
             unsigned: false,
         })
         isSaved.value = false
@@ -232,7 +234,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         isSaved.value = false
         const node = schema.value.find(el => el.id === id)
         if (node) whisper('schema-patch', {
-            update: [{ id, data: { sqlType: node.data.sqlType, keyMod: node.data.keyMod, nullable: node.data.nullable, unsigned: node.data.unsigned, defaultValue: node.data.defaultValue, comment: node.data.comment } }]
+            update: [{ id, data: { sqlType: node.data.sqlType, keyMod: node.data.keyMod, nullable: node.data.nullable, indexed: node.data.indexed ?? true, unsigned: node.data.unsigned, defaultValue: node.data.defaultValue, description: node.data.description ?? node.data.comment ?? '' } }]
         })
     }
 
@@ -240,10 +242,23 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         snapshot(`note-${id}`)
         const node = schema.value.find(el => el.id === id)
         if (!node) return
-        const key = node.type === 'table' ? 'note' : 'comment'
-        node.data = { ...node.data, [key]: note }
+        node.data = { ...node.data, description: note }
         isSaved.value = false
-        whisper('schema-patch', { update: [{ id, data: { [key]: note } }] })
+        whisper('schema-patch', { update: [{ id, data: { description: note } }] })
+    }
+
+    const updateTableActions = (id, actions) => {
+        snapshot(`table-actions-${id}`)
+        const node = schema.value.find(el => el.id === id && el.type === 'table')
+        if (!node) return
+        const ontologyActions = {
+            create: !!actions.create,
+            modify: !!actions.modify,
+            delete: !!actions.delete,
+        }
+        node.data = { ...node.data, ontologyActions }
+        isSaved.value = false
+        whisper('schema-patch', { update: [{ id, data: { ontologyActions } }] })
     }
 
     const updateLabel = (id, newLabel) => {
@@ -340,7 +355,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         selectedEdge, showRelationshipModal, modalPosition,
         addTable, copyTable, onPaneClick,
         addRow, addRowAfter, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
-        updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor, updateNote,
+        updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor, updateNote, updateTableActions,
         onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
         openRelationshipModal, closeRelationshipModal,
     }

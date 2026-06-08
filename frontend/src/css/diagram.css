@@ -51,6 +51,10 @@ select:focus {
     color: #f6c453;
 }
 
+.table_button--has-actions {
+    color: #7dd3fc;
+}
+
 .table_button svg {
     display: block;
 }
@@ -161,6 +165,10 @@ select:focus {
 
 .vue-flow__node-table > .table_button--note {
     right: 58px;
+}
+
+.vue-flow__node-table > .table_button--settings {
+    right: 82px;
 }
 
 .vue-flow__node-table > .table_button--add-row {

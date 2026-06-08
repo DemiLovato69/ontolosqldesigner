@@ -64,12 +64,12 @@
 
     <!-- Options -->
     <button
-        v-if="canEdit || data.comment"
+        v-if="canEdit || description"
         ref="noteBtnRef"
-        :class="['table_button', { 'table_button--has-note': data.comment }]"
+        :class="['table_button', { 'table_button--has-note': description }]"
         @mousedown.stop
-        @click="showNote = !showNote"
-        :title="data.comment || 'Add row note'"
+        @click.stop.prevent="showNote = !showNote"
+        :title="description || 'Add row description'"
     >
         <SvgIcon name="note" :size="13" />
     </button>
@@ -80,9 +80,10 @@
 
     <NodeNoteModal
         v-if="showNote"
-        title="Row note"
-        :note="data.comment ?? ''"
+        title="Row description"
+        :note="description"
         :canEdit="canEdit"
+        :anchor="noteBtnRef"
         :ignore="[noteBtnRef]"
         @save="$emit('update-note', id, $event)"
         @close="showNote = false"
@@ -140,6 +141,7 @@ const props = defineProps({
 const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev', 'update-note'])
 
 const emitChange = () => emit('change', props.id)
+const description = computed(() => props.data.description ?? props.data.comment ?? '')
 
 // --- Constraint badges ---
 
@@ -157,6 +159,9 @@ const badges = computed(() => {
     }
     if (props.data.nullable) {
         result.push({ label: 'NULL', cls: 'badge--null' })
+    }
+    if ((props.data.indexed ?? true) && !result.some(badge => badge.label === 'IDX')) {
+        result.push({ label: 'IDX', cls: 'badge--idx' })
     }
     return result
 })

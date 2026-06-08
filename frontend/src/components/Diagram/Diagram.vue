@@ -145,6 +145,7 @@
                         :id="nodeProps.id"
                         :data="nodeProps.data"
                         :label="nodeProps.label"
+                        :dbType="diagramDbType"
                         :canEdit="canEdit"
                         @delete-node="deleteNode"
                         @update-label="updateLabel"
@@ -153,6 +154,7 @@
                         @resize-start="startTableResize"
                         @update-color="updateTableColor"
                         @update-note="updateNote"
+                        @update-actions="updateTableActions"
                     />
                 </template>
 
@@ -326,7 +328,7 @@ const {
     selectedEdge, showRelationshipModal, modalPosition,
     addTable, copyTable, onPaneClick,
     addRow, addRowAfter, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
-    updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor, updateNote,
+    updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor, updateNote, updateTableActions,
     onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
     openRelationshipModal, closeRelationshipModal,
 } = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction, defaultTableColor, defaultConnectionColor })
@@ -537,7 +539,12 @@ const getDiagram = async () => {
         id: '1',
         type: 'table',
         label: 'users',
-        data: { toolbarPosition: Position.Top, toolbarVisible: true },
+        data: {
+            toolbarPosition: Position.Top,
+            toolbarVisible: true,
+            description: '',
+            ontologyActions: { create: false, modify: false, delete: false },
+        },
         position: { x: 0, y: -100 },
         style: TABLE_STYLE,
     }]

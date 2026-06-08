@@ -1,65 +1,116 @@
-# SQL Designer
+# OntoloSQL Designer
 
-[![License](https://img.shields.io/badge/license-source--available-blue)](./LICENSE)
-[![Website](https://img.shields.io/website?url=https%3A%2F%2Fsql-designer.com)](https://sql-designer.com)
+OntoloSQL Designer is a fork of SQL Designer focused on visually designing Foundry ontology definitions. It keeps the original drag-and-drop database canvas, SQL import/export, and multi-dialect schema support, while adding an `Ontology` diagram type that exports `.mts` modules for `@osdk/maker`.
 
-**SQL Designer** is a free, web-based visual database schema designer. Design and manage your database schemas through an intuitive drag-and-drop interface — no SQL expertise required.
+The original project was a GUI SQL designer. This fork extends it into an ontology authoring workflow:
 
-🌐 **Live app:** [sql-designer.com](https://sql-designer.com)
-
-![SQL Designer — visual database schema editor](backend/public/images/designer_screenshot.png)
-
----
-
-## Why SQL Designer?
-
-Most database design tools are either expensive, desktop-only, or require an account just to get started. SQL Designer runs in your browser, free, and gets you from idea to schema in seconds.
-
-- **No install** — runs entirely in the browser
-- **Visual-first** — drag, drop, and connect tables without writing SQL
-- **Bidirectional SQL** — import existing SQL to visualize it, or export clean `CREATE` statements from your diagram
-- **MySQL & PostgreSQL** — full support for both dialects
-- **Open source** — read the code, report bugs, suggest features
-
----
-
-## Features
-
-- **Visual diagram editor** — design schemas on an interactive canvas with drag-and-drop support
-- **Table & column management** — create, rename, and delete tables and columns inline
-- **Relationship visualization** — connect tables with relationship lines using crow's foot notation
-- **Support for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access** — choose your target database type per diagram
-- **SQL import & export** — generate SQL `CREATE` statements from your diagram, or import existing SQL to auto-build a diagram
-- **Save & manage diagrams** — store multiple diagrams per account with auto-save
-- **User accounts** — register and log in to keep your diagrams private and persistent
-
----
+- Create standard SQL diagrams or Foundry ontology diagrams.
+- Import SQL DDL into an ontology diagram and map SQL types to the closest Foundry data types.
+- Export ontology diagrams as Maker `.mts` files.
+- Export SQL diagrams as SQL, JSON, Laravel migrations, PNG, or ontology `.mts`.
+- Add notes to tables and rows; ontology export maps them to Maker descriptions and SQL export emits them as comments.
+- Manually verify users from the admin dashboard for local development without a mail server.
 
 ## Stack
 
-| Layer    | Technology             |
-|----------|------------------------|
-| Frontend | Vue 3, Pinia, Vue Flow |
-| Backend  | Laravel 11 (PHP)       |
-| Database | PostgreSQL             |
-| Infra    | Docker, Nginx          |
+| Layer | Technology |
+| --- | --- |
+| Frontend | Vue 3, Vue Flow, Vite |
+| Backend | Laravel 11, Sanctum, Reverb |
+| Database | PostgreSQL |
+| Queue/cache | Redis |
+| Ontology export | `@osdk/maker` and local ontology generator service |
+| Dev runtime | Docker Compose, Nginx, PHP-FPM, Node |
 
----
+## Local Development
 
-## Contributing
+Prerequisites:
 
-Contributions are welcome. Please open an issue first to discuss what you'd like to change.
+- Docker Desktop
+- GNU Make
+- Git submodules initialized if you need the bundled `ontolosql` Rust CLI reference
 
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Commit your changes
-4. Open a pull request
+Start from a clean checkout:
 
----
+```bash
+cp backend/.env.example backend/.env
+make install
+```
+
+Open the app at:
+
+```text
+http://localhost:8080
+```
+
+Vite runs on `http://localhost:5173`, but Nginx at `8080` is the normal entry point.
+
+Useful commands:
+
+```bash
+make up
+make down
+make test
+docker compose -p snydiagram logs --tail=120 php nginx node queue
+```
+
+The admin dashboard is available at:
+
+```text
+http://localhost:8080/admin
+```
+
+Use the admin user configured in the local database/env. The dashboard includes manual account verification so local development does not require SMTP setup.
+
+## Ontology Workflow
+
+1. Log in and create a new diagram.
+2. Choose `Ontology` as the diagram type.
+3. Add tables and rows, or import existing SQL DDL.
+4. Imported SQL types are normalized to Foundry-friendly types such as `STRING`, `LONG`, `DECIMAL(12,4)`, `TIMESTAMP`, `ATTACHMENT`, and ontology `ENUM(...)`.
+5. Add table or row notes with the note buttons on the canvas.
+6. Export the diagram as `.mts`.
+
+Ontology exports include:
+
+- `defineObject` definitions
+- `defineLink` definitions for relationships
+- `defineValueType` definitions for enum-like values
+- Maker `description` fields from table and row notes
+- Foundry data type mapping for the canvas type palette
+
+## SQL Workflow
+
+Non-ontology diagrams retain the original SQL behavior:
+
+- Create tables and rows visually.
+- Import SQL DDL into the canvas.
+- Export SQL for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and MS Access.
+- Export JSON, Laravel migrations, and PNG.
+
+Table and row notes are exported as SQL `--` comments. Dialects that support native inline column comments, such as MySQL, also keep those native comments.
+
+## Testing
+
+Run the backend test suite in Docker:
+
+```bash
+make test
+```
+
+Run the frontend build locally:
+
+```bash
+cd frontend
+npm run build
+```
+
+The test suite covers ontology exports, SQL import/export, type mapping, manual admin verification, and diagram CRUD/sharing behavior.
+
+## Notes On The Fork
+
+This repository still contains original SQL Designer concepts and naming in several places, including the Docker Compose project name and some UI copy. The main behavior change is that ontology generation is now a first-class output path alongside SQL outputs.
 
 ## License
 
-This project is source-available. See [LICENSE](./LICENSE) for details.
-
-**Author:** Snyatkov Dmitriy Andreevich
-**Contact:** dmitriy@sql-designer.com
+This project remains source-available under the original repository license. See [LICENSE](./LICENSE).

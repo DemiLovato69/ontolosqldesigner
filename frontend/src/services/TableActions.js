@@ -122,7 +122,7 @@ export const TableActions = {
             type: 'table',
             label: tableName,
             zIndex,
-            data: { toolbarPosition: Position.Top, toolbarVisible: true, color, note: '' },
+            data: { toolbarPosition: Position.Top, toolbarVisible: true, color, description: '', ontologyActions: { create: false, modify: false, delete: false } },
             position,
             style: { ...TABLE_STYLE, background: color, borderColor: color },
         }]
@@ -132,6 +132,7 @@ export const TableActions = {
             keyMod: 'PRIMARY KEY',
             sqlType: defaultIntType(dbType),
             nullable: false,
+            indexed: true,
             unsigned: false
         })
 
@@ -168,9 +169,10 @@ export const TableActions = {
                 keyMod: rowProps.keyMod,
                 sqlType: rowProps.sqlType,
                 nullable: rowProps.nullable,
+                indexed: rowProps.indexed ?? true,
                 unsigned: rowProps.unsigned,
                 defaultValue: rowProps.defaultValue ?? '',
-                comment: rowProps.comment ?? ''
+                description: rowProps.description ?? rowProps.comment ?? ''
             }
         }]
 
@@ -209,9 +211,10 @@ export const TableActions = {
                 keyMod: rowProps.keyMod,
                 sqlType: rowProps.sqlType,
                 nullable: rowProps.nullable,
+                indexed: rowProps.indexed ?? true,
                 unsigned: rowProps.unsigned,
                 defaultValue: rowProps.defaultValue ?? '',
-                comment: rowProps.comment ?? ''
+                description: rowProps.description ?? rowProps.comment ?? ''
             }
         }]
 
@@ -245,6 +248,7 @@ export const TableActions = {
             keyMod: 'FOREIGN KEY',
             sqlType: defaultIntType(dbType),
             nullable: false,
+            indexed: true,
             unsigned: false
         })
 
@@ -253,6 +257,7 @@ export const TableActions = {
             keyMod: 'FOREIGN KEY',
             sqlType: defaultIntType(dbType),
             nullable: false,
+            indexed: true,
             unsigned: false
         })
 

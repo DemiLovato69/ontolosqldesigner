@@ -191,12 +191,12 @@ class DiagramSqlService
             foreach ($enumTypeDecls as $decl) {
                 $lines[] = $decl;
             }
-            if ($table['note'] !== '') {
-                $noteLines = array_map(
-                    fn (string $noteLine): string => '-- '.trim($noteLine),
-                    preg_split('/\R/', $table['note']) ?: []
-                );
-                $lines[] = implode("\n", $noteLines);
+            $documentation = $this->sqlCommentLines($table['note'], "Table {$table['name']}");
+            foreach ($tableRows as $row) {
+                $documentation = array_merge($documentation, $this->sqlCommentLines((string) ($row['comment'] ?? ''), "Column {$table['name']}.{$row['name']}"));
+            }
+            if ($documentation !== []) {
+                $lines[] = implode("\n", $documentation);
             }
             $ifNotExists = $dialect->supportsIfNotExists() ? 'IF NOT EXISTS ' : '';
             $lines[] = 'CREATE TABLE '.$ifNotExists.$qi($table['name'])." (\n".implode(",\n", $allDefs)."\n);";
@@ -403,7 +403,7 @@ class DiagramSqlService
                 'table' => $tables->push([
                     'id' => $item['id'],
                     'name' => $item['label'],
-                    'note' => trim((string) ($item['data']['note'] ?? '')),
+                    'note' => trim((string) ($item['data']['description'] ?? $item['data']['note'] ?? '')),
                     'unique_together' => $item['data']['uniqueTogether'] ?? [],
                     'fulltext_indexes' => $item['data']['fulltextIndexes'] ?? [],
                 ]),
@@ -418,7 +418,7 @@ class DiagramSqlService
                     'nullable' => $item['data']['nullable'] ?? false,
                     'unsigned' => $item['data']['unsigned'] ?? false,
                     'default_value' => $item['data']['defaultValue'] ?? null,
-                    'comment' => $item['data']['comment'] ?? null,
+                    'comment' => $item['data']['description'] ?? $item['data']['comment'] ?? null,
                 ]),
                 default => isset($item['sourceNode']['id'], $item['targetNode']['id'])
                     ? $connections->push(['source_id' => $item['sourceNode']['id'], 'target_id' => $item['targetNode']['id']])
@@ -450,7 +450,7 @@ class DiagramSqlService
             'initialized' => false,
             'isParent' => true,
             'position' => ['x' => $x, 'y' => $y],
-            'data' => ['toolbarPosition' => 'top', 'toolbarVisible' => true, 'editing' => false, 'color' => '#3d7a5c', 'uniqueTogether' => [], 'fulltextIndexes' => []],
+            'data' => ['toolbarPosition' => 'top', 'toolbarVisible' => true, 'editing' => false, 'color' => '#3d7a5c', 'uniqueTogether' => [], 'fulltextIndexes' => [], 'description' => '', 'ontologyActions' => ['create' => false, 'modify' => false, 'delete' => false]],
             'events' => (object) [],
             'label' => $name,
             'style' => [
@@ -606,7 +606,7 @@ class DiagramSqlService
                 'editing' => false, 'showModal' => false, 'showOptionsModal' => false,
                 'keyMod' => $keyMod ?? 'None',
                 'sqlType' => $sqlType, 'nullable' => $nullable, 'unsigned' => $unsigned,
-                'defaultValue' => $defaultValue, 'comment' => $comment,
+                'defaultValue' => $defaultValue, 'description' => $comment, 'indexed' => true,
             ]);
             $index++;
         }
@@ -666,6 +666,26 @@ class DiagramSqlService
         }
 
         return 'STRING';
+    }
+
+    /** @return list<string> */
+    private function sqlCommentLines(string $comment, string $subject): array
+    {
+        $comment = trim($comment);
+        if ($comment === '') {
+            return [];
+        }
+
+        $lines = preg_split('/\R/', $comment) ?: [];
+        $result = [];
+        foreach ($lines as $index => $line) {
+            $line = trim(str_replace('--', '- -', $line));
+            $result[] = $index === 0
+                ? "-- {$subject}: {$line}"
+                : "-- {$line}";
+        }
+
+        return $result;
     }
 
     /** @return list<array{sourceCol: string, targetTable: string, targetCol: string}> */
