@@ -1,0 +1,3 @@
+[submodule "OntoloSQL"]
+	path = OntoloSQL
+	url = git@github.com:DemiLovato69/OntoloSQL.git
