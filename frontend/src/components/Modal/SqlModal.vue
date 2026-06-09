@@ -2,7 +2,7 @@
     <div class="modal-overlay" @click.self="$emit('close')">
         <div class="modal-card sql-modal">
             <div class="modal-header">
-                <span class="modal-title">{{ primaryLabel }} SQL</span>
+                <span class="modal-title">{{ primaryLabel }} {{ primaryLabel === 'Import' ? 'Schema' : 'SQL' }}</span>
                 <button class="modal-close" @click="$emit('close')" aria-label="Close">
                     <SvgIcon name="close" :size="16" />
                 </button>
@@ -12,7 +12,7 @@
                     class="sql-textarea"
                     :value="modelValue"
                     @input="$emit('update:modelValue', $event.target.value)"
-                    :placeholder="primaryLabel === 'Import' ? 'Paste your CREATE TABLE statements here…' : ''"
+                    :placeholder="primaryLabel === 'Import' ? 'Paste SQL or an exported ontology JSON document here…' : ''"
                 ></textarea>
                 <button v-if="primaryLabel === 'Export'" class="sql-copy-btn" @click="copyText" title="Copy all">
                     <SvgIcon name="copy" :size="14" />
@@ -111,7 +111,11 @@ const handleFileUpload = (event) => {
         const content = e.target.result
         if (file.name.endsWith('.json')) {
             try {
-                emit('update:modelValue', jsonToSql(JSON.parse(content)))
+                const json = JSON.parse(content)
+                emit(
+                    'update:modelValue',
+                    Array.isArray(json.objectTypes) ? JSON.stringify(json) : jsonToSql(json)
+                )
             } catch {
                 $toast.error('Invalid JSON file')
             }

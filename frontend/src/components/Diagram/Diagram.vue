@@ -93,7 +93,8 @@
                 @node-mouse-leave="onNodeMouseLeave"
                 :is-valid-connection="isValidConnection"
                 v-model="schema"
-                fit-view-on-init
+                :fit-view-on-init="!isLargeDiagram"
+                only-render-visible-elements
                 :zoomOnDoubleClick="false"
                 :controlled="false"
                 :pan-on-drag="!isPlacingTable"
@@ -120,18 +121,18 @@
                     </div>
                     <div v-if="tableNavOpen" class="table-navigator__list">
                         <button
-                            v-for="t in schema.filter(el => el.type === 'table')"
+                            v-for="t in tables"
                             :key="t.id"
                             class="table-navigator__item"
                             @click.stop="navigateToTable(t.id)"
                         >{{ t.label }}</button>
-                        <span v-if="!schema.filter(el => el.type === 'table').length" class="table-navigator__empty">No tables</span>
+                        <span v-if="!tables.length" class="table-navigator__empty">No tables</span>
                     </div>
                 </Panel>
 
 
                 <template #edge-chickenFoot="props">
-                    <ChickenFootEdge v-bind="props" />
+                    <ChickenFootEdge v-bind="props" :simple-routing="isLargeDiagram" />
                 </template>
 
                 <Panel position="bottom-right" class="support-panel">
@@ -165,9 +166,9 @@
                         :label="nodeProps.label"
                         :dbType="diagramDbType"
                         :canEdit="canEdit"
-                        :tableColumns="schema.filter(el => el.type === 'row' && el.parentNode === nodeProps.parentNodeId).sort((a, b) => a.position.y - b.position.y).map(el => el.label)"
-                        :tableUniqueTogether="schema.find(el => el.id === nodeProps.parentNodeId)?.data?.uniqueTogether ?? []"
-                        :tableFulltextIndexes="schema.find(el => el.id === nodeProps.parentNodeId)?.data?.fulltextIndexes ?? []"
+                        :tableColumns="tableColumnLabels.get(nodeProps.parentNodeId) ?? []"
+                        :tableUniqueTogether="tableById.get(nodeProps.parentNodeId)?.data?.uniqueTogether ?? []"
+                        :tableFulltextIndexes="tableById.get(nodeProps.parentNodeId)?.data?.fulltextIndexes ?? []"
                         @update-label="updateLabel"
                         @toggle-options-modal="toggleOptionsModal"
                         @delete-node="deleteNode"
@@ -279,7 +280,30 @@ const notAvailable = ref(false)
 const pendingApproval = ref(false)
 const loading = ref(false)
 const isSaved = ref(true)
-const schema = ref()
+const schema = ref([])
+const LARGE_DIAGRAM_ELEMENT_COUNT = 2000
+const isLargeDiagram = computed(() => schema.value.length > LARGE_DIAGRAM_ELEMENT_COUNT)
+const tables = computed(() => schema.value.filter(el => el.type === 'table'))
+const tableById = computed(() => new Map(tables.value.map(table => [table.id, table])))
+const rowsByTableId = computed(() => {
+    const rows = new Map()
+    for (const element of schema.value) {
+        if (element.type !== 'row' || !element.parentNode) continue
+        if (!rows.has(element.parentNode)) rows.set(element.parentNode, [])
+        rows.get(element.parentNode).push(element)
+    }
+    for (const tableRows of rows.values()) {
+        tableRows.sort((a, b) => (a.position?.y ?? 0) - (b.position?.y ?? 0))
+    }
+    return rows
+})
+const tableColumnLabels = computed(() => {
+    const labels = new Map()
+    for (const [tableId, rows] of rowsByTableId.value) {
+        labels.set(tableId, rows.map(row => row.label))
+    }
+    return labels
+})
 const diagramName = ref('schema')
 const diagramDbType = ref('mysql')
 const showShareModal = ref(false)
@@ -378,10 +402,17 @@ const openSupportModal = async () => {
 
 const navigateToTable = (tableId) => {
     tableNavOpen.value = false
-    const tableNode = schema.value.find(el => el.id === tableId)
+    const tableNode = tableById.value.get(tableId)
     if (!tableNode) return
-    const childIds = schema.value.filter(el => el.parentNode === tableId).map(el => el.id)
+    const childIds = (rowsByTableId.value.get(tableId) ?? []).map(el => el.id)
     fitView({ nodes: [tableId, ...childIds], duration: 300, padding: 0.3 })
+}
+
+const focusLargeDiagram = () => {
+    if (!isLargeDiagram.value || !tables.value.length) return
+    nextTick(() => {
+        requestAnimationFrame(() => navigateToTable(tables.value[0].id))
+    })
 }
 
 // --- Import / Export ---
@@ -405,6 +436,7 @@ const importSql = async () => {
 
     const applySchema = (schemaJson) => {
         schema.value = schemaJson
+        focusLargeDiagram()
         importLoading.value = false
         $toast.success('Imported successfully')
         isSaved.value = false
@@ -551,6 +583,7 @@ const getDiagram = async () => {
 
     isSaved.value = true
     loading.value = false
+    focusLargeDiagram()
 
     initEcho()
     if (!isOwner.value) startGuestAccessPolling()

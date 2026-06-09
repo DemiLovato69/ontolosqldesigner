@@ -12,6 +12,7 @@ use App\Events\VisitorRequested;
 use App\Models\Diagram;
 use App\Models\DiagramVisitor;
 use App\Models\User;
+use App\Support\DiagramSchema;
 use Exception;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -148,7 +149,7 @@ class DiagramSharingService
             return false;
         }
 
-        $diagram->schema = $schema;
+        $diagram->schema = DiagramSchema::withoutRuntimeState($schema);
         $diagram->save();
 
         return true;

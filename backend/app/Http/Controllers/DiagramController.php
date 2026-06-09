@@ -25,6 +25,7 @@ use App\Services\DiagramCrudService;
 use App\Services\DiagramSharingService;
 use App\Services\DiagramSqlService;
 use App\Services\OntologyMakerService;
+use App\Support\DiagramSchema;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
@@ -149,7 +150,9 @@ class DiagramController extends Controller
 
         return $this->success([
             'status' => $diagram->import_status,
-            'schema' => $diagram->import_status === ImportStatus::DONE ? $diagram->schema : null,
+            'schema' => $diagram->import_status === ImportStatus::DONE
+                ? DiagramSchema::withoutRuntimeState($diagram->schema)
+                : null,
             'error' => $diagram->import_error,
         ]);
     }

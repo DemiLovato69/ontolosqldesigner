@@ -15,11 +15,12 @@
                 :edges-updatable="false"
                 :zoom-on-double-click="false"
                 :controlled="false"
-                fit-view-on-init
+                :fit-view-on-init="!isLargeDiagram"
+                only-render-visible-elements
                 class="embed-canvas"
             >
                 <template #edge-chickenFoot="props">
-                    <ChickenFootEdge v-bind="props" />
+                    <ChickenFootEdge v-bind="props" :simple-routing="isLargeDiagram" />
                 </template>
 
                 <template #node-table="nodeProps">
@@ -54,7 +55,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { VueFlow } from '@vue-flow/core'
 import ChickenFootEdge from './ChickenFootEdge.vue'
@@ -70,6 +71,7 @@ const token = useRoute().params.token
 const loading = ref(true)
 const error = ref(null)
 const schema = ref([])
+const isLargeDiagram = computed(() => schema.value.length > 2000)
 const dbType = ref('mysql')
 
 onMounted(async () => {

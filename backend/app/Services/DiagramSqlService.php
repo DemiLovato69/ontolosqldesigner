@@ -281,6 +281,13 @@ class DiagramSqlService
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
     public function createSchema(string $script, string $dbType = 'mysql'): string
     {
+        if ($dbType === DbType::ONTOLOGY->value) {
+            $ontology = $this->decodeOntologyExport($script);
+            if ($ontology !== null) {
+                return json_encode($this->createSchemaFromOntologyExport($ontology), JSON_PRETTY_PRINT);
+            }
+        }
+
         $tables = [];
         $rows = [];
         $connections = [];
@@ -441,17 +448,8 @@ class DiagramSqlService
         return [
             'id' => $id,
             'type' => 'table',
-            'dimensions' => ['width' => 350, 'height' => 40],
-            'computedPosition' => ['x' => $x, 'y' => $y, 'z' => 1000],
-            'handleBounds' => ['source' => null, 'target' => null],
-            'selected' => false,
-            'dragging' => false,
-            'resizing' => false,
-            'initialized' => false,
-            'isParent' => true,
             'position' => ['x' => $x, 'y' => $y],
-            'data' => ['toolbarPosition' => 'top', 'toolbarVisible' => true, 'editing' => false, 'color' => '#3d7a5c', 'uniqueTogether' => [], 'fulltextIndexes' => [], 'description' => '', 'ontologyActions' => ['create' => false, 'modify' => false, 'delete' => false]],
-            'events' => (object) [],
+            'data' => ['toolbarPosition' => 'top', 'toolbarVisible' => true, 'color' => '#3d7a5c', 'uniqueTogether' => [], 'fulltextIndexes' => [], 'description' => '', 'ontologyActions' => ['create' => false, 'modify' => false, 'delete' => false]],
             'label' => $name,
             'style' => [
                 'display' => 'flex', 'border' => '1px solid #3d7a5c',
@@ -472,24 +470,9 @@ class DiagramSqlService
         return [
             'id' => $id,
             'type' => 'row',
-            'dimensions' => ['width' => 350, 'height' => 40],
-            'computedPosition' => ['x' => $x, 'y' => $y, 'z' => 1001],
-            'handleBounds' => [
-                'source' => [
-                    ['id' => null, 'type' => 'source', 'nodeId' => $id, 'position' => 'right', 'x' => 345, 'y' => 16, 'width' => 8, 'height' => 8],
-                    ['id' => null, 'type' => 'source', 'nodeId' => $id, 'position' => 'left',  'x' => -3,  'y' => 16, 'width' => 8, 'height' => 8],
-                ],
-                'target' => null,
-            ],
             'draggable' => false,
-            'selected' => false,
-            'dragging' => false,
-            'resizing' => false,
-            'initialized' => false,
-            'isParent' => false,
             'position' => ['x' => 0, 'y' => 40 + ($index * 40)],
             'data' => $data,
-            'events' => (object) [],
             'label' => $name,
             'style' => [
                 'display' => 'flex', 'border' => '1px solid #898989',
@@ -498,6 +481,241 @@ class DiagramSqlService
                 'alignItems' => 'center', 'justifyContent' => 'space-between',
             ],
             'parentNode' => $tableId,
+        ];
+    }
+
+    /** @return array<string, mixed>|null */
+    private function decodeOntologyExport(string $script): ?array
+    {
+        $trimmed = trim($script);
+        if ($trimmed === '' || $trimmed[0] !== '{') {
+            return null;
+        }
+
+        $decoded = json_decode($trimmed, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw InvalidSchemaException::malformedJson();
+        }
+        if (! is_array($decoded) || ! isset($decoded['objectTypes']) || ! is_array($decoded['objectTypes'])) {
+            return null;
+        }
+
+        return $decoded;
+    }
+
+    /**
+     * @param array<string, mixed> $ontology
+     * @return list<array<string, mixed>>
+     */
+    private function createSchemaFromOntologyExport(array $ontology): array
+    {
+        $tables = [];
+        $rows = [];
+        $connections = [];
+        $tablesByRid = [];
+        $rowsByPropertyRid = [];
+        $rowsByObjectAndPropertyId = [];
+        $primaryRowsByObjectRid = [];
+        $columnY = array_fill(0, 5, 50);
+
+        foreach ($ontology['objectTypes'] as $objectIndex => $objectType) {
+            if (! is_array($objectType)) {
+                continue;
+            }
+
+            $column = $objectIndex % count($columnY);
+            $x = 50 + ($column * 400);
+            $y = $columnY[$column];
+            $tableId = 'ontology-table-'.($objectType['rid'] ?? $objectType['id'] ?? $objectIndex);
+            $displayMetadata = is_array($objectType['displayMetadata'] ?? null) ? $objectType['displayMetadata'] : [];
+            $name = (string) ($displayMetadata['displayName'] ?? $objectType['apiName'] ?? $objectType['id'] ?? 'Object');
+            $table = $this->buildTableNode($tableId, $name, $x, $y);
+            $table['data']['description'] = trim((string) ($displayMetadata['description'] ?? ''));
+            $table['data']['ontologyMetadata'] = [
+                'id' => $objectType['id'] ?? null,
+                'rid' => $objectType['rid'] ?? null,
+                'apiName' => $objectType['apiName'] ?? null,
+                'titlePropertyId' => $objectType['titlePropertyId'] ?? null,
+            ];
+            $tables[] = $table;
+
+            $objectRid = (string) ($objectType['rid'] ?? '');
+            if ($objectRid !== '') {
+                $tablesByRid[$objectRid] = $table;
+            }
+
+            $primaryKeys = array_map('strval', is_array($objectType['primaryKeys'] ?? null) ? $objectType['primaryKeys'] : []);
+            $properties = is_array($objectType['properties'] ?? null) ? $objectType['properties'] : [];
+            foreach ($properties as $propertyIndex => $property) {
+                if (! is_array($property)) {
+                    continue;
+                }
+
+                $propertyId = (string) ($property['id'] ?? $property['apiName'] ?? "property-{$propertyIndex}");
+                $propertyRid = (string) ($property['rid'] ?? '');
+                $rowId = 'ontology-row-'.($propertyRid !== '' ? $propertyRid : "{$tableId}-{$propertyId}");
+                $propertyDisplay = is_array($property['displayMetadata'] ?? null) ? $property['displayMetadata'] : [];
+                $baseType = is_array($property['baseType'] ?? null) ? $property['baseType'] : ['type' => 'STRING'];
+                $canvasType = $this->ontologyCanvasType($baseType);
+                $isPrimary = in_array($propertyId, $primaryKeys, true)
+                    || in_array((string) ($property['apiName'] ?? ''), $primaryKeys, true);
+                $nullability = $property['dataConstraints']['nullability'] ?? null;
+                $row = $this->buildRowNode($rowId, $tableId, $propertyId, $x, $y + 40 + ($propertyIndex * 40), $propertyIndex, [
+                    'editing' => false,
+                    'showModal' => false,
+                    'showOptionsModal' => false,
+                    'keyMod' => $isPrimary ? 'PRIMARY KEY' : 'None',
+                    'sqlType' => $canvasType,
+                    'nullable' => ! $isPrimary && $nullability !== 'NO_NULLS',
+                    'unsigned' => false,
+                    'defaultValue' => '',
+                    'description' => trim((string) ($propertyDisplay['description'] ?? '')),
+                    'indexed' => (bool) ($property['indexedForSearch'] ?? false),
+                    'ontologyBaseType' => $baseType,
+                    'ontologyImportedSqlType' => $canvasType,
+                    'ontologyMetadata' => [
+                        'rid' => $property['rid'] ?? null,
+                        'apiName' => $property['apiName'] ?? null,
+                        'displayName' => $propertyDisplay['displayName'] ?? null,
+                        'source' => $property['source'] ?? null,
+                    ],
+                ]);
+                $rows[] = $row;
+
+                if ($propertyRid !== '') {
+                    $rowsByPropertyRid[$propertyRid] = $row;
+                }
+                if ($objectRid !== '') {
+                    $rowsByObjectAndPropertyId[$objectRid][$propertyId] = $row;
+                    if ($isPrimary) {
+                        $primaryRowsByObjectRid[$objectRid][] = $row;
+                    }
+                }
+            }
+
+            $columnY[$column] += max(160, (count($properties) + 2) * 40);
+        }
+
+        foreach (($ontology['relations'] ?? []) as $relationIndex => $relation) {
+            if (! is_array($relation)) {
+                continue;
+            }
+            $definition = is_array($relation['definition'] ?? null) ? $relation['definition'] : [];
+            $type = $definition['type'] ?? null;
+
+            if ($type === 'oneToMany' && is_array($definition['oneToMany'] ?? null)) {
+                $link = $definition['oneToMany'];
+                $oneRid = (string) ($link['objectTypeRidOneSide'] ?? '');
+                $manyRid = (string) ($link['objectTypeRidManySide'] ?? '');
+                $mapping = is_array($link['oneSidePrimaryKeyToManySidePropertyMapping'] ?? null)
+                    ? $link['oneSidePrimaryKeyToManySidePropertyMapping']
+                    : [];
+                $sourceRow = null;
+                $targetRow = null;
+                foreach ($mapping as $sourcePropertyRid => $targetPropertyRid) {
+                    $sourceRow = $rowsByPropertyRid[(string) $sourcePropertyRid] ?? null;
+                    $targetRow = $rowsByPropertyRid[(string) $targetPropertyRid] ?? null;
+                    if ($sourceRow && $targetRow) {
+                        break;
+                    }
+                }
+                $sourceRow ??= $primaryRowsByObjectRid[$oneRid][0] ?? null;
+                $foreignPropertyId = (string) ($link['manySideForeignKeyPropertyId'] ?? '');
+                $targetRow ??= $rowsByObjectAndPropertyId[$manyRid][$foreignPropertyId] ?? null;
+
+                if ($sourceRow && $targetRow) {
+                    if (($targetRow['data']['keyMod'] ?? null) !== 'PRIMARY KEY') {
+                        $this->markRowAsForeignKey($rows, $targetRow['id']);
+                    }
+                    $relationshipType = ($link['cardinalityHint'] ?? null) === 'ONE_TO_ONE' ? 'one-to-one' : 'one-to-many';
+                    $connections[] = $this->buildOntologyConnection(
+                        (string) ($relation['rid'] ?? "relation-{$relationIndex}"),
+                        $sourceRow,
+                        $targetRow,
+                        $tablesByRid[$manyRid]['data']['color'] ?? '#3d7a5c',
+                        $relationshipType
+                    );
+                }
+            } elseif ($type === 'manyToMany' && is_array($definition['manyToMany'] ?? null)) {
+                $link = $definition['manyToMany'];
+                $aRid = (string) ($link['objectTypeRidA'] ?? '');
+                $bRid = (string) ($link['objectTypeRidB'] ?? '');
+                $sourceRow = $primaryRowsByObjectRid[$aRid][0] ?? null;
+                $targetRow = $primaryRowsByObjectRid[$bRid][0] ?? null;
+                if ($sourceRow && $targetRow) {
+                    $connections[] = $this->buildOntologyConnection(
+                        (string) ($relation['rid'] ?? "relation-{$relationIndex}"),
+                        $sourceRow,
+                        $targetRow,
+                        $tablesByRid[$bRid]['data']['color'] ?? '#3d7a5c',
+                        'many-to-many'
+                    );
+                }
+            }
+        }
+
+        return array_merge($tables, $rows, $connections);
+    }
+
+    /** @param array<string, mixed> $baseType */
+    private function ontologyCanvasType(array $baseType): string
+    {
+        $type = strtoupper((string) ($baseType['type'] ?? 'STRING'));
+
+        return match ($type) {
+            'ARRAY' => 'ARRAY<'.$this->ontologyCanvasType(
+                is_array($baseType['subType'] ?? null) ? $baseType['subType'] : ['type' => 'STRING']
+            ).'>',
+            'VECTOR' => isset($baseType['dimension']) ? 'VECTOR('.(int) $baseType['dimension'].')' : 'VECTOR',
+            'DECIMAL' => isset($baseType['precision'], $baseType['scale'])
+                ? 'DECIMAL('.(int) $baseType['precision'].','.(int) $baseType['scale'].')'
+                : 'DECIMAL(10,2)',
+            'MEDIA_REFERENCE' => 'MEDIAREFERENCE',
+            'TIME_DEPENDENT' => 'GEOTIMESERIES',
+            default => $type,
+        };
+    }
+
+    /** @param list<array<string, mixed>> $rows */
+    private function markRowAsForeignKey(array &$rows, string $rowId): void
+    {
+        foreach ($rows as &$row) {
+            if (($row['id'] ?? null) === $rowId) {
+                $row['data']['keyMod'] = 'FOREIGN KEY';
+
+                return;
+            }
+        }
+    }
+
+    /**
+     * @param array<string, mixed> $sourceRow
+     * @param array<string, mixed> $targetRow
+     * @return array<string, mixed>
+     */
+    private function buildOntologyConnection(string $id, array $sourceRow, array $targetRow, string $color, string $relationshipType): array
+    {
+        $markers = match ($relationshipType) {
+            'one-to-one' => ['none', 'none'],
+            'many-to-many' => ['url(#chickenFoot)', 'url(#chickenFoot)'],
+            default => ['url(#chickenFoot)', 'none'],
+        };
+
+        return [
+            'id' => 'ontology-edge-'.$id,
+            'type' => 'chickenFoot',
+            'source' => $sourceRow['id'],
+            'target' => $targetRow['id'],
+            'sourceHandle' => 'source-right',
+            'targetHandle' => 'target-left',
+            'updatable' => true,
+            'style' => ['stroke' => $color],
+            'data' => [
+                'relationshipType' => $relationshipType,
+                'markerStart' => $markers[0],
+                'markerEnd' => $markers[1],
+                'color' => $color,
+            ],
         ];
     }
 

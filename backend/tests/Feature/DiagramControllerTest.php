@@ -76,6 +76,38 @@ class DiagramControllerTest extends TestCase
             ->assertJsonFragment(['status' => true]);
     }
 
+    public function test_schema_runtime_state_is_not_stored_or_returned(): void
+    {
+        $schema = [[
+            'id' => 'table-1',
+            'type' => 'table',
+            'label' => 'users',
+            'position' => ['x' => 10, 'y' => 20],
+            'computedPosition' => ['x' => 10, 'y' => 20, 'z' => 1],
+            'dimensions' => ['width' => 350, 'height' => 40],
+            'handleBounds' => ['source' => [], 'target' => []],
+            'selected' => true,
+            'data' => ['description' => 'Users', 'editing' => true],
+        ]];
+
+        $this->auth()
+            ->putJson("/api/diagrams/{$this->diagram->id}", ['schema' => $schema])
+            ->assertStatus(200);
+
+        $stored = $this->diagram->refresh()->schema[0];
+        $this->assertArrayNotHasKey('computedPosition', $stored);
+        $this->assertArrayNotHasKey('dimensions', $stored);
+        $this->assertArrayNotHasKey('handleBounds', $stored);
+        $this->assertArrayNotHasKey('selected', $stored);
+        $this->assertArrayNotHasKey('editing', $stored['data']);
+
+        $this->auth()
+            ->getJson("/api/diagrams/{$this->diagram->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('data.schema.0.position.x', 10)
+            ->assertJsonMissingPath('data.schema.0.computedPosition');
+    }
+
     public function test_destroy_deletes_diagram(): void
     {
         $diagram = Diagram::factory()->create(['user_id' => $this->user->id]);

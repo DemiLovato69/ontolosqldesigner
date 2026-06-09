@@ -4,7 +4,7 @@
             <button v-if="canEdit" class="dh-btn" @click="$emit('add-table')" title="Add Table (Ctrl+A)">
                 <SvgIcon name="plus" :size="17" />
             </button>
-            <button v-if="isOwner || isDemo" class="dh-btn" @click="$emit('import')" title="Import SQL">
+            <button v-if="isOwner || isDemo" class="dh-btn" @click="$emit('import')" title="Import schema">
                 <SvgIcon name="import" :size="17" />
             </button>
             <button v-if="isOwner || isDemo" class="dh-btn" @click="$emit('export')" title="Export">

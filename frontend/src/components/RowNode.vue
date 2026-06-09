@@ -373,9 +373,13 @@ const ONTOLOGY_TYPES = {
         { value: 'DATE', label: 'DATE' },
         { value: 'TIMESTAMP', label: 'TIMESTAMP' },
         { value: 'ATTACHMENT', label: 'ATTACHMENT' },
+        { value: 'ARRAY<STRING>', label: 'ARRAY' },
+        { value: 'VECTOR', label: 'VECTOR' },
+        { value: 'STRUCT', label: 'STRUCT' },
     ],
     'Geospatial & Media': [
         { value: 'GEOPOINT', label: 'GEOPOINT' },
+        { value: 'GEOHASH', label: 'GEOHASH' },
         { value: 'GEOSHAPE', label: 'GEOSHAPE' },
         { value: 'MEDIAREFERENCE', label: 'MEDIA REFERENCE' },
         { value: 'GEOTIMESERIES', label: 'GEOTIME SERIES' },

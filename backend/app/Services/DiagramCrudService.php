@@ -9,6 +9,7 @@ use App\DTOs\UpdateDiagramDTO;
 use App\Models\Diagram;
 use App\Models\User;
 use App\Repositories\DiagramRepositoryInterface;
+use App\Support\DiagramSchema;
 use Illuminate\Database\Eloquent\Collection;
 
 class DiagramCrudService
@@ -42,7 +43,7 @@ class DiagramCrudService
         return [
             'name' => $diagram->name,
             'db_type' => $diagram->db_type->value,
-            'schema' => $diagram->schema,
+            'schema' => DiagramSchema::withoutRuntimeState($diagram->schema),
         ];
     }
 }

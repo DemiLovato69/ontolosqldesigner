@@ -21,6 +21,7 @@ RUN apk add --no-cache $PHPIZE_DEPS \
 
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY docker/php/uploads.ini /usr/local/etc/php/conf.d/uploads.ini
 
 ARG USER_ID=1000
 ARG GROUP_ID=1000

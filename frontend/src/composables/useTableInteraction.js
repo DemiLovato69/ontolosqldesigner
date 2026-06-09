@@ -4,7 +4,19 @@ export function useTableInteraction({ findNode, schema, whisper, isSaved, broadc
     const lastInteractedTableId = ref(null)
     // Keep last-row border-radius in sync whenever row positions change
     watch(
-        () => schema.value?.filter(n => n.type === 'row').map(n => `${n.parentNode}:${n.id}:${n.position.y}`).sort().join(','),
+        () => {
+            const lastRows = {}
+            for (const node of schema.value ?? []) {
+                if (node.type !== 'row') continue
+                if (!lastRows[node.parentNode] || node.position.y > lastRows[node.parentNode].position.y) {
+                    lastRows[node.parentNode] = node
+                }
+            }
+            return Object.keys(lastRows)
+                .sort()
+                .map(parentId => `${parentId}:${lastRows[parentId].id}:${lastRows[parentId].position.y}`)
+                .join(',')
+        },
         () => {
             if (!schema.value) return
             const best = {}

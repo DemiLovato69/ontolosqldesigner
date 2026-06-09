@@ -297,4 +297,44 @@ class OntologyMakerServiceTest extends TestCase
             'geotime series' => ['GEOTIMESERIES', '"geotimeSeries"'],
         ];
     }
+
+    public function test_emits_array_vector_struct_and_geohash_properties(): void
+    {
+        $schema = json_encode([
+            ['id' => 'types', 'type' => 'table', 'label' => 'types'],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'types', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+            ['id' => 'tags', 'type' => 'row', 'label' => 'tags', 'parentNode' => 'types', 'data' => [
+                'sqlType' => 'ARRAY<STRING>',
+                'ontologyBaseType' => ['type' => 'ARRAY', 'subType' => ['type' => 'STRING']],
+            ]],
+            ['id' => 'embedding', 'type' => 'row', 'label' => 'embedding', 'parentNode' => 'types', 'data' => [
+                'sqlType' => 'VECTOR(1536)',
+                'ontologyBaseType' => ['type' => 'VECTOR', 'dimension' => 1536],
+            ]],
+            ['id' => 'address', 'type' => 'row', 'label' => 'address', 'parentNode' => 'types', 'data' => [
+                'sqlType' => 'STRUCT',
+                'ontologyBaseType' => [
+                    'type' => 'STRUCT',
+                    'structFields' => [
+                        ['apiName' => 'street', 'fieldType' => ['type' => 'STRING']],
+                        ['apiName' => 'number', 'fieldType' => ['type' => 'INTEGER']],
+                    ],
+                ],
+            ]],
+            ['id' => 'location', 'type' => 'row', 'label' => 'location', 'parentNode' => 'types', 'data' => [
+                'sqlType' => 'GEOHASH',
+                'ontologyBaseType' => ['type' => 'GEOHASH'],
+            ]],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('"tags": { type: "string", array: true', $module);
+        $this->assertStringContainsString('"embedding": { type: "vector"', $module);
+        $this->assertStringContainsString('"address": { type: { type: "struct", structDefinition: { "street": "string", "number": "integer" } }', $module);
+        $this->assertStringContainsString('"location": { type: "geohash"', $module);
+    }
 }

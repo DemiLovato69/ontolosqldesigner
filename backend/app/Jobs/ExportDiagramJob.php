@@ -24,7 +24,7 @@ class ExportDiagramJob implements ShouldQueue
 
     public int $timeout = 300;
 
-    public int $tries = 3;
+    public int $tries = 15;
 
     public int $backoff = 30;
 
@@ -32,13 +32,18 @@ class ExportDiagramJob implements ShouldQueue
 
     public function __construct(private Diagram $diagram)
     {
+        $this->onConnection('database');
         $this->onQueue('diagrams');
     }
 
     /** @return array<int, object> */
     public function middleware(): array
     {
-        return [new WithoutOverlapping((string) $this->diagram->id)];
+        return [
+            (new WithoutOverlapping((string) $this->diagram->id))
+                ->releaseAfter(30)
+                ->expireAfter(330),
+        ];
     }
 
     public function handle(DiagramSqlService $service, OntologyMakerService $ontologyMakerService): void

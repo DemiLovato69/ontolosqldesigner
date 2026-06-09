@@ -36,10 +36,12 @@ class OntologyMakerService
 
             foreach ($tableRows as $row) {
                 $apiName = $this->apiName($row['name']);
+                [$propertyType, $isArray] = $this->mapPropertyType($row);
                 $property = [
                     'api_name' => $apiName,
                     'display_name' => $this->displayName($row['name']),
-                    'type' => $this->mapType($row['sql_type']),
+                    'type' => $propertyType,
+                    'array' => $isArray,
                     'description' => $row['note'],
                     'nullable' => $row['nullable'],
                     'key_mod' => $row['key_mod'],
@@ -195,6 +197,9 @@ class OntologyMakerService
                     'note' => trim((string) ($item['data']['description'] ?? $item['data']['note'] ?? $item['data']['comment'] ?? '')),
                     'nullable' => (bool) ($item['data']['nullable'] ?? false),
                     'indexed' => (bool) ($item['data']['indexed'] ?? true),
+                    'ontology_base_type' => is_array($item['data']['ontologyBaseType'] ?? null)
+                        ? $item['data']['ontologyBaseType']
+                        : null,
                 ];
             } else {
                 $sourceId = $item['sourceNode']['id'] ?? $item['source'] ?? null;
@@ -341,6 +346,69 @@ class OntologyMakerService
         }
 
         return '"string"';
+    }
+
+    /** @param array<string, mixed> $row @return array{string, bool} */
+    private function mapPropertyType(array $row): array
+    {
+        $baseType = $row['ontology_base_type'] ?? null;
+        if (is_array($baseType)) {
+            return $this->mapOntologyBaseType($baseType);
+        }
+
+        $sqlType = trim((string) $row['sql_type']);
+        if (preg_match('/^ARRAY\s*<(.+)>$/i', $sqlType, $matches)) {
+            return [$this->mapType($matches[1]), true];
+        }
+        if (preg_match('/^VECTOR(?:\(\d+\))?$/i', $sqlType)) {
+            return ['"vector"', false];
+        }
+        if (strcasecmp($sqlType, 'GEOHASH') === 0) {
+            return ['"geohash"', false];
+        }
+        if (strcasecmp($sqlType, 'STRUCT') === 0) {
+            return ['{ type: "struct", structDefinition: {} }', false];
+        }
+
+        return [$this->mapType($sqlType), false];
+    }
+
+    /** @param array<string, mixed> $baseType @return array{string, bool} */
+    private function mapOntologyBaseType(array $baseType): array
+    {
+        $type = strtoupper((string) ($baseType['type'] ?? 'STRING'));
+        if ($type === 'ARRAY') {
+            [$subType] = $this->mapOntologyBaseType(
+                is_array($baseType['subType'] ?? null) ? $baseType['subType'] : ['type' => 'STRING']
+            );
+
+            return [$subType, true];
+        }
+        if ($type === 'STRUCT') {
+            $fields = [];
+            foreach (($baseType['structFields'] ?? []) as $field) {
+                if (! is_array($field)) {
+                    continue;
+                }
+                [$fieldType] = $this->mapOntologyBaseType(
+                    is_array($field['fieldType'] ?? null) ? $field['fieldType'] : ['type' => 'STRING']
+                );
+                $apiName = $this->apiName((string) ($field['apiName'] ?? 'field'));
+                $fields[] = '"'.$apiName.'": '.$fieldType;
+            }
+
+            return ['{ type: "struct", structDefinition: { '.implode(', ', $fields).' } }', false];
+        }
+
+        return [match ($type) {
+            'VECTOR' => '"vector"',
+            'GEOHASH' => '"geohash"',
+            'MEDIA_REFERENCE' => '"mediaReference"',
+            'DECIMAL' => isset($baseType['precision'], $baseType['scale'])
+                ? sprintf('{ type: "decimal", precision: %d, scale: %d }', $baseType['precision'], $baseType['scale'])
+                : '"decimal"',
+            default => $this->mapType($type),
+        }, false];
     }
 
     /** @return list<string> */
@@ -559,7 +627,8 @@ MTS;
                 $indexedForSearch = ($property['indexed'] ?? false) || in_array($property['key_mod'] ?? null, ['PRIMARY KEY', 'UNIQUE', 'INDEX'], true)
                     ? ', indexedForSearch: true'
                     : '';
-                $propertyLines[] = '    "'.$property['api_name'].'": { type: '.$property['type'].', displayName: "'.$this->escape($property['display_name']).'"'.$description.$nullability.$indexedForSearch.$valueType.' },';
+                $array = ($property['array'] ?? false) ? ', array: true' : '';
+                $propertyLines[] = '    "'.$property['api_name'].'": { type: '.$property['type'].$array.', displayName: "'.$this->escape($property['display_name']).'"'.$description.$nullability.$indexedForSearch.$valueType.' },';
             }
             $properties = implode("\n", $propertyLines);
             $description = $object['description'] !== ''

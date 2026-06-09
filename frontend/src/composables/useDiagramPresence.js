@@ -18,11 +18,15 @@ export const CURSOR_COLORS = ['#E53935', '#D81B60', '#8E24AA', '#3949AB', '#1E88
  * @param {Function} opts.onDiagramSaved           - called when a remote user saves
  */
 export function useDiagramPresence({ token, ownerIdentity, viewport, schema, canvasWrapperRef, onDiagramSaved, onVisitorRequested, onAccessChanged }) {
+    const FULL_SCHEMA_SYNC_LIMIT = 2000
     const remoteCursors = reactive({})
     let echo = null
     let presenceChannel = null
 
-    const whisper = (event, data) => presenceChannel?.whisper(event, data)
+    const whisper = (event, data) => {
+        if (event === 'schema-sync' && data?.schema?.length > FULL_SCHEMA_SYNC_LIMIT) return
+        presenceChannel?.whisper(event, data)
+    }
 
     const broadcastCursor = useThrottleFn((event) => {
         if (!presenceChannel || !ownerIdentity.value) return

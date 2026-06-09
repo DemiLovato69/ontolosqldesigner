@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Services;
 
 use App\Models\Diagram;
+use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
 use App\Services\DiagramSqlService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -31,6 +32,18 @@ class DiagramSqlServiceTest extends TestCase
         $schema = $this->service->importSchema($diagram, json_encode($sql));
         $arr = json_decode($schema, true);
         $this->assertCount(1, array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'table'));
+    }
+
+    public function test_heavy_diagram_jobs_use_database_queue(): void
+    {
+        $diagram = Diagram::factory()->make();
+        $importJob = new ImportDiagramSchemaJob($diagram);
+        $exportJob = new ExportDiagramJob($diagram);
+
+        $this->assertSame('database', $importJob->connection);
+        $this->assertSame('diagrams', $importJob->queue);
+        $this->assertSame('database', $exportJob->connection);
+        $this->assertSame('diagrams', $exportJob->queue);
     }
 
     public function test_export_script(): void
@@ -514,6 +527,110 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertEquals('TIMESTAMP', $rows['located_at']['data']['sqlType']);
         $this->assertEquals("ENUM('draft','published')", $rows['status']['data']['sqlType']);
         $this->assertEquals("ENUM('internal','external')", $rows['tags']['data']['sqlType']);
+    }
+
+    public function test_create_schema_imports_exported_ontology_json(): void
+    {
+        $ontology = [
+            'version' => 2,
+            'objectTypes' => [
+                [
+                    'id' => 'users',
+                    'rid' => 'object-users',
+                    'apiName' => 'User',
+                    'displayMetadata' => ['displayName' => 'User', 'description' => 'Application users'],
+                    'primaryKeys' => ['id'],
+                    'properties' => [
+                        [
+                            'id' => 'id',
+                            'rid' => 'property-user-id',
+                            'apiName' => 'id',
+                            'displayMetadata' => ['displayName' => 'Id'],
+                            'baseType' => ['type' => 'LONG'],
+                            'indexedForSearch' => true,
+                        ],
+                        [
+                            'id' => 'tags',
+                            'rid' => 'property-user-tags',
+                            'apiName' => 'tags',
+                            'displayMetadata' => ['displayName' => 'Tags'],
+                            'baseType' => ['type' => 'ARRAY', 'subType' => ['type' => 'STRING']],
+                        ],
+                        [
+                            'id' => 'embedding',
+                            'rid' => 'property-user-embedding',
+                            'apiName' => 'embedding',
+                            'displayMetadata' => ['displayName' => 'Embedding'],
+                            'baseType' => ['type' => 'VECTOR', 'dimension' => 1536],
+                        ],
+                        [
+                            'id' => 'location',
+                            'rid' => 'property-user-location',
+                            'apiName' => 'location',
+                            'displayMetadata' => ['displayName' => 'Location'],
+                            'baseType' => ['type' => 'GEOHASH'],
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'posts',
+                    'rid' => 'object-posts',
+                    'apiName' => 'Post',
+                    'displayMetadata' => ['displayName' => 'Post'],
+                    'primaryKeys' => ['id'],
+                    'properties' => [
+                        [
+                            'id' => 'id',
+                            'rid' => 'property-post-id',
+                            'apiName' => 'id',
+                            'displayMetadata' => ['displayName' => 'Id'],
+                            'baseType' => ['type' => 'LONG'],
+                        ],
+                        [
+                            'id' => 'user_id',
+                            'rid' => 'property-post-user-id',
+                            'apiName' => 'userId',
+                            'displayMetadata' => ['displayName' => 'User Id'],
+                            'baseType' => ['type' => 'LONG'],
+                            'dataConstraints' => ['nullability' => 'NO_NULLS'],
+                        ],
+                    ],
+                ],
+            ],
+            'relations' => [
+                [
+                    'rid' => 'relation-user-posts',
+                    'definition' => [
+                        'type' => 'oneToMany',
+                        'oneToMany' => [
+                            'objectTypeRidOneSide' => 'object-users',
+                            'objectTypeRidManySide' => 'object-posts',
+                            'manySideForeignKeyPropertyId' => 'user_id',
+                            'oneSidePrimaryKeyToManySidePropertyMapping' => [
+                                'property-user-id' => 'property-post-user-id',
+                            ],
+                        ],
+                    ],
+                ],
+            ],
+        ];
+
+        $schema = json_decode($this->service->createSchema(json_encode($ontology), 'ontology'), true);
+        $tables = array_values(array_filter($schema, fn ($item) => ($item['type'] ?? null) === 'table'));
+        $rows = array_column(array_filter($schema, fn ($item) => ($item['type'] ?? null) === 'row'), null, 'label');
+        $edges = array_values(array_filter($schema, fn ($item) => ($item['type'] ?? null) === 'chickenFoot'));
+
+        $this->assertCount(2, $tables);
+        $this->assertSame('Application users', $tables[0]['data']['description']);
+        $this->assertSame('ARRAY<STRING>', $rows['tags']['data']['sqlType']);
+        $this->assertSame('VECTOR(1536)', $rows['embedding']['data']['sqlType']);
+        $this->assertSame('GEOHASH', $rows['location']['data']['sqlType']);
+        $this->assertSame('FOREIGN KEY', $rows['user_id']['data']['keyMod']);
+        $this->assertFalse($rows['user_id']['data']['nullable']);
+        $this->assertCount(1, $edges);
+        $this->assertSame('one-to-many', $edges[0]['data']['relationshipType']);
+        $this->assertArrayNotHasKey('handleBounds', $rows['id']);
+        $this->assertArrayNotHasKey('computedPosition', $tables[0]);
     }
 
     public function test_import_schema_for_ontology_normalizes_imported_sql_types(): void

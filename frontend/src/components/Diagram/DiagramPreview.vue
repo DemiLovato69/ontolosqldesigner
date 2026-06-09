@@ -85,6 +85,8 @@ const TABLE_W = 350
 const HEADER_H = 40
 const ROW_H = 40
 const PADDING = 60
+const MAX_TABLES = 20
+const MAX_ROWS_PER_TABLE = 6
 
 export default {
     props: {
@@ -123,10 +125,20 @@ export default {
             return pos
         },
         tables() {
+            const rowsByTable = {}
+            for (const node of this.parsedSchema) {
+                if (node.type !== 'row' || !node.parentNode) continue
+                if (!rowsByTable[node.parentNode]) rowsByTable[node.parentNode] = []
+                if (rowsByTable[node.parentNode].length < MAX_ROWS_PER_TABLE) {
+                    rowsByTable[node.parentNode].push(node)
+                }
+            }
+
             return this.parsedSchema
                 .filter(n => n.type === 'table')
+                .slice(0, MAX_TABLES)
                 .map(n => {
-                    const rows = this.parsedSchema.filter(r => r.parentNode === n.id && r.type === 'row')
+                    const rows = rowsByTable[n.id] ?? []
                     const pos = this.absPos[n.id] || { x: 0, y: 0 }
                     return {
                         id: n.id,

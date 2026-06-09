@@ -233,9 +233,15 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         snapshot()
         isSaved.value = false
         const node = schema.value.find(el => el.id === id)
-        if (node) whisper('schema-patch', {
-            update: [{ id, data: { sqlType: node.data.sqlType, keyMod: node.data.keyMod, nullable: node.data.nullable, indexed: node.data.indexed ?? true, unsigned: node.data.unsigned, defaultValue: node.data.defaultValue, description: node.data.description ?? node.data.comment ?? '' } }]
-        })
+        if (node) {
+            if (node.data.ontologyImportedSqlType && node.data.sqlType !== node.data.ontologyImportedSqlType) {
+                node.data.ontologyBaseType = null
+                node.data.ontologyImportedSqlType = null
+            }
+            whisper('schema-patch', {
+                update: [{ id, data: { sqlType: node.data.sqlType, keyMod: node.data.keyMod, nullable: node.data.nullable, indexed: node.data.indexed ?? true, unsigned: node.data.unsigned, defaultValue: node.data.defaultValue, description: node.data.description ?? node.data.comment ?? '', ontologyBaseType: node.data.ontologyBaseType ?? null, ontologyImportedSqlType: node.data.ontologyImportedSqlType ?? null } }]
+            })
+        }
     }
 
     const updateNote = (id, note) => {

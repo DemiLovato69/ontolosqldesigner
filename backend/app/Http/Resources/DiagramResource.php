@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Diagram;
+use App\Support\DiagramSchema;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Knuckles\Scribe\Attributes\ResponseField;
@@ -17,7 +18,6 @@ class DiagramResource extends JsonResource
     #[ResponseField('name', 'string', 'The diagram name.')]
     #[ResponseField('db_type', 'string', 'The diagram output type.', enum: ['mysql', 'postgresql', 'sqlite', 'oracle', 'sqlserver', 'msaccess', 'ontology'])]
     #[ResponseField('schema', 'object', 'The diagram schema (tables, columns, relations).')]
-    #[ResponseField('script', 'string', 'The raw SQL script.')]
     #[ResponseField('share_token', 'string', 'Token used to share the diagram publicly.')]
     #[ResponseField('share_access', 'string', 'The share access level.')]
     #[ResponseField('require_approval', 'boolean', 'Whether viewer access requires approval.')]
@@ -29,8 +29,7 @@ class DiagramResource extends JsonResource
             'id' => $this->resource->id,
             'name' => $this->resource->name,
             'db_type' => $this->resource->db_type ?? 'mysql',
-            'schema' => $this->resource->schema,
-            'script' => $this->resource->script,
+            'schema' => DiagramSchema::withoutRuntimeState($this->resource->schema),
             'share_token' => $this->resource->share_token,
             'share_access' => $this->resource->share_access?->value,
             'require_approval' => (bool) $this->resource->require_approval,

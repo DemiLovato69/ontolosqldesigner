@@ -8,6 +8,7 @@ use App\DTOs\CreateDiagramDTO;
 use App\DTOs\UpdateDiagramDTO;
 use App\Models\Diagram;
 use App\Models\User;
+use App\Support\DiagramSchema;
 use Illuminate\Database\Eloquent\Collection;
 
 class DiagramRepository implements DiagramRepositoryInterface
@@ -38,7 +39,12 @@ class DiagramRepository implements DiagramRepositoryInterface
 
     public function update(Diagram $diagram, UpdateDiagramDTO $dto): bool
     {
-        return $diagram->update($dto->toArray());
+        $data = $dto->toArray();
+        if (isset($data['schema']) && is_array($data['schema'])) {
+            $data['schema'] = DiagramSchema::withoutRuntimeState($data['schema']);
+        }
+
+        return $diagram->update($data);
     }
 
     public function delete(Diagram $diagram): bool

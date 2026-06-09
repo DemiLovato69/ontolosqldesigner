@@ -22,6 +22,9 @@ services:
             DB_PORT: 5432
             REDIS_HOST: redis
             REDIS_PORT: 6379
+            REVERB_INTERNAL_HOST: reverb
+            REVERB_INTERNAL_PORT: 6001
+            REVERB_INTERNAL_SCHEME: http
 
 
     queue:
@@ -43,7 +46,10 @@ services:
         environment:
             DB_HOST: postgres
             DB_PORT: 5432
-        command: ["php", "artisan", "queue:work", "--queue=diagrams", "--tries=1", "--sleep=3", "--timeout=300"]
+            REVERB_INTERNAL_HOST: reverb
+            REVERB_INTERNAL_PORT: 6001
+            REVERB_INTERNAL_SCHEME: http
+        command: ["php", "artisan", "queue:work", "database", "--queue=diagrams", "--tries=1", "--sleep=3", "--timeout=300"]
 
     queue-emails:
         build:

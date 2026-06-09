@@ -15,7 +15,7 @@
 </template>
 
 <script setup>
-import { BaseEdge } from '@vue-flow/core'
+import { BaseEdge, getSmoothStepPath } from '@vue-flow/core'
 import { computed } from 'vue'
 import { useEdgeRouting } from '@/composables/useEdgeRouting.js'
 
@@ -33,11 +33,15 @@ const props = defineProps({
     targetPosition: String,
     data: Object,
     style: Object,
+    simpleRouting: Boolean,
 })
 
 const { routeEdge } = useEdgeRouting()
 
-const edgePath = computed(() => routeEdge(props))
+const edgePath = computed(() => props.simpleRouting
+    ? getSmoothStepPath(props)[0]
+    : routeEdge(props)
+)
 const markerId = computed(() => `chickenFoot-${props.id}`)
 const strokeColor = computed(() => props.style?.stroke || 'var(--color-primary)')
 const edgeStyle = computed(() => ({ fill: 'none', ...props.style }))
