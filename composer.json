@@ -1,5 +1,11 @@
 {
     "require": {
+        "php": "8.4.*",
+        "ext-mbstring": "*",
+        "ext-pdo": "*",
+        "ext-pdo_pgsql": "*",
+        "ext-simplexml": "*",
+        "ext-zip": "*",
         "google/apiclient": "*"
     }
 }
