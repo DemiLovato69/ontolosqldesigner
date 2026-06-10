@@ -7,6 +7,7 @@
     "require": {
         "php": "^8.2",
         "ext-pdo": "*",
+        "ext-pcntl": "*",
         "ext-zip": "*",
         "google/apiclient": "^2.15",
         "knuckleswtf/scribe": "^5.9",

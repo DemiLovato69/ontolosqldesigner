@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "27c14a21a28ec2157ef8758c340e6d01",
+    "content-hash": "cacb3d82887615f5c53295e75463511f",
     "packages": [
         {
             "name": "brick/math",
@@ -824,12 +824,12 @@
             "version": "v7.0.4",
             "source": {
                 "type": "git",
-                "url": "https://github.com/firebase/php-jwt.git",
+                "url": "https://github.com/googleapis/php-jwt.git",
                 "reference": "e41f1bd7dbe3c5455c3f72d4338cfeb083b71931"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/firebase/php-jwt/zipball/e41f1bd7dbe3c5455c3f72d4338cfeb083b71931",
+                "url": "https://api.github.com/repos/googleapis/php-jwt/zipball/e41f1bd7dbe3c5455c3f72d4338cfeb083b71931",
                 "reference": "e41f1bd7dbe3c5455c3f72d4338cfeb083b71931",
                 "shasum": ""
             },
@@ -10964,6 +10964,7 @@
     "platform": {
         "php": "^8.2",
         "ext-pdo": "*",
+        "ext-pcntl": "*",
         "ext-zip": "*",
         "ext-simplexml": "*"
     },
