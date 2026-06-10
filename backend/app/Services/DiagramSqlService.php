@@ -27,7 +27,10 @@ use ZipArchive;
 
 class DiagramSqlService
 {
-    public function __construct(private readonly OntologyMakerService $ontologyMakerService) {}
+    public function __construct(
+        private readonly OntologyMakerService $ontologyMakerService,
+        private readonly HierarchicalDiagramLayoutService $layoutService,
+    ) {}
 
     public function startImport(Diagram $diagram, string $script, User $user): void
     {
@@ -37,7 +40,7 @@ class DiagramSqlService
         $diagram->save();
 
         ImportDiagramSchemaJob::dispatch($diagram);
-        broadcast(new SchemaImported($diagram->share_token, json_encode($diagram->schema), (string) $user->id));
+        broadcast(new SchemaImported($diagram->share_token, (string) $user->id));
 
         DiagramChangelog::create([
             'diagram_id' => $diagram->id,
@@ -67,7 +70,7 @@ class DiagramSqlService
 
     public function importSchema(Diagram $diagram, string $script): string
     {
-        $diagram->schema = json_decode($this->createSchema($script, ($diagram->db_type ?? DbType::MYSQL)->value), true);
+        $diagram->schema = $this->createSchemaArray($script, ($diagram->db_type ?? DbType::MYSQL)->value);
         $diagram->save();
 
         return json_encode($diagram->schema);
@@ -281,10 +284,16 @@ class DiagramSqlService
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
     public function createSchema(string $script, string $dbType = 'mysql'): string
     {
+        return json_encode($this->createSchemaArray($script, $dbType), JSON_PRETTY_PRINT);
+    }
+
+    /** @return list<array<string, mixed>> */
+    public function createSchemaArray(string $script, string $dbType = 'mysql'): array
+    {
         if ($dbType === DbType::ONTOLOGY->value) {
             $ontology = $this->decodeOntologyExport($script);
             if ($ontology !== null) {
-                return json_encode($this->createSchemaFromOntologyExport($ontology), JSON_PRETTY_PRINT);
+                return $this->createSchemaFromOntologyExport($ontology);
             }
         }
 
@@ -293,6 +302,7 @@ class DiagramSqlService
         $connections = [];
         $tableX = 50;
         $pendingFks = [];
+        $layoutRelationships = [];
         $tableIdByName = [];
         $tableColorById = [];
         $rowIndex = [];
@@ -337,10 +347,16 @@ class DiagramSqlService
             $connection = $this->resolveConnection($tableIdByName, $tableColorById, $rowIndex, $fk['sourceTable'], $fk['sourceCol'], $fk['targetTable'], $fk['targetCol']);
             if ($connection) {
                 $connections[] = $connection;
+                $layoutRelationships[] = [
+                    'source' => $tableIdByName[$fk['targetTable']],
+                    'target' => $tableIdByName[$fk['sourceTable']],
+                ];
             }
         }
 
-        return json_encode(array_merge($tables, $rows, $connections), JSON_PRETTY_PRINT);
+        $tables = $this->layoutService->layout($tables, $rows, $layoutRelationships);
+
+        return array_merge($tables, $rows, $connections);
     }
 
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
@@ -487,12 +503,12 @@ class DiagramSqlService
     /** @return array<string, mixed>|null */
     private function decodeOntologyExport(string $script): ?array
     {
-        $trimmed = trim($script);
-        if ($trimmed === '' || $trimmed[0] !== '{') {
+        $firstContentOffset = strspn($script, " \n\r\t");
+        if ($firstContentOffset === strlen($script) || $script[$firstContentOffset] !== '{') {
             return null;
         }
 
-        $decoded = json_decode($trimmed, true);
+        $decoded = json_decode($script, true);
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw InvalidSchemaException::malformedJson();
         }
@@ -504,7 +520,7 @@ class DiagramSqlService
     }
 
     /**
-     * @param array<string, mixed> $ontology
+     * @param  array<string, mixed>  $ontology
      * @return list<array<string, mixed>>
      */
     private function createSchemaFromOntologyExport(array $ontology): array
@@ -516,16 +532,15 @@ class DiagramSqlService
         $rowsByPropertyRid = [];
         $rowsByObjectAndPropertyId = [];
         $primaryRowsByObjectRid = [];
-        $columnY = array_fill(0, 5, 50);
+        $layoutRelationships = [];
 
         foreach ($ontology['objectTypes'] as $objectIndex => $objectType) {
             if (! is_array($objectType)) {
                 continue;
             }
 
-            $column = $objectIndex % count($columnY);
-            $x = 50 + ($column * 400);
-            $y = $columnY[$column];
+            $x = 50;
+            $y = 50;
             $tableId = 'ontology-table-'.($objectType['rid'] ?? $objectType['id'] ?? $objectIndex);
             $displayMetadata = is_array($objectType['displayMetadata'] ?? null) ? $objectType['displayMetadata'] : [];
             $name = (string) ($displayMetadata['displayName'] ?? $objectType['apiName'] ?? $objectType['id'] ?? 'Object');
@@ -593,7 +608,6 @@ class DiagramSqlService
                 }
             }
 
-            $columnY[$column] += max(160, (count($properties) + 2) * 40);
         }
 
         foreach (($ontology['relations'] ?? []) as $relationIndex => $relation) {
@@ -635,6 +649,12 @@ class DiagramSqlService
                         $tablesByRid[$manyRid]['data']['color'] ?? '#3d7a5c',
                         $relationshipType
                     );
+                    if ($oneRid !== '' && $manyRid !== '' && isset($tablesByRid[$oneRid], $tablesByRid[$manyRid])) {
+                        $layoutRelationships[] = [
+                            'source' => $tablesByRid[$oneRid]['id'],
+                            'target' => $tablesByRid[$manyRid]['id'],
+                        ];
+                    }
                 }
             } elseif ($type === 'manyToMany' && is_array($definition['manyToMany'] ?? null)) {
                 $link = $definition['manyToMany'];
@@ -650,9 +670,17 @@ class DiagramSqlService
                         $tablesByRid[$bRid]['data']['color'] ?? '#3d7a5c',
                         'many-to-many'
                     );
+                    if ($aRid !== '' && $bRid !== '' && isset($tablesByRid[$aRid], $tablesByRid[$bRid])) {
+                        $layoutRelationships[] = [
+                            'source' => $tablesByRid[$aRid]['id'],
+                            'target' => $tablesByRid[$bRid]['id'],
+                        ];
+                    }
                 }
             }
         }
+
+        $tables = $this->layoutService->layout($tables, $rows, $layoutRelationships);
 
         return array_merge($tables, $rows, $connections);
     }
@@ -689,8 +717,8 @@ class DiagramSqlService
     }
 
     /**
-     * @param array<string, mixed> $sourceRow
-     * @param array<string, mixed> $targetRow
+     * @param  array<string, mixed>  $sourceRow
+     * @param  array<string, mixed>  $targetRow
      * @return array<string, mixed>
      */
     private function buildOntologyConnection(string $id, array $sourceRow, array $targetRow, string $color, string $relationshipType): array

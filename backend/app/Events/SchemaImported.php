@@ -16,7 +16,6 @@ class SchemaImported implements ShouldBroadcastNow // Don't believe the IDE, eve
 
     public function __construct(
         public readonly string $shareToken,
-        public readonly string $schema,
         public readonly string $importedBy,
     ) {}
 

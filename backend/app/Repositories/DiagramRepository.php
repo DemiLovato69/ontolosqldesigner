@@ -16,7 +16,18 @@ class DiagramRepository implements DiagramRepositoryInterface
     /** @return Collection<int, Diagram> */
     public function all(User $user): Collection
     {
-        return $user->diagrams()->get();
+        return $user->diagrams()
+            ->select([
+                'id',
+                'name',
+                'db_type',
+                'user_id',
+                'share_token',
+                'share_access',
+                'require_approval',
+                'library',
+            ])
+            ->get();
     }
 
     /** @deprecated Not used anywhere */

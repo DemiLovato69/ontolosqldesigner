@@ -212,6 +212,7 @@
             :dbType="diagramDbType"
             @close="showExportModal = false"
             @capture-png="capturePng"
+            @capture-svg="captureSvg"
         />
 
         <SupportModal
@@ -234,6 +235,7 @@ import { computed, onBeforeMount, onMounted, onUnmounted, ref, nextTick } from '
 import { Panel, Position, useVueFlow, VueFlow } from '@vue-flow/core'
 import { TABLE_STYLE } from '@/services/TableActions.js'
 import { Diagram } from '@/services/Diagram.js'
+import { exportDiagramPng, exportDiagramSvg } from '@/services/DiagramPngExporter.js'
 import { DEMO_SCHEMA } from '@/services/demoSchema.js'
 import { useDiagramPresence, CURSOR_COLORS } from '@/composables/useDiagramPresence.js'
 import { useDiagramPolling } from '@/composables/useDiagramPolling.js'
@@ -478,19 +480,20 @@ const openExportModal = async () => {
 
 const capturePng = async () => {
     showExportModal.value = false
-    fitView({ duration: 0 })
-    await nextTick()
-    const el = canvasWrapperRef.value?.querySelector('.vue-flow')
-    if (!el) return
     try {
-        const { toPng } = await import('html-to-image')
-        const dataUrl = await toPng(el, { backgroundColor: '#282828' })
-        const a = document.createElement('a')
-        a.href = dataUrl
-        a.download = `${diagramName.value}.png`
-        a.click()
+        await exportDiagramPng(schema.value, diagramName.value)
     } catch (e) {
         $toast.error('Failed to export image')
+        console.error(e)
+    }
+}
+
+const captureSvg = async () => {
+    showExportModal.value = false
+    try {
+        await exportDiagramSvg(schema.value, diagramName.value)
+    } catch (e) {
+        $toast.error('Failed to export SVG')
         console.error(e)
     }
 }

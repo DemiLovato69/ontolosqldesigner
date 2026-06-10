@@ -60,9 +60,9 @@ class ImportDiagramSchemaJob implements ShouldQueue
         $this->diagram->import_status = ImportStatus::PROCESSING;
         $this->diagram->save();
 
-        $this->diagram->schema = json_decode(
-            $service->createSchema($this->diagram->script, ($this->diagram->db_type ?? DbType::MYSQL)->value),
-            true
+        $this->diagram->schema = $service->createSchemaArray(
+            $this->diagram->script,
+            ($this->diagram->db_type ?? DbType::MYSQL)->value
         );
         $this->diagram->import_status = ImportStatus::DONE;
         $this->diagram->import_error = null;

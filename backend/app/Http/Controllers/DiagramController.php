@@ -12,11 +12,11 @@ use App\Enums\DiagramAccess;
 use App\Enums\ExportStatus;
 use App\Enums\ImportStatus;
 use App\Http\Requests\DiagramRequest;
-use App\Http\Requests\ImportDiagramRequest;
 use App\Http\Requests\SaveByTokenRequest;
 use App\Http\Requests\UpdateShareAccessRequest;
 use App\Http\Requests\UpdateVisitorAccessRequest;
 use App\Http\Resources\DiagramResource;
+use App\Http\Resources\DiagramSummaryResource;
 use App\Http\Resources\DiagramVisitorResource;
 use App\Models\Diagram;
 use App\Models\DiagramVisitor;
@@ -50,7 +50,7 @@ class DiagramController extends Controller
     #[Subgroup('CRUD')]
     public function index(Request $request): AnonymousResourceCollection
     {
-        return DiagramResource::collection($this->crudService->getUserDiagrams($request->user()));
+        return DiagramSummaryResource::collection($this->crudService->getUserDiagrams($request->user()));
     }
 
     /**
@@ -129,13 +129,20 @@ class DiagramController extends Controller
      * @throws AuthorizationException
      */
     #[Subgroup('SQL')]
-    public function import(Diagram $diagram, ImportDiagramRequest $request): JsonResponse
+    public function import(Diagram $diagram, Request $request): JsonResponse
     {
         $this->authorize('import', $diagram);
 
+        $script = $request->isJson()
+            ? $request->input('script')
+            : $request->getContent();
+        if (! is_string($script) || $script === '') {
+            return $this->success(['message' => 'The script field is required.'], 422);
+        }
+
         /** @var User $user */
         $user = $request->user();
-        $this->sqlService->startImport($diagram, $request->validated()['script'], $user);
+        $this->sqlService->startImport($diagram, $script, $user);
 
         return $this->success(['status' => 'pending'], 202);
     }

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Services;
 
-use App\Models\Diagram;
 use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
+use App\Models\Diagram;
 use App\Services\DiagramSqlService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
@@ -207,9 +207,12 @@ class DiagramSqlServiceTest extends TestCase
                 CREATE TABLE posts (id INT UNSIGNED NOT NULL PRIMARY KEY, user_id INT UNSIGNED NOT NULL);
                 ALTER TABLE posts ADD FOREIGN KEY (user_id) REFERENCES users(id);';
         $arr = json_decode($this->service->createSchema($sql), true);
-        $this->assertCount(2, array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'table'));
+        $tables = array_values(array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'table'));
+        $tablesByName = array_column($tables, null, 'label');
+        $this->assertCount(2, $tables);
         $this->assertCount(5, array_filter($arr, fn ($i) => ($i['type'] ?? null) === 'row'));
         $this->assertCount(1, array_filter($arr, fn ($i) => isset($i['source'], $i['target'])));
+        $this->assertLessThan($tablesByName['posts']['position']['x'], $tablesByName['users']['position']['x']);
     }
 
     public function test_create_schema_my_sql_separate_constraints(): void
@@ -631,6 +634,8 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertSame('one-to-many', $edges[0]['data']['relationshipType']);
         $this->assertArrayNotHasKey('handleBounds', $rows['id']);
         $this->assertArrayNotHasKey('computedPosition', $tables[0]);
+        $tablesByName = array_column($tables, null, 'label');
+        $this->assertLessThan($tablesByName['Post']['position']['x'], $tablesByName['User']['position']['x']);
     }
 
     public function test_import_schema_for_ontology_normalizes_imported_sql_types(): void

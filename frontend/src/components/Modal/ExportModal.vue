@@ -81,7 +81,24 @@
                         <span v-else class="export-spinner"></span>
                     </div>
                     <span class="export-card__label">.png</span>
-                    <span class="export-card__desc">{{ activeExport === 'png' ? 'Capturing…' : 'Image snapshot' }}</span>
+                    <span class="export-card__desc">{{ activeExport === 'png' ? 'Rendering…' : 'Full diagram image' }}</span>
+                </button>
+
+                <button class="export-card export-card--svg" :class="{ 'export-card--active': activeExport === 'svg' }" :disabled="isExporting" @click="captureSvg">
+                    <div class="export-card__icon">
+                        <svg v-if="activeExport !== 'svg'" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M10 6h20l10 10v26a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2z" fill="var(--bg-surface-alt)" stroke="#a855f7" stroke-width="2"/>
+                            <path d="M30 6v10h10M14 31l7-7 5 5 7-9" stroke="#a855f7" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+                            <circle cx="14" cy="31" r="2" fill="#a855f7"/>
+                            <circle cx="21" cy="24" r="2" fill="#a855f7"/>
+                            <circle cx="26" cy="29" r="2" fill="#a855f7"/>
+                            <circle cx="33" cy="20" r="2" fill="#a855f7"/>
+                            <text x="24" y="40" text-anchor="middle" font-size="8" font-weight="700" font-family="monospace" fill="#a855f7">.svg</text>
+                        </svg>
+                        <span v-else class="export-spinner"></span>
+                    </div>
+                    <span class="export-card__label">.svg</span>
+                    <span class="export-card__desc">{{ activeExport === 'svg' ? 'Rendering…' : 'Scalable full diagram' }}</span>
                 </button>
 
                 <button class="export-card export-card--laravel" :class="{ 'export-card--active': activeExport === 'laravel' }" :disabled="isExporting" @click="downloadLaravelMigrations">
@@ -285,12 +302,15 @@ const downloadJson = () => withExporting('json', async () => {
     URL.revokeObjectURL(url)
 })
 
-const emit = defineEmits(['close', 'capture-png'])
+const emit = defineEmits(['close', 'capture-png', 'capture-svg'])
 
-const capturePng = () => withExporting('png', () => new Promise(resolve => {
+const capturePng = () => withExporting('png', async () => {
     emit('capture-png')
-    setTimeout(resolve, 4000)
-}))
+})
+
+const captureSvg = () => withExporting('svg', async () => {
+    emit('capture-svg')
+})
 
 const downloadLaravelMigrations = () => withExporting('laravel', async () => {
     const blob = await Diagram.exportMigration(props.diagramId)
@@ -435,6 +455,10 @@ const downloadOntology = () => withExporting('ontology', async () => {
 
 .export-card--png:hover {
     border-color: var(--color-primary);
+}
+
+.export-card--svg:hover {
+    border-color: #a855f7;
 }
 
 .export-card__icon {

@@ -33,7 +33,20 @@ class DiagramControllerTest extends TestCase
 
     public function test_index_returns_diagrams(): void
     {
-        $this->auth()->getJson('/api/diagrams')->assertStatus(200);
+        $this->diagram->update([
+            'schema' => [[
+                'id' => 'large-table',
+                'type' => 'table',
+                'label' => str_repeat('large schema data', 1000),
+            ]],
+        ]);
+
+        $this->auth()
+            ->getJson('/api/diagrams')
+            ->assertStatus(200)
+            ->assertJsonPath('data.0.id', $this->diagram->id)
+            ->assertJsonPath('data.0.schema', [])
+            ->assertJsonMissingPath('data.0.schema.0');
     }
 
     public function test_store_creates_diagram(): void
@@ -152,11 +165,49 @@ class DiagramControllerTest extends TestCase
         Queue::fake();
         Event::fake();
 
-        // script column is JSON type — must be a JSON-encoded string value
         $this->auth()
-            ->postJson("/api/diagrams/sql/import/{$this->diagram->id}", ['script' => json_encode('CREATE TABLE t (id INT);')])
+            ->postJson("/api/diagrams/sql/import/{$this->diagram->id}", ['script' => 'CREATE TABLE t (id INT);'])
             ->assertStatus(202)
             ->assertJsonFragment(['status' => 'pending']);
+    }
+
+    public function test_import_accepts_raw_script_body(): void
+    {
+        Queue::fake();
+        Event::fake();
+
+        $this->auth()
+            ->call(
+                'POST',
+                "/api/diagrams/sql/import/{$this->diagram->id}",
+                [],
+                [],
+                [],
+                ['CONTENT_TYPE' => 'text/plain'],
+                'CREATE TABLE users (id INT PRIMARY KEY);'
+            )
+            ->assertStatus(202)
+            ->assertJsonPath('status', 'pending');
+
+        $this->assertSame(
+            'CREATE TABLE users (id INT PRIMARY KEY);',
+            $this->diagram->refresh()->script
+        );
+    }
+
+    public function test_import_rejects_empty_raw_script_body(): void
+    {
+        $this->auth()
+            ->call(
+                'POST',
+                "/api/diagrams/sql/import/{$this->diagram->id}",
+                [],
+                [],
+                [],
+                ['CONTENT_TYPE' => 'text/plain'],
+                ''
+            )
+            ->assertStatus(422);
     }
 
     public function test_import_status_returns_status(): void
