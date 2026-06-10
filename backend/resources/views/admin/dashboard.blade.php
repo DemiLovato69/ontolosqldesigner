@@ -260,7 +260,10 @@
             letter-spacing: .04em;
         }
         .modal-to strong { color: #2c3e50; text-transform: none; }
-        .modal input[type="text"], .modal textarea {
+        .modal input[type="text"],
+        .modal input[type="email"],
+        .modal input[type="password"],
+        .modal textarea {
             font-family: 'JetBrains Mono', monospace;
             font-size: 12px;
             padding: 8px 12px;
@@ -273,8 +276,20 @@
             resize: vertical;
             transition: border-color .2s;
         }
-        .modal input[type="text"]:focus, .modal textarea:focus { border-color: #8f2f2f; }
+        .modal input:focus, .modal textarea:focus { border-color: #8f2f2f; }
         .modal textarea { min-height: 140px; }
+        .modal-error {
+            display: none;
+            padding: 8px 10px;
+            border: 1px solid #e0b0b0;
+            border-radius: 4px;
+            background: #fff0f0;
+            color: #8f2f2f;
+            font-size: 10px;
+            line-height: 1.5;
+            text-transform: none;
+        }
+        .modal-error.show { display: block; }
         .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
         .modal-cancel {
             background: none;
@@ -441,6 +456,7 @@
                     <a href="{{ request()->fullUrlWithQuery(['sort' => 'registered', 'page' => 1]) }}" class="sort-btn {{ $sort === 'registered' ? 'active' : '' }}">Registered</a>
                     <a href="{{ request()->fullUrlWithQuery(['sort' => 'last_action', 'page' => 1]) }}" class="sort-btn {{ $sort === 'last_action' ? 'active' : '' }}">Last Action</a>
                 </div>
+                <button class="modal-send" style="font-size:10px;padding:5px 12px;" onclick="openCreateUserModal()">Create Account</button>
                 <button class="feature-btn" style="font-size:10px;padding:5px 12px;" onclick="openBulkEmailModal()">Email All</button>
             </div>
         </div>
@@ -534,6 +550,21 @@
     </main>
 
     <div class="toast" id="toast"></div>
+
+    <div class="modal-overlay" id="createUserModalOverlay">
+        <div class="modal">
+            <div class="modal-title">Create Internal Account</div>
+            <div class="modal-to">The account will be created as verified and can sign in immediately.</div>
+            <input type="email" id="createUserEmail" placeholder="Email address" maxlength="255" autocomplete="off" />
+            <input type="password" id="createUserPassword" placeholder="Password" autocomplete="new-password" />
+            <input type="password" id="createUserPasswordConfirmation" placeholder="Confirm password" autocomplete="new-password" />
+            <div class="modal-error" id="createUserError"></div>
+            <div class="modal-actions">
+                <button class="modal-cancel" onclick="closeCreateUserModal()">Cancel</button>
+                <button class="modal-send" id="createUserBtn" onclick="createUser()">Create Account</button>
+            </div>
+        </div>
+    </div>
 
     <div class="modal-overlay" id="bulkEmailModalOverlay">
         <div class="modal">
@@ -714,6 +745,65 @@
             t.textContent = msg;
             t.className = 'toast show' + (isError ? ' error' : '');
             setTimeout(() => { t.className = 'toast'; }, 3000);
+        }
+
+        function openCreateUserModal() {
+            document.getElementById('createUserEmail').value = '';
+            document.getElementById('createUserPassword').value = '';
+            document.getElementById('createUserPasswordConfirmation').value = '';
+            document.getElementById('createUserError').className = 'modal-error';
+            document.getElementById('createUserError').textContent = '';
+            document.getElementById('createUserBtn').disabled = false;
+            document.getElementById('createUserBtn').textContent = 'Create Account';
+            document.getElementById('createUserModalOverlay').classList.add('show');
+            document.getElementById('createUserEmail').focus();
+        }
+
+        function closeCreateUserModal() {
+            document.getElementById('createUserModalOverlay').classList.remove('show');
+        }
+
+        document.getElementById('createUserModalOverlay').addEventListener('click', function (e) {
+            if (e.target === this) closeCreateUserModal();
+        });
+
+        async function createUser() {
+            const email = document.getElementById('createUserEmail').value.trim();
+            const password = document.getElementById('createUserPassword').value;
+            const passwordConfirmation = document.getElementById('createUserPasswordConfirmation').value;
+            const error = document.getElementById('createUserError');
+            const btn = document.getElementById('createUserBtn');
+
+            error.className = 'modal-error';
+            error.textContent = '';
+            btn.disabled = true;
+            btn.textContent = '...';
+
+            try {
+                const res = await fetch('/admin/users', {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({
+                        email,
+                        password,
+                        password_confirmation: passwordConfirmation,
+                    }),
+                });
+                const data = await res.json();
+                if (!res.ok) {
+                    const messages = Object.values(data.errors || {}).flat();
+                    throw new Error(messages.join(' ') || data.message || 'Account creation failed');
+                }
+
+                showToast(`Created ${data.email}`);
+                closeCreateUserModal();
+                setTimeout(() => window.location.reload(), 600);
+            } catch (e) {
+                error.textContent = e.message;
+                error.className = 'modal-error show';
+                btn.disabled = false;
+                btn.textContent = 'Create Account';
+            }
         }
 
         function openBulkEmailModal() {

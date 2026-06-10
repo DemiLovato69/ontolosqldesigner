@@ -4,37 +4,19 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\DTOs\RegisterDTO;
 use App\Http\Requests\Auth\LoginRequest;
-use App\Http\Requests\Auth\RegisterRequest;
 use App\Models\User;
 use App\Services\AuthService;
-use Exception;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Knuckles\Scribe\Attributes\Group;
-use Laravel\Socialite\Facades\Socialite;
 
 #[Group('Authentication')]
 class AuthController extends Controller
 {
     public function __construct(private readonly AuthService $authService) {}
-
-    public function register(RegisterRequest $request): JsonResponse
-    {
-        try {
-            $token = $this->authService->register(new RegisterDTO(
-                email: $request->input('email'),
-                password: $request->input('password'),
-            ));
-        } catch (AuthenticationException) {
-            return $this->success(['status' => false, 'message' => 'Wrong email or password'], 401);
-        }
-
-        return $this->created(['status' => true, 'token' => $token, 'message' => 'Registered successfully']);
-    }
 
     public function login(LoginRequest $request): JsonResponse
     {
@@ -53,23 +35,6 @@ class AuthController extends Controller
             'status' => $this->authService->logout($request->user()),
             'message' => 'Logged out successfully',
         ]);
-    }
-
-    public function oauthRedirect(string $driver): \Symfony\Component\HttpFoundation\RedirectResponse|RedirectResponse
-    {
-        return Socialite::driver($driver)->redirect();
-    }
-
-    public function oauthCallback(string $driver): RedirectResponse
-    {
-        try {
-            $oauthUser = Socialite::driver($driver)->user();
-        } catch (Exception) {
-            return redirect(config('app.url').'/login?oauth_error=1');
-        }
-        $token = $this->authService->loginWithOAuth($driver, $oauthUser);
-
-        return redirect(config('app.url').'/auth/callback?token='.$token.'&driver='.$driver);
     }
 
     public function verifyEmail(string $id, string $hash): RedirectResponse

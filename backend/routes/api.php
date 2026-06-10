@@ -13,10 +13,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('/stats', [StatsController::class, 'index'])->middleware('throttle:60,1');
 
-Route::middleware('throttle:10,1')->group(function () {
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
-});
+Route::middleware('throttle:10,1')->post('/login', [AuthController::class, 'login']);
 Route::middleware('throttle:5,1')->post('/support', [SupportController::class, 'send']);
 
 Route::get('/diagrams/embed/{token}', [DiagramController::class, 'showEmbed']);

@@ -1,13 +1,13 @@
 <template>
     <header class="header">
         <div class="flex-items">
-            <a href="/">
+            <a href="/diagrams">
                 <img src="../icons/logo.svg" alt="sql-designer" class="logo" width="148" height="24">
             </a>
         </div>
         <div class="flex-items">
             <button v-if="!store.state.auth_token && route.name !== 'demo'" class="hbtn-cta" @click="router.push({ name: 'demo' })">Try Demo</button>
-            <button v-if="!store.state.auth_token && route.name === 'demo'" class="hbtn-cta" @click="router.push({ name: 'register' })">Register for free</button>
+            <button v-if="!store.state.auth_token && route.name === 'demo'" class="hbtn-cta" @click="router.push({ name: 'login' })">Sign in</button>
             <button v-if="store.state.auth_token" class="hbtn" @click="router.push({ name: 'diagrams' })" title="View diagrams">
                 <SvgIcon name="eye" :size="17" />
             </button>

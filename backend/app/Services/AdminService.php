@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use SensitiveParameter;
 
 class AdminService
@@ -126,6 +127,15 @@ class AdminService
     public function impersonate(User $user): string
     {
         return $user->createToken('admin-impersonate')->plainTextToken;
+    }
+
+    public function createUser(string $email, #[SensitiveParameter] string $password): User
+    {
+        return User::create([
+            'email' => $email,
+            'password' => Hash::make($password),
+            'email_verified_at' => now(),
+        ]);
     }
 
     public function verifyUser(User $user): bool

@@ -8,6 +8,7 @@ use App\Models\Diagram;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdminControllerTest extends TestCase
@@ -69,6 +70,49 @@ class AdminControllerTest extends TestCase
             ]);
 
         $this->assertNotNull($user->fresh()->email_verified_at);
+    }
+
+    public function test_admin_can_create_verified_user(): void
+    {
+        $email = 'internal_'.uniqid().'@example.com';
+
+        $this->withSession($this->adminSession)
+            ->postJson('/admin/users', [
+                'email' => $email,
+                'password' => 'Secret123',
+                'password_confirmation' => 'Secret123',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('email', $email);
+
+        $user = User::where('email', $email)->firstOrFail();
+        $this->assertTrue($user->hasVerifiedEmail());
+        $this->assertTrue(Hash::check('Secret123', $user->password));
+    }
+
+    public function test_create_user_requires_admin_session(): void
+    {
+        $this->postJson('/admin/users', [
+            'email' => 'blocked@example.com',
+            'password' => 'Secret123',
+            'password_confirmation' => 'Secret123',
+        ])->assertRedirect('/admin/login');
+
+        $this->assertDatabaseMissing('users', ['email' => 'blocked@example.com']);
+    }
+
+    public function test_create_user_validates_unique_email_and_confirmed_password(): void
+    {
+        $user = User::factory()->create();
+
+        $this->withSession($this->adminSession)
+            ->postJson('/admin/users', [
+                'email' => $user->email,
+                'password' => 'Secret123',
+                'password_confirmation' => 'Different123',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors(['email', 'password']);
     }
 
     public function test_verifying_user_is_idempotent(): void

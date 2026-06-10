@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\Admin\AdminSendEmailRequest;
+use App\Http\Requests\Admin\CreateUserRequest;
 use App\Http\Requests\Admin\FeatureDiagramRequest;
 use App\Http\Requests\Auth\AdminLoginRequest;
 use App\Jobs\SendAdminBulkEmailBatch;
@@ -79,6 +80,20 @@ class AdminController extends Controller
     public function impersonate(User $user): JsonResponse
     {
         return $this->success(['token' => $this->adminService->impersonate($user)]);
+    }
+
+    public function storeUser(CreateUserRequest $request): JsonResponse
+    {
+        $user = $this->adminService->createUser(
+            $request->string('email')->toString(),
+            $request->string('password')->toString(),
+        );
+
+        return $this->created([
+            'id' => $user->id,
+            'email' => $user->email,
+            'message' => 'Account created',
+        ]);
     }
 
     public function verifyUser(User $user): JsonResponse

@@ -37,8 +37,8 @@
             :diagramName="diagramName"
             :hasPendingVisitors="hasPendingVisitors"
             @add-table="addTable"
-            @import="isDemo ? router.push({ name: 'register' }) : showImportModal = true"
-            @export="isDemo ? router.push({ name: 'register' }) : openExportModal()"
+            @import="isDemo ? router.push({ name: 'login' }) : showImportModal = true"
+            @export="isDemo ? router.push({ name: 'login' }) : openExportModal()"
             @save="saveDiagram"
             @show-share="showShareModal = true"
             @show-changelog="showChangelogModal = true"
@@ -502,7 +502,7 @@ const captureSvg = async () => {
 
 const saveDiagram = async (silent = false) => {
     if (props.isDemo) {
-        await router.push({ name: 'register' })
+        await router.push({ name: 'login' })
         return
     }
     await (isOwner.value ? Diagram.save(diagramId.value, schema.value) : Diagram.saveByToken(token, schema.value))

@@ -16,7 +16,6 @@ async function authenticate(endpoint, userData, redirectTo) {
 }
 
 export const Auth = {
-    register: (userData) => authenticate('/api/register', userData, 'verify-email'),
     login: (userData) => authenticate('/api/login', userData, 'diagrams'),
 
     async logout() {

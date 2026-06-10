@@ -8,8 +8,11 @@ use App\Http\Controllers\LibraryController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('home');
+    /* return view('home'); */
+    return view('layouts.app');
 });
+
+/* Route::redirect('/', '/login'); */
 
 Route::prefix('/blog')->group(function () {
     Route::get('/', fn () => view('blog.index'));
@@ -30,6 +33,7 @@ Route::get('/library', [LibraryController::class, 'index']);
 Route::get('/sitemap', fn () => view('sitemap'));
 Route::get('/privacy', fn () => view('privacy'));
 Route::get('/terms', fn () => view('terms'));
+Route::redirect('/register', '/login');
 
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed', 'throttle:6,1'])
@@ -43,6 +47,7 @@ Route::prefix('/admin')->group(function () {
         Route::get('/', [AdminController::class, 'showDashboard'])->name('admin.dashboard');
         Route::get('/library', [AdminController::class, 'showLibrary'])->name('admin.library');
         Route::get('/reviews', [AdminController::class, 'showReviews'])->name('admin.reviews');
+        Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::post('/impersonate/{user}', [AdminController::class, 'impersonate'])->name('admin.impersonate');
         Route::post('/users/{user}/verify', [AdminController::class, 'verifyUser'])->name('admin.users.verify');
         Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('admin.users.destroy');
@@ -55,14 +60,9 @@ Route::prefix('/admin')->group(function () {
     });
 });
 
-Route::prefix('/auth')->where(['driver' => 'google|github|gitlab'])->group(function () {
-    Route::get('/{driver}', [AuthController::class, 'oauthRedirect']);
-    Route::get('/{driver}/callback', [AuthController::class, 'oauthCallback']);
-});
-
 Route::get('/{any}', function ($any) {
-    $exactRoutes = ['register', 'login', 'logout', 'verify-email', 'demo', 'diagrams', 'auth/callback'];
-    $prefixRoutes = ['diagrams/', 'shared/', 'embed/', 'auth/'];
+    $exactRoutes = ['login', 'logout', 'verify-email', 'demo', 'diagrams'];
+    $prefixRoutes = ['diagrams/', 'shared/', 'embed/'];
 
     if (in_array($any, $exactRoutes)) {
         return view('layouts.app');
