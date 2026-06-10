@@ -17,6 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->trustProxies(at: '*');
+
         $isDiagramImport = fn ($request): bool => $request->is('api/diagrams/sql/import/*');
         $middleware->trimStrings(except: [$isDiagramImport]);
         $middleware->convertEmptyStringsToNull(except: [$isDiagramImport]);
