@@ -1,7 +1,7 @@
 <template>
     <header class="dh">
         <div class="dh-group">
-            <button v-if="canEdit" class="dh-btn" @click="$emit('add-table')" title="Add Table (Ctrl+A)">
+            <button v-if="canEdit" class="dh-btn" @click="$emit('add-table')" title="Add Table (Ctrl/⌘+Shift+A)">
                 <SvgIcon name="plus" :size="17" />
             </button>
             <button v-if="isOwner || isDemo" class="dh-btn" @click="$emit('import')" title="Import schema">
@@ -14,7 +14,7 @@
         </div>
         <div class="dh-group">
             <div v-if="canEdit" class="dh-save-wrap">
-                <button class="dh-btn" @click="$emit('save')" title="Save (Ctrl+S)" :disabled="!isDemo && isSaved">
+                <button class="dh-btn" @click="$emit('save')" title="Save (Ctrl/⌘+S)" :disabled="!isDemo && isSaved">
                     <SvgIcon name="save" :size="17" />
                 </button>
                 <span v-if="!isDemo" class="dh-save-dot" :class="{ 'dh-save-dot--saved': isSaved }"></span>
@@ -28,6 +28,14 @@
                 </button>
                 <span v-if="hasPendingVisitors" class="dh-pending-dot"></span>
             </div>
+            <button
+                class="dh-btn"
+                @click="$emit('show-help')"
+                title="Keyboard Shortcuts"
+                aria-label="Show keyboard shortcuts"
+            >
+                <SvgIcon name="help" :size="17" />
+            </button>
         </div>
     </header>
 </template>
@@ -43,7 +51,7 @@ defineProps({
     diagramName: String,
     hasPendingVisitors: { type: Boolean, default: false },
 })
-defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-changelog'])
+defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-changelog', 'show-help'])
 </script>
 
 <style scoped>

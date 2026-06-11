@@ -42,6 +42,7 @@
             @save="saveDiagram"
             @show-share="showShareModal = true"
             @show-changelog="showChangelogModal = true"
+            @show-help="showHotkeysModal = true"
         />
 
         <ShareModal
@@ -227,6 +228,11 @@
             @close="showChangelogModal = false"
         />
 
+        <HotkeysModal
+            v-if="showHotkeysModal"
+            @close="showHotkeysModal = false"
+        />
+
     </template>
 </template>
 
@@ -257,6 +263,7 @@ import ExportModal from '../Modal/ExportModal.vue'
 import RemoteCursor from '../RemoteCursor.vue'
 import SupportModal from '../Modal/SupportModal.vue'
 import ChangelogModal from '../Modal/ChangelogModal.vue'
+import HotkeysModal from '../Modal/HotkeysModal.vue'
 import { useElementSize } from '@vueuse/core'
 import { useToast } from 'vue-toast-notification'
 import { useRoute, useRouter } from 'vue-router'
@@ -310,6 +317,7 @@ const diagramName = ref('schema')
 const diagramDbType = ref('mysql')
 const showShareModal = ref(false)
 const showChangelogModal = ref(false)
+const showHotkeysModal = ref(false)
 const diagramShareAccess = ref(null)
 const diagramRequireApproval = ref(false)
 const diagramInLibrary = ref(false)
