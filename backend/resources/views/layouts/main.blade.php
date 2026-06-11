@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="yandex-verification" content="ebdef4d5d4512d71" />
-    <title>@yield('title', 'SQL Designer — Free Online MySQL Database Schema Designer')</title>
+    <title>@yield('title', 'OntoloSQL - The free Ontology design and generator')</title>
     <link rel="shortcut icon" href="/favicon.ico">
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" sizes="any">
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">

@@ -601,7 +601,7 @@ const onKeyDown = (event) => {
         event.preventDefault()
         if (canEdit.value && lastInteractedTableId.value) copyTable(lastInteractedTableId.value)
     }
-    if ((event.ctrlKey || event.metaKey) && event.key === 'a') {
+    if ((event.ctrlKey || event.metaKey) && event.key === 't') {
         event.preventDefault()
         if (canEdit.value) addTable()
     }

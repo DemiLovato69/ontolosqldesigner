@@ -59,15 +59,15 @@ const routes = [
     });
 
     const pageTitles = {
-      'login': 'Login — SQL Designer',
-      'verify-email': 'Verify Email — SQL Designer',
-      'diagrams': 'My Diagrams — SQL Designer',
-      'diagram.show': 'Diagram Editor — SQL Designer',
-      'demo': 'Try Demo — SQL Designer',
+      'login': 'Login — OntoloSQL Designer',
+      'verify-email': 'Verify Email — OntoloSQL Designer',
+      'diagrams': 'My Diagrams — OntoloSQL Designer',
+      'diagram.show': 'Diagram Editor — OntoloSQL Designer',
+      'demo': 'Try Demo — OntoloSQL Designer',
     };
 
     router.afterEach((to) => {
-      document.title = pageTitles[to.name] || 'SQL Designer — MySQL & PostgreSQL Schema Designer';
+      document.title = pageTitles[to.name] || 'OntoloSQLDesigner - The free Ontology Design and Generation Tool';
     });
 
     export default router;

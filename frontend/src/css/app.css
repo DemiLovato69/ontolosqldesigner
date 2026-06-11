@@ -80,9 +80,6 @@ select:focus {
 /* ── Layout ──────────────────────────────────────────────────── */
 .logo {
     margin-top: 4px;
-    height: 24px;
-    width: auto;
-    max-width: 120px;
 }
 
 .header {

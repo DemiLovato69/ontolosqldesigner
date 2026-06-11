@@ -2,11 +2,10 @@
     <header class="header">
         <div class="flex-items">
             <a href="/diagrams">
-                <img src="../icons/logo.svg" alt="sql-designer" class="logo" width="148" height="24">
+                <img src="../icons/logo.svg" alt="ontolo-sql-designer" class="logo">
             </a>
         </div>
         <div class="flex-items">
-            <button v-if="!store.state.auth_token && route.name !== 'demo'" class="hbtn-cta" @click="router.push({ name: 'demo' })">Try Demo</button>
             <button v-if="!store.state.auth_token && route.name === 'demo'" class="hbtn-cta" @click="router.push({ name: 'login' })">Sign in</button>
             <button v-if="store.state.auth_token" class="hbtn" @click="router.push({ name: 'diagrams' })" title="View diagrams">
                 <SvgIcon name="eye" :size="17" />
@@ -50,8 +49,5 @@ onMounted(() => {
 <style scoped>
 .logo {
     margin-top: 4px;
-    height: 24px;
-    width: auto;
-    max-width: 120px;
 }
 </style>
