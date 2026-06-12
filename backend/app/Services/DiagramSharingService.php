@@ -6,6 +6,7 @@ namespace App\Services;
 
 use App\DTOs\ShareSettingsDTO;
 use App\Enums\DiagramAccess;
+use App\Enums\ImportStatus;
 use App\Enums\VisitorStatus;
 use App\Events\VisitorAccessChanged;
 use App\Events\VisitorRequested;
@@ -154,9 +155,15 @@ class DiagramSharingService
         if ($valueTypes !== null) {
             $diagram->value_types = $valueTypes;
         }
-        $diagram->import_status = null;
-        $diagram->import_error = null;
-        $diagram->import_warnings = null;
+        if (! in_array(
+            $diagram->import_status,
+            [ImportStatus::PENDING, ImportStatus::PROCESSING],
+            true
+        )) {
+            $diagram->import_status = null;
+            $diagram->import_error = null;
+            $diagram->import_warnings = null;
+        }
         $diagram->save();
 
         return true;

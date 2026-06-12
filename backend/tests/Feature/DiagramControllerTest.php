@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Enums\ImportStatus;
 use App\Models\Diagram;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
@@ -85,6 +86,21 @@ class DiagramControllerTest extends TestCase
             ->putJson("/api/diagrams/{$this->diagram->id}", ['name' => 'Updated '.uniqid()])
             ->assertStatus(200)
             ->assertJsonFragment(['status' => true]);
+    }
+
+    public function test_schema_autosave_does_not_cancel_active_import(): void
+    {
+        $this->diagram->update(['import_status' => ImportStatus::PENDING]);
+
+        $this->auth()
+            ->putJson("/api/diagrams/{$this->diagram->id}", [
+                'schema' => [['id' => 'current', 'type' => 'table', 'label' => 'Current']],
+                'value_types' => [],
+            ])
+            ->assertStatus(200)
+            ->assertJsonFragment(['status' => true]);
+
+        $this->assertSame(ImportStatus::PENDING, $this->diagram->refresh()->import_status);
     }
 
     public function test_schema_runtime_state_is_not_stored_or_returned(): void

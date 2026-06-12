@@ -6,6 +6,7 @@ namespace App\Repositories;
 
 use App\DTOs\CreateDiagramDTO;
 use App\DTOs\UpdateDiagramDTO;
+use App\Enums\ImportStatus;
 use App\Models\Diagram;
 use App\Models\User;
 use App\Support\DiagramSchema;
@@ -54,7 +55,13 @@ class DiagramRepository implements DiagramRepositoryInterface
         if (isset($data['schema']) && is_array($data['schema'])) {
             $data['schema'] = DiagramSchema::withoutRuntimeState($data['schema']);
         }
-        if (array_key_exists('schema', $data) || array_key_exists('value_types', $data)) {
+        $importIsActive = in_array(
+            $diagram->import_status,
+            [ImportStatus::PENDING, ImportStatus::PROCESSING],
+            true
+        );
+        if (! $importIsActive
+            && (array_key_exists('schema', $data) || array_key_exists('value_types', $data))) {
             $data['import_status'] = null;
             $data['import_error'] = null;
             $data['import_warnings'] = null;

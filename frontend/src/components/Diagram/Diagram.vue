@@ -463,9 +463,12 @@ const importSql = async () => {
         return
     }
     importLoading.value = true
+    // Keep autosave from replacing the queued import with the current editor state.
+    isSaved.value = true
     const result = await Diagram.import(diagramId.value, importType.value, importContent.value)
     if (!result) {
         importLoading.value = false
+        isSaved.value = false
         return
     }
 
@@ -495,6 +498,7 @@ const importSql = async () => {
         if (attempts > 150) {
             clearInterval(poll)
             importLoading.value = false
+            isSaved.value = false
             $toast.error('Import timed out')
             return
         }
@@ -506,6 +510,7 @@ const importSql = async () => {
         } else if (status.status === 'failed') {
             clearInterval(poll)
             importLoading.value = false
+            isSaved.value = false
             $toast.error('Import failed: ' + (status.error || 'Unknown error'))
         }
     }, 2000)
@@ -550,6 +555,9 @@ const saveDiagram = async (silent = false) => {
     if (props.isDemo) {
         await router.push({ name: 'login' })
         return
+    }
+    if (importLoading.value) {
+        return false
     }
     const saved = await (isOwner.value
         ? Diagram.save(diagramId.value, schema.value, valueTypes.value)
