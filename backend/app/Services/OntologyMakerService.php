@@ -701,11 +701,11 @@ class OntologyMakerService
     private function renderValueTypeConstraint(array $constraint): string
     {
         $payload = match ($constraint['type'] ?? null) {
-            'regex' => 'regex: { regexPattern: "'.$this->escape((string) ($constraint['regexPattern'] ?? ''))
+            'regex' => 'type: "regex", regex: { regexPattern: "'.$this->escape((string) ($constraint['regexPattern'] ?? ''))
                 .'", usePartialMatch: '.(($constraint['usePartialMatch'] ?? false) ? 'true' : 'false').' }',
-            'isRid' => 'isRid: {}',
-            'isUuid' => 'isUuid: {}',
-            'length' => 'length: { '.implode(', ', array_filter([
+            'isRid' => 'type: "isRid", isRid: {}',
+            'isUuid' => 'type: "isUuid", isUuid: {}',
+            'length' => 'type: "length", length: { '.implode(', ', array_filter([
                 isset($constraint['minSize']) ? 'minSize: '.(int) $constraint['minSize'] : null,
                 isset($constraint['maxSize']) ? 'maxSize: '.(int) $constraint['maxSize'] : null,
             ])).' }',
