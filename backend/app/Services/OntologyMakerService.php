@@ -137,7 +137,7 @@ class OntologyMakerService
             ];
         }
 
-        $links = [];
+        $linksByRelationship = [];
         $usedLinkNames = [];
         foreach ($connections as $connection) {
             $sourceRow = $rowsById[$connection['source_id']] ?? null;
@@ -153,13 +153,20 @@ class OntologyMakerService
                     continue;
                 }
 
-                $linkName = $this->uniqueLinkName(
-                    $source['singular'].'To'.$this->upperFirst($target['plural']),
-                    $usedLinkNames,
-                    $this->apiName($targetRow['name'])
-                );
+                $relationshipKey = 'many-to-many:'.implode(':', [
+                    min($sourceRow['id'], $targetRow['id']),
+                    max($sourceRow['id'], $targetRow['id']),
+                ]);
+                $linkName = $linksByRelationship[$relationshipKey]['const_name'] ?? null;
+                if ($linkName === null) {
+                    $linkName = $this->uniqueLinkName(
+                        $source['singular'].'To'.$this->upperFirst($target['plural']),
+                        $usedLinkNames,
+                        $this->apiName($targetRow['name'])
+                    );
+                }
 
-                $links[] = [
+                $linksByRelationship[$relationshipKey] = [
                     'const_name' => $linkName,
                     'api_name' => $linkName,
                     'kind' => 'many-to-many',
@@ -176,13 +183,17 @@ class OntologyMakerService
                 continue;
             }
 
-            $linkName = $this->uniqueLinkName(
-                $one['singular'].'To'.$this->upperFirst($many['plural']),
-                $usedLinkNames,
-                $this->apiName($manyRow['name'])
-            );
+            $relationshipKey = 'one-to-many:'.$oneRow['id'].':'.$manyRow['id'];
+            $linkName = $linksByRelationship[$relationshipKey]['const_name'] ?? null;
+            if ($linkName === null) {
+                $linkName = $this->uniqueLinkName(
+                    $one['singular'].'To'.$this->upperFirst($many['plural']),
+                    $usedLinkNames,
+                    $this->apiName($manyRow['name'])
+                );
+            }
 
-            $links[] = [
+            $linksByRelationship[$relationshipKey] = [
                 'const_name' => $linkName,
                 'api_name' => $linkName,
                 'kind' => 'one-to-many',
@@ -193,7 +204,7 @@ class OntologyMakerService
             ];
         }
 
-        return $this->render($valueTypes, $objects, $links);
+        return $this->render($valueTypes, $objects, array_values($linksByRelationship));
     }
 
     /** @return array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>, 2: list<array<string, string>>} */
@@ -243,8 +254,10 @@ class OntologyMakerService
                         : null,
                 ];
             } else {
-                $sourceId = $item['sourceNode']['id'] ?? $item['source'] ?? null;
-                $targetId = $item['targetNode']['id'] ?? $item['target'] ?? null;
+                // sourceNode/targetNode are Vue Flow caches and may be stale after
+                // reconnecting an edge. The scalar endpoint fields are canonical.
+                $sourceId = $item['source'] ?? $item['sourceNode']['id'] ?? null;
+                $targetId = $item['target'] ?? $item['targetNode']['id'] ?? null;
                 if ($sourceId !== null && $targetId !== null) {
                     $connections[] = [
                         'source_id' => (string) $sourceId,
@@ -431,7 +444,7 @@ class OntologyMakerService
     }
 
     /**
-     * @param array<string, mixed> $baseType
+     * @param  array<string, mixed>  $baseType
      * @return array{0: string, 1: bool}
      */
     private function mapOntologyBaseType(array $baseType): array
@@ -633,7 +646,7 @@ class OntologyMakerService
     }
 
     /**
-     * @param  array<string, mixed>  $baseType
+     * @param array<string, mixed> $baseType
      * @param  list<array<string, mixed>>  $constraints
      */
     private function renderValueTypeType(array $baseType, array $constraints): string

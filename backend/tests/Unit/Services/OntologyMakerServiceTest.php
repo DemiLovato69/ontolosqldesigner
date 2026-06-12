@@ -189,6 +189,49 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringNotContainsString('cardinality:', $module);
     }
 
+    public function test_prefers_current_edge_endpoints_over_stale_cached_nodes(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'posts', 'type' => 'table', 'label' => 'posts'],
+            ['id' => 'post_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'posts', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'post_user_id', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 'posts', 'data' => ['keyMod' => 'FOREIGN KEY', 'sqlType' => 'LONG']],
+            [
+                'source' => 'user_id',
+                'target' => 'post_user_id',
+                'sourceNode' => ['id' => 'post_id'],
+                'targetNode' => ['id' => 'user_id'],
+                'data' => ['relationshipType' => 'one-to-many'],
+            ],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('export const userToPosts = defineLink({', $module);
+        $this->assertStringContainsString('manyForeignKeyProperty: "userId"', $module);
+        $this->assertSame(1, substr_count($module, 'defineLink({'));
+    }
+
+    public function test_collapses_duplicate_relationship_records_after_an_edit(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'posts', 'type' => 'table', 'label' => 'posts'],
+            ['id' => 'post_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'posts', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'LONG']],
+            ['id' => 'post_user_id', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 'posts', 'data' => ['keyMod' => 'FOREIGN KEY', 'sqlType' => 'LONG']],
+            ['id' => 'old-edge', 'source' => 'user_id', 'target' => 'post_user_id', 'data' => ['relationshipType' => 'one-to-many']],
+            ['id' => 'new-edge', 'source' => 'user_id', 'target' => 'post_user_id', 'data' => ['relationshipType' => 'one-to-one']],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertSame(1, substr_count($module, 'defineLink({'));
+        $this->assertStringContainsString('export const userToPosts = defineLink({', $module);
+        $this->assertStringContainsString('cardinality: "OneToOne"', $module);
+    }
+
     public function test_generates_synthetic_composite_primary_key(): void
     {
         $schema = json_encode([
@@ -306,8 +349,8 @@ class OntologyMakerServiceTest extends TestCase
         $module = $this->service->createModule($schema);
 
         $this->assertStringContainsString('primaryKeyPropertyApiName: "id"', $module);
-        $this->assertStringContainsString('"id": { type: "long", displayName: "Id", nullability: { noNulls: true }, indexedForSearch: true }', $module);
-        $this->assertStringContainsString('"fullName": { type: "string", displayName: "Full Name", nullability: { noNulls: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"id": { type: "long", displayName: "Id", nullability: { noEmptyCollections: false, noNulls: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"fullName": { type: "string", displayName: "Full Name", nullability: { noEmptyCollections: false, noNulls: true }, indexedForSearch: true }', $module);
         $this->assertStringContainsString('"nickname": { type: "string", displayName: "Nickname", indexedForSearch: true }', $module);
     }
 
@@ -330,7 +373,7 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('// - index: full_name', $module);
         $this->assertStringContainsString('// - unique together: tenant_id, external_id', $module);
         $this->assertStringContainsString('// - fulltext index: full_name', $module);
-        $this->assertStringContainsString('"externalId": { type: "string", displayName: "External Id", nullability: { noNulls: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"externalId": { type: "string", displayName: "External Id", nullability: { noEmptyCollections: false, noNulls: true }, indexedForSearch: true }', $module);
         $this->assertStringContainsString('"fullName": { type: "string", displayName: "Full Name", indexedForSearch: true }', $module);
     }
 
@@ -349,7 +392,7 @@ class OntologyMakerServiceTest extends TestCase
 
         $this->assertStringNotContainsString('missing_column', $module);
         $this->assertStringNotContainsString('unique together: tenant_id', $module);
-        $this->assertStringContainsString('"tenantId": { type: "long", displayName: "Tenant Id", nullability: { noNulls: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"tenantId": { type: "long", displayName: "Tenant Id", nullability: { noEmptyCollections: false, noNulls: true }, indexedForSearch: true }', $module);
     }
 
     #[DataProvider('sqlTypeProvider')]
