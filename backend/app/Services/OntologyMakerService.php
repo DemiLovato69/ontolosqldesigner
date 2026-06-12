@@ -788,7 +788,7 @@ MTS;
                     ? ', description: "'.$this->escape($propertyDescription).'"'
                     : '';
                 $nullability = ($property['nullable'] ?? true) === false || ($property['key_mod'] ?? null) === 'PRIMARY KEY'
-                    ? ', nullability: { noNulls: true, noEmptyCollections: true }'
+                    ? ', nullability: { ' . (($property['array'] ?? false) ? 'noNulls: true' : ' noEmptyCollections: true') . '}'
                     : '';
                 $indexedForSearch = ($property['indexed'] ?? false) || in_array($property['key_mod'] ?? null, ['PRIMARY KEY', 'UNIQUE', 'INDEX'], true)
                     ? ', indexedForSearch: true'
