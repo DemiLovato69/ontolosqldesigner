@@ -187,10 +187,32 @@ class DiagramControllerTest extends TestCase
             ->assertStatus(202)
             ->assertJsonPath('status', 'pending');
 
-        $this->assertSame(
-            'CREATE TABLE users (id INT PRIMARY KEY);',
-            $this->diagram->refresh()->script
-        );
+        $queued = json_decode($this->diagram->refresh()->script, true);
+        $this->assertSame('sql', $queued['format']);
+        $this->assertSame('CREATE TABLE users (id INT PRIMARY KEY);', $queued['content']);
+    }
+
+    public function test_import_format_route_preserves_selected_format(): void
+    {
+        Queue::fake();
+        Event::fake();
+
+        $this->auth()
+            ->call(
+                'POST',
+                "/api/diagrams/import/backup-json/{$this->diagram->id}",
+                [],
+                [],
+                [],
+                ['CONTENT_TYPE' => 'text/plain'],
+                '{"format":"ontolosql-designer"}'
+            )
+            ->assertStatus(202)
+            ->assertJsonPath('status', 'pending');
+
+        $queued = json_decode($this->diagram->refresh()->script, true);
+        $this->assertSame('backup-json', $queued['format']);
+        $this->assertSame('{"format":"ontolosql-designer"}', $queued['content']);
     }
 
     public function test_import_rejects_empty_raw_script_body(): void

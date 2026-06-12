@@ -132,6 +132,23 @@ class DiagramController extends Controller
     #[Subgroup('SQL')]
     public function import(Diagram $diagram, Request $request): JsonResponse
     {
+        return $this->startImport($diagram, $request, 'sql');
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    #[Subgroup('Import')]
+    public function importFormat(string $format, Diagram $diagram, Request $request): JsonResponse
+    {
+        return $this->startImport($diagram, $request, $format);
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    private function startImport(Diagram $diagram, Request $request, string $format): JsonResponse
+    {
         $this->authorize('import', $diagram);
 
         $script = $request->isJson()
@@ -143,7 +160,7 @@ class DiagramController extends Controller
 
         /** @var User $user */
         $user = $request->user();
-        $this->sqlService->startImport($diagram, $script, $user);
+        $this->sqlService->startImport($diagram, $script, $user, $format);
 
         return $this->success(['status' => 'pending'], 202);
     }

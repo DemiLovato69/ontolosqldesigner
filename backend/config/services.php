@@ -3,6 +3,15 @@
 declare(strict_types=1);
 
 return [
+    'maker_import' => [
+        'node' => env('MAKER_IMPORT_NODE', 'node'),
+        'script' => env(
+            'MAKER_IMPORT_SCRIPT',
+            is_file(base_path('../maker-runtime/import-maker.mjs'))
+                ? base_path('../maker-runtime/import-maker.mjs')
+                : '/opt/ontolosql-maker/import-maker.mjs'
+        ),
+    ],
 
     /*
     |--------------------------------------------------------------------------

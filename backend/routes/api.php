@@ -52,6 +52,8 @@ Route::middleware(['auth:sanctum', 'track.seen'])->group(function () {
             Route::get('/export-status/{diagram}', [DiagramController::class, 'exportStatus']);
         });
 
+        Route::post('/import/{format}/{diagram}', [DiagramController::class, 'importFormat'])
+            ->whereIn('format', ['sql', 'ontology-json', 'backup-json', 'maker-mts']);
         Route::get('/json/export/{diagram}', [DiagramController::class, 'exportJson']);
         Route::get('/migration/export/{diagram}', [DiagramController::class, 'exportMigration']);
         Route::get('/ontology/export/{diagram}', [DiagramController::class, 'exportOntology']);

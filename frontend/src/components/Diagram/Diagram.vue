@@ -204,6 +204,7 @@
         <SqlModal
             v-if="showImportModal"
             v-model="importContent"
+            v-model:importType="importType"
             primaryLabel="Import"
             :loading="importLoading"
             @primary-action="importSql"
@@ -452,16 +453,17 @@ const focusLargeDiagram = () => {
 
 const showImportModal = ref(false)
 const importContent = ref('')
+const importType = ref('sql')
 const importLoading = ref(false)
 const showExportModal = ref(false)
 
 const importSql = async () => {
     if (!importContent.value.trim()) {
-        $toast.error('Cannot import empty SQL')
+        $toast.error('Cannot import an empty file')
         return
     }
     importLoading.value = true
-    const result = await Diagram.import(diagramId.value, importContent.value)
+    const result = await Diagram.import(diagramId.value, importType.value, importContent.value)
     if (!result) {
         importLoading.value = false
         return

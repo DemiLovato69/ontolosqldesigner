@@ -7,9 +7,13 @@ namespace Tests\Unit\Services;
 use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
 use App\Enums\ImportStatus;
+use App\Exceptions\InvalidSchemaException;
 use App\Models\Diagram;
 use App\Services\DiagramSqlService;
+use App\Services\HierarchicalDiagramLayoutService;
+use App\Services\MakerDefinitionImportService;
 use App\Services\OntologyMakerService;
+use Mockery;
 use Tests\TestCase;
 
 class DiagramSqlServiceTest extends TestCase
@@ -213,7 +217,7 @@ class DiagramSqlServiceTest extends TestCase
             ]],
         ]);
 
-        $payload = $this->service->createImportPayload($ontology, 'ontology');
+        $payload = $this->service->createImportPayload($ontology, 'ontology', 'ontology-json');
 
         $this->assertCount(1, $payload['value_types']);
         $this->assertSame('emailAddress', $payload['value_types'][0]['apiName']);
@@ -237,7 +241,7 @@ class DiagramSqlServiceTest extends TestCase
             'objectTypes' => [],
         ]);
 
-        $payload = $this->service->createImportPayload($ontology, 'ontology');
+        $payload = $this->service->createImportPayload($ontology, 'ontology', 'ontology-json');
 
         $this->assertCount(1, $payload['value_types']);
         $this->assertSame([], $payload['value_types'][0]['constraints']);
@@ -359,12 +363,108 @@ class DiagramSqlServiceTest extends TestCase
         $backup = $this->service->createJson(json_encode($schema), $valueTypes, 'ontology', 'Users');
         $diagram = Diagram::factory()->create(['db_type' => 'mysql']);
 
-        $this->service->importSchema($diagram, json_encode($backup));
+        $this->service->importSchema($diagram, json_encode($backup), 'backup-json');
         $diagram->refresh();
 
         $this->assertSame($schema, $diagram->schema);
         $this->assertSame($valueTypes, $diagram->value_types);
         $this->assertSame('ontology', $diagram->db_type->value);
+    }
+
+    public function test_backup_import_rejects_ontology_json(): void
+    {
+        $this->expectException(InvalidSchemaException::class);
+        $this->expectExceptionMessage('not an OntoloSQL Designer backup');
+
+        $this->service->createImportPayload(
+            json_encode(['objectTypes' => []]),
+            'ontology',
+            'backup-json'
+        );
+    }
+
+    public function test_ontology_json_import_rejects_backup_json(): void
+    {
+        $backup = $this->service->createJson('[]', [], 'ontology');
+
+        $this->expectException(InvalidSchemaException::class);
+        $this->expectExceptionMessage('not a supported exported ontology JSON');
+
+        $this->service->createImportPayload(
+            json_encode($backup),
+            'ontology',
+            'ontology-json'
+        );
+    }
+
+    public function test_sql_import_rejects_json_even_for_ontology_diagrams(): void
+    {
+        $this->expectException(InvalidSchemaException::class);
+        $this->expectExceptionMessage('SQL import expects SQL DDL');
+
+        $this->service->createImportPayload(
+            json_encode(['objectTypes' => []]),
+            'ontology',
+            'sql'
+        );
+    }
+
+    public function test_maker_mts_import_uses_declarative_converter_output(): void
+    {
+        $converter = Mockery::mock(MakerDefinitionImportService::class);
+        $converter->shouldReceive('convert')
+            ->once()
+            ->with('maker definitions')
+            ->andReturn([
+                'valueTypes' => [[
+                    'rid' => 'emailAddress',
+                    'apiName' => 'emailAddress',
+                    'displayMetadata' => ['displayName' => 'Email Address'],
+                    'version' => '1.0.0',
+                    'baseType' => ['type' => 'string'],
+                    'constraints' => [],
+                ]],
+                'objectTypes' => [[
+                    'rid' => 'users',
+                    'apiName' => 'users',
+                    'displayMetadata' => ['displayName' => 'Users'],
+                    'titlePropertyId' => 'email',
+                    'primaryKeys' => ['id'],
+                    'properties' => [
+                        ['id' => 'id', 'apiName' => 'id', 'baseType' => ['type' => 'string']],
+                        [
+                            'id' => 'email',
+                            'apiName' => 'email',
+                            'baseType' => ['type' => 'string'],
+                            'valueType' => ['apiName' => 'emailAddress'],
+                        ],
+                    ],
+                ]],
+                'relations' => [],
+            ]);
+        $service = new DiagramSqlService(
+            app(OntologyMakerService::class),
+            app(HierarchicalDiagramLayoutService::class),
+            $converter
+        );
+
+        $payload = $service->createImportPayload('maker definitions', 'mysql', 'maker-mts');
+
+        $this->assertSame('ontology', $payload['db_type']->value);
+        $this->assertSame('emailAddress', $payload['value_types'][0]['apiName']);
+        $email = collect($payload['schema'])
+            ->first(fn ($item) => ($item['type'] ?? null) === 'row' && ($item['label'] ?? null) === 'email');
+        $this->assertSame($payload['value_types'][0]['id'], $email['data']['valueTypeId']);
+    }
+
+    public function test_queued_import_preserves_explicit_format(): void
+    {
+        $encoded = $this->service->encodeQueuedImport('backup-json', '{"format":"ontolosql-designer"}');
+
+        $this->assertSame([
+            'format' => 'backup-json',
+            'content' => '{"format":"ontolosql-designer"}',
+        ], $this->service->decodeQueuedImport($encoded));
     }
 
     // --- createSchema MySQL ---

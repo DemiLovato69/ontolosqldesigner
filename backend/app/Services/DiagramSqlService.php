@@ -34,11 +34,12 @@ class DiagramSqlService
     public function __construct(
         private readonly OntologyMakerService $ontologyMakerService,
         private readonly HierarchicalDiagramLayoutService $layoutService,
+        private readonly MakerDefinitionImportService $makerDefinitionImportService,
     ) {}
 
-    public function startImport(Diagram $diagram, string $script, User $user): void
+    public function startImport(Diagram $diagram, string $script, User $user, string $format = 'sql'): void
     {
-        $diagram->script = $script;
+        $diagram->script = $this->encodeQueuedImport($format, $script);
         $diagram->import_status = ImportStatus::PENDING;
         $diagram->import_error = null;
         $diagram->import_warnings = null;
@@ -75,9 +76,13 @@ class DiagramSqlService
         ]);
     }
 
-    public function importSchema(Diagram $diagram, string $script): string
+    public function importSchema(Diagram $diagram, string $script, string $format = 'sql'): string
     {
-        $payload = $this->createImportPayload($script, ($diagram->db_type ?? DbType::MYSQL)->value);
+        $payload = $this->createImportPayload(
+            $script,
+            ($diagram->db_type ?? DbType::MYSQL)->value,
+            $format
+        );
         $diagram->schema = $payload['schema'];
         $diagram->value_types = $payload['value_types'];
         if ($payload['db_type'] !== null) {
@@ -376,40 +381,78 @@ class DiagramSqlService
      *     db_type: DbType|null
      * }
      */
-    public function createImportPayload(string $script, string $dbType = 'mysql'): array
+    public function createImportPayload(string $script, string $dbType = 'mysql', string $format = 'sql'): array
     {
-        $backup = $this->decodeBackup($script);
-        if ($backup !== null) {
-            return $backup;
+        if ($format === 'backup-json') {
+            return $this->decodeBackup($script)
+                ?? throw new InvalidSchemaException('The file is not an OntoloSQL Designer backup.');
         }
 
-        if ($dbType !== DbType::ONTOLOGY->value) {
+        if ($format === 'ontology-json') {
+            $ontology = $this->decodeOntologyExport($script)
+                ?? throw new InvalidSchemaException('The file is not a supported exported ontology JSON document.');
+            $parsed = $this->parseOntologyValueTypes($ontology);
+
             return [
-                'schema' => $this->createSchemaArray($script, $dbType),
-                'value_types' => [],
-                'warnings' => [],
-                'db_type' => null,
+                'schema' => $this->createSchemaFromOntologyExport($ontology, $parsed['references']),
+                'value_types' => $parsed['definitions'],
+                'warnings' => $parsed['warnings'],
+                'db_type' => DbType::ONTOLOGY,
             ];
         }
 
-        $ontology = $this->decodeOntologyExport($script);
-        if ($ontology === null) {
+        if ($format === 'maker-mts') {
+            $ontology = $this->makerDefinitionImportService->convert($script);
+            $parsed = $this->parseOntologyValueTypes($ontology);
+
             return [
-                'schema' => $this->createSchemaArray($script, $dbType),
-                'value_types' => [],
-                'warnings' => [],
-                'db_type' => null,
+                'schema' => $this->createSchemaFromOntologyExport($ontology, $parsed['references']),
+                'value_types' => $parsed['definitions'],
+                'warnings' => $parsed['warnings'],
+                'db_type' => DbType::ONTOLOGY,
             ];
         }
 
-        $parsed = $this->parseOntologyValueTypes($ontology);
+        if ($format !== 'sql') {
+            throw new InvalidSchemaException("Unsupported import format: {$format}.");
+        }
+
+        if (preg_match('/^\s*[\[{]/', $script)) {
+            throw new InvalidSchemaException('SQL import expects SQL DDL, not JSON.');
+        }
 
         return [
-            'schema' => $this->createSchemaFromOntologyExport($ontology, $parsed['references']),
-            'value_types' => $parsed['definitions'],
-            'warnings' => $parsed['warnings'],
+            'schema' => $this->createSchemaArray($script, $dbType),
+            'value_types' => [],
+            'warnings' => [],
             'db_type' => null,
         ];
+    }
+
+    public function encodeQueuedImport(string $format, string $content): string
+    {
+        return json_encode([
+            '__ontolosql_import' => 1,
+            'format' => $format,
+            'content' => $content,
+        ], JSON_THROW_ON_ERROR);
+    }
+
+    /** @return array{format: string, content: string} */
+    public function decodeQueuedImport(string $payload): array
+    {
+        $decoded = json_decode($payload, true);
+        if (is_array($decoded)
+            && ($decoded['__ontolosql_import'] ?? null) === 1
+            && is_string($decoded['format'] ?? null)
+            && is_string($decoded['content'] ?? null)) {
+            return [
+                'format' => $decoded['format'],
+                'content' => $decoded['content'],
+            ];
+        }
+
+        return ['format' => 'sql', 'content' => $payload];
     }
 
     /**

@@ -2,9 +2,21 @@
     <div class="modal-overlay" @click.self="$emit('close')">
         <div class="modal-card sql-modal">
             <div class="modal-header">
-                <span class="modal-title">{{ primaryLabel }} {{ primaryLabel === 'Import' ? 'Schema' : 'SQL' }}</span>
+                <span class="modal-title">{{ primaryLabel }} {{ primaryLabel === 'Import' ? 'Diagram' : 'SQL' }}</span>
                 <button class="modal-close" @click="$emit('close')" aria-label="Close">
                     <SvgIcon name="close" :size="16" />
+                </button>
+            </div>
+            <div v-if="primaryLabel === 'Import'" class="import-types">
+                <button
+                    v-for="option in importOptions"
+                    :key="option.value"
+                    type="button"
+                    :class="['import-type', { 'import-type--active': importType === option.value }]"
+                    @click="selectImportType(option.value)"
+                >
+                    <strong>{{ option.label }}</strong>
+                    <span>{{ option.description }}</span>
                 </button>
             </div>
             <div class="sql-textarea-wrap">
@@ -12,7 +24,7 @@
                     class="sql-textarea"
                     :value="modelValue"
                     @input="$emit('update:modelValue', $event.target.value)"
-                    :placeholder="primaryLabel === 'Import' ? 'Paste SQL or an exported ontology JSON document here…' : ''"
+                    :placeholder="primaryLabel === 'Import' ? activeImportOption.placeholder : ''"
                 ></textarea>
                 <button v-if="primaryLabel === 'Export'" class="sql-copy-btn" @click="copyText" title="Copy all">
                     <SvgIcon name="copy" :size="14" />
@@ -31,7 +43,7 @@
                 <div v-if="primaryLabel === 'Import'" class="import-footer">
                     <label class="btn btn-secondary import-file-btn" title="Upload from file">
                         <SvgIcon name="import" :size="15" />
-                        <input type="file" accept=".sql,.json" @change="handleFileUpload" hidden>
+                        <input type="file" :accept="activeImportOption.accept" @change="handleFileUpload" hidden>
                     </label>
                     <button class="btn btn-primary" @click="$emit('primary-action')" :disabled="loading">
                         {{ loading ? 'Importing…' : primaryLabel }}
@@ -43,6 +55,7 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import SvgIcon from '../SvgIcon.vue'
 
@@ -54,9 +67,50 @@ const props = defineProps({
     filename: { type: String, default: 'schema' },
     jsonContent: { type: String, default: null },
     loading: { type: Boolean, default: false },
+    importType: { type: String, default: 'sql' },
 })
 
-const emit = defineEmits(['update:modelValue', 'primary-action', 'close'])
+const emit = defineEmits(['update:modelValue', 'update:importType', 'primary-action', 'close'])
+
+const importOptions = [
+    {
+        value: 'sql',
+        label: 'SQL',
+        description: 'Database DDL',
+        accept: '.sql,.txt',
+        placeholder: 'Paste SQL CREATE TABLE definitions here…',
+    },
+    {
+        value: 'ontology-json',
+        label: 'Ontology JSON',
+        description: 'Foundry export',
+        accept: '.json',
+        placeholder: 'Paste an exported Foundry ontology JSON document here…',
+    },
+    {
+        value: 'backup-json',
+        label: 'Backup JSON',
+        description: 'Exact diagram backup',
+        accept: '.json',
+        placeholder: 'Paste an OntoloSQL Designer backup JSON document here…',
+    },
+    {
+        value: 'maker-mts',
+        label: 'Maker .mts',
+        description: '@osdk/maker definitions',
+        accept: '.mts,.ts',
+        placeholder: 'Paste declarative @osdk/maker definitions here…',
+    },
+]
+
+const activeImportOption = computed(() =>
+    importOptions.find(option => option.value === props.importType) ?? importOptions[0]
+)
+
+const selectImportType = (type) => {
+    emit('update:importType', type)
+    emit('update:modelValue', '')
+}
 
 const copyText = async () => {
     await navigator.clipboard.writeText(props.modelValue)
@@ -83,25 +137,6 @@ const downloadJson = () => {
     URL.revokeObjectURL(url)
 }
 
-const jsonToSql = (json) => {
-    let sql = ''
-    for (const table of json.tables ?? []) {
-        sql += `CREATE TABLE IF NOT EXISTS \`${table.name}\` (\n`
-        const cols = (table.columns ?? []).map(col => {
-            let def = `  \`${col.name}\` ${col.type}`
-            if (col.unsigned) def += ' UNSIGNED'
-            def += col.nullable ? ' NULL' : ' NOT NULL'
-            if (col.key && col.key !== 'None') def += ` ${col.key}`
-            return def
-        })
-        sql += cols.join(',\n') + '\n);\n\n'
-    }
-    for (const fk of json.foreignKeys ?? []) {
-        sql += `ALTER TABLE \`${fk.table}\`\nADD FOREIGN KEY (\`${fk.column}\`) REFERENCES \`${fk.referencesTable}\`(\`${fk.referencesColumn}\`);\n\n`
-    }
-    return sql
-}
-
 const handleFileUpload = (event) => {
     const file = event.target.files[0]
     if (!file) return
@@ -109,18 +144,10 @@ const handleFileUpload = (event) => {
     const reader = new FileReader()
     reader.onload = (e) => {
         const content = e.target.result
-        if (file.name.endsWith('.json')) {
+        if (props.importType === 'ontology-json' || props.importType === 'backup-json') {
             try {
-                const json = JSON.parse(content)
-                const isBackup = json.format === 'ontolosql-designer'
-                    && typeof json.version === 'number'
-                    && json.diagram
-                emit(
-                    'update:modelValue',
-                    isBackup || Array.isArray(json.objectTypes)
-                        ? JSON.stringify(json)
-                        : jsonToSql(json)
-                )
+                JSON.parse(content)
+                emit('update:modelValue', content)
             } catch {
                 $toast.error('Invalid JSON file')
             }
@@ -156,6 +183,42 @@ const handleFileUpload = (event) => {
 .sql-modal {
     width: 700px;
     max-width: calc(100vw - 2rem);
+}
+
+.import-types {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 8px;
+    padding: 12px 18px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.import-type {
+    display: grid;
+    gap: 3px;
+    padding: 9px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    background: var(--bg-surface-alt);
+    text-align: left;
+    cursor: pointer;
+}
+
+.import-type span {
+    color: var(--text-muted);
+    font-size: 10px;
+}
+
+.import-type--active {
+    border-color: var(--color-primary);
+    box-shadow: inset 0 0 0 1px var(--color-primary);
+}
+
+@media (max-width: 700px) {
+    .import-types {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
 }
 
 .modal-header {

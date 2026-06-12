@@ -31,9 +31,9 @@ export const Diagram = {
         }
     },
 
-    import: (id, script) =>
+    import: (id, format, script) =>
         request(async () => {
-            const response = await axios.post(`/api/diagrams/sql/import/${id}`, script, {
+            const response = await axios.post(`/api/diagrams/import/${format}/${id}`, script, {
                 headers: { 'Content-Type': 'text/plain' },
             })
             return response.data
