@@ -43,6 +43,29 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('cardinality: "OneToMany"', $module);
     }
 
+    public function test_uses_selected_title_property(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users', 'data' => [
+                'titlePropertyRowId' => 'user_email',
+            ]],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'BIGINT',
+            ]],
+            ['id' => 'user_name', 'type' => 'row', 'label' => 'full_name', 'parentNode' => 'users', 'data' => [
+                'sqlType' => 'VARCHAR(255)',
+            ]],
+            ['id' => 'user_email', 'type' => 'row', 'label' => 'email_address', 'parentNode' => 'users', 'data' => [
+                'sqlType' => 'VARCHAR(255)',
+            ]],
+        ]);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('titlePropertyApiName: "emailAddress"', $module);
+    }
+
     public function test_exports_custom_value_type_constraints_and_property_reference(): void
     {
         $schema = json_encode([

@@ -607,6 +607,7 @@ class DiagramSqlService
                 'titlePropertyId' => $objectType['titlePropertyId'] ?? null,
             ];
             $tables[] = $table;
+            $tableIndex = array_key_last($tables);
 
             $objectRid = (string) ($objectType['rid'] ?? '');
             if ($objectRid !== '') {
@@ -662,6 +663,27 @@ class DiagramSqlService
                     $rowsByObjectAndPropertyId[$objectRid][$propertyId] = $row;
                     if ($isPrimary) {
                         $primaryRowsByObjectRid[$objectRid][] = $row;
+                    }
+                }
+            }
+
+            $titlePropertyId = (string) ($objectType['titlePropertyId'] ?? '');
+            if ($titlePropertyId !== '') {
+                foreach ($rows as $row) {
+                    if (($row['parentNode'] ?? null) !== $tableId) {
+                        continue;
+                    }
+                    $metadata = is_array($row['data']['ontologyMetadata'] ?? null)
+                        ? $row['data']['ontologyMetadata']
+                        : [];
+                    if (in_array($titlePropertyId, [
+                        (string) ($row['id'] ?? ''),
+                        (string) ($row['label'] ?? ''),
+                        (string) ($metadata['rid'] ?? ''),
+                        (string) ($metadata['apiName'] ?? ''),
+                    ], true)) {
+                        $tables[$tableIndex]['data']['titlePropertyRowId'] = $row['id'];
+                        break;
                     }
                 }
             }

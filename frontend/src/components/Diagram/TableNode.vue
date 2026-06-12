@@ -38,12 +38,12 @@
     </button>
 
     <button
-        v-if="dbType === 'ontology' && (canEdit || hasOntologyActions)"
+        v-if="dbType === 'ontology' && (canEdit || hasOntologySettings)"
         ref="settingsBtnRef"
-        :class="['table_button', 'table_button--settings', { 'table_button--has-actions': hasOntologyActions }]"
+        :class="['table_button', 'table_button--settings', { 'table_button--has-actions': hasOntologySettings }]"
         @mousedown.stop
         @click.stop.prevent="showSettings = !showSettings"
-        :title="hasOntologyActions ? 'Ontology actions enabled' : 'Ontology action settings'"
+        :title="hasOntologySettings ? 'Ontology settings configured' : 'Ontology settings'"
     >
         <SvgIcon name="gear" :size="13" />
     </button>
@@ -66,6 +66,8 @@
     <TableSettingsModal
         v-if="showSettings"
         :actions="ontologyActions"
+        :titlePropertyRowId="titlePropertyRowId"
+        :columns="columns"
         :canEdit="canEdit"
         :anchor="settingsBtnRef"
         :ignore="[settingsBtnRef]"
@@ -90,6 +92,7 @@ const props = defineProps({
     data: Object,
     label: String,
     dbType: { type: String, default: 'mysql' },
+    columns: { type: Array, default: () => [] },
     canEdit: { type: Boolean, default: true },
 })
 
@@ -100,7 +103,9 @@ const showSettings = ref(false)
 const noteBtnRef = ref(null)
 const settingsBtnRef = ref(null)
 const ontologyActions = computed(() => props.data?.ontologyActions ?? {})
+const titlePropertyRowId = computed(() => props.data?.titlePropertyRowId ?? '')
 const hasOntologyActions = computed(() => !!(ontologyActions.value.create || ontologyActions.value.modify || ontologyActions.value.delete))
+const hasOntologySettings = computed(() => hasOntologyActions.value || !!titlePropertyRowId.value)
 const description = computed(() => props.data?.description ?? props.data?.note ?? '')
 </script>
 

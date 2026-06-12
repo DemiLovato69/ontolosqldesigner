@@ -150,6 +150,7 @@
                         :data="nodeProps.data"
                         :label="nodeProps.label"
                         :dbType="diagramDbType"
+                        :columns="tableColumns.get(nodeProps.id) ?? []"
                         :canEdit="canEdit"
                         @delete-node="deleteNode"
                         @update-label="updateLabel"
@@ -326,6 +327,13 @@ const tableColumnLabels = computed(() => {
         labels.set(tableId, rows.map(row => row.label))
     }
     return labels
+})
+const tableColumns = computed(() => {
+    const columns = new Map()
+    for (const [tableId, rows] of rowsByTableId.value) {
+        columns.set(tableId, rows.map(row => ({ id: row.id, label: row.label })))
+    }
+    return columns
 })
 const diagramName = ref('schema')
 const diagramDbType = ref('mysql')

@@ -7,8 +7,24 @@
             @mousedown.stop
             @pointerdown.stop
         >
-            <p class="table-settings-modal__title">Ontology Actions</p>
-            <p class="table-settings-modal__hint">Generate Maker CRUD action definitions for this table.</p>
+            <p class="table-settings-modal__title">Ontology Settings</p>
+
+            <label class="table-settings-modal__field">
+                <span>Title property</span>
+                <select
+                    :value="titlePropertyRowId || ''"
+                    :disabled="!canEdit"
+                    @change="setTitleProperty($event.target.value)"
+                >
+                    <option value="">Automatic</option>
+                    <option v-for="column in columns" :key="column.id" :value="column.id">
+                        {{ column.label }}
+                    </option>
+                </select>
+            </label>
+
+            <p class="table-settings-modal__section">Generated Actions</p>
+            <p class="table-settings-modal__hint">Generate Maker CRUD action definitions for this object type.</p>
 
             <label class="table-settings-modal__row">
                 <span>Create action</span>
@@ -32,6 +48,8 @@ import { onClickOutside } from '@vueuse/core'
 
 const props = defineProps({
     actions: { type: Object, default: () => ({}) },
+    titlePropertyRowId: { type: String, default: '' },
+    columns: { type: Array, default: () => [] },
     canEdit: { type: Boolean, default: true },
     anchor: { type: Object, default: null },
     ignore: { type: Array, default: () => [] },
@@ -64,7 +82,17 @@ const toggle = (key) => {
         create: !!props.actions.create,
         modify: !!props.actions.modify,
         delete: !!props.actions.delete,
+        titlePropertyRowId: props.titlePropertyRowId || null,
         [key]: !props.actions[key],
+    })
+}
+
+const setTitleProperty = (titlePropertyRowId) => {
+    emit('change', {
+        create: !!props.actions.create,
+        modify: !!props.actions.modify,
+        delete: !!props.actions.delete,
+        titlePropertyRowId: titlePropertyRowId || null,
     })
 }
 </script>
@@ -82,10 +110,18 @@ const toggle = (key) => {
 }
 
 .table-settings-modal__title {
-    margin: 0 0 4px;
+    margin: 0 0 10px;
     color: var(--text-secondary);
     font-size: 12px;
     font-weight: 700;
+}
+
+.table-settings-modal__section {
+    margin: 12px 0 4px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
 }
 
 .table-settings-modal__hint {
@@ -93,6 +129,22 @@ const toggle = (key) => {
     color: var(--text-muted);
     font-size: 11px;
     line-height: 1.35;
+}
+
+.table-settings-modal__field {
+    display: grid;
+    gap: 5px;
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.table-settings-modal__field select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid var(--border-strong);
+    border-radius: 4px;
+    color: var(--text-primary);
+    background: var(--bg-surface);
 }
 
 .table-settings-modal__row {

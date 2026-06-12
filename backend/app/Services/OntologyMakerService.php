@@ -122,7 +122,8 @@ class OntologyMakerService
                 $primaryKey = $this->inferPrimaryKey($tableRows);
             }
 
-            $titleProperty = $this->chooseTitleProperty($properties, $primaryKey);
+            $titleProperty = $this->selectedTitleProperty($table, $tableRows)
+                ?? $this->chooseTitleProperty($properties, $primaryKey);
             $objects[] = [
                 'const_name' => $names['object'],
                 'api_name' => $names['object'],
@@ -570,6 +571,23 @@ class OntologyMakerService
         }
 
         return $primaryKey;
+    }
+
+    /** @param list<array<string, mixed>> $rows */
+    private function selectedTitleProperty(array $table, array $rows): ?string
+    {
+        $selectedRowId = $table['data']['titlePropertyRowId'] ?? null;
+        if (! is_string($selectedRowId) || $selectedRowId === '') {
+            return null;
+        }
+
+        foreach ($rows as $row) {
+            if ($row['id'] === $selectedRowId) {
+                return $this->apiName($row['name']);
+            }
+        }
+
+        return null;
     }
 
     /** @return array{object: string, singular: string, plural: string, display: string, plural_display: string} */

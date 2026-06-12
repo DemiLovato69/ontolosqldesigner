@@ -122,7 +122,7 @@ export const TableActions = {
             type: 'table',
             label: tableName,
             zIndex,
-            data: { toolbarPosition: Position.Top, toolbarVisible: true, color, description: '', ontologyActions: { create: false, modify: false, delete: false } },
+            data: { toolbarPosition: Position.Top, toolbarVisible: true, color, description: '', titlePropertyRowId: null, ontologyActions: { create: false, modify: false, delete: false } },
             position,
             style: { ...TABLE_STYLE, background: color, borderColor: color },
         }]
