@@ -54,6 +54,11 @@ class DiagramRepository implements DiagramRepositoryInterface
         if (isset($data['schema']) && is_array($data['schema'])) {
             $data['schema'] = DiagramSchema::withoutRuntimeState($data['schema']);
         }
+        if (array_key_exists('schema', $data) || array_key_exists('value_types', $data)) {
+            $data['import_status'] = null;
+            $data['import_error'] = null;
+            $data['import_warnings'] = null;
+        }
 
         return $diagram->update($data);
     }

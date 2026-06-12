@@ -6,14 +6,12 @@ namespace Tests\Feature;
 
 use App\Models\Diagram;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class DiagramControllerTest extends TestCase
 {
-    use DatabaseTransactions;
 
     private User $user;
 
@@ -241,6 +239,63 @@ class DiagramControllerTest extends TestCase
         $this->auth()
             ->getJson("/api/diagrams/json/export/{$this->diagram->id}")
             ->assertStatus(200);
+    }
+
+    public function test_export_json_includes_ontology_value_types(): void
+    {
+        $this->diagram->update([
+            'db_type' => 'ontology',
+            'schema' => [
+                ['id' => 't1', 'type' => 'table', 'label' => 'users'],
+                ['id' => 'r1', 'type' => 'row', 'label' => 'email', 'parentNode' => 't1', 'data' => [
+                    'sqlType' => 'STRING',
+                    'valueTypeId' => 'email-type',
+                ]],
+            ],
+            'value_types' => [[
+                'id' => 'email-type',
+                'apiName' => 'emailAddress',
+                'displayName' => 'Email Address',
+                'version' => '1.0.0',
+                'baseType' => ['type' => 'string'],
+                'constraints' => [],
+            ]],
+        ]);
+
+        $this->auth()
+            ->getJson("/api/diagrams/json/export/{$this->diagram->id}")
+            ->assertOk()
+            ->assertJsonPath('valueTypes.0.apiName', 'emailAddress')
+            ->assertJsonPath('tables.0.columns.0.valueTypeId', 'email-type');
+    }
+
+    public function test_export_ontology_includes_value_types(): void
+    {
+        $this->diagram->update([
+            'db_type' => 'ontology',
+            'schema' => [
+                ['id' => 't1', 'type' => 'table', 'label' => 'users'],
+                ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'STRING']],
+                ['id' => 'r2', 'type' => 'row', 'label' => 'email', 'parentNode' => 't1', 'data' => [
+                    'sqlType' => 'STRING',
+                    'valueTypeId' => 'email-type',
+                ]],
+            ],
+            'value_types' => [[
+                'id' => 'email-type',
+                'apiName' => 'emailAddress',
+                'displayName' => 'Email Address',
+                'version' => '1.0.0',
+                'baseType' => ['type' => 'string'],
+                'constraints' => [],
+            ]],
+        ]);
+
+        $response = $this->auth()->get("/api/diagrams/ontology/export/{$this->diagram->id}");
+
+        $response->assertOk();
+        $this->assertStringContainsString('export const emailAddress = defineValueType({', $response->getContent());
+        $this->assertStringContainsString('valueType: emailAddress', $response->getContent());
     }
 
     public function test_export_migration_returns_zip(): void

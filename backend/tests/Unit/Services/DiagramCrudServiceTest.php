@@ -9,12 +9,10 @@ use App\DTOs\UpdateDiagramDTO;
 use App\Models\Diagram;
 use App\Models\User;
 use App\Services\DiagramCrudService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class DiagramCrudServiceTest extends TestCase
 {
-    use DatabaseTransactions;
 
     private DiagramCrudService $service;
 

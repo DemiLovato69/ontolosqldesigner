@@ -4,13 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
 
 class SupportControllerTest extends TestCase
 {
-    use DatabaseTransactions;
 
     public function test_send_support_message_returns_ok(): void
     {

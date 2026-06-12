@@ -7,13 +7,11 @@ namespace Tests\Feature;
 use App\Models\Diagram;
 use App\Models\DiagramVisitor;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
 class DiagramSharingTest extends TestCase
 {
-    use DatabaseTransactions;
 
     public function test_visitor_request_is_pending_when_approval_required(): void
     {

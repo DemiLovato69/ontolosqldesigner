@@ -6,14 +6,14 @@ namespace Tests\Unit\Services;
 
 use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
+use App\Enums\ImportStatus;
 use App\Models\Diagram;
 use App\Services\DiagramSqlService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use App\Services\OntologyMakerService;
 use Tests\TestCase;
 
 class DiagramSqlServiceTest extends TestCase
 {
-    use DatabaseTransactions;
 
     private DiagramSqlService $service;
 
@@ -112,6 +112,138 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertStringContainsString('export const users = defineObject({', $result);
     }
 
+    public function test_export_script_for_ontology_diagram_includes_persisted_value_types(): void
+    {
+        $diagram = Diagram::factory()->create([
+            'schema' => [
+                ['id' => 't1', 'type' => 'table', 'label' => 'users'],
+                ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'STRING']],
+                ['id' => 'r2', 'type' => 'row', 'label' => 'email', 'parentNode' => 't1', 'data' => [
+                    'sqlType' => 'STRING',
+                    'valueTypeId' => 'email-type',
+                ]],
+            ],
+            'db_type' => 'ontology',
+            'value_types' => [[
+                'id' => 'email-type',
+                'apiName' => 'emailAddress',
+                'displayName' => 'Email Address',
+                'version' => '1.0.0',
+                'baseType' => ['type' => 'string'],
+                'constraints' => [],
+            ]],
+        ]);
+
+        $result = $this->service->exportScript($diagram);
+
+        $this->assertStringContainsString('export const emailAddress = defineValueType({', $result);
+        $this->assertStringContainsString('valueType: emailAddress', $result);
+    }
+
+    public function test_export_job_includes_value_types_in_mts_and_json_backup(): void
+    {
+        $diagram = Diagram::factory()->create([
+            'schema' => [
+                ['id' => 't1', 'type' => 'table', 'label' => 'users'],
+                ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'STRING']],
+                ['id' => 'r2', 'type' => 'row', 'label' => 'email', 'parentNode' => 't1', 'data' => [
+                    'sqlType' => 'STRING',
+                    'valueTypeId' => 'email-type',
+                ]],
+            ],
+            'db_type' => 'ontology',
+            'value_types' => [[
+                'id' => 'email-type',
+                'apiName' => 'emailAddress',
+                'displayName' => 'Email Address',
+                'version' => '1.0.0',
+                'baseType' => ['type' => 'string'],
+                'constraints' => [],
+            ]],
+        ]);
+
+        (new ExportDiagramJob($diagram))->handle($this->service, app(OntologyMakerService::class));
+        $diagram->refresh();
+
+        $this->assertStringContainsString('export const emailAddress = defineValueType({', $diagram->script);
+        $this->assertSame('emailAddress', $diagram->export_json['valueTypes'][0]['apiName']);
+        $this->assertSame('email-type', $diagram->export_json['tables'][0]['columns'][1]['valueTypeId']);
+    }
+
+    public function test_imports_ontology_value_types_and_field_references(): void
+    {
+        $ontology = json_encode([
+            'valueTypes' => [[
+                'rid' => 'ri.value-type.email',
+                'apiName' => 'emailAddress',
+                'version' => '1.0.0',
+                'displayMetadata' => [
+                    'displayName' => 'Email Address',
+                    'description' => 'Validated email',
+                ],
+                'baseType' => ['type' => 'string'],
+                'constraints' => [[
+                    'constraint' => [
+                        'constraint' => [
+                            'type' => 'string',
+                            'string' => [
+                                'type' => 'regex',
+                                'regex' => [
+                                    'regexPattern' => '^[^@]+@[^@]+$',
+                                    'usePartialMatch' => false,
+                                ],
+                            ],
+                        ],
+                        'failureMessage' => ['message' => 'Invalid email'],
+                    ],
+                ]],
+            ]],
+            'objectTypes' => [[
+                'rid' => 'ri.object.user',
+                'apiName' => 'User',
+                'primaryKeys' => ['id'],
+                'properties' => [
+                    ['id' => 'id', 'baseType' => ['type' => 'STRING']],
+                    [
+                        'id' => 'email',
+                        'baseType' => ['type' => 'STRING'],
+                        'valueTypeRid' => 'ri.value-type.email',
+                    ],
+                ],
+            ]],
+        ]);
+
+        $payload = $this->service->createImportPayload($ontology, 'ontology');
+
+        $this->assertCount(1, $payload['value_types']);
+        $this->assertSame('emailAddress', $payload['value_types'][0]['apiName']);
+        $this->assertSame('regex', $payload['value_types'][0]['constraints'][0]['type']);
+        $this->assertSame('Invalid email', $payload['value_types'][0]['constraints'][0]['failureMessage']);
+        $emailRow = collect($payload['schema'])->first(fn ($item) => ($item['type'] ?? null) === 'row' && ($item['label'] ?? null) === 'email');
+        $this->assertSame($payload['value_types'][0]['id'], $emailRow['data']['valueTypeId']);
+        $this->assertSame([], $payload['warnings']);
+    }
+
+    public function test_skips_unsupported_ontology_value_type_constraints_with_warning(): void
+    {
+        $ontology = json_encode([
+            'valueTypes' => [[
+                'apiName' => 'customString',
+                'baseType' => ['type' => 'string'],
+                'constraints' => [[
+                    'constraint' => ['type' => 'unsupported', 'unsupported' => []],
+                ]],
+            ]],
+            'objectTypes' => [],
+        ]);
+
+        $payload = $this->service->createImportPayload($ontology, 'ontology');
+
+        $this->assertCount(1, $payload['value_types']);
+        $this->assertSame([], $payload['value_types'][0]['constraints']);
+        $this->assertCount(1, $payload['warnings']);
+    }
+
     public function test_create_script_my_sql_skips_invalid_connection(): void
     {
         $schema = json_encode([
@@ -197,6 +329,31 @@ class DiagramSqlServiceTest extends TestCase
         ]);
         $result = $this->service->createJson($schema);
         $this->assertEmpty($result['foreignKeys']);
+    }
+
+    public function test_create_json_includes_value_types_and_column_references(): void
+    {
+        $schema = json_encode([
+            ['id' => 't1', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'email', 'parentNode' => 't1', 'data' => [
+                'sqlType' => 'STRING',
+                'nullable' => false,
+                'valueTypeId' => 'email-type',
+            ]],
+        ]);
+        $valueTypes = [[
+            'id' => 'email-type',
+            'apiName' => 'emailAddress',
+            'displayName' => 'Email Address',
+            'version' => '1.0.0',
+            'baseType' => ['type' => 'string'],
+            'constraints' => [],
+        ]];
+
+        $result = $this->service->createJson($schema, $valueTypes);
+
+        $this->assertSame($valueTypes, $result['valueTypes']);
+        $this->assertSame('email-type', $result['tables'][0]['columns'][0]['valueTypeId']);
     }
 
     // --- createSchema MySQL ---
@@ -655,6 +812,7 @@ class DiagramSqlServiceTest extends TestCase
         $diagram = Diagram::factory()->create([
             'db_type' => 'ontology',
             'script' => 'CREATE TABLE users (id BIGINT PRIMARY KEY, birth_date DATE);',
+            'import_status' => ImportStatus::PENDING,
         ]);
 
         (new ImportDiagramSchemaJob($diagram))->handle($this->service);
@@ -662,6 +820,28 @@ class DiagramSqlServiceTest extends TestCase
         $rows = array_column(array_filter($diagram->refresh()->schema, fn ($i) => ($i['type'] ?? null) === 'row'), null, 'label');
         $this->assertEquals('LONG', $rows['id']['data']['sqlType']);
         $this->assertEquals('DATE', $rows['birth_date']['data']['sqlType']);
+    }
+
+    public function test_stale_import_job_does_not_overwrite_newer_editor_state(): void
+    {
+        $diagram = Diagram::factory()->create([
+            'db_type' => 'ontology',
+            'script' => 'CREATE TABLE imported_users (id BIGINT PRIMARY KEY);',
+            'import_status' => ImportStatus::PENDING,
+        ]);
+        $job = new ImportDiagramSchemaJob($diagram);
+        $newSchema = [['id' => 'current', 'type' => 'table', 'label' => 'current_users']];
+        $diagram->update([
+            'schema' => $newSchema,
+            'value_types' => [['id' => 'current-type']],
+            'import_status' => null,
+        ]);
+
+        $job->handle($this->service);
+        $diagram->refresh();
+
+        $this->assertSame($newSchema, $diagram->schema);
+        $this->assertSame([['id' => 'current-type']], $diagram->value_types);
     }
 
     public function test_create_migration_enum_values(): void

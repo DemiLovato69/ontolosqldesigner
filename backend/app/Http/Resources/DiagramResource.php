@@ -30,6 +30,8 @@ class DiagramResource extends JsonResource
             'name' => $this->resource->name,
             'db_type' => $this->resource->db_type ?? 'mysql',
             'schema' => DiagramSchema::withoutRuntimeState($this->resource->schema),
+            'value_types' => $this->resource->value_types ?? [],
+            'import_warnings' => $this->resource->import_warnings ?? [],
             'share_token' => $this->resource->share_token,
             'share_access' => $this->resource->share_access?->value,
             'require_approval' => (bool) $this->resource->require_approval,

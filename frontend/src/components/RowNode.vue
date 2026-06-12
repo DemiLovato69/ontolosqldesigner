@@ -55,6 +55,11 @@
             @change="onLengthChange"
         />
         <select v-model="sqlTypeForSelect" @change="emitChange()" :disabled="!canEdit">
+            <optgroup v-if="dbType === 'ontology' && valueTypes.length" label="Value Types">
+                <option v-for="valueType in valueTypes" :key="valueType.id" :value="`__value_type__:${valueType.id}`">
+                    {{ valueType.displayName }}
+                </option>
+            </optgroup>
             <optgroup v-for="(options, groupLabel) in typeGroups" :key="groupLabel" :label="groupLabel">
                 <option v-for="opt in options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
             </optgroup>
@@ -136,6 +141,7 @@ const props = defineProps({
     tableColumns: { type: Array, default: () => [] },
     tableUniqueTogether: { type: Array, default: () => [] },
     tableFulltextIndexes: { type: Array, default: () => [] },
+    valueTypes: { type: Array, default: () => [] },
 })
 
 const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev', 'update-note'])
@@ -162,6 +168,9 @@ const badges = computed(() => {
     }
     if ((props.data.indexed ?? true) && !result.some(badge => badge.label === 'IDX')) {
         result.push({ label: 'IDX', cls: 'badge--idx' })
+    }
+    if (props.data.valueTypeId) {
+        result.push({ label: 'VT', cls: 'badge--vt' })
     }
     return result
 })
@@ -438,6 +447,7 @@ const onLengthChange = (e) => {
 
 const sqlTypeForSelect = computed({
     get() {
+        if (props.data.valueTypeId) return `__value_type__:${props.data.valueTypeId}`
         if (isEnum.value) return "ENUM('')"
         const m = props.data.sqlType?.match(LENGTH_TYPE_RE)
         if (m) {
@@ -451,6 +461,17 @@ const sqlTypeForSelect = computed({
         return props.data.sqlType
     },
     set(val) {
+        if (val?.startsWith('__value_type__:')) {
+            const valueTypeId = val.slice('__value_type__:'.length)
+            const valueType = props.valueTypes.find(item => item.id === valueTypeId)
+            if (!valueType) return
+            props.data.valueTypeId = valueTypeId
+            props.data.sqlType = canvasTypeForValueType(valueType)
+            props.data.ontologyBaseType = null
+            props.data.ontologyImportedSqlType = null
+            return
+        }
+        props.data.valueTypeId = null
         const newMatch = val?.match(LENGTH_TYPE_RE)
         const curMatch = props.data.sqlType?.match(LENGTH_TYPE_RE)
         // Same base type — preserve the user's custom length
@@ -458,6 +479,14 @@ const sqlTypeForSelect = computed({
         props.data.sqlType = val
     }
 })
+
+const canvasTypeForValueType = (valueType) => {
+    const baseType = valueType.baseType ?? { type: 'string' }
+    if (baseType.type === 'array') return `ARRAY<${String(baseType.elementType ?? 'string').toUpperCase()}>`
+    if (baseType.type === 'struct') return 'STRUCT'
+    if (baseType.type === 'decimal') return 'DECIMAL(10,2)'
+    return String(baseType.type ?? 'string').toUpperCase()
+}
 </script>
 
 <style scoped>
@@ -518,6 +547,7 @@ const sqlTypeForSelect = computed({
 .badge--uq          { background: #3b82f6; color: #fff; }
 .badge--idx         { background: #6b7280; color: #fff; }
 .badge--uq-together { background: #10b981; color: #fff; }
+.badge--vt          { background: #7c3aed; color: #fff; }
 .badge--ft          { background: #f97316; color: #fff; }
 .badge--null        { background: #7c3aed; color: #fff; }
 

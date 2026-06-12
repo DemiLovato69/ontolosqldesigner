@@ -6,14 +6,12 @@ namespace Tests\Feature;
 
 use App\Models\Diagram;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdminControllerTest extends TestCase
 {
-    use DatabaseTransactions;
 
     private array $adminSession = ['admin_authenticated' => true];
 

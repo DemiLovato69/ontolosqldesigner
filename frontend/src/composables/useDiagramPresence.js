@@ -17,7 +17,7 @@ export const CURSOR_COLORS = ['#E53935', '#D81B60', '#8E24AA', '#3949AB', '#1E88
  * @param {import('vue').Ref} opts.canvasWrapperRef
  * @param {Function} opts.onDiagramSaved           - called when a remote user saves
  */
-export function useDiagramPresence({ token, ownerIdentity, viewport, schema, canvasWrapperRef, onDiagramSaved, onVisitorRequested, onAccessChanged }) {
+export function useDiagramPresence({ token, ownerIdentity, viewport, schema, valueTypes, canvasWrapperRef, onDiagramSaved, onVisitorRequested, onAccessChanged }) {
     const FULL_SCHEMA_SYNC_LIMIT = 2000
     const remoteCursors = reactive({})
     let echo = null
@@ -55,7 +55,7 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, can
                 if (user.id !== ownerIdentity.value.id) {
                     remoteCursors[user.id] = { ...user, screenX: -999, screenY: -999 }
                     setTimeout(() => {
-                        whisper('schema-sync', { schema: schema.value, forUserId: user.id })
+                        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes?.value ?? [], forUserId: user.id })
                     }, Math.random() * 200)
                 }
             })
@@ -69,9 +69,13 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, can
                 remoteCursors[id].screenX = x * viewport.value.zoom + viewport.value.x
                 remoteCursors[id].screenY = y * viewport.value.zoom + viewport.value.y
             })
-            .listenForWhisper('schema-sync', ({ schema: incoming, forUserId }) => {
+            .listenForWhisper('schema-sync', ({ schema: incoming, valueTypes: incomingValueTypes, forUserId }) => {
                 if (forUserId && forUserId !== ownerIdentity.value?.id) return
                 if (incoming?.length) schema.value = incoming
+                if (valueTypes && Array.isArray(incomingValueTypes)) valueTypes.value = incomingValueTypes
+            })
+            .listenForWhisper('value-types-sync', ({ valueTypes: incomingValueTypes }) => {
+                if (valueTypes && Array.isArray(incomingValueTypes)) valueTypes.value = incomingValueTypes
             })
             .listenForWhisper('schema-patch', ({ add, remove, update }) => {
                 if (remove?.length) {
@@ -100,6 +104,7 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, can
                 if (String(imported_by) === ownerIdentity.value?.id) return
                 const result = await Diagram.getByToken(token)
                 if (result?.schema) schema.value = result.schema
+                if (valueTypes && Array.isArray(result?.value_types)) valueTypes.value = result.value_types
             })
             .listen('.visitor.requested', () => {
                 if (onVisitorRequested) onVisitorRequested()

@@ -43,6 +43,95 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('cardinality: "OneToMany"', $module);
     }
 
+    public function test_exports_custom_value_type_constraints_and_property_reference(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+            ['id' => 'email', 'type' => 'row', 'label' => 'email', 'parentNode' => 'users', 'data' => [
+                'sqlType' => 'STRING',
+                'valueTypeId' => 'email-type',
+            ]],
+        ]);
+        $valueTypes = [[
+            'id' => 'email-type',
+            'apiName' => 'emailAddress',
+            'displayName' => 'Email Address',
+            'description' => 'Validated email address',
+            'version' => '1.2.0',
+            'baseType' => ['type' => 'string'],
+            'constraints' => [
+                [
+                    'id' => 'regex',
+                    'type' => 'regex',
+                    'regexPattern' => '^[^@]+@[^@]+\\.[^@]+$',
+                    'usePartialMatch' => false,
+                    'failureMessage' => 'Must be a valid email',
+                ],
+                [
+                    'id' => 'length',
+                    'type' => 'length',
+                    'minSize' => 5,
+                    'maxSize' => 255,
+                    'failureMessage' => 'Email length is invalid',
+                ],
+            ],
+        ]];
+
+        $module = $this->service->createModule($schema, $valueTypes);
+
+        $this->assertStringContainsString('export const emailAddress = defineValueType({', $module);
+        $this->assertStringContainsString('description: "Validated email address"', $module);
+        $this->assertStringContainsString('regexPattern: "^[^@]+@[^@]+\\\\.[^@]+$"', $module);
+        $this->assertStringContainsString('usePartialMatch: false', $module);
+        $this->assertStringContainsString('failureMessage: { message: "Must be a valid email" }', $module);
+        $this->assertStringContainsString('length: { minSize: 5, maxSize: 255 }', $module);
+        $this->assertStringContainsString('version: "1.2.0"', $module);
+        $this->assertStringContainsString('"email": { type: "string"', $module);
+        $this->assertStringContainsString('valueType: emailAddress', $module);
+    }
+
+    public function test_exports_one_level_array_and_struct_value_types(): void
+    {
+        $schema = json_encode([
+            ['id' => 'items', 'type' => 'table', 'label' => 'items'],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'items', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+        ]);
+        $valueTypes = [
+            [
+                'id' => 'tags',
+                'apiName' => 'tags',
+                'displayName' => 'Tags',
+                'version' => '1.0.0',
+                'baseType' => ['type' => 'array', 'elementType' => 'string'],
+                'constraints' => [],
+            ],
+            [
+                'id' => 'address',
+                'apiName' => 'address',
+                'displayName' => 'Address',
+                'version' => '1.0.0',
+                'baseType' => ['type' => 'struct', 'fields' => [
+                    ['id' => 'city', 'apiName' => 'city', 'type' => 'string'],
+                    ['id' => 'zip', 'apiName' => 'zipCode', 'type' => 'integer'],
+                ]],
+                'constraints' => [],
+            ],
+        ];
+
+        $module = $this->service->createModule($schema, $valueTypes);
+
+        $this->assertStringContainsString('type: { type: "array", elementType: "string" }', $module);
+        $this->assertStringContainsString('{ identifier: "city", baseType: "string" }', $module);
+        $this->assertStringContainsString('{ identifier: "zipCode", baseType: "integer" }', $module);
+    }
+
     public function test_respects_one_to_one_relationship_type(): void
     {
         $schema = json_encode([

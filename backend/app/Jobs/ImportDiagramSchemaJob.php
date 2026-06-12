@@ -21,6 +21,8 @@ class ImportDiagramSchemaJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    private ?string $expectedScriptHash = null;
+
     public int $timeout = 300;
 
     public int $tries = 15;
@@ -31,6 +33,9 @@ class ImportDiagramSchemaJob implements ShouldQueue
 
     public function __construct(private Diagram $diagram)
     {
+        $this->expectedScriptHash = is_string($diagram->script)
+            ? hash('sha256', $diagram->script)
+            : null;
         $this->onConnection('database');
         $this->onQueue('diagrams');
     }
@@ -49,21 +54,26 @@ class ImportDiagramSchemaJob implements ShouldQueue
     {
         ini_set('memory_limit', '512M');
 
-        if ($this->diagram->script === null) {
-            $this->diagram->import_status = ImportStatus::FAILED;
-            $this->diagram->import_error = 'No script to import.';
-            $this->diagram->save();
-
+        $this->diagram->refresh();
+        $currentStatus = $this->diagram->import_status;
+        $currentScript = $this->diagram->script;
+        if ($this->expectedScriptHash === null
+            || ! in_array($currentStatus, [ImportStatus::PENDING, ImportStatus::PROCESSING], true)
+            || ! is_string($currentScript)
+            || ! hash_equals($this->expectedScriptHash, hash('sha256', $currentScript))) {
             return;
         }
 
         $this->diagram->import_status = ImportStatus::PROCESSING;
         $this->diagram->save();
 
-        $this->diagram->schema = $service->createSchemaArray(
-            $this->diagram->script,
+        $payload = $service->createImportPayload(
+            $currentScript,
             ($this->diagram->db_type ?? DbType::MYSQL)->value
         );
+        $this->diagram->schema = $payload['schema'];
+        $this->diagram->value_types = $payload['value_types'];
+        $this->diagram->import_warnings = $payload['warnings'];
         $this->diagram->import_status = ImportStatus::DONE;
         $this->diagram->import_error = null;
         $this->diagram->save();

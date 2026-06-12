@@ -101,85 +101,13 @@
                     <span class="export-card__desc">{{ activeExport === 'svg' ? 'Rendering…' : 'Scalable full diagram' }}</span>
                 </button>
 
-                <button class="export-card export-card--laravel" :class="{ 'export-card--active': activeExport === 'laravel' }" :disabled="isExporting" @click="downloadLaravelMigrations">
-                    <div class="export-card__icon">
-                        <svg v-if="activeExport !== 'laravel'" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                            <!-- ZIP archive body -->
-                            <rect x="8" y="14" width="32" height="28" rx="3" fill="var(--bg-surface-alt)" stroke="#FF2D20" stroke-width="2"/>
-                            <!-- ZIP top flap -->
-                            <path d="M8 20h32" stroke="#FF2D20" stroke-width="2"/>
-                            <!-- Zipper teeth -->
-                            <rect x="21" y="8" width="6" height="5" rx="1" fill="#FF2D20"/>
-                            <rect x="21" y="13" width="6" height="3" rx="1" fill="#FF2D20" opacity="0.5"/>
-                            <!-- Laravel L inside -->
-                            <text x="24" y="36" text-anchor="middle" font-size="11" font-weight="800" font-family="sans-serif" fill="#FF2D20">php</text>
-                        </svg>
-                        <span v-else class="export-spinner export-spinner--laravel"></span>
-                    </div>
-                    <span class="export-card__label">Laravel</span>
-                    <span class="export-card__desc">{{ activeExport === 'laravel' ? 'Generating…' : 'Migration files (.zip)' }}</span>
-                </button>
-            </div>
-
-            <div v-if="!reviewDismissed" class="review-section">
-                <template v-if="!reviewSubmitted">
-                    <div class="review-section__header">
-                        <span class="review-section__label">Enjoying sql-designer.com?</span>
-                        <button class="review-section__dismiss" @click="reviewDismissed = true" aria-label="Dismiss">
-                            <img src="../../icons/close.svg" alt="Close">
-                        </button>
-                    </div>
-                    <div class="review-section__stars" @mouseleave="hoveredStars = 0">
-                        <button
-                            v-for="n in 5"
-                            :key="n"
-                            class="star-btn"
-                            @click="selectedStars = n"
-                            @mouseenter="hoveredStars = n"
-                            :aria-label="`${n} star`"
-                        >
-                            <svg viewBox="0 0 24 24" width="28" height="28">
-                                <polygon
-                                    points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26"
-                                    :fill="n <= (hoveredStars || selectedStars) ? 'var(--color-primary)' : 'none'"
-                                    :stroke="n <= (hoveredStars || selectedStars) ? 'var(--color-primary)' : 'var(--border-color)'"
-                                    stroke-width="1.5"
-                                    stroke-linejoin="round"
-                                />
-                            </svg>
-                        </button>
-                    </div>
-                    <div v-if="selectedStars > 0" class="review-section__message-wrap">
-                        <textarea
-                            v-model="reviewMessage"
-                            class="review-section__textarea"
-                            placeholder="Optional message..."
-                            rows="2"
-                            maxlength="1000"
-                        ></textarea>
-                    </div>
-                    <div v-if="selectedStars > 0" class="review-section__actions">
-                        <button
-                            class="review-section__submit"
-                            :disabled="reviewLoading"
-                            @click="submitReview"
-                        >{{ reviewLoading ? 'Sending…' : 'Submit' }}</button>
-                        <button class="review-section__skip" @click="reviewDismissed = true">Maybe later</button>
-                    </div>
-                </template>
-                <template v-else>
-                    <div class="review-section__thanks">
-                        Thank you for your feedback!
-                    </div>
-                </template>
             </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
-import axios from '@/axios.js'
+import { computed, ref } from 'vue'
 import { useToast } from 'vue-toast-notification'
 import { Diagram } from '@/services/Diagram.js'
 
@@ -195,37 +123,6 @@ const isOntology = computed(() => props.dbType === 'ontology')
 const isExporting  = ref(false)
 const activeExport = ref(null)
 const sqlCache     = ref(null)
-
-const reviewDismissed = ref(true)
-const reviewSubmitted = ref(false)
-const reviewLoading   = ref(false)
-const selectedStars   = ref(0)
-const hoveredStars    = ref(0)
-const reviewMessage   = ref('')
-
-onMounted(async () => {
-    try {
-        const { data } = await axios.get('/api/review')
-        if (!data.reviewed) reviewDismissed.value = false
-    } catch {
-        // silently skip — keep hidden on error
-    }
-})
-
-const submitReview = async () => {
-    reviewLoading.value = true
-    try {
-        await axios.post('/api/review', {
-            stars:   selectedStars.value,
-            message: reviewMessage.value || null,
-        })
-        reviewSubmitted.value = true
-    } catch {
-        $toast.error('Failed to submit review')
-    } finally {
-        reviewLoading.value = false
-    }
-}
 
 const withExporting = async (key, fn) => {
     isExporting.value  = true
@@ -243,6 +140,16 @@ const withExporting = async (key, fn) => {
 
 const generateSql = () => new Promise((resolve, reject) => {
     if (sqlCache.value) { resolve(sqlCache.value); return }
+    if (isOntology.value) {
+        Diagram.exportOntology(props.diagramId)
+            .then(blob => blob.text())
+            .then(module => {
+                sqlCache.value = module
+                resolve(module)
+            })
+            .catch(reject)
+        return
+    }
     Diagram.export(props.diagramId).then(result => {
         if (!result) { reject(new Error('Export failed')); return }
         if (result.status === 'done' && result.script) {
@@ -310,16 +217,6 @@ const capturePng = () => withExporting('png', async () => {
 
 const captureSvg = () => withExporting('svg', async () => {
     emit('capture-svg')
-})
-
-const downloadLaravelMigrations = () => withExporting('laravel', async () => {
-    const blob = await Diagram.exportMigration(props.diagramId)
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `${props.filename}_migrations.zip`
-    a.click()
-    URL.revokeObjectURL(url)
 })
 
 const downloadOntology = () => withExporting('ontology', async () => {
@@ -449,10 +346,6 @@ const downloadOntology = () => withExporting('ontology', async () => {
     transform: translateY(-2px);
 }
 
-.export-card--laravel:hover {
-    border-color: #FF2D20;
-}
-
 .export-card--png:hover {
     border-color: var(--color-primary);
 }
@@ -481,10 +374,6 @@ const downloadOntology = () => withExporting('ontology', async () => {
     font-family: 'Consolas', 'Monaco', monospace;
 }
 
-.export-card--laravel .export-card__label {
-    color: #FF2D20;
-}
-
 .export-card__desc {
     font-size: 10px;
     color: var(--text-secondary);
@@ -510,11 +399,6 @@ const downloadOntology = () => withExporting('ontology', async () => {
     background: var(--bg-surface);
 }
 
-.export-card--laravel.export-card--active,
-.export-card--laravel.export-card--active:disabled {
-    border-color: #FF2D20;
-}
-
 .export-spinner {
     display: block;
     width: 28px;
@@ -525,158 +409,8 @@ const downloadOntology = () => withExporting('ontology', async () => {
     animation: spin 0.7s linear infinite;
 }
 
-.export-spinner--laravel {
-    border-top-color: #FF2D20;
-}
-
 @keyframes spin {
     to { transform: rotate(360deg); }
 }
 
-/* Review section */
-.review-section {
-    border-top: 1px solid var(--border-color);
-    padding: 16px 24px 18px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-}
-
-.review-section__header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 12px;
-    width: 100%;
-}
-
-.review-section__label {
-    font-size: 12px;
-    color: var(--text-secondary);
-    font-weight: 500;
-}
-
-.review-section__dismiss {
-    width: 22px;
-    height: 22px;
-    padding: 3px;
-    border: none;
-    background: transparent;
-    cursor: pointer;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0.5;
-    transition: opacity 0.15s, background 0.15s;
-}
-
-.review-section__dismiss:hover {
-    opacity: 1;
-    background: var(--bg-surface-alt);
-}
-
-.review-section__dismiss img {
-    width: 12px;
-    height: 12px;
-    filter: brightness(0) invert(1);
-}
-
-.review-section__stars {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 4px;
-}
-
-.star-btn {
-    background: none;
-    border: none;
-    padding: 2px;
-    cursor: pointer;
-    border-radius: 4px;
-    display: flex;
-    transition: transform 0.1s;
-}
-
-.star-btn:hover {
-    transform: scale(1.15);
-}
-
-.review-section__message-wrap {
-    margin-top: 10px;
-    width: 100%;
-}
-
-.review-section__textarea {
-    width: 100%;
-    background: var(--bg-surface-alt);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    color: var(--text-primary);
-    font-size: 12px;
-    padding: 8px 10px;
-    resize: none;
-    box-sizing: border-box;
-    transition: border-color 0.15s;
-    font-family: inherit;
-}
-
-.review-section__textarea:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-.review-section__actions {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 14px;
-    margin-top: 10px;
-}
-
-.review-section__submit {
-    padding: 6px 18px;
-    background: var(--color-primary);
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: opacity 0.15s;
-}
-
-.review-section__submit:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.review-section__submit:not(:disabled):hover {
-    opacity: 0.85;
-}
-
-.review-section__skip {
-    background: none;
-    border: none;
-    color: var(--text-secondary);
-    font-size: 11px;
-    cursor: pointer;
-    padding: 0;
-    text-decoration: underline;
-    text-underline-offset: 2px;
-}
-
-.review-section__skip:hover {
-    color: var(--text-primary);
-}
-
-.review-section__thanks {
-    font-size: 13px;
-    color: var(--color-primary);
-    font-weight: 500;
-    text-align: center;
-    padding: 4px 0;
-}
 </style>

@@ -8,7 +8,8 @@ use App\Exceptions\InvalidSchemaException;
 
 class OntologyMakerService
 {
-    public function createModule(string $schema): string
+    /** @param list<array<string, mixed>> $definitions */
+    public function createModule(string $schema, array $definitions = []): string
     {
         [$tables, $rows, $connections] = $this->parseSchema($schema);
         $rowsById = [];
@@ -20,6 +21,31 @@ class OntologyMakerService
         }
 
         $valueTypes = [];
+        $valueTypeNamesById = [];
+        $valueTypeDefinitionsById = [];
+        foreach ($definitions as $definition) {
+            if (! is_string($definition['id'] ?? null)) {
+                continue;
+            }
+            $constName = (string) ($definition['apiName'] ?? '');
+            if ($constName === '') {
+                continue;
+            }
+            $valueTypes[$constName] = [
+                'api_name' => $constName,
+                'display_name' => (string) ($definition['displayName'] ?? $constName),
+                'description' => (string) ($definition['description'] ?? ''),
+                'version' => (string) ($definition['version'] ?? '1.0.0'),
+                'base_type' => is_array($definition['baseType'] ?? null)
+                    ? $definition['baseType']
+                    : ['type' => 'string'],
+                'constraints' => is_array($definition['constraints'] ?? null)
+                    ? $definition['constraints']
+                    : [],
+            ];
+            $valueTypeNamesById[$definition['id']] = $constName;
+            $valueTypeDefinitionsById[$definition['id']] = $definition;
+        }
         $objects = [];
         $objectNamesByTable = [];
 
@@ -48,9 +74,21 @@ class OntologyMakerService
                     'indexed' => $row['indexed'] || in_array($row['name'], $indexedColumns, true),
                 ];
 
-                $enumValues = $this->enumValues($row['sql_type']);
+                $enumValues = [];
+                $referencedValueType = $valueTypeNamesById[$row['value_type_id'] ?? ''] ?? null;
+                if ($referencedValueType !== null) {
+                    $property['value_type'] = $referencedValueType;
+                    [$property['type'], $property['array']] = $this->mapValueTypeBaseToProperty(
+                        $valueTypeDefinitionsById[$row['value_type_id']]['baseType'] ?? ['type' => 'string']
+                    );
+                } else {
+                    $enumValues = $this->enumValues($row['sql_type']);
+                }
                 if ($enumValues !== []) {
                     $valueTypeName = $this->apiName($table['name'].'_'.$row['name']).'ValueType';
+                    while (isset($valueTypes[$valueTypeName])) {
+                        $valueTypeName .= 'Generated';
+                    }
                     $valueTypes[$valueTypeName] = [
                         'api_name' => $this->apiName($table['name'].'_'.$row['name']),
                         'display_name' => $this->displayName($table['name'].' '.$row['name']),
@@ -200,6 +238,9 @@ class OntologyMakerService
                     'ontology_base_type' => is_array($item['data']['ontologyBaseType'] ?? null)
                         ? $item['data']['ontologyBaseType']
                         : null,
+                    'value_type_id' => is_string($item['data']['valueTypeId'] ?? null)
+                        ? $item['data']['valueTypeId']
+                        : null,
                 ];
             } else {
                 $sourceId = $item['sourceNode']['id'] ?? $item['source'] ?? null;
@@ -218,6 +259,7 @@ class OntologyMakerService
     }
 
     /**
+     * @param array<string, mixed> $table
      * @param list<array<string, mixed>> $rows
      * @return list<string>
      */
@@ -240,7 +282,11 @@ class OntologyMakerService
         return array_values(array_unique($columns));
     }
 
-    /** @param list<array<string, mixed>> $rows */
+    /**
+     * @param list<string> $group
+     * @param list<array<string, mixed>> $rows
+     * @return list<string>
+     */
     private function validConstraintColumns(array $group, array $rows): array
     {
         $rowNames = array_column($rows, 'name');
@@ -248,7 +294,12 @@ class OntologyMakerService
         return array_values(array_filter($group, fn (string $column): bool => in_array($column, $rowNames, true)));
     }
 
-    /** @param list<array<string, mixed>> $rows */
+    /**
+     * @param array<string, mixed> $table
+     * @param list<array<string, mixed>> $rows
+     * @param list<array<string, mixed>> $primaryRows
+     * @return list<string>
+     */
     private function objectConstraints(array $table, array $rows, array $primaryRows): array
     {
         $constraints = [];
@@ -283,7 +334,10 @@ class OntologyMakerService
         return $constraints;
     }
 
-    /** @return array{create: bool, modify: bool, delete: bool} */
+    /**
+     * @param array<string, mixed> $table
+     * @return array{create: bool, modify: bool, delete: bool}
+     */
     private function ontologyActions(array $table): array
     {
         $actions = $table['data']['ontologyActions'] ?? [];
@@ -348,7 +402,10 @@ class OntologyMakerService
         return '"string"';
     }
 
-    /** @param array<string, mixed> $row @return array{string, bool} */
+    /**
+     * @param array<string, mixed> $row
+     * @return array{0: string, 1: bool}
+     */
     private function mapPropertyType(array $row): array
     {
         $baseType = $row['ontology_base_type'] ?? null;
@@ -373,7 +430,10 @@ class OntologyMakerService
         return [$this->mapType($sqlType), false];
     }
 
-    /** @param array<string, mixed> $baseType @return array{string, bool} */
+    /**
+     * @param array<string, mixed> $baseType
+     * @return array{0: string, 1: bool}
+     */
     private function mapOntologyBaseType(array $baseType): array
     {
         $type = strtoupper((string) ($baseType['type'] ?? 'STRING'));
@@ -451,6 +511,11 @@ class OntologyMakerService
         return $name.'Key';
     }
 
+    /**
+     * @param array<string, mixed> $sourceRow
+     * @param array<string, mixed> $targetRow
+     * @return array{0: array<string, mixed>, 1: array<string, mixed>}
+     */
     private function oneToManyRows(array $sourceRow, array $targetRow, ?string $relationshipType): array
     {
         if ($sourceRow['key_mod'] === 'FOREIGN KEY' && $targetRow['key_mod'] !== 'FOREIGN KEY') {
@@ -466,6 +531,7 @@ class OntologyMakerService
         return [$sourceRow, $targetRow];
     }
 
+    /** @param array<string, true> $usedLinkNames */
     private function uniqueLinkName(string $baseName, array &$usedLinkNames, string $dedupeSuffix): string
     {
         $linkName = $baseName;
@@ -567,6 +633,93 @@ class OntologyMakerService
     }
 
     /**
+     * @param  array<string, mixed>  $baseType
+     * @param  list<array<string, mixed>>  $constraints
+     */
+    private function renderValueTypeType(array $baseType, array $constraints): string
+    {
+        $type = (string) ($baseType['type'] ?? 'string');
+        $renderedBaseType = match ($type) {
+            'array' => '{ type: "array", elementType: "'.$this->escape((string) ($baseType['elementType'] ?? 'string')).'" }',
+            'struct' => $this->renderValueTypeStruct($baseType),
+            default => '"'.$this->escape($type).'"',
+        };
+
+        $renderedConstraints = array_map(
+            fn (array $constraint): string => $this->renderValueTypeConstraint($constraint),
+            $constraints
+        );
+        $constraintsLine = $renderedConstraints === []
+            ? ''
+            : ",\n    constraints: [\n      ".implode(",\n      ", $renderedConstraints)."\n    ]";
+
+        return "{\n    type: {$renderedBaseType}{$constraintsLine}\n  }";
+    }
+
+    /**
+     * @param array<string, mixed> $baseType
+     * @return array{0: string, 1: bool}
+     */
+    private function mapValueTypeBaseToProperty(array $baseType): array
+    {
+        $type = (string) ($baseType['type'] ?? 'string');
+        if ($type === 'array') {
+            return ['"'.$this->escape((string) ($baseType['elementType'] ?? 'string')).'"', true];
+        }
+        if ($type === 'struct') {
+            $fields = [];
+            foreach (($baseType['fields'] ?? []) as $field) {
+                if (! is_array($field)) {
+                    continue;
+                }
+                $fields[] = '"'.$this->escape((string) ($field['apiName'] ?? 'field')).'": "'
+                    .$this->escape((string) ($field['type'] ?? 'string')).'"';
+            }
+
+            return ['{ type: "struct", structDefinition: { '.implode(', ', $fields).' } }', false];
+        }
+
+        return ['"'.$this->escape($type).'"', false];
+    }
+
+    /** @param array<string, mixed> $baseType */
+    private function renderValueTypeStruct(array $baseType): string
+    {
+        $fields = [];
+        foreach (($baseType['fields'] ?? []) as $field) {
+            if (! is_array($field)) {
+                continue;
+            }
+            $fields[] = '{ identifier: "'.$this->escape((string) ($field['apiName'] ?? 'field'))
+                .'", baseType: "'.$this->escape((string) ($field['type'] ?? 'string')).'" }';
+        }
+
+        return '{ type: "struct", fields: ['.implode(', ', $fields).'] }';
+    }
+
+    /** @param array<string, mixed> $constraint */
+    private function renderValueTypeConstraint(array $constraint): string
+    {
+        $payload = match ($constraint['type'] ?? null) {
+            'regex' => 'regex: { regexPattern: "'.$this->escape((string) ($constraint['regexPattern'] ?? ''))
+                .'", usePartialMatch: '.(($constraint['usePartialMatch'] ?? false) ? 'true' : 'false').' }',
+            'isRid' => 'isRid: {}',
+            'isUuid' => 'isUuid: {}',
+            'length' => 'length: { '.implode(', ', array_filter([
+                isset($constraint['minSize']) ? 'minSize: '.(int) $constraint['minSize'] : null,
+                isset($constraint['maxSize']) ? 'maxSize: '.(int) $constraint['maxSize'] : null,
+            ])).' }',
+            default => '',
+        };
+        $failureMessage = trim((string) ($constraint['failureMessage'] ?? ''));
+        $message = $failureMessage !== ''
+            ? ', failureMessage: { message: "'.$this->escape($failureMessage).'" }'
+            : '';
+
+        return '{ constraint: { '.$payload.' }'.$message.' }';
+    }
+
+    /**
      * @param array<string, array<string, mixed>> $valueTypes
      * @param list<array<string, mixed>> $objects
      * @param list<array<string, mixed>> $links
@@ -597,18 +750,31 @@ class OntologyMakerService
         $blocks = ['import { '.implode(', ', $imports).' } from "@osdk/maker";'];
 
         foreach ($valueTypes as $constName => $valueType) {
-            $values = implode(', ', array_map(fn (string $value): string => '"'.$this->escape($value).'"', $valueType['values']));
-            $blocks[] = <<<MTS
-export const {$constName} = defineValueType({
-  apiName: "{$valueType['api_name']}",
-  displayName: "{$this->escape($valueType['display_name'])}",
-  type: {
+            if (isset($valueType['values'])) {
+                $values = implode(', ', array_map(fn (string $value): string => '"'.$this->escape($value).'"', $valueType['values']));
+                $type = <<<MTS
+{
     type: "string",
     constraints: [{
       constraint: { type: "oneOf", oneOf: { values: [{$values}], useIgnoreCase: false } },
     }],
-  },
-  version: "0.1.0",
+  }
+MTS;
+                $description = '';
+                $version = '0.1.0';
+            } else {
+                $type = $this->renderValueTypeType($valueType['base_type'], $valueType['constraints']);
+                $description = $valueType['description'] !== ''
+                    ? "\n  description: \"".$this->escape($valueType['description'])."\","
+                    : '';
+                $version = $valueType['version'];
+            }
+            $blocks[] = <<<MTS
+export const {$constName} = defineValueType({
+  apiName: "{$valueType['api_name']}",
+  displayName: "{$this->escape($valueType['display_name'])}",{$description}
+  type: {$type},
+  version: "{$version}",
 });
 MTS;
         }

@@ -141,15 +141,22 @@ class DiagramSharingService
     /**
      * Save a schema update from a shared user if they have write access.
      *
-     * @param  array<string, mixed>  $schema
+     * @param array<int, mixed> $schema
+     * @param list<array<string, mixed>>|null $valueTypes
      */
-    public function saveByToken(Diagram $diagram, User $user, array $schema): bool
+    public function saveByToken(Diagram $diagram, User $user, array $schema, ?array $valueTypes = null): bool
     {
         if (! $this->hasWriteAccess($diagram, $user)) {
             return false;
         }
 
         $diagram->schema = DiagramSchema::withoutRuntimeState($schema);
+        if ($valueTypes !== null) {
+            $diagram->value_types = $valueTypes;
+        }
+        $diagram->import_status = null;
+        $diagram->import_error = null;
+        $diagram->import_warnings = null;
         $diagram->save();
 
         return true;

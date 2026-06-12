@@ -27,11 +27,14 @@ class AdminService
     {
         $tz = 'Europe/Moscow';
         $cutoff = now($tz)->subDays(59)->startOfDay()->utc();
+        $dateExpression = DB::connection()->getDriverName() === 'sqlite'
+            ? 'DATE(created_at)'
+            : "DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')";
 
         $rows = DB::table('users')
-            ->selectRaw("DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow') as day, COUNT(*) as count")
+            ->selectRaw("{$dateExpression} as day, COUNT(*) as count")
             ->where('created_at', '>=', $cutoff)
-            ->groupByRaw("DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')")
+            ->groupByRaw($dateExpression)
             ->orderBy('day')
             ->get()
             ->keyBy('day');
@@ -43,10 +46,10 @@ class AdminService
         }
 
         $activityRows = DB::table('diagram_changelog')
-            ->selectRaw("DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow') as day, COUNT(DISTINCT user_id) as count")
+            ->selectRaw("{$dateExpression} as day, COUNT(DISTINCT user_id) as count")
             ->whereNotNull('user_id')
             ->where('created_at', '>=', $cutoff)
-            ->groupByRaw("DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')")
+            ->groupByRaw($dateExpression)
             ->orderBy('day')
             ->get()
             ->keyBy('day');
@@ -82,7 +85,7 @@ class AdminService
                 ->selectRaw('user_id')
                 ->whereNotNull('user_id')
                 ->groupBy('user_id')
-                ->havingRaw("COUNT(DISTINCT DATE(created_at AT TIME ZONE 'UTC' AT TIME ZONE 'Europe/Moscow')) >= 2"),
+                ->havingRaw("COUNT(DISTINCT {$dateExpression}) >= 2"),
             'sub'
         )->count();
 

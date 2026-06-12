@@ -22,6 +22,15 @@
             <button v-if="canEdit && !isDemo" class="dh-btn" @click="$emit('show-changelog')" title="Changelog">
                 <SvgIcon name="history" :size="17" />
             </button>
+            <button
+                v-if="dbType === 'ontology'"
+                class="dh-btn"
+                @click="$emit('show-value-types')"
+                title="Value Types"
+                aria-label="Manage value types"
+            >
+                <SvgIcon name="value-type" :size="17" />
+            </button>
             <div v-if="isOwner" class="dh-share-wrap">
                 <button class="dh-btn" @click="$emit('show-share')" title="Share">
                     <SvgIcon name="share" :size="17" />
@@ -49,9 +58,10 @@ defineProps({
     isDemo: Boolean,
     isSaved: Boolean,
     diagramName: String,
+    dbType: { type: String, default: 'mysql' },
     hasPendingVisitors: { type: Boolean, default: false },
 })
-defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-changelog', 'show-help'])
+defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-changelog', 'show-help', 'show-value-types'])
 </script>
 
 <style scoped>

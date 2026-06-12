@@ -52,15 +52,19 @@ class ExportDiagramJob implements ShouldQueue
 
         $this->diagram->export_status = ExportStatus::PROCESSING;
         $this->diagram->save();
+        $this->diagram->refresh();
 
         $schemaJson = json_encode($this->diagram->schema);
         $dbType = $this->diagram->db_type ?? DbType::MYSQL;
         $script = $dbType === DbType::ONTOLOGY
-            ? $ontologyMakerService->createModule($schemaJson)
+            ? $ontologyMakerService->createModule($schemaJson, $this->diagram->value_types ?? [])
             : $service->createScript($schemaJson, $dbType->value);
 
         $this->diagram->script = $script;
-        $this->diagram->export_json = $service->createJson($schemaJson);
+        $this->diagram->export_json = $service->createJson(
+            $schemaJson,
+            $this->diagram->value_types ?? []
+        );
         $this->diagram->export_status = ExportStatus::DONE;
         $this->diagram->export_error = null;
         $this->diagram->save();

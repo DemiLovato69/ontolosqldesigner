@@ -26,6 +26,7 @@ class Diagram extends Model
         'name',
         'db_type',
         'schema',
+        'value_types',
         'script',
         'user_id',
         'share_token',
@@ -36,6 +37,7 @@ class Diagram extends Model
         'featured_url',
         'import_status',
         'import_error',
+        'import_warnings',
         'export_status',
         'export_error',
         'export_json',
@@ -47,6 +49,8 @@ class Diagram extends Model
         'db_type' => DbType::class,
         'share_access' => DiagramAccess::class,
         'schema' => 'array',
+        'value_types' => 'array',
+        'import_warnings' => 'array',
         'export_json' => 'array',
     ];
 

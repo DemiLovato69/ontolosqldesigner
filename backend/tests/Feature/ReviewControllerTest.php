@@ -5,12 +5,10 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class ReviewControllerTest extends TestCase
 {
-    use DatabaseTransactions;
 
     public function test_check_review_returns_status(): void
     {

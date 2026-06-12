@@ -35,6 +35,7 @@
             :isDemo="isDemo"
             :isSaved="isSaved"
             :diagramName="diagramName"
+            :dbType="diagramDbType"
             :hasPendingVisitors="hasPendingVisitors"
             @add-table="addTable"
             @import="isDemo ? router.push({ name: 'login' }) : showImportModal = true"
@@ -43,6 +44,7 @@
             @show-share="showShareModal = true"
             @show-changelog="showChangelogModal = true"
             @show-help="showHotkeysModal = true"
+            @show-value-types="showValueTypesModal = true"
         />
 
         <ShareModal
@@ -170,6 +172,7 @@
                         :tableColumns="tableColumnLabels.get(nodeProps.parentNodeId) ?? []"
                         :tableUniqueTogether="tableById.get(nodeProps.parentNodeId)?.data?.uniqueTogether ?? []"
                         :tableFulltextIndexes="tableById.get(nodeProps.parentNodeId)?.data?.fulltextIndexes ?? []"
+                        :valueTypes="valueTypes"
                         @update-label="updateLabel"
                         @toggle-options-modal="toggleOptionsModal"
                         @delete-node="deleteNode"
@@ -233,6 +236,15 @@
             @close="showHotkeysModal = false"
         />
 
+        <ValueTypesModal
+            v-if="showValueTypesModal"
+            :valueTypes="valueTypes"
+            :schema="schema"
+            :canEdit="canEdit"
+            @update="updateValueTypes"
+            @close="showValueTypesModal = false"
+        />
+
     </template>
 </template>
 
@@ -264,6 +276,7 @@ import RemoteCursor from '../RemoteCursor.vue'
 import SupportModal from '../Modal/SupportModal.vue'
 import ChangelogModal from '../Modal/ChangelogModal.vue'
 import HotkeysModal from '../Modal/HotkeysModal.vue'
+import ValueTypesModal from '../Modal/ValueTypesModal.vue'
 import { useElementSize } from '@vueuse/core'
 import { useToast } from 'vue-toast-notification'
 import { useRoute, useRouter } from 'vue-router'
@@ -290,6 +303,7 @@ const pendingApproval = ref(false)
 const loading = ref(false)
 const isSaved = ref(true)
 const schema = ref([])
+const valueTypes = ref([])
 const LARGE_DIAGRAM_ELEMENT_COUNT = 2000
 const isLargeDiagram = computed(() => schema.value.length > LARGE_DIAGRAM_ELEMENT_COUNT)
 const tables = computed(() => schema.value.filter(el => el.type === 'table'))
@@ -318,6 +332,7 @@ const diagramDbType = ref('mysql')
 const showShareModal = ref(false)
 const showChangelogModal = ref(false)
 const showHotkeysModal = ref(false)
+const showValueTypesModal = ref(false)
 const diagramShareAccess = ref(null)
 const diagramRequireApproval = ref(false)
 const diagramInLibrary = ref(false)
@@ -328,10 +343,10 @@ const canEdit = computed(() => props.isDemo || isOwner.value || diagramShareAcce
 
 const { width: canvasWidth, height: canvasHeight } = useElementSize(canvasWrapperRef)
 
-const { snapshot, undo, redo } = useUndoHistory(schema)
+const { snapshot, undo, redo } = useUndoHistory(schema, valueTypes)
 
 const { remoteCursors, whisper, initEcho, cleanupEcho, onCanvasMouseMove, broadcastCursor } = useDiagramPresence({
-    token, ownerIdentity, viewport, schema, canvasWrapperRef,
+    token, ownerIdentity, viewport, schema, valueTypes, canvasWrapperRef,
     onDiagramSaved: () => $toast.success('Diagram saved'),
 })
 
@@ -444,18 +459,22 @@ const importSql = async () => {
         return
     }
 
-    const applySchema = (schemaJson) => {
+    const applySchema = (schemaJson, importedValueTypes = [], warnings = []) => {
         schema.value = schemaJson
+        valueTypes.value = importedValueTypes
         focusLargeDiagram()
         importLoading.value = false
         $toast.success('Imported successfully')
         isSaved.value = false
         showImportModal.value = false
-        whisper('schema-sync', { schema: schema.value })
+        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+        for (const warning of warnings) {
+            $toast.warning(warning)
+        }
     }
 
     if (result.status === 'done' && result.schema) {
-        applySchema(result.schema)
+        applySchema(result.schema, result.value_types ?? [], result.warnings ?? [])
         return
     }
 
@@ -472,7 +491,7 @@ const importSql = async () => {
         if (!status) return
         if (status.status === 'done') {
             clearInterval(poll)
-            applySchema(status.schema)
+            applySchema(status.schema, status.value_types ?? [], status.warnings ?? [])
         } else if (status.status === 'failed') {
             clearInterval(poll)
             importLoading.value = false
@@ -482,8 +501,9 @@ const importSql = async () => {
 }
 
 const openExportModal = async () => {
-    await saveDiagram(true)
-    showExportModal.value = true
+    if (await saveDiagram(true)) {
+        showExportModal.value = true
+    }
 }
 
 const capturePng = async () => {
@@ -506,6 +526,13 @@ const captureSvg = async () => {
     }
 }
 
+const updateValueTypes = (nextValueTypes) => {
+    snapshot()
+    valueTypes.value = nextValueTypes
+    isSaved.value = false
+    whisper('value-types-sync', { valueTypes: valueTypes.value })
+}
+
 // --- Save ---
 
 const saveDiagram = async (silent = false) => {
@@ -513,12 +540,16 @@ const saveDiagram = async (silent = false) => {
         await router.push({ name: 'login' })
         return
     }
-    await (isOwner.value ? Diagram.save(diagramId.value, schema.value) : Diagram.saveByToken(token, schema.value))
+    const saved = await (isOwner.value
+        ? Diagram.save(diagramId.value, schema.value, valueTypes.value)
+        : Diagram.saveByToken(token, schema.value, valueTypes.value))
+    if (!saved) return false
     isSaved.value = true
     if (!silent) {
         whisper('diagram-saved', {})
-        whisper('schema-sync', { schema: schema.value })
+        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
     }
+    return true
 }
 
 // --- Load ---
@@ -576,6 +607,7 @@ const getDiagram = async () => {
     }
     diagramDbType.value = diagramInfo.db_type ?? 'mysql'
     diagramName.value = diagramInfo.name ?? ''
+    valueTypes.value = diagramInfo.value_types ?? []
 
 
     schema.value = diagramInfo.schema ?? [{
@@ -622,9 +654,10 @@ const onKeyDown = (event) => {
         if (!canEdit.value) return
         const prev = undo()
         if (prev !== null) {
-            schema.value = prev
+            schema.value = prev.schema
+            valueTypes.value = prev.valueTypes ?? []
             isSaved.value = false
-            whisper('schema-sync', { schema: schema.value })
+            whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
         }
     }
     if ((event.ctrlKey || event.metaKey) && event.key === 'y') {
@@ -632,9 +665,10 @@ const onKeyDown = (event) => {
         if (!canEdit.value) return
         const next = redo()
         if (next !== null) {
-            schema.value = next
+            schema.value = next.schema
+            valueTypes.value = next.valueTypes ?? []
             isSaved.value = false
-            whisper('schema-sync', { schema: schema.value })
+            whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
         }
     }
 }

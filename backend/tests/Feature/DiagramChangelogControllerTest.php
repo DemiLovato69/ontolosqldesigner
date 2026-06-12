@@ -6,12 +6,10 @@ namespace Tests\Feature;
 
 use App\Models\Diagram;
 use App\Models\User;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class DiagramChangelogControllerTest extends TestCase
 {
-    use DatabaseTransactions;
 
     public function test_index_returns_changelog(): void
     {

@@ -102,7 +102,7 @@
                                 @click="newDiagramDbType = db.type"
                                 :title="db.label"
                             >
-                                <img :src="dbIcons[db.type]" :alt="db.label" />
+                                <img :src="db.icon || dbIcons[db.type]" :alt="db.label" />
                                 <span>{{ db.label }}</span>
                             </button>
                         </div>
@@ -182,7 +182,7 @@ export default {
                 { type: 'oracle', label: 'Oracle' },
                 { type: 'sqlserver', label: 'SQL Server' },
                 { type: 'msaccess', label: 'MS Access' },
-                { type: 'ontology', label: 'Ontology' },
+                { type: 'ontology', label: 'Ontology', icon: '/palantir.svg' },
             ]
         }
     },

@@ -37,6 +37,7 @@ class DiagramSqlService
         $diagram->script = $script;
         $diagram->import_status = ImportStatus::PENDING;
         $diagram->import_error = null;
+        $diagram->import_warnings = null;
         $diagram->save();
 
         ImportDiagramSchemaJob::dispatch($diagram);
@@ -55,6 +56,8 @@ class DiagramSqlService
     {
         $diagram->export_status = ExportStatus::PENDING;
         $diagram->export_error = null;
+        $diagram->script = null;
+        $diagram->export_json = null;
         $diagram->save();
 
         ExportDiagramJob::dispatch($diagram);
@@ -70,7 +73,10 @@ class DiagramSqlService
 
     public function importSchema(Diagram $diagram, string $script): string
     {
-        $diagram->schema = $this->createSchemaArray($script, ($diagram->db_type ?? DbType::MYSQL)->value);
+        $payload = $this->createImportPayload($script, ($diagram->db_type ?? DbType::MYSQL)->value);
+        $diagram->schema = $payload['schema'];
+        $diagram->value_types = $payload['value_types'];
+        $diagram->import_warnings = $payload['warnings'];
         $diagram->save();
 
         return json_encode($diagram->schema);
@@ -80,7 +86,7 @@ class DiagramSqlService
     {
         $dbType = $diagram->db_type ?? DbType::MYSQL;
         $script = $dbType === DbType::ONTOLOGY
-            ? $this->ontologyMakerService->createModule(json_encode($diagram->schema))
+            ? $this->ontologyMakerService->createModule(json_encode($diagram->schema), $diagram->value_types ?? [])
             : $this->createScript(json_encode($diagram->schema), $dbType->value);
         $diagram->script = $script;
         $diagram->save();
@@ -234,18 +240,24 @@ class DiagramSqlService
     }
 
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
-    /** @return array{tables: list<array<string, mixed>>, foreignKeys: list<array<string, mixed>>} */
-    public function createJson(string $schema): array
+    /**
+     * @param  list<array<string, mixed>>  $valueTypes
+     * @return array{tables: list<array<string, mixed>>, foreignKeys: list<array<string, mixed>>, valueTypes: list<array<string, mixed>>}
+     */
+    public function createJson(string $schema, array $valueTypes = []): array
     {
         [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
         $tablesById = $tables->keyBy('id');
         $rowsById = $rows->keyBy('id');
         $rowsByTable = $rows->groupBy('table_id');
-        $result = ['tables' => [], 'foreignKeys' => []];
+        $result = ['tables' => [], 'foreignKeys' => [], 'valueTypes' => $valueTypes];
 
         foreach ($tables as $table) {
             $columns = $rowsByTable->get($table['id'], collect())->map(function ($row) {
                 $col = ['name' => $row['name'], 'type' => $row['sql_type'], 'nullable' => $row['nullable']];
+                if ($row['value_type_id'] !== null) {
+                    $col['valueTypeId'] = $row['value_type_id'];
+                }
                 if ($row['unsigned']) {
                     $col['unsigned'] = true;
                 }
@@ -293,7 +305,10 @@ class DiagramSqlService
         if ($dbType === DbType::ONTOLOGY->value) {
             $ontology = $this->decodeOntologyExport($script);
             if ($ontology !== null) {
-                return $this->createSchemaFromOntologyExport($ontology);
+                return $this->createSchemaFromOntologyExport(
+                    $ontology,
+                    $this->parseOntologyValueTypes($ontology)['references']
+                );
             }
         }
 
@@ -357,6 +372,41 @@ class DiagramSqlService
         $tables = $this->layoutService->layout($tables, $rows, $layoutRelationships);
 
         return array_merge($tables, $rows, $connections);
+    }
+
+    /**
+     * @return array{
+     *     schema: list<array<string, mixed>>,
+     *     value_types: list<array<string, mixed>>,
+     *     warnings: list<string>
+     * }
+     */
+    public function createImportPayload(string $script, string $dbType = 'mysql'): array
+    {
+        if ($dbType !== DbType::ONTOLOGY->value) {
+            return [
+                'schema' => $this->createSchemaArray($script, $dbType),
+                'value_types' => [],
+                'warnings' => [],
+            ];
+        }
+
+        $ontology = $this->decodeOntologyExport($script);
+        if ($ontology === null) {
+            return [
+                'schema' => $this->createSchemaArray($script, $dbType),
+                'value_types' => [],
+                'warnings' => [],
+            ];
+        }
+
+        $parsed = $this->parseOntologyValueTypes($ontology);
+
+        return [
+            'schema' => $this->createSchemaFromOntologyExport($ontology, $parsed['references']),
+            'value_types' => $parsed['definitions'],
+            'warnings' => $parsed['warnings'],
+        ];
     }
 
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
@@ -442,6 +492,9 @@ class DiagramSqlService
                     'unsigned' => $item['data']['unsigned'] ?? false,
                     'default_value' => $item['data']['defaultValue'] ?? null,
                     'comment' => $item['data']['description'] ?? $item['data']['comment'] ?? null,
+                    'value_type_id' => is_string($item['data']['valueTypeId'] ?? null)
+                        ? $item['data']['valueTypeId']
+                        : null,
                 ]),
                 default => isset($item['sourceNode']['id'], $item['targetNode']['id'])
                     ? $connections->push(['source_id' => $item['sourceNode']['id'], 'target_id' => $item['targetNode']['id']])
@@ -521,9 +574,10 @@ class DiagramSqlService
 
     /**
      * @param  array<string, mixed>  $ontology
+     * @param  array<string, string>  $valueTypeReferences
      * @return list<array<string, mixed>>
      */
-    private function createSchemaFromOntologyExport(array $ontology): array
+    private function createSchemaFromOntologyExport(array $ontology, array $valueTypeReferences = []): array
     {
         $tables = [];
         $rows = [];
@@ -595,6 +649,10 @@ class DiagramSqlService
                         'source' => $property['source'] ?? null,
                     ],
                 ]);
+                $valueTypeId = $this->resolveOntologyValueTypeId($property, $valueTypeReferences);
+                if ($valueTypeId !== null) {
+                    $row['data']['valueTypeId'] = $valueTypeId;
+                }
                 $rows[] = $row;
 
                 if ($propertyRid !== '') {
@@ -683,6 +741,237 @@ class DiagramSqlService
         $tables = $this->layoutService->layout($tables, $rows, $layoutRelationships);
 
         return array_merge($tables, $rows, $connections);
+    }
+
+    /**
+     * @param array<string, mixed> $ontology
+     * @return array{
+     *     definitions: list<array<string, mixed>>,
+     *     references: array<string, string>,
+     *     warnings: list<string>
+     * }
+     */
+    private function parseOntologyValueTypes(array $ontology): array
+    {
+        $rawValueTypes = $ontology['valueTypes'] ?? [];
+        if (! is_array($rawValueTypes)) {
+            return ['definitions' => [], 'references' => [], 'warnings' => []];
+        }
+        if (is_array($rawValueTypes['valueTypes'] ?? null)) {
+            $rawValueTypes = $rawValueTypes['valueTypes'];
+        }
+
+        $definitions = [];
+        $references = [];
+        $warnings = [];
+
+        foreach ($rawValueTypes as $key => $rawDefinition) {
+            if (! is_array($rawDefinition)) {
+                continue;
+            }
+
+            $apiName = (string) ($rawDefinition['apiName'] ?? (is_string($key) ? $key : ''));
+            if ($apiName === '') {
+                continue;
+            }
+            $idSource = (string) ($rawDefinition['rid'] ?? $rawDefinition['id'] ?? $apiName);
+            $id = 'ontology-value-type-'.substr(hash('sha256', $idSource), 0, 24);
+            $displayMetadata = is_array($rawDefinition['displayMetadata'] ?? null)
+                ? $rawDefinition['displayMetadata']
+                : [];
+            $baseType = $this->normalizeOntologyValueTypeBase(
+                is_array($rawDefinition['baseType'] ?? null)
+                    ? $rawDefinition['baseType']
+                    : (is_array($rawDefinition['type']['type'] ?? null)
+                        ? $rawDefinition['type']['type']
+                        : ['type' => $rawDefinition['type']['type'] ?? $rawDefinition['type'] ?? 'string'])
+            );
+            if ($baseType === null) {
+                $warnings[] = "Skipped value type {$apiName}: unsupported base type.";
+
+                continue;
+            }
+
+            $constraints = [];
+            foreach (($rawDefinition['constraints'] ?? $rawDefinition['type']['constraints'] ?? []) as $rawConstraint) {
+                if (! is_array($rawConstraint)) {
+                    continue;
+                }
+                $constraint = $this->normalizeOntologyValueTypeConstraint($rawConstraint);
+                if ($constraint === null) {
+                    $warnings[] = "Skipped an unsupported constraint on value type {$apiName}.";
+                    continue;
+                }
+                if ($baseType['type'] !== 'string') {
+                    $warnings[] = "Skipped a constraint on non-string value type {$apiName}.";
+                    continue;
+                }
+                $constraints[] = $constraint;
+            }
+
+            $definition = [
+                'id' => $id,
+                'apiName' => $apiName,
+                'displayName' => (string) ($displayMetadata['displayName'] ?? $rawDefinition['displayName'] ?? $apiName),
+                'description' => (string) ($displayMetadata['description'] ?? $rawDefinition['description'] ?? ''),
+                'version' => (string) ($rawDefinition['version'] ?? '1.0.0'),
+                'baseType' => $baseType,
+                'constraints' => $constraints,
+            ];
+            $definitions[] = $definition;
+
+            foreach ([$rawDefinition['rid'] ?? null, $rawDefinition['id'] ?? null, $apiName, $key] as $reference) {
+                if (is_string($reference) && $reference !== '') {
+                    $references[$reference] = $id;
+                }
+            }
+        }
+
+        return compact('definitions', 'references', 'warnings');
+    }
+
+    /**
+     * @param array<string, mixed> $baseType
+     * @return array<string, mixed>|null
+     */
+    private function normalizeOntologyValueTypeBase(array $baseType): ?array
+    {
+        $type = strtolower((string) ($baseType['type'] ?? 'string'));
+        $type = $type === 'structv2' ? 'struct' : $type;
+        $allowedSimple = ['boolean', 'date', 'decimal', 'double', 'float', 'integer', 'long', 'short', 'string', 'timestamp'];
+
+        if (in_array($type, $allowedSimple, true)) {
+            return ['type' => $type];
+        }
+
+        if ($type === 'array') {
+            $array = is_array($baseType['array'] ?? null) ? $baseType['array'] : $baseType;
+            $element = $array['elementType'] ?? $array['subType'] ?? 'string';
+            $elementType = is_array($element)
+                ? strtolower((string) ($element['type'] ?? 'string'))
+                : strtolower((string) $element);
+
+            return in_array($elementType, $allowedSimple, true)
+                ? ['type' => 'array', 'elementType' => $elementType]
+                : null;
+        }
+
+        if ($type !== 'struct') {
+            return null;
+        }
+
+        $struct = is_array($baseType['structV2'] ?? null)
+            ? $baseType['structV2']
+            : (is_array($baseType['struct'] ?? null) ? $baseType['struct'] : $baseType);
+        $rawFields = $struct['fields'] ?? $struct['structFields'] ?? [];
+        $fields = [];
+        foreach ($rawFields as $index => $field) {
+            if (! is_array($field)) {
+                continue;
+            }
+            $fieldType = $field['baseType'] ?? $field['fieldType'] ?? $field['type'] ?? 'string';
+            $fieldType = is_array($fieldType)
+                ? strtolower((string) ($fieldType['type'] ?? 'string'))
+                : strtolower((string) $fieldType);
+            if (! in_array($fieldType, $allowedSimple, true)) {
+                continue;
+            }
+            $apiName = (string) ($field['identifier'] ?? $field['apiName'] ?? "field{$index}");
+            $fields[] = [
+                'id' => 'ontology-struct-field-'.substr(hash('sha256', $apiName.'-'.$index), 0, 16),
+                'apiName' => $apiName,
+                'type' => $fieldType,
+            ];
+        }
+
+        return $fields === [] ? null : ['type' => 'struct', 'fields' => $fields];
+    }
+
+    /**
+     * @param array<string, mixed> $rawConstraint
+     * @return array<string, mixed>|null
+     */
+    private function normalizeOntologyValueTypeConstraint(array $rawConstraint): ?array
+    {
+        $failure = $rawConstraint['failureMessage']
+            ?? $rawConstraint['constraint']['failureMessage']
+            ?? $rawConstraint['constraint']['constraint']['failureMessage']
+            ?? null;
+        $failureMessage = is_array($failure) ? (string) ($failure['message'] ?? '') : (string) ($failure ?? '');
+
+        $constraint = $rawConstraint['constraint']['constraint']
+            ?? $rawConstraint['constraint']
+            ?? $rawConstraint;
+        if (! is_array($constraint)) {
+            return null;
+        }
+        if (($constraint['type'] ?? null) === 'string' && is_array($constraint['string'] ?? null)) {
+            $constraint = $constraint['string'];
+        }
+
+        $id = 'ontology-constraint-'.substr(hash('sha256', json_encode($rawConstraint)), 0, 16);
+        $type = $constraint['type'] ?? null;
+        if ($type === 'regex' || isset($constraint['regex'])) {
+            $regex = is_array($constraint['regex'] ?? null) ? $constraint['regex'] : $constraint;
+
+            return [
+                'id' => $id,
+                'type' => 'regex',
+                'regexPattern' => (string) ($regex['regexPattern'] ?? $regex['regex'] ?? ''),
+                'usePartialMatch' => (bool) ($regex['usePartialMatch'] ?? false),
+                'failureMessage' => $failureMessage,
+            ];
+        }
+        if ($type === 'isRid' || isset($constraint['isRid'])) {
+            return ['id' => $id, 'type' => 'isRid', 'failureMessage' => $failureMessage];
+        }
+        if ($type === 'isUuid' || isset($constraint['isUuid'])) {
+            return ['id' => $id, 'type' => 'isUuid', 'failureMessage' => $failureMessage];
+        }
+        if ($type === 'length' || isset($constraint['length'])) {
+            $length = is_array($constraint['length'] ?? null) ? $constraint['length'] : $constraint;
+            $normalized = ['id' => $id, 'type' => 'length', 'failureMessage' => $failureMessage];
+            if (isset($length['minSize'])) {
+                $normalized['minSize'] = (int) $length['minSize'];
+            }
+            if (isset($length['maxSize'])) {
+                $normalized['maxSize'] = (int) $length['maxSize'];
+            }
+
+            return isset($normalized['minSize']) || isset($normalized['maxSize']) ? $normalized : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * @param array<string, mixed> $property
+     * @param array<string, string> $references
+     */
+    private function resolveOntologyValueTypeId(array $property, array $references): ?string
+    {
+        $candidates = [
+            $property['valueTypeRid'] ?? null,
+            $property['valueTypeId'] ?? null,
+            $property['valueType'] ?? null,
+            $property['valueTypeReference'] ?? null,
+        ];
+
+        foreach ($candidates as $candidate) {
+            if (is_string($candidate) && isset($references[$candidate])) {
+                return $references[$candidate];
+            }
+            if (is_array($candidate)) {
+                foreach (['rid', 'id', 'apiName'] as $key) {
+                    $reference = $candidate[$key] ?? null;
+                    if (is_string($reference) && isset($references[$reference])) {
+                        return $references[$reference];
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     /** @param array<string, mixed> $baseType */

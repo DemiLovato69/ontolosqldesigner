@@ -105,6 +105,7 @@ class DiagramController extends Controller
             shareAccess: isset($validated['share_access']) ? DiagramAccess::from($validated['share_access']) : null,
             library: isset($validated['library']) ? (bool) $validated['library'] : null,
             schema: $validated['schema'] ?? null,
+            valueTypes: $validated['value_types'] ?? null,
         );
 
         return $this->crudService->updateDiagram($diagram, $dto)
@@ -160,6 +161,12 @@ class DiagramController extends Controller
             'schema' => $diagram->import_status === ImportStatus::DONE
                 ? DiagramSchema::withoutRuntimeState($diagram->schema)
                 : null,
+            'value_types' => $diagram->import_status === ImportStatus::DONE
+                ? ($diagram->value_types ?? [])
+                : null,
+            'warnings' => $diagram->import_status === ImportStatus::DONE
+                ? ($diagram->import_warnings ?? [])
+                : [],
             'error' => $diagram->import_error,
         ]);
     }
@@ -221,8 +228,12 @@ class DiagramController extends Controller
     public function exportJson(Diagram $diagram): JsonResponse
     {
         $this->authorize('export', $diagram);
+        $diagram->refresh();
 
-        return $this->success($this->sqlService->createJson(json_encode($diagram->schema)));
+        return $this->success($this->sqlService->createJson(
+            json_encode($diagram->schema),
+            $diagram->value_types ?? []
+        ));
     }
 
     /**
@@ -232,8 +243,12 @@ class DiagramController extends Controller
     public function exportOntology(Diagram $diagram): Response
     {
         $this->authorize('export', $diagram);
+        $diagram->refresh();
 
-        $module = $this->ontologyMakerService->createModule(json_encode($diagram->schema));
+        $module = $this->ontologyMakerService->createModule(
+            json_encode($diagram->schema),
+            $diagram->value_types ?? []
+        );
         $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $diagram->name).'.mts';
 
         return response($module, 200, [
@@ -335,7 +350,13 @@ class DiagramController extends Controller
     {
         $diagram = Diagram::where('share_token', $token)->firstOrFail();
 
-        if (! $this->sharingService->saveByToken($diagram, $request->user(), $request->validated()['schema'])) {
+        $validated = $request->validated();
+        if (! $this->sharingService->saveByToken(
+            $diagram,
+            $request->user(),
+            $validated['schema'],
+            $validated['value_types'] ?? null
+        )) {
             abort(403);
         }
 

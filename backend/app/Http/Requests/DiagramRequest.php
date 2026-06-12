@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Rules\ValueTypeDefinitions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 use Knuckles\Scribe\Attributes\BodyParam;
 
 #[BodyParam('name', 'string', 'The diagram name. Must be unique per user.', required: false, example: 'My ERD')]
@@ -21,6 +23,45 @@ class DiagramRequest extends FormRequest
             'share_access' => ['nullable', 'string', 'in:read,write,per_user'],
             'library' => ['sometimes', 'boolean'],
             'schema' => ['sometimes', 'nullable', 'array'],
+            'value_types' => ['sometimes', 'array', new ValueTypeDefinitions],
         ];
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            if (! $this->has('value_types')) {
+                return;
+            }
+
+            $valueTypes = $this->input('value_types', []);
+            $diagram = $this->route('diagram');
+            $dbType = (string) ($this->input('db_type') ?? $diagram->db_type->value);
+            if ($valueTypes !== [] && $dbType !== 'ontology') {
+                $validator->errors()->add('value_types', 'Value types are only available for ontology diagrams.');
+            }
+
+            $this->validateReferences($validator, $valueTypes);
+        });
+    }
+
+    /** @param list<array<string, mixed>> $valueTypes */
+    private function validateReferences(Validator $validator, array $valueTypes): void
+    {
+        $ids = [];
+        foreach ($valueTypes as $definition) {
+            if (is_string($definition['id'] ?? null)) {
+                $ids[$definition['id']] = true;
+            }
+        }
+
+        foreach ($this->input('schema', []) as $item) {
+            $reference = $item['data']['valueTypeId'] ?? null;
+            if (is_string($reference) && $reference !== '' && ! isset($ids[$reference])) {
+                $validator->errors()->add('schema', "Schema row references missing value type {$reference}.");
+
+                return;
+            }
+        }
     }
 }

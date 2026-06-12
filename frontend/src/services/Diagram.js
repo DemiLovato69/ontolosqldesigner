@@ -63,20 +63,16 @@ export const Diagram = {
             return JSON.stringify(response.data, null, 2)
         }),
 
-    exportMigration: async (id) => {
-        const response = await axios.get(`/api/diagrams/migration/export/${id}`, { responseType: 'blob' })
-        return response.data
-    },
-
     exportOntology: async (id) => {
         const response = await axios.get(`/api/diagrams/ontology/export/${id}`, { responseType: 'blob' })
         return response.data
     },
 
-    save: (id, schema) =>
+    save: (id, schema, valueTypes = []) =>
         request(async () => {
-            const response = await axios.put(`/api/diagrams/${id}`, { id, schema })
+            const response = await axios.put(`/api/diagrams/${id}`, { id, schema, value_types: valueTypes })
             $toast.success(response.data.message)
+            return true
         }),
 
     share: (id) =>
@@ -90,9 +86,10 @@ export const Diagram = {
             await axios.delete(`/api/diagrams/${id}/share`)
         }),
 
-    saveByToken: (token, schema) =>
+    saveByToken: (token, schema, valueTypes = []) =>
         request(async () => {
-            await axios.patch(`/api/diagrams/shared/${token}`, { schema })
+            await axios.patch(`/api/diagrams/shared/${token}`, { schema, value_types: valueTypes })
+            return true
         }),
 
     updateShareAccess: (id, payload) =>

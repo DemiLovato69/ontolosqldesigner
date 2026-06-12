@@ -9,12 +9,17 @@ use App\Enums\DiagramAccess;
 
 readonly class UpdateDiagramDTO
 {
+    /**
+     * @param array<int, mixed>|null $schema
+     * @param list<array<string, mixed>>|null $valueTypes
+     */
     public function __construct(
         public ?string $name = null,
         public ?DbType $dbType = null,
         public ?DiagramAccess $shareAccess = null,
         public ?bool $library = null,
         public ?array $schema = null,
+        public ?array $valueTypes = null,
     ) {}
 
     /** @return array<string, mixed> */
@@ -36,6 +41,9 @@ readonly class UpdateDiagramDTO
         }
         if ($this->schema !== null) {
             $data['schema'] = $this->schema;
+        }
+        if ($this->valueTypes !== null) {
+            $data['value_types'] = $this->valueTypes;
         }
 
         return $data;

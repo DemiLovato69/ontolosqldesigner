@@ -11,12 +11,10 @@ use App\Models\Diagram;
 use App\Models\DiagramVisitor;
 use App\Models\User;
 use App\Services\DiagramSharingService;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Tests\TestCase;
 
 class DiagramSharingServiceTest extends TestCase
 {
-    use DatabaseTransactions;
 
     private DiagramSharingService $service;
 
