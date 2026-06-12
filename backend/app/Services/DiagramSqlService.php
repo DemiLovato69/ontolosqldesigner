@@ -27,6 +27,10 @@ use ZipArchive;
 
 class DiagramSqlService
 {
+    private const BACKUP_FORMAT = 'ontolosql-designer';
+
+    private const BACKUP_VERSION = 1;
+
     public function __construct(
         private readonly OntologyMakerService $ontologyMakerService,
         private readonly HierarchicalDiagramLayoutService $layoutService,
@@ -76,6 +80,9 @@ class DiagramSqlService
         $payload = $this->createImportPayload($script, ($diagram->db_type ?? DbType::MYSQL)->value);
         $diagram->schema = $payload['schema'];
         $diagram->value_types = $payload['value_types'];
+        if ($payload['db_type'] !== null) {
+            $diagram->db_type = $payload['db_type'];
+        }
         $diagram->import_warnings = $payload['warnings'];
         $diagram->save();
 
@@ -242,55 +249,42 @@ class DiagramSqlService
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
     /**
      * @param  list<array<string, mixed>>  $valueTypes
-     * @return array{tables: list<array<string, mixed>>, foreignKeys: list<array<string, mixed>>, valueTypes: list<array<string, mixed>>}
+     * @return array{
+     *     format: string,
+     *     version: int,
+     *     diagram: array{
+     *         name: string|null,
+     *         dbType: string|null,
+     *         schema: list<mixed>,
+     *         valueTypes: list<array<string, mixed>>
+     *     }
+     * }
      */
-    public function createJson(string $schema, array $valueTypes = []): array
+    public function createJson(
+        string $schema,
+        array $valueTypes = [],
+        ?string $dbType = null,
+        ?string $name = null
+    ): array
     {
-        [$tables, $rows, $connections] = $this->parseSchemaItems($schema);
-        $tablesById = $tables->keyBy('id');
-        $rowsById = $rows->keyBy('id');
-        $rowsByTable = $rows->groupBy('table_id');
-        $result = ['tables' => [], 'foreignKeys' => [], 'valueTypes' => $valueTypes];
-
-        foreach ($tables as $table) {
-            $columns = $rowsByTable->get($table['id'], collect())->map(function ($row) {
-                $col = ['name' => $row['name'], 'type' => $row['sql_type'], 'nullable' => $row['nullable']];
-                if ($row['value_type_id'] !== null) {
-                    $col['valueTypeId'] = $row['value_type_id'];
-                }
-                if ($row['unsigned']) {
-                    $col['unsigned'] = true;
-                }
-                if ($row['key_mod']) {
-                    $col['key'] = $row['key_mod'];
-                }
-                if ($row['default_value']) {
-                    $col['default_value'] = $row['default_value'];
-                }
-                if ($row['comment']) {
-                    $col['comment'] = $row['comment'];
-                }
-
-                return $col;
-            })->values()->all();
-            $result['tables'][] = ['name' => $table['name'], 'columns' => $columns];
+        $decodedSchema = json_decode($schema, true);
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            throw InvalidSchemaException::malformedJson();
+        }
+        if (! is_array($decodedSchema)) {
+            throw InvalidSchemaException::notAnArray();
         }
 
-        foreach ($connections as $connection) {
-            $sourceRow = $rowsById->get($connection['source_id']);
-            $targetRow = $rowsById->get($connection['target_id']);
-            if (! $sourceRow || ! $targetRow) {
-                continue;
-            }
-            $result['foreignKeys'][] = [
-                'table' => $tablesById->get($sourceRow['table_id'])['name'],
-                'column' => $sourceRow['name'],
-                'referencesTable' => $tablesById->get($targetRow['table_id'])['name'],
-                'referencesColumn' => $targetRow['name'],
-            ];
-        }
-
-        return $result;
+        return [
+            'format' => self::BACKUP_FORMAT,
+            'version' => self::BACKUP_VERSION,
+            'diagram' => [
+                'name' => $name,
+                'dbType' => $dbType,
+                'schema' => $decodedSchema,
+                'valueTypes' => $valueTypes,
+            ],
+        ];
     }
 
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
@@ -378,16 +372,23 @@ class DiagramSqlService
      * @return array{
      *     schema: list<array<string, mixed>>,
      *     value_types: list<array<string, mixed>>,
-     *     warnings: list<string>
+     *     warnings: list<string>,
+     *     db_type: DbType|null
      * }
      */
     public function createImportPayload(string $script, string $dbType = 'mysql'): array
     {
+        $backup = $this->decodeBackup($script);
+        if ($backup !== null) {
+            return $backup;
+        }
+
         if ($dbType !== DbType::ONTOLOGY->value) {
             return [
                 'schema' => $this->createSchemaArray($script, $dbType),
                 'value_types' => [],
                 'warnings' => [],
+                'db_type' => null,
             ];
         }
 
@@ -397,6 +398,7 @@ class DiagramSqlService
                 'schema' => $this->createSchemaArray($script, $dbType),
                 'value_types' => [],
                 'warnings' => [],
+                'db_type' => null,
             ];
         }
 
@@ -406,6 +408,50 @@ class DiagramSqlService
             'schema' => $this->createSchemaFromOntologyExport($ontology, $parsed['references']),
             'value_types' => $parsed['definitions'],
             'warnings' => $parsed['warnings'],
+            'db_type' => null,
+        ];
+    }
+
+    /**
+     * @return array{
+     *     schema: list<mixed>,
+     *     value_types: list<array<string, mixed>>,
+     *     warnings: list<string>,
+     *     db_type: DbType|null
+     * }|null
+     */
+    private function decodeBackup(string $script): ?array
+    {
+        $decoded = json_decode($script, true);
+        if (! is_array($decoded) || ($decoded['format'] ?? null) !== self::BACKUP_FORMAT) {
+            return null;
+        }
+        if (($decoded['version'] ?? null) !== self::BACKUP_VERSION) {
+            throw new InvalidSchemaException('Unsupported OntoloSQL Designer backup version.');
+        }
+
+        $diagram = $decoded['diagram'] ?? null;
+        if (! is_array($diagram) || ! is_array($diagram['schema'] ?? null)) {
+            throw new InvalidSchemaException('Backup does not contain a valid diagram schema.');
+        }
+
+        $valueTypes = $diagram['valueTypes'] ?? [];
+        if (! is_array($valueTypes)) {
+            throw new InvalidSchemaException('Backup does not contain valid value type definitions.');
+        }
+
+        $backupDbType = is_string($diagram['dbType'] ?? null)
+            ? DbType::tryFrom($diagram['dbType'])
+            : null;
+        if (($diagram['dbType'] ?? null) !== null && $backupDbType === null) {
+            throw new InvalidSchemaException('Backup contains an unsupported diagram type.');
+        }
+
+        return [
+            'schema' => array_values($diagram['schema']),
+            'value_types' => array_values($valueTypes),
+            'warnings' => [],
+            'db_type' => $backupDbType,
         ];
     }
 

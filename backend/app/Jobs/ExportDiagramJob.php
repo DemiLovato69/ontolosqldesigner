@@ -63,7 +63,9 @@ class ExportDiagramJob implements ShouldQueue
         $this->diagram->script = $script;
         $this->diagram->export_json = $service->createJson(
             $schemaJson,
-            $this->diagram->value_types ?? []
+            $this->diagram->value_types ?? [],
+            $dbType->value,
+            $this->diagram->name
         );
         $this->diagram->export_status = ExportStatus::DONE;
         $this->diagram->export_error = null;

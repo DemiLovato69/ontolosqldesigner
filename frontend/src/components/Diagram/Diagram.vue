@@ -467,9 +467,10 @@ const importSql = async () => {
         return
     }
 
-    const applySchema = (schemaJson, importedValueTypes = [], warnings = []) => {
+    const applySchema = (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null) => {
         schema.value = schemaJson
         valueTypes.value = importedValueTypes
+        if (importedDbType) diagramDbType.value = importedDbType
         focusLargeDiagram()
         importLoading.value = false
         $toast.success('Imported successfully')
@@ -482,7 +483,7 @@ const importSql = async () => {
     }
 
     if (result.status === 'done' && result.schema) {
-        applySchema(result.schema, result.value_types ?? [], result.warnings ?? [])
+        applySchema(result.schema, result.value_types ?? [], result.warnings ?? [], result.db_type)
         return
     }
 
@@ -499,7 +500,7 @@ const importSql = async () => {
         if (!status) return
         if (status.status === 'done') {
             clearInterval(poll)
-            applySchema(status.schema, status.value_types ?? [], status.warnings ?? [])
+            applySchema(status.schema, status.value_types ?? [], status.warnings ?? [], status.db_type)
         } else if (status.status === 'failed') {
             clearInterval(poll)
             importLoading.value = false

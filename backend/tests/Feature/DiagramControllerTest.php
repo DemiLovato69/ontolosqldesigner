@@ -265,8 +265,11 @@ class DiagramControllerTest extends TestCase
         $this->auth()
             ->getJson("/api/diagrams/json/export/{$this->diagram->id}")
             ->assertOk()
-            ->assertJsonPath('valueTypes.0.apiName', 'emailAddress')
-            ->assertJsonPath('tables.0.columns.0.valueTypeId', 'email-type');
+            ->assertJsonPath('format', 'ontolosql-designer')
+            ->assertJsonPath('version', 1)
+            ->assertJsonPath('diagram.dbType', 'ontology')
+            ->assertJsonPath('diagram.valueTypes.0.apiName', 'emailAddress')
+            ->assertJsonPath('diagram.schema.1.data.valueTypeId', 'email-type');
     }
 
     public function test_export_ontology_includes_value_types(): void

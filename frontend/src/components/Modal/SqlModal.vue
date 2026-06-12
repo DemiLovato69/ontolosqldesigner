@@ -112,9 +112,14 @@ const handleFileUpload = (event) => {
         if (file.name.endsWith('.json')) {
             try {
                 const json = JSON.parse(content)
+                const isBackup = json.format === 'ontolosql-designer'
+                    && typeof json.version === 'number'
+                    && json.diagram
                 emit(
                     'update:modelValue',
-                    Array.isArray(json.objectTypes) ? JSON.stringify(json) : jsonToSql(json)
+                    isBackup || Array.isArray(json.objectTypes)
+                        ? JSON.stringify(json)
+                        : jsonToSql(json)
                 )
             } catch {
                 $toast.error('Invalid JSON file')

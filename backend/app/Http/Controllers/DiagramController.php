@@ -164,6 +164,9 @@ class DiagramController extends Controller
             'value_types' => $diagram->import_status === ImportStatus::DONE
                 ? ($diagram->value_types ?? [])
                 : null,
+            'db_type' => $diagram->import_status === ImportStatus::DONE
+                ? ($diagram->db_type?->value ?? DbType::MYSQL->value)
+                : null,
             'warnings' => $diagram->import_status === ImportStatus::DONE
                 ? ($diagram->import_warnings ?? [])
                 : [],
@@ -232,7 +235,9 @@ class DiagramController extends Controller
 
         return $this->success($this->sqlService->createJson(
             json_encode($diagram->schema),
-            $diagram->value_types ?? []
+            $diagram->value_types ?? [],
+            $diagram->db_type?->value,
+            $diagram->name
         ));
     }
 

@@ -166,8 +166,8 @@ class DiagramSqlServiceTest extends TestCase
         $diagram->refresh();
 
         $this->assertStringContainsString('export const emailAddress = defineValueType({', $diagram->script);
-        $this->assertSame('emailAddress', $diagram->export_json['valueTypes'][0]['apiName']);
-        $this->assertSame('email-type', $diagram->export_json['tables'][0]['columns'][1]['valueTypeId']);
+        $this->assertSame('emailAddress', $diagram->export_json['diagram']['valueTypes'][0]['apiName']);
+        $this->assertSame('email-type', $diagram->export_json['diagram']['schema'][2]['data']['valueTypeId']);
     }
 
     public function test_imports_ontology_value_types_and_field_references(): void
@@ -303,32 +303,17 @@ class DiagramSqlServiceTest extends TestCase
     public function test_create_json(): void
     {
         $schema = json_encode([
-            ['id' => 't1', 'type' => 'table', 'label' => 'users'],
-            ['id' => 't2', 'type' => 'table', 'label' => 'posts'],
-            ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => true, 'defaultValue' => '5', 'description' => 'pk']],
-            ['id' => 'r2', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 't2', 'data' => ['keyMod' => null, 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false, 'defaultValue' => '', 'description' => '']],
-            ['sourceNode' => ['id' => 'r2'], 'targetNode' => ['id' => 'r1']],
+            ['id' => 't1', 'type' => 'table', 'label' => 'users', 'position' => ['x' => 120, 'y' => 340], 'data' => ['color' => '#112233']],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT']],
+            ['id' => 'e1', 'source' => 'r1', 'target' => 'r1', 'style' => ['stroke' => '#abcdef'], 'data' => ['color' => '#abcdef']],
         ]);
-        $result = $this->service->createJson($schema);
-        $this->assertCount(2, $result['tables']);
-        $this->assertCount(1, $result['foreignKeys']);
-        $col = $result['tables'][0]['columns'][0];
-        $this->assertTrue($col['unsigned']);
-        $this->assertEquals('PRIMARY KEY', $col['key']);
-        $this->assertEquals('5', $col['default_value']);
-        $this->assertEquals('pk', $col['comment']);
-        $this->assertEquals('posts', $result['foreignKeys'][0]['table']);
-    }
+        $result = $this->service->createJson($schema, [], 'ontology', 'Users');
 
-    public function test_create_json_skips_invalid_connection(): void
-    {
-        $schema = json_encode([
-            ['id' => 't1', 'type' => 'table', 'label' => 'users'],
-            ['id' => 'r1', 'type' => 'row', 'label' => 'id', 'parentNode' => 't1', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false, 'unsigned' => false]],
-            ['sourceNode' => ['id' => 'bad'], 'targetNode' => ['id' => 'r1']],
-        ]);
-        $result = $this->service->createJson($schema);
-        $this->assertEmpty($result['foreignKeys']);
+        $this->assertSame('ontolosql-designer', $result['format']);
+        $this->assertSame(1, $result['version']);
+        $this->assertSame('Users', $result['diagram']['name']);
+        $this->assertSame('ontology', $result['diagram']['dbType']);
+        $this->assertSame(json_decode($schema, true), $result['diagram']['schema']);
     }
 
     public function test_create_json_includes_value_types_and_column_references(): void
@@ -350,10 +335,36 @@ class DiagramSqlServiceTest extends TestCase
             'constraints' => [],
         ]];
 
-        $result = $this->service->createJson($schema, $valueTypes);
+        $result = $this->service->createJson($schema, $valueTypes, 'ontology');
 
-        $this->assertSame($valueTypes, $result['valueTypes']);
-        $this->assertSame('email-type', $result['tables'][0]['columns'][0]['valueTypeId']);
+        $this->assertSame($valueTypes, $result['diagram']['valueTypes']);
+        $this->assertSame('email-type', $result['diagram']['schema'][1]['data']['valueTypeId']);
+    }
+
+    public function test_import_backup_restores_physical_schema_value_types_and_db_type(): void
+    {
+        $schema = [
+            ['id' => 't1', 'type' => 'table', 'label' => 'users', 'position' => ['x' => 321, 'y' => 654], 'data' => ['color' => '#123456']],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'email', 'parentNode' => 't1', 'data' => ['sqlType' => 'STRING', 'valueTypeId' => 'email-type']],
+            ['id' => 'e1', 'source' => 'r1', 'target' => 'r1', 'style' => ['stroke' => '#fedcba'], 'data' => ['color' => '#fedcba']],
+        ];
+        $valueTypes = [[
+            'id' => 'email-type',
+            'apiName' => 'emailAddress',
+            'displayName' => 'Email Address',
+            'version' => '1.0.0',
+            'baseType' => ['type' => 'string'],
+            'constraints' => [],
+        ]];
+        $backup = $this->service->createJson(json_encode($schema), $valueTypes, 'ontology', 'Users');
+        $diagram = Diagram::factory()->create(['db_type' => 'mysql']);
+
+        $this->service->importSchema($diagram, json_encode($backup));
+        $diagram->refresh();
+
+        $this->assertSame($schema, $diagram->schema);
+        $this->assertSame($valueTypes, $diagram->value_types);
+        $this->assertSame('ontology', $diagram->db_type->value);
     }
 
     // --- createSchema MySQL ---
