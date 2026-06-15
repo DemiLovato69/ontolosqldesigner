@@ -392,11 +392,12 @@ class DiagramSqlService
             $ontology = $this->decodeOntologyExport($script)
                 ?? throw new InvalidSchemaException('The file is not a supported exported ontology JSON document.');
             $parsed = $this->parseOntologyValueTypes($ontology);
+            $warnings = array_merge($parsed['warnings'], $this->ontologyImportWarnings($ontology));
 
             return [
                 'schema' => $this->createSchemaFromOntologyExport($ontology, $parsed['references']),
                 'value_types' => $parsed['definitions'],
-                'warnings' => $parsed['warnings'],
+                'warnings' => $warnings,
                 'db_type' => DbType::ONTOLOGY,
             ];
         }
@@ -677,10 +678,7 @@ class DiagramSqlService
         $primaryRowsByObjectRid = [];
         $layoutRelationships = [];
 
-        foreach ($ontology['objectTypes'] as $objectIndex => $objectType) {
-            if (! is_array($objectType)) {
-                continue;
-            }
+        foreach ($this->ontologyObjectTypes($ontology) as $objectIndex => $objectType) {
 
             $x = 50;
             $y = 50;
@@ -689,6 +687,13 @@ class DiagramSqlService
             $name = (string) ($displayMetadata['displayName'] ?? $objectType['apiName'] ?? $objectType['id'] ?? 'Object');
             $table = $this->buildTableNode($tableId, $name, $x, $y);
             $table['data']['description'] = trim((string) ($displayMetadata['description'] ?? ''));
+            if (is_array($objectType['ontologyActions'] ?? null)) {
+                $table['data']['ontologyActions'] = [
+                    'create' => (bool) ($objectType['ontologyActions']['create'] ?? false),
+                    'modify' => (bool) ($objectType['ontologyActions']['modify'] ?? false),
+                    'delete' => (bool) ($objectType['ontologyActions']['delete'] ?? false),
+                ];
+            }
             $table['data']['ontologyMetadata'] = [
                 'id' => $objectType['id'] ?? null,
                 'rid' => $objectType['rid'] ?? null,
@@ -699,8 +704,13 @@ class DiagramSqlService
             $tableIndex = array_key_last($tables);
 
             $objectRid = (string) ($objectType['rid'] ?? '');
-            if ($objectRid !== '') {
-                $tablesByRid[$objectRid] = $table;
+            $objectReferences = array_values(array_unique(array_filter([
+                $objectType['rid'] ?? null,
+                $objectType['id'] ?? null,
+                $objectType['apiName'] ?? null,
+            ], fn (mixed $reference): bool => is_string($reference) && $reference !== '')));
+            foreach ($objectReferences as $reference) {
+                $tablesByRid[$reference] = $table;
             }
 
             $primaryKeys = array_map('strval', is_array($objectType['primaryKeys'] ?? null) ? $objectType['primaryKeys'] : []);
@@ -745,13 +755,24 @@ class DiagramSqlService
                 }
                 $rows[] = $row;
 
+                $propertyReferences = array_values(array_unique(array_filter([
+                    $property['rid'] ?? null,
+                    $property['id'] ?? null,
+                    $property['apiName'] ?? null,
+                ], fn (mixed $reference): bool => is_string($reference) && $reference !== '')));
                 if ($propertyRid !== '') {
                     $rowsByPropertyRid[$propertyRid] = $row;
                 }
+                foreach ($objectReferences as $objectReference) {
+                    foreach ($propertyReferences as $propertyReference) {
+                        $rowsByObjectAndPropertyId[$objectReference][$propertyReference] = $row;
+                    }
+                }
                 if ($objectRid !== '') {
-                    $rowsByObjectAndPropertyId[$objectRid][$propertyId] = $row;
                     if ($isPrimary) {
-                        $primaryRowsByObjectRid[$objectRid][] = $row;
+                        foreach ($objectReferences as $objectReference) {
+                            $primaryRowsByObjectRid[$objectReference][] = $row;
+                        }
                     }
                 }
             }
@@ -788,16 +809,32 @@ class DiagramSqlService
 
             if ($type === 'oneToMany' && is_array($definition['oneToMany'] ?? null)) {
                 $link = $definition['oneToMany'];
-                $oneRid = (string) ($link['objectTypeRidOneSide'] ?? '');
-                $manyRid = (string) ($link['objectTypeRidManySide'] ?? '');
+                $oneRid = (string) ($link['objectTypeRidOneSide'] ?? $link['objectTypeIdOneSide'] ?? '');
+                $manyRid = (string) ($link['objectTypeRidManySide'] ?? $link['objectTypeIdManySide'] ?? '');
                 $mapping = is_array($link['oneSidePrimaryKeyToManySidePropertyMapping'] ?? null)
                     ? $link['oneSidePrimaryKeyToManySidePropertyMapping']
                     : [];
                 $sourceRow = null;
                 $targetRow = null;
                 foreach ($mapping as $sourcePropertyRid => $targetPropertyRid) {
-                    $sourceRow = $rowsByPropertyRid[(string) $sourcePropertyRid] ?? null;
-                    $targetRow = $rowsByPropertyRid[(string) $targetPropertyRid] ?? null;
+                    if (is_int($sourcePropertyRid) && is_array($targetPropertyRid)) {
+                        $sourcePropertyRid = $targetPropertyRid['from']['rid']
+                            ?? $targetPropertyRid['from']['apiName']
+                            ?? null;
+                        $targetPropertyRid = $targetPropertyRid['to']['rid']
+                            ?? $targetPropertyRid['to']['apiName']
+                            ?? null;
+                    }
+                    $sourceRow = is_string($sourcePropertyRid)
+                        ? ($rowsByPropertyRid[$sourcePropertyRid]
+                            ?? $rowsByObjectAndPropertyId[$oneRid][$sourcePropertyRid]
+                            ?? null)
+                        : null;
+                    $targetRow = is_string($targetPropertyRid)
+                        ? ($rowsByPropertyRid[$targetPropertyRid]
+                            ?? $rowsByObjectAndPropertyId[$manyRid][$targetPropertyRid]
+                            ?? null)
+                        : null;
                     if ($sourceRow && $targetRow) {
                         break;
                     }
@@ -827,8 +864,8 @@ class DiagramSqlService
                 }
             } elseif ($type === 'manyToMany' && is_array($definition['manyToMany'] ?? null)) {
                 $link = $definition['manyToMany'];
-                $aRid = (string) ($link['objectTypeRidA'] ?? '');
-                $bRid = (string) ($link['objectTypeRidB'] ?? '');
+                $aRid = (string) ($link['objectTypeRidA'] ?? $link['objectTypeIdA'] ?? '');
+                $bRid = (string) ($link['objectTypeRidB'] ?? $link['objectTypeIdB'] ?? '');
                 $sourceRow = $primaryRowsByObjectRid[$aRid][0] ?? null;
                 $targetRow = $primaryRowsByObjectRid[$bRid][0] ?? null;
                 if ($sourceRow && $targetRow) {
@@ -866,15 +903,19 @@ class DiagramSqlService
     {
         $rawValueTypes = $ontology['valueTypes'] ?? [];
         if (! is_array($rawValueTypes)) {
-            return ['definitions' => [], 'references' => [], 'warnings' => []];
+            $rawValueTypes = [];
         }
         if (is_array($rawValueTypes['valueTypes'] ?? null)) {
             $rawValueTypes = $rawValueTypes['valueTypes'];
+        }
+        foreach ($this->inferredOntologyValueTypes($ontology) as $inferredValueType) {
+            $rawValueTypes[] = $inferredValueType;
         }
 
         $definitions = [];
         $references = [];
         $warnings = [];
+        $definitionIds = [];
 
         foreach ($rawValueTypes as $key => $rawDefinition) {
             if (! is_array($rawDefinition)) {
@@ -887,6 +928,15 @@ class DiagramSqlService
             }
             $idSource = (string) ($rawDefinition['rid'] ?? $rawDefinition['id'] ?? $apiName);
             $id = 'ontology-value-type-'.substr(hash('sha256', $idSource), 0, 24);
+            if (isset($definitionIds[$id])) {
+                foreach ([$rawDefinition['rid'] ?? null, $rawDefinition['id'] ?? null, $apiName] as $reference) {
+                    if (is_string($reference) && $reference !== '') {
+                        $references[$reference] = $id;
+                    }
+                }
+
+                continue;
+            }
             $displayMetadata = is_array($rawDefinition['displayMetadata'] ?? null)
                 ? $rawDefinition['displayMetadata']
                 : [];
@@ -930,6 +980,7 @@ class DiagramSqlService
                 'constraints' => $constraints,
             ];
             $definitions[] = $definition;
+            $definitionIds[$id] = true;
 
             foreach ([$rawDefinition['rid'] ?? null, $rawDefinition['id'] ?? null, $apiName, $key] as $reference) {
                 if (is_string($reference) && $reference !== '') {
@@ -939,6 +990,92 @@ class DiagramSqlService
         }
 
         return compact('definitions', 'references', 'warnings');
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function ontologyObjectTypes(array $ontology): array
+    {
+        return array_values(array_filter(
+            is_array($ontology['objectTypes'] ?? null) ? $ontology['objectTypes'] : [],
+            fn (mixed $objectType): bool => is_array($objectType)
+                && is_array($objectType['properties'] ?? null)
+                && is_array($objectType['primaryKeys'] ?? null)
+                && ! isset($objectType['actionTypeLogic'])
+                && ! isset($objectType['metadata']['parameters'])
+        ));
+    }
+
+    /** @return list<string> */
+    private function ontologyImportWarnings(array $ontology): array
+    {
+        $warnings = [];
+        $actionCount = count(is_array($ontology['actionTypes'] ?? null) ? $ontology['actionTypes'] : []);
+        if ($actionCount > 0) {
+            $warnings[] = "Skipped {$actionCount} custom action types because action import is not supported.";
+        }
+        $intermediaryCount = 0;
+        foreach (is_array($ontology['relations'] ?? null) ? $ontology['relations'] : [] as $relation) {
+            if (is_array($relation) && ($relation['definition']['type'] ?? null) === 'intermediary') {
+                $intermediaryCount++;
+            }
+        }
+        if ($intermediaryCount > 0) {
+            $warnings[] = "Skipped {$intermediaryCount} intermediary relations because they are not supported.";
+        }
+
+        return $warnings;
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function inferredOntologyValueTypes(array $ontology): array
+    {
+        $sources = [];
+        foreach (is_array($ontology['sharedProperties'] ?? null) ? $ontology['sharedProperties'] : [] as $property) {
+            if (is_array($property)) {
+                $sources[] = $property;
+            }
+        }
+        foreach ($this->ontologyObjectTypes($ontology) as $objectType) {
+            foreach ($objectType['properties'] as $property) {
+                if (is_array($property)) {
+                    $sources[] = $property;
+                }
+            }
+        }
+
+        $inferred = [];
+        foreach ($sources as $property) {
+            $valueType = is_array($property['valueType'] ?? null) ? $property['valueType'] : [];
+            $rid = (string) ($valueType['rid'] ?? $property['valueTypeRid'] ?? '');
+            if ($rid === '' || isset($inferred[$rid])) {
+                continue;
+            }
+            $apiName = (string) ($valueType['apiName'] ?? $property['apiName'] ?? $property['id'] ?? '');
+            if ($apiName === '') {
+                continue;
+            }
+            $displayMetadata = is_array($property['displayMetadata'] ?? null)
+                ? $property['displayMetadata']
+                : [];
+            $constraints = is_array($property['dataConstraints']['propertyTypeConstraints'] ?? null)
+                ? $property['dataConstraints']['propertyTypeConstraints']
+                : [];
+            $inferred[$rid] = [
+                'rid' => $rid,
+                'apiName' => $apiName,
+                'displayMetadata' => [
+                    'displayName' => $displayMetadata['displayName'] ?? $apiName,
+                    'description' => $displayMetadata['description'] ?? '',
+                ],
+                'version' => (string) ($valueType['version'] ?? '1.0.0'),
+                'baseType' => is_array($property['baseType'] ?? null)
+                    ? $property['baseType']
+                    : ['type' => 'string'],
+                'constraints' => $constraints,
+            ];
+        }
+
+        return array_values($inferred);
     }
 
     /**
@@ -1010,7 +1147,8 @@ class DiagramSqlService
             ?? null;
         $failureMessage = is_array($failure) ? (string) ($failure['message'] ?? '') : (string) ($failure ?? '');
 
-        $constraint = $rawConstraint['constraint']['constraint']
+        $constraint = $rawConstraint['constraints']
+            ?? $rawConstraint['constraint']['constraint']
             ?? $rawConstraint['constraint']
             ?? $rawConstraint;
         if (! is_array($constraint)) {

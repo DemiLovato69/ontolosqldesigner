@@ -248,6 +248,125 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertCount(1, $payload['warnings']);
     }
 
+    public function test_ontology_json_imports_only_objects_links_and_custom_value_types(): void
+    {
+        $ontology = json_encode([
+            'objectTypes' => [
+                [
+                    'id' => 'object-users',
+                    'rid' => 'ri.object.users',
+                    'apiName' => 'User',
+                    'displayMetadata' => ['displayName' => 'Users'],
+                    'titlePropertyId' => 'name',
+                    'primaryKeys' => ['id'],
+                    'properties' => [
+                        ['id' => 'id', 'rid' => 'ri.property.user.id', 'apiName' => 'id', 'baseType' => ['type' => 'STRING']],
+                        ['id' => 'name', 'rid' => 'ri.property.user.name', 'apiName' => 'name', 'baseType' => ['type' => 'STRING']],
+                        [
+                            'id' => 'email',
+                            'rid' => 'ri.property.user.email',
+                            'apiName' => 'email',
+                            'baseType' => ['type' => 'STRING'],
+                            'valueType' => ['rid' => 'ri.value-type.email'],
+                        ],
+                    ],
+                ],
+                [
+                    'id' => 'object-posts',
+                    'rid' => 'ri.object.posts',
+                    'apiName' => 'Post',
+                    'displayMetadata' => ['displayName' => 'Posts'],
+                    'titlePropertyId' => 'title',
+                    'primaryKeys' => ['id'],
+                    'properties' => [
+                        ['id' => 'id', 'rid' => 'ri.property.post.id', 'apiName' => 'id', 'baseType' => ['type' => 'STRING']],
+                        ['id' => 'title', 'rid' => 'ri.property.post.title', 'apiName' => 'title', 'baseType' => ['type' => 'STRING']],
+                        ['id' => 'user_id', 'rid' => 'ri.property.post.user', 'apiName' => 'userId', 'baseType' => ['type' => 'STRING']],
+                    ],
+                ],
+                [
+                    'metadata' => ['apiName' => 'customAction'],
+                    'actionTypeLogic' => ['logic' => ['rules' => []]],
+                ],
+            ],
+            'relations' => [
+                [
+                    'rid' => 'ri.relation.user-posts',
+                    'definition' => [
+                        'type' => 'oneToMany',
+                        'oneToMany' => [
+                            'objectTypeIdOneSide' => 'object-users',
+                            'objectTypeIdManySide' => 'object-posts',
+                            'manySideForeignKeyPropertyId' => 'user_id',
+                            'oneSidePrimaryKeyToManySidePropertyMapping' => [
+                                'id' => 'user_id',
+                            ],
+                        ],
+                    ],
+                ],
+                [
+                    'rid' => 'ri.relation.user-posts-many',
+                    'definition' => [
+                        'type' => 'manyToMany',
+                        'manyToMany' => [
+                            'objectTypeIdA' => 'object-users',
+                            'objectTypeIdB' => 'object-posts',
+                        ],
+                    ],
+                ],
+                [
+                    'rid' => 'ri.relation.unsupported',
+                    'definition' => ['type' => 'intermediary', 'intermediary' => []],
+                ],
+            ],
+            'actionTypes' => [
+                ['metadata' => ['apiName' => 'customAction'], 'actionTypeLogic' => []],
+            ],
+            'sharedProperties' => [[
+                'rid' => 'ri.shared.email',
+                'apiName' => 'emailAddress',
+                'displayMetadata' => [
+                    'displayName' => 'Email Address',
+                    'description' => 'Validated email',
+                ],
+                'baseType' => ['type' => 'STRING'],
+                'valueType' => ['rid' => 'ri.value-type.email'],
+                'dataConstraints' => [
+                    'propertyTypeConstraints' => [[
+                        'failureMessage' => ['message' => 'Invalid email'],
+                        'constraints' => [
+                            'type' => 'string',
+                            'string' => [
+                                'type' => 'regex',
+                                'regex' => ['regexPattern' => '^.+@.+$', 'usePartialMatch' => false],
+                            ],
+                        ],
+                    ]],
+                ],
+            ]],
+        ], JSON_THROW_ON_ERROR);
+
+        $payload = $this->service->createImportPayload($ontology, 'ontology', 'ontology-json');
+        $tables = array_values(array_filter($payload['schema'], fn ($item) => ($item['type'] ?? null) === 'table'));
+        $rows = array_values(array_filter($payload['schema'], fn ($item) => ($item['type'] ?? null) === 'row'));
+        $edges = array_values(array_filter($payload['schema'], fn ($item) => ($item['type'] ?? null) === 'chickenFoot'));
+
+        $this->assertCount(2, $tables);
+        $this->assertSame(['Users', 'Posts'], array_column($tables, 'label'));
+        $this->assertCount(2, $edges);
+        $this->assertSame(['one-to-many', 'many-to-many'], array_column(array_column($edges, 'data'), 'relationshipType'));
+        $foreignKey = collect($rows)->first(fn ($row) => ($row['label'] ?? null) === 'user_id');
+        $this->assertSame('FOREIGN KEY', $foreignKey['data']['keyMod']);
+        $email = collect($rows)->first(fn ($row) => ($row['label'] ?? null) === 'email');
+        $this->assertCount(1, $payload['value_types']);
+        $this->assertSame('emailAddress', $payload['value_types'][0]['apiName']);
+        $this->assertSame('regex', $payload['value_types'][0]['constraints'][0]['type']);
+        $this->assertSame($payload['value_types'][0]['id'], $email['data']['valueTypeId']);
+        $this->assertCount(2, $payload['warnings']);
+        $this->assertStringContainsString('custom action types', $payload['warnings'][0]);
+        $this->assertStringContainsString('intermediary relations', $payload['warnings'][1]);
+    }
+
     public function test_create_script_my_sql_skips_invalid_connection(): void
     {
         $schema = json_encode([
@@ -348,7 +467,22 @@ class DiagramSqlServiceTest extends TestCase
     public function test_import_backup_restores_physical_schema_value_types_and_db_type(): void
     {
         $schema = [
-            ['id' => 't1', 'type' => 'table', 'label' => 'users', 'position' => ['x' => 321, 'y' => 654], 'data' => ['color' => '#123456']],
+            [
+                'id' => 't1',
+                'type' => 'table',
+                'label' => 'users',
+                'position' => ['x' => 321, 'y' => 654],
+                'data' => ['color' => '#123456'],
+                'style' => ['background' => '#123456', 'borderColor' => '#123456', 'width' => '475px'],
+            ],
+            [
+                'id' => 't2',
+                'type' => 'table',
+                'label' => 'accounts',
+                'position' => ['x' => -120, 'y' => 88],
+                'data' => ['color' => '#abcdef'],
+                'style' => ['background' => '#abcdef', 'borderColor' => '#abcdef'],
+            ],
             ['id' => 'r1', 'type' => 'row', 'label' => 'email', 'parentNode' => 't1', 'data' => ['sqlType' => 'STRING', 'valueTypeId' => 'email-type']],
             ['id' => 'e1', 'source' => 'r1', 'target' => 'r1', 'style' => ['stroke' => '#fedcba'], 'data' => ['color' => '#fedcba']],
         ];
@@ -455,6 +589,69 @@ class DiagramSqlServiceTest extends TestCase
         $email = collect($payload['schema'])
             ->first(fn ($item) => ($item['type'] ?? null) === 'row' && ($item['label'] ?? null) === 'email');
         $this->assertSame($payload['value_types'][0]['id'], $email['data']['valueTypeId']);
+    }
+
+    public function test_exported_maker_module_round_trips_with_unique_node_ids(): void
+    {
+        $schema = [
+            ['id' => 'users', 'type' => 'table', 'label' => 'users', 'data' => [
+                'titlePropertyRowId' => 'user_name',
+                'ontologyActions' => ['create' => true, 'modify' => true, 'delete' => true],
+            ]],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => [
+                'keyMod' => 'PRIMARY KEY', 'sqlType' => 'STRING', 'nullable' => false,
+            ]],
+            ['id' => 'user_name', 'type' => 'row', 'label' => 'name', 'parentNode' => 'users', 'data' => [
+                'keyMod' => 'None', 'sqlType' => 'STRING', 'nullable' => false,
+            ]],
+            ['id' => 'posts', 'type' => 'table', 'label' => 'posts'],
+            ['id' => 'post_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'posts', 'data' => [
+                'keyMod' => 'PRIMARY KEY', 'sqlType' => 'STRING', 'nullable' => false,
+            ]],
+            ['id' => 'post_name', 'type' => 'row', 'label' => 'name', 'parentNode' => 'posts', 'data' => [
+                'keyMod' => 'None', 'sqlType' => 'STRING', 'nullable' => false,
+            ]],
+            ['id' => 'post_user_id', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 'posts', 'data' => [
+                'keyMod' => 'FOREIGN KEY', 'sqlType' => 'STRING', 'nullable' => false,
+            ]],
+            [
+                'id' => 'user-posts',
+                'type' => 'chickenFoot',
+                'source' => 'user_id',
+                'target' => 'post_user_id',
+                'data' => ['relationshipType' => 'one-to-many'],
+            ],
+        ];
+        $module = app(OntologyMakerService::class)->createModule(json_encode($schema, JSON_THROW_ON_ERROR));
+
+        $payload = $this->service->createImportPayload($module, 'ontology', 'maker-mts');
+        $nodes = array_values(array_filter(
+            $payload['schema'],
+            fn (array $item): bool => in_array($item['type'] ?? null, ['table', 'row'], true)
+        ));
+        $rows = array_values(array_filter(
+            $payload['schema'],
+            fn (array $item): bool => ($item['type'] ?? null) === 'row'
+        ));
+        $tables = array_values(array_filter(
+            $payload['schema'],
+            fn (array $item): bool => ($item['type'] ?? null) === 'table'
+        ));
+        $edges = array_values(array_filter(
+            $payload['schema'],
+            fn (array $item): bool => ($item['type'] ?? null) === 'chickenFoot'
+        ));
+
+        $this->assertCount(7, $nodes);
+        $this->assertCount(7, array_unique(array_column($nodes, 'id')));
+        $this->assertCount(5, $rows);
+        $this->assertCount(1, $edges);
+        $this->assertSame(
+            ['create' => true, 'modify' => true, 'delete' => true],
+            $tables[0]['data']['ontologyActions']
+        );
+        $this->assertContains($edges[0]['source'], array_column($rows, 'id'));
+        $this->assertContains($edges[0]['target'], array_column($rows, 'id'));
     }
 
     public function test_queued_import_preserves_explicit_format(): void
@@ -953,6 +1150,40 @@ class DiagramSqlServiceTest extends TestCase
 
         $this->assertSame($newSchema, $diagram->schema);
         $this->assertSame([['id' => 'current-type']], $diagram->value_types);
+    }
+
+    public function test_failed_import_job_keeps_previous_diagram_schema(): void
+    {
+        $previousSchema = [['id' => 'current', 'type' => 'table', 'label' => 'current_users']];
+        $previousValueTypes = [['id' => 'current-type']];
+        $diagram = Diagram::factory()->create([
+            'schema' => $previousSchema,
+            'value_types' => $previousValueTypes,
+            'script' => $this->service->encodeQueuedImport('maker-mts', 'invalid maker module'),
+            'import_status' => ImportStatus::PENDING,
+        ]);
+        $job = new ImportDiagramSchemaJob($diagram);
+        $service = Mockery::mock(DiagramSqlService::class);
+        $service->shouldReceive('decodeQueuedImport')->once()->andReturn([
+            'format' => 'maker-mts',
+            'content' => 'invalid maker module',
+        ]);
+        $service->shouldReceive('createImportPayload')
+            ->once()
+            ->andThrow(new InvalidSchemaException('Unsupported Maker import.'));
+
+        try {
+            $job->handle($service);
+            $this->fail('The import should have failed.');
+        } catch (InvalidSchemaException $exception) {
+            $job->failed($exception);
+        }
+
+        $diagram->refresh();
+        $this->assertSame($previousSchema, $diagram->schema);
+        $this->assertSame($previousValueTypes, $diagram->value_types);
+        $this->assertSame(ImportStatus::FAILED, $diagram->import_status);
+        $this->assertSame('Unsupported Maker import.', $diagram->import_error);
     }
 
     public function test_create_migration_enum_values(): void

@@ -12,7 +12,6 @@ use Tests\TestCase;
 
 class DiagramSharingTest extends TestCase
 {
-
     public function test_visitor_request_is_pending_when_approval_required(): void
     {
         Event::fake();
@@ -103,5 +102,19 @@ class DiagramSharingTest extends TestCase
             ->patchJson('/api/diagrams/shared/'.$diagram->share_token, ['schema' => [['id' => 'node1']]])
             ->assertStatus(200)
             ->assertJsonFragment(['status' => true]);
+    }
+
+    public function test_shared_save_requires_array_schema(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $user->id,
+            'share_access' => 'write',
+        ]);
+
+        $this->actingAs($user, 'sanctum')
+            ->patchJson('/api/diagrams/shared/'.$diagram->share_token, ['schema' => null])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('schema');
     }
 }

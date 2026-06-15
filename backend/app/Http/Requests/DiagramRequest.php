@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\HandlesLargeDiagramSchema;
 use App\Rules\ValueTypeDefinitions;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -14,6 +15,8 @@ use Knuckles\Scribe\Attributes\BodyParam;
 #[BodyParam('db_type', 'string', 'The diagram output type. Allowed: mysql, postgresql, sqlite, oracle, sqlserver, msaccess, ontology.', required: false, example: 'ontology')]
 class DiagramRequest extends FormRequest
 {
+    use HandlesLargeDiagramSchema;
+
     /** @return array<string, mixed> */
     public function rules(): array
     {
@@ -22,7 +25,6 @@ class DiagramRequest extends FormRequest
             'db_type' => ['sometimes', 'string', 'in:mysql,postgresql,sqlite,oracle,sqlserver,msaccess,ontology'],
             'share_access' => ['nullable', 'string', 'in:read,write,per_user'],
             'library' => ['sometimes', 'boolean'],
-            'schema' => ['sometimes', 'nullable', 'array'],
             'value_types' => ['sometimes', 'array', new ValueTypeDefinitions],
         ];
     }
@@ -30,6 +32,8 @@ class DiagramRequest extends FormRequest
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $this->validateDiagramSchema($validator, false, true);
+
             if (! $this->has('value_types')) {
                 return;
             }
@@ -55,8 +59,8 @@ class DiagramRequest extends FormRequest
             }
         }
 
-        foreach ($this->input('schema', []) as $item) {
-            $reference = $item['data']['valueTypeId'] ?? null;
+        foreach ($this->diagramSchema() ?? [] as $item) {
+            $reference = is_array($item) ? ($item['data']['valueTypeId'] ?? null) : null;
             if (is_string($reference) && $reference !== '' && ! isset($ids[$reference])) {
                 $validator->errors()->add('schema', "Schema row references missing value type {$reference}.");
 

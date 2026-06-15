@@ -13,7 +13,6 @@ use Tests\TestCase;
 
 class DiagramControllerTest extends TestCase
 {
-
     private User $user;
 
     private Diagram $diagram;
@@ -133,6 +132,42 @@ class DiagramControllerTest extends TestCase
             ->assertStatus(200)
             ->assertJsonPath('data.schema.0.position.x', 10)
             ->assertJsonMissingPath('data.schema.0.computedPosition');
+    }
+
+    public function test_update_saves_large_nested_schema_without_exhausting_validation_memory(): void
+    {
+        $schema = [];
+        $description = str_repeat('ontology property metadata ', 40);
+
+        for ($index = 0; $index < 6000; $index++) {
+            $schema[] = [
+                'id' => "node-{$index}",
+                'type' => 'table',
+                'position' => ['x' => $index % 100 * 420, 'y' => intdiv($index, 100) * 300],
+                'data' => [
+                    'name' => "ObjectType{$index}",
+                    'description' => $description,
+                    'properties' => [
+                        ['id' => "property-{$index}", 'name' => 'identifier', 'dataType' => 'string'],
+                    ],
+                ],
+            ];
+        }
+
+        $this->auth()
+            ->putJson("/api/diagrams/{$this->diagram->id}", ['schema' => $schema])
+            ->assertStatus(200)
+            ->assertJsonFragment(['status' => true]);
+
+        $this->assertCount(6000, $this->diagram->refresh()->schema);
+    }
+
+    public function test_update_rejects_non_array_schema(): void
+    {
+        $this->auth()
+            ->putJson("/api/diagrams/{$this->diagram->id}", ['schema' => 'invalid'])
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('schema');
     }
 
     public function test_destroy_deletes_diagram(): void

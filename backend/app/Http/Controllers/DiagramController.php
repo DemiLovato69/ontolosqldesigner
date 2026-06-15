@@ -104,7 +104,7 @@ class DiagramController extends Controller
             dbType: isset($validated['db_type']) ? DbType::from($validated['db_type']) : null,
             shareAccess: isset($validated['share_access']) ? DiagramAccess::from($validated['share_access']) : null,
             library: isset($validated['library']) ? (bool) $validated['library'] : null,
-            schema: $validated['schema'] ?? null,
+            schema: $request->exists('schema') ? $request->diagramSchema() : null,
             valueTypes: $validated['value_types'] ?? null,
         );
 
@@ -376,7 +376,7 @@ class DiagramController extends Controller
         if (! $this->sharingService->saveByToken(
             $diagram,
             $request->user(),
-            $validated['schema'],
+            $request->diagramSchema() ?? [],
             $validated['value_types'] ?? null
         )) {
             abort(403);

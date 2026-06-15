@@ -291,7 +291,7 @@ import '@/css/header.css'
 
 const props = defineProps({ isDemo: { type: Boolean, default: false } })
 
-const { updateEdge, addEdges, viewport, screenToFlowCoordinate, flowToScreenCoordinate, findNode, fitView } = useVueFlow()
+const { updateEdge, addEdges, setElements, viewport, screenToFlowCoordinate, flowToScreenCoordinate, findNode, fitView } = useVueFlow()
 const store = useStore()
 store.dispatch('initializeAuth')
 const router = useRouter()
@@ -472,10 +472,15 @@ const importSql = async () => {
         return
     }
 
-    const applySchema = (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null) => {
-        schema.value = schemaJson
+    const applySchema = async (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null) => {
+        // Replace Vue Flow's internal graph instead of relying on v-model
+        // reconciliation, which can retain runtime state for reused node IDs.
+        const restoredSchema = JSON.parse(JSON.stringify(schemaJson))
+        setElements(restoredSchema)
+        schema.value = restoredSchema
         valueTypes.value = importedValueTypes
         if (importedDbType) diagramDbType.value = importedDbType
+        await nextTick()
         focusLargeDiagram()
         importLoading.value = false
         $toast.success('Imported successfully')
@@ -488,7 +493,7 @@ const importSql = async () => {
     }
 
     if (result.status === 'done' && result.schema) {
-        applySchema(result.schema, result.value_types ?? [], result.warnings ?? [], result.db_type)
+        await applySchema(result.schema, result.value_types ?? [], result.warnings ?? [], result.db_type)
         return
     }
 
@@ -506,7 +511,7 @@ const importSql = async () => {
         if (!status) return
         if (status.status === 'done') {
             clearInterval(poll)
-            applySchema(status.schema, status.value_types ?? [], status.warnings ?? [], status.db_type)
+            await applySchema(status.schema, status.value_types ?? [], status.warnings ?? [], status.db_type)
         } else if (status.status === 'failed') {
             clearInterval(poll)
             importLoading.value = false

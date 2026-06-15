@@ -11,30 +11,12 @@ const file = ts.createSourceFile(
 );
 
 const allowedCalls = new Set([
-  "defineAction",
-  "defineCreateInterfaceObjectAction",
   "defineCreateObjectAction",
-  "defineCreateOrModifyObjectAction",
-  "defineDeleteInterfaceObjectAction",
   "defineDeleteObjectAction",
-  "defineInterface",
-  "defineInterfaceLinkConstraint",
   "defineLink",
-  "defineModifyInterfaceObjectAction",
   "defineModifyObjectAction",
   "defineObject",
-  "defineSharedPropertyType",
   "defineValueType",
-  "importOntologyEntity",
-  "importSharedPropertyType",
-]);
-
-const allowedConstants = new Set([
-  "CREATE_INTERFACE_OBJECT_PARAMETER",
-  "CREATE_OR_MODIFY_OBJECT_PARAMETER",
-  "DELETE_OBJECT_PARAMETER",
-  "MODIFY_INTERFACE_OBJECT_PARAMETER",
-  "MODIFY_OBJECT_PARAMETER",
 ]);
 
 const bindings = new Map();
@@ -55,9 +37,23 @@ try {
 function validateImports(statements) {
   for (const statement of statements) {
     if (!ts.isImportDeclaration(statement)) continue;
+    if (statement.importClause?.isTypeOnly) continue;
     if (!ts.isStringLiteral(statement.moduleSpecifier)
       || statement.moduleSpecifier.text !== "@osdk/maker") {
       fail(statement, "Only imports from @osdk/maker are supported");
+    }
+    const clause = statement.importClause;
+    if (!clause || clause.name || !clause.namedBindings
+      || !ts.isNamedImports(clause.namedBindings)) {
+      fail(statement, "Maker imports must use named imports");
+    }
+    for (const element of clause.namedBindings.elements) {
+      if (element.isTypeOnly) continue;
+      const importedName = element.propertyName?.text ?? element.name.text;
+      if (element.name.text !== importedName
+        || (importedName !== "defineOntology" && !allowedCalls.has(importedName))) {
+        fail(element, `Unsupported Maker import "${importedName}"`);
+      }
     }
   }
 }
@@ -143,7 +139,6 @@ function evaluate(node, allowMakerCall = false) {
   if (ts.isIdentifier(node)) {
     if (node.text === "undefined") return undefined;
     if (bindings.has(node.text)) return bindings.get(node.text);
-    if (allowedConstants.has(node.text)) return maker[node.text];
     fail(node, `Unknown identifier "${node.text}"`);
   }
 
@@ -216,29 +211,43 @@ async function readStdin() {
 
 function normalizeOntology(ir) {
   const ontology = ir.ontology ?? {};
+  assertEmptyRecord(ontology.sharedPropertyTypes, "Shared property types are not supported");
+  assertEmptyRecord(ontology.interfaceTypes, "Interfaces are not supported");
+  assertEmptyRecord(ir.importedOntology?.objectTypes, "Imported ontology entities are not supported");
+  assertEmptyRecord(ir.importedOntology?.sharedPropertyTypes, "Imported ontology entities are not supported");
+  assertEmptyRecord(ir.importedOntology?.interfaceTypes, "Imported ontology entities are not supported");
+  assertEmptyRecord(ir.importedOntology?.linkTypes, "Imported ontology entities are not supported");
+  assertEmptyRecord(ir.importedOntology?.actionTypes, "Imported ontology entities are not supported");
+
+  const actionsByObject = normalizeActions(ontology.actionTypes ?? {});
   const objectTypes = Object.entries(ontology.objectTypes ?? {}).map(([key, block]) => {
     const object = block.objectType ?? {};
-    const properties = Object.entries(object.propertyTypes ?? {}).map(([propertyKey, property]) => ({
-      id: property.apiName ?? propertyKey,
-      rid: property.apiName ?? propertyKey,
-      apiName: property.apiName ?? propertyKey,
-      displayMetadata: property.displayMetadata ?? {},
-      baseType: property.type ?? { type: "string" },
-      indexedForSearch: property.indexedForSearch ?? false,
-      valueType: property.valueType,
-      dataConstraints: property.nullability
-        ? { nullability: property.nullability.noNulls ? "NO_NULLS" : "NULLABLE" }
-        : {},
-    }));
+    const objectRid = object.apiName ?? key;
+    const properties = Object.entries(object.propertyTypes ?? {}).map(([propertyKey, property]) => {
+      const apiName = property.apiName ?? propertyKey;
+      return {
+        id: apiName,
+        rid: propertyRid(objectRid, apiName),
+        apiName,
+        displayMetadata: property.displayMetadata ?? {},
+        baseType: normalizePropertyBaseType(property.type),
+        indexedForSearch: property.indexedForSearch ?? false,
+        valueType: property.valueType,
+        dataConstraints: property.nullability
+          ? { nullability: property.nullability.noNulls ? "NO_NULLS" : "NULLABLE" }
+          : {},
+      };
+    });
 
     return {
-      id: object.apiName ?? key,
-      rid: object.apiName ?? key,
-      apiName: object.apiName ?? key,
+      id: objectRid,
+      rid: objectRid,
+      apiName: objectRid,
       displayMetadata: object.displayMetadata ?? {},
       titlePropertyId: object.titlePropertyTypeRid,
       primaryKeys: object.primaryKeys ?? [],
       properties,
+      ontologyActions: actionsByObject.get(objectRid) ?? emptyActions(),
     };
   });
 
@@ -247,11 +256,17 @@ function normalizeOntology(ir) {
     const definition = link.definition ?? {};
     if (definition.type === "oneToMany") {
       const oneToMany = definition.oneToMany ?? {};
+      const oneRid = oneToMany.objectTypeRidOneSide;
+      const manyRid = oneToMany.objectTypeRidManySide;
       const mapping = {};
+      let manySideForeignKeyPropertyId = oneToMany.manySideForeignKeyPropertyId;
       for (const entry of oneToMany.oneSidePrimaryKeyToManySidePropertyMapping ?? []) {
         const from = entry?.from?.apiName;
         const to = entry?.to?.apiName;
-        if (from && to) mapping[from] = to;
+        if (oneRid && manyRid && from && to) {
+          mapping[propertyRid(oneRid, from)] = propertyRid(manyRid, to);
+          manySideForeignKeyPropertyId ??= to;
+        }
       }
       return {
         id: link.id ?? key,
@@ -261,7 +276,7 @@ function normalizeOntology(ir) {
           oneToMany: {
             ...oneToMany,
             oneSidePrimaryKeyToManySidePropertyMapping: mapping,
-            manySideForeignKeyPropertyId: Object.values(mapping)[0],
+            manySideForeignKeyPropertyId,
           },
         },
       };
@@ -287,5 +302,163 @@ function normalizeOntology(ir) {
     };
   });
 
-  return { objectTypes, relations, valueTypes };
+  const normalized = { objectTypes, relations, valueTypes };
+  validateNormalizedOntology(normalized);
+  return normalized;
+}
+
+function normalizeActions(actionTypes) {
+  const actions = new Map();
+  for (const [key, block] of Object.entries(actionTypes)) {
+    const action = block.actionType ?? {};
+    const rules = action.actionTypeLogic?.logic?.rules ?? [];
+    if (rules.length !== 1) {
+      throw new Error(`Unsupported Maker action "${key}"`);
+    }
+    const rule = rules[0];
+    let objectRid;
+    let actionName;
+    if (rule.type === "addObjectRule") {
+      objectRid = rule.addObjectRule?.objectTypeId;
+      actionName = "create";
+    } else if (rule.type === "modifyObjectRule") {
+      objectRid = affectedObject(action);
+      actionName = "modify";
+    } else if (rule.type === "deleteObjectRule") {
+      objectRid = affectedObject(action);
+      actionName = "delete";
+    } else {
+      throw new Error(`Unsupported Maker action "${key}"`);
+    }
+    if (!objectRid) {
+      throw new Error(`Maker action "${key}" does not reference an object type`);
+    }
+    const objectActions = actions.get(objectRid) ?? emptyActions();
+    objectActions[actionName] = true;
+    actions.set(objectRid, objectActions);
+  }
+  return actions;
+}
+
+function affectedObject(action) {
+  const affected = action.metadata?.entities?.affectedObjectTypes ?? [];
+  return affected.length === 1 ? affected[0] : undefined;
+}
+
+function emptyActions() {
+  return { create: false, modify: false, delete: false };
+}
+
+function propertyRid(objectRid, propertyApiName) {
+  return `${objectRid}::${propertyApiName}`;
+}
+
+function normalizePropertyBaseType(baseType) {
+  if (!baseType || typeof baseType !== "object") {
+    return { type: "string" };
+  }
+  if (baseType.type !== "array") {
+    return baseType;
+  }
+  const subType = baseType.array?.subtype ?? baseType.array?.subType;
+  return {
+    type: "array",
+    subType: normalizePropertyBaseType(subType),
+  };
+}
+
+function assertEmptyRecord(record, message) {
+  if (record && Object.keys(record).length > 0) {
+    throw new Error(message);
+  }
+}
+
+function validateNormalizedOntology(ontology) {
+  const objectRids = new Set();
+  const propertyRids = new Set();
+  const propertiesByObject = new Map();
+
+  for (const object of ontology.objectTypes) {
+    if (!object.rid || objectRids.has(object.rid)) {
+      throw new Error(`Duplicate or missing object type identifier "${object.rid ?? ""}"`);
+    }
+    objectRids.add(object.rid);
+    const localProperties = new Set();
+    for (const property of object.properties) {
+      if (!property.apiName || localProperties.has(property.apiName)) {
+        throw new Error(`Duplicate or missing property "${property.apiName ?? ""}" on object "${object.apiName}"`);
+      }
+      if (!property.rid || propertyRids.has(property.rid)) {
+        throw new Error(`Duplicate property identifier "${property.rid ?? ""}"`);
+      }
+      localProperties.add(property.apiName);
+      propertyRids.add(property.rid);
+    }
+    propertiesByObject.set(object.rid, localProperties);
+    if (object.titlePropertyId && !localProperties.has(object.titlePropertyId)) {
+      throw new Error(`Title property "${object.titlePropertyId}" was not found on object "${object.apiName}"`);
+    }
+    for (const primaryKey of object.primaryKeys) {
+      if (!localProperties.has(primaryKey)) {
+        throw new Error(`Primary key "${primaryKey}" was not found on object "${object.apiName}"`);
+      }
+    }
+  }
+
+  const relationRids = new Set();
+  for (const relation of ontology.relations) {
+    if (!relation.rid || relationRids.has(relation.rid)) {
+      throw new Error(`Duplicate or missing relation identifier "${relation.rid ?? ""}"`);
+    }
+    relationRids.add(relation.rid);
+    const definition = relation.definition ?? {};
+    if (definition.type === "oneToMany") {
+      const link = definition.oneToMany ?? {};
+      validateObjectReference(objectRids, link.objectTypeRidOneSide, relation.rid);
+      validateObjectReference(objectRids, link.objectTypeRidManySide, relation.rid);
+      const mapping = link.oneSidePrimaryKeyToManySidePropertyMapping ?? {};
+      if (Object.keys(mapping).length === 0) {
+        throw new Error(`Relation "${relation.rid}" has no property mapping`);
+      }
+      for (const [from, to] of Object.entries(mapping)) {
+        if (!propertyRids.has(from) || !propertyRids.has(to)) {
+          throw new Error(`Relation "${relation.rid}" references an unknown property`);
+        }
+      }
+      if (!propertiesByObject.get(link.objectTypeRidManySide)?.has(link.manySideForeignKeyPropertyId)) {
+        throw new Error(`Relation "${relation.rid}" references an unknown foreign key property`);
+      }
+    } else if (definition.type === "manyToMany") {
+      const link = definition.manyToMany ?? {};
+      validateObjectReference(objectRids, link.objectTypeRidA, relation.rid);
+      validateObjectReference(objectRids, link.objectTypeRidB, relation.rid);
+    } else {
+      throw new Error(`Unsupported relation type "${definition.type ?? ""}"`);
+    }
+  }
+
+  const valueTypeNames = new Set();
+  for (const valueType of ontology.valueTypes) {
+    if (!valueType.apiName || valueTypeNames.has(valueType.apiName)) {
+      throw new Error(`Duplicate or missing value type identifier "${valueType.apiName ?? ""}"`);
+    }
+    valueTypeNames.add(valueType.apiName);
+  }
+
+  for (const [objectRid, actions] of actionsByObjectEntries(ontology.objectTypes)) {
+    if (!objectRids.has(objectRid)
+      || !["create", "modify", "delete"].every((key) => typeof actions[key] === "boolean")) {
+      throw new Error(`Invalid actions for object "${objectRid}"`);
+    }
+  }
+}
+
+function validateObjectReference(objectRids, objectRid, relationRid) {
+  if (!objectRid || !objectRids.has(objectRid)) {
+    throw new Error(`Relation "${relationRid}" references unknown object "${objectRid ?? ""}"`);
+  }
+}
+
+function actionsByObjectEntries(objectTypes) {
+  return objectTypes.map((object) => [object.rid, object.ontologyActions]);
 }
