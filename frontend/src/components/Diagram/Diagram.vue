@@ -96,6 +96,8 @@
                 @node-mouse-leave="onNodeMouseLeave"
                 :is-valid-connection="isValidConnection"
                 v-model="schema"
+                :min-zoom="0.01"
+                :max-zoom="4"
                 :fit-view-on-init="!isLargeDiagram"
                 only-render-visible-elements
                 :zoomOnDoubleClick="false"
