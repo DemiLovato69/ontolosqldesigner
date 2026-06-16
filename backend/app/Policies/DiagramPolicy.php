@@ -27,12 +27,12 @@ class DiagramPolicy
 
     public function import(User $user, Diagram $diagram): bool
     {
-        return $this->ownsDiagram($user, $diagram);
+        return app(DiagramSharingService::class)->canWrite($diagram, $user);
     }
 
     public function export(User $user, Diagram $diagram): bool
     {
-        return $this->ownsDiagram($user, $diagram);
+        return app(DiagramSharingService::class)->canRead($diagram, $user);
     }
 
     public function viewChangelog(User $user, Diagram $diagram): bool

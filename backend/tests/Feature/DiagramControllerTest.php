@@ -644,7 +644,7 @@ class DiagramControllerTest extends TestCase
             ->assertJsonPath('message', 'Import file must be between 1 byte and 2GB.');
     }
 
-    public function test_chunked_import_requires_owner_access(): void
+    public function test_chunked_import_requires_write_access(): void
     {
         Storage::fake('imports');
         $otherUser = User::factory()->create(['email_verified_at' => now()]);
@@ -656,6 +656,48 @@ class DiagramControllerTest extends TestCase
                 'chunk_size' => 10,
                 'chunks_total' => 1,
             ])
+            ->assertForbidden();
+    }
+
+    public function test_shared_writer_can_import(): void
+    {
+        Queue::fake();
+        Event::fake();
+
+        $owner = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $owner->id,
+            'share_access' => 'per_user',
+        ]);
+        DiagramVisitor::factory()->create([
+            'diagram_id' => $diagram->id,
+            'user_id' => $this->user->id,
+            'status' => 'approved',
+            'access' => 'write',
+        ]);
+
+        $this->auth()
+            ->postJson("/api/diagrams/sql/import/{$diagram->id}", ['script' => 'CREATE TABLE t (id INT);'])
+            ->assertStatus(202)
+            ->assertJsonPath('status', 'pending');
+    }
+
+    public function test_shared_reader_cannot_import(): void
+    {
+        $owner = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $owner->id,
+            'share_access' => 'per_user',
+        ]);
+        DiagramVisitor::factory()->create([
+            'diagram_id' => $diagram->id,
+            'user_id' => $this->user->id,
+            'status' => 'approved',
+            'access' => 'read',
+        ]);
+
+        $this->auth()
+            ->postJson("/api/diagrams/sql/import/{$diagram->id}", ['script' => 'CREATE TABLE t (id INT);'])
             ->assertForbidden();
     }
 
@@ -696,6 +738,45 @@ class DiagramControllerTest extends TestCase
             ->postJson("/api/diagrams/sql/export/{$this->diagram->id}")
             ->assertStatus(202)
             ->assertJsonFragment(['status' => 'pending']);
+    }
+
+    public function test_shared_writer_can_export(): void
+    {
+        Queue::fake();
+
+        $owner = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $owner->id,
+            'share_access' => 'per_user',
+        ]);
+        DiagramVisitor::factory()->create([
+            'diagram_id' => $diagram->id,
+            'user_id' => $this->user->id,
+            'status' => 'approved',
+            'access' => 'write',
+        ]);
+
+        $this->auth()
+            ->postJson("/api/diagrams/sql/export/{$diagram->id}")
+            ->assertStatus(202)
+            ->assertJsonPath('status', 'pending');
+    }
+
+    public function test_public_reader_can_export(): void
+    {
+        Queue::fake();
+
+        $owner = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $owner->id,
+            'share_access' => 'read',
+            'library' => true,
+        ]);
+
+        $this->auth()
+            ->postJson("/api/diagrams/sql/export/{$diagram->id}")
+            ->assertStatus(202)
+            ->assertJsonPath('status', 'pending');
     }
 
     public function test_export_status_returns_status(): void
