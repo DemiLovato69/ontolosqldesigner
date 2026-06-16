@@ -28,15 +28,21 @@ COPY docker/app/start-web.sh /usr/local/bin/start-web
 RUN chmod +x /usr/local/bin/start-web
 
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 WORKDIR /var/www/html/backend
 COPY backend/composer.json backend/composer.lock* ./
 RUN composer install --no-interaction --prefer-dist --no-scripts --no-autoloader --no-dev
 
 COPY backend ./
-RUN composer dump-autoload --optimize --no-dev \
-    && mkdir -p storage/framework/{sessions,views,cache} storage/logs bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+RUN mkdir -p storage/framework/sessions \
+    storage/framework/views \
+    storage/framework/cache \
+    storage/logs \
+    bootstrap/cache \
+    && rm -f bootstrap/cache/*.php \
+    && chmod -R 775 storage bootstrap/cache \
+    && composer dump-autoload --optimize --no-dev
 
 COPY maker-runtime/package.json maker-runtime/package-lock.json /opt/ontolosql-maker/
 RUN cd /opt/ontolosql-maker && npm ci --omit=dev
