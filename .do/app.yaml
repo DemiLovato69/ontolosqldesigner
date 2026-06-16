@@ -21,7 +21,7 @@ envs:
 
   - key: LOG_CHANNEL
     scope: RUN_AND_BUILD_TIME
-    value: stack
+    value: stderr
   - key: LOG_LEVEL
     scope: RUN_AND_BUILD_TIME
     value: error

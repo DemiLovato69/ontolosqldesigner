@@ -41,6 +41,7 @@ RUN mkdir -p storage/framework/sessions \
     storage/logs \
     bootstrap/cache \
     && rm -f bootstrap/cache/*.php \
+    && chown -R www-data:www-data storage bootstrap/cache \
     && chmod -R 775 storage bootstrap/cache \
     && composer dump-autoload --optimize --no-dev
 
