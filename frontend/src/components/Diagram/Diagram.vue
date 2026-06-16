@@ -333,8 +333,11 @@ const tables = computed(() => schema.value.filter(el => el.type === 'table'))
 const tableSearch = ref('')
 const filteredTables = computed(() => {
     const q = tableSearch.value.trim().toLowerCase()
-    if (!q) return tables.value
-    return tables.value.filter(table => (table.label ?? '').toLowerCase().includes(q))
+    const list = q
+        ? tables.value.filter(table => (table.label ?? '').toLowerCase().includes(q))
+        : tables.value
+
+    return [...list].sort((a, b) => (a.label ?? '').localeCompare(b.label ?? '', undefined, { sensitivity: 'base' }))
 })
 const tableById = computed(() => new Map(tables.value.map(table => [table.id, table])))
 const rowsByTableId = computed(() => {
@@ -910,12 +913,15 @@ onUnmounted(() => {
 
 .schema-sidebar__item {
     width: 100%;
+    flex: 0 0 auto;
+    min-height: 32px;
     padding: 7px 8px;
     border: none;
     border-radius: 4px;
     background: none;
     color: var(--text-primary);
     font-size: 13px;
+    line-height: 18px;
     cursor: pointer;
     text-align: left;
     white-space: nowrap;
