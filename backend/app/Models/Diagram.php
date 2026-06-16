@@ -101,4 +101,10 @@ class Diagram extends Model
     {
         return $this->hasMany(DiagramVisitor::class);
     }
+
+    /** @return HasMany<DiagramInvite, $this> */
+    public function invites(): HasMany
+    {
+        return $this->hasMany(DiagramInvite::class);
+    }
 }

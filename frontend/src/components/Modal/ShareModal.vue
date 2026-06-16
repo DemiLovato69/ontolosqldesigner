@@ -34,29 +34,62 @@
                     <template v-else>Anyone with this link can {{ shareAccess === 'write' ? 'edit' : 'view' }} this diagram.</template>
                 </p>
 
-                <div v-if="shareAccess" class="share-modal__embed">
-                    <span class="share-modal__toggle-label">Embed</span>
-                    <div class="share-modal__embed-body">
-                        <div class="share-modal__embed-code-row">
-                            <textarea class="share-modal__link-input share-modal__embed-input" :value="embedCode" readonly rows="3"></textarea>
-                            <button class="btn btn-primary share-modal__copy-btn share-modal__embed-copy-btn" @click="copyEmbed">{{ copiedEmbed ? 'Copied!' : 'Copy' }}</button>
+                <div v-if="shareAccess" class="share-modal__email-shares">
+                    <span class="share-modal__toggle-label">Shared with emails</span>
+                    <div class="share-modal__email-entry">
+                        <div class="share-modal__email-input-wrap">
+                            <input
+                                v-model.trim="inviteEmail"
+                                class="share-modal__link-input"
+                                type="email"
+                                list="share-email-suggestions"
+                                placeholder="coworker@example.com"
+                                @input="searchEmails"
+                                @keyup.enter="addInvite"
+                            />
+                            <datalist id="share-email-suggestions">
+                                <option v-for="email in emailSuggestions" :key="email" :value="email" />
+                            </datalist>
                         </div>
-                        <p class="share-modal__hint">The link to my site is optional — but if you include it, your diagram gets featured in the <a href="/library" target="_blank" style="  color: var(--color-primary-text);
-    cursor: pointer;
-    text-decoration: underline;">Schema Library</a> with a backlink to your site.</p>
+                        <select v-model="inviteAccess" class="share-modal__access-select">
+                            <option value="read">Read</option>
+                            <option value="write">Write</option>
+                        </select>
+                        <button class="btn btn-primary share-modal__add-email-btn" type="button" @click="addInvite" :disabled="loading || !inviteEmail">Add</button>
+                    </div>
+                    <p class="share-modal__hint">Add existing users or any email address. Existing users will see the diagram in Shared With Me.</p>
+                    <div v-if="invitesLoading" class="share-modal__visitors-empty">Loading…</div>
+                    <div v-else-if="invites.length === 0" class="share-modal__visitors-empty">No email shares yet.</div>
+                    <div v-else class="share-modal__email-list">
+                        <div v-for="invite in invites" :key="invite.email" class="share-modal__email-row">
+                            <span class="share-modal__email-address">{{ invite.email }}</span>
+                            <div class="share-modal__visitor-actions">
+                                <button
+                                    class="share-modal__vbtn"
+                                    :class="{ 'share-modal__vbtn--active': invite.access === 'write' }"
+                                    @click="setInviteAccess(invite, 'write')"
+                                    :disabled="loading"
+                                >Write</button>
+                                <button
+                                    class="share-modal__vbtn"
+                                    :class="{ 'share-modal__vbtn--active': invite.access === 'read' }"
+                                    @click="setInviteAccess(invite, 'read')"
+                                    :disabled="loading"
+                                >Read</button>
+                                <button class="share-modal__vbtn share-modal__vbtn--revoke" @click="removeInvite(invite)" :disabled="loading">Remove</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
                 <div v-if="shareAccess" class="share-modal__approval-row">
                     <label class="share-modal__checkbox-label">
                         <input type="checkbox" class="share-modal__checkbox" :checked="inLibrary" @change="toggleLibrary" :disabled="loading" />
-                        <span>Share in library</span>
+                        <span>Show in Company Wide Diagrams</span>
                     </label>
                     <span class="share-modal__help-icon">
                         ?
-                        <span class="share-modal__tooltip">When enabled, this diagram appears in read-only mode in the public <a href="/library" target="_blank" style="color: var(--color-primary-text);
-    cursor: pointer;
-    text-decoration: underline;">Schema Library</a> for anyone to browse.</span>
+                        <span class="share-modal__tooltip">When enabled, logged-in users can find this diagram in Company Wide Diagrams. It remains read-only unless access is set to Can edit.</span>
                     </span>
                 </div>
 
@@ -141,16 +174,32 @@ const emit = defineEmits(['close', 'save', 'update:shareAccess', 'update:require
 
 const loading = ref(false)
 const copied = ref(false)
-const copiedEmbed = ref(false)
 const visitors = ref([])
 const visitorsLoading = ref(false)
+const invites = ref([])
+const invitesLoading = ref(false)
+const inviteEmail = ref('')
+const inviteAccess = ref('read')
+const emailSuggestions = ref([])
 const shareUrl = computed(() => `${window.location.origin}/diagrams/${props.token}`)
-const embedCode = computed(() => `<iframe src="${window.location.origin}/embed/${props.token}" width="100%" height="500" allowfullscreen></iframe>\n<p>Created with <a href="https://sql-designer.com">SQL Designer</a> — free online database schema designer</p>`)
 
 const fetchVisitors = async () => {
     visitorsLoading.value = true
     visitors.value = await Diagram.getVisitors(props.diagramId) ?? []
     visitorsLoading.value = false
+}
+
+const fetchInvites = async () => {
+    invitesLoading.value = true
+    invites.value = await Diagram.getInvites(props.diagramId) ?? []
+    invitesLoading.value = false
+}
+
+const syncInvites = async () => {
+    loading.value = true
+    const result = await Diagram.updateInvites(props.diagramId, invites.value.map(({ email, access }) => ({ email, access })))
+    if (result) invites.value = result
+    loading.value = false
 }
 
 watch(visitors, (v) => {
@@ -159,7 +208,12 @@ watch(visitors, (v) => {
 
 watch(
     () => props.shareAccess,
-    (active) => { if (active) fetchVisitors() },
+    (active) => {
+        if (active) {
+            fetchVisitors()
+            fetchInvites()
+        }
+    },
     { immediate: true }
 )
 
@@ -179,7 +233,11 @@ const toggleShare = async () => {
 const setAccessMode = async (mode) => {
     loading.value = true
     const result = await Diagram.setAccessMode(props.diagramId, mode)
-    if (result) emit('update:shareAccess', result.share_access)
+    if (result) {
+        emit('update:shareAccess', result.share_access)
+        emit('update:requireApproval', result.require_approval)
+        emit('update:inLibrary', result.library)
+    }
     loading.value = false
 }
 
@@ -214,12 +272,6 @@ const copyLink = async () => {
     setTimeout(() => { copied.value = false }, 2000)
 }
 
-const copyEmbed = async () => {
-    await navigator.clipboard.writeText(embedCode.value)
-    copiedEmbed.value = true
-    setTimeout(() => { copiedEmbed.value = false }, 2000)
-}
-
 const toggleLibrary = async (event) => {
     loading.value = true
     const value = event.target.checked
@@ -227,8 +279,42 @@ const toggleLibrary = async (event) => {
     if (result) {
         emit('update:inLibrary', result.library)
         emit('update:shareAccess', result.share_access)
+        emit('update:requireApproval', result.require_approval)
     }
     loading.value = false
+}
+
+const searchEmails = async () => {
+    if (inviteEmail.value.length < 2) {
+        emailSuggestions.value = []
+        return
+    }
+    emailSuggestions.value = await Diagram.searchShareUsers(inviteEmail.value) ?? []
+}
+
+const addInvite = async () => {
+    const email = inviteEmail.value.trim().toLowerCase()
+    if (!email || !email.includes('@')) return
+    const existing = invites.value.find(item => item.email === email)
+    if (existing) {
+        existing.access = inviteAccess.value
+    } else {
+        invites.value = [...invites.value, { email, access: inviteAccess.value }]
+    }
+    inviteEmail.value = ''
+    inviteAccess.value = 'read'
+    emailSuggestions.value = []
+    await syncInvites()
+}
+
+const setInviteAccess = async (invite, access) => {
+    invite.access = access
+    await syncInvites()
+}
+
+const removeInvite = async (invite) => {
+    invites.value = invites.value.filter(item => item.email !== invite.email)
+    await syncInvites()
 }
 </script>
 
@@ -428,8 +514,8 @@ const toggleLibrary = async (event) => {
     line-height: 1.4;
 }
 
-/* Embed section */
-.share-modal__embed {
+/* Email share section */
+.share-modal__email-shares {
     border-top: 1px solid var(--border-color);
     padding-top: 1rem;
     display: flex;
@@ -437,27 +523,54 @@ const toggleLibrary = async (event) => {
     gap: 0.75rem;
 }
 
-.share-modal__embed-body {
-    display: flex;
-    flex-direction: column;
+.share-modal__email-entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 92px auto;
     gap: 0.5rem;
 }
 
-.share-modal__embed-code-row {
+.share-modal__email-input-wrap {
+    min-width: 0;
+}
+
+.share-modal__access-select {
+    padding: 0.4rem 0.45rem;
+    color: var(--text-subtle);
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.share-modal__add-email-btn {
+    padding: 0.4rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.share-modal__email-list {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.45rem;
 }
 
-.share-modal__embed-input {
-    font-family: monospace;
-    font-size: 0.68rem;
-    resize: none;
-    line-height: 1.5;
+.share-modal__email-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.55rem 0.65rem;
+    background: var(--bg-surface-alt);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
 }
 
-.share-modal__embed-copy-btn {
-    align-self: flex-end;
+.share-modal__email-address {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--text-subtle);
+    font-size: 0.78rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Approval checkbox row */
@@ -622,6 +735,19 @@ const toggleLibrary = async (event) => {
     border-color: #ef4444;
     background: color-mix(in srgb, #ef4444 10%, transparent);
     color: #ef4444;
+}
+
+@media (max-width: 640px) {
+    .share-modal__email-entry,
+    .share-modal__email-row {
+        display: flex;
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .share-modal__visitor-actions {
+        flex-wrap: wrap;
+    }
 }
 
 </style>

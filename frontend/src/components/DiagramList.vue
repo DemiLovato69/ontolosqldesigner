@@ -5,66 +5,170 @@
         </div>
 
         <div class="diagrams-grid-container">
-            <div class="diagrams-grid">
-                <!-- New diagram card -->
-                <div class="diagram-card diagram-card--new" @click="openNewForm">
-                    <div class="diagram-card__preview diagram-card__preview--empty">
-                        <SvgIcon name="plus" :size="40" class="new-diagram-plus" />
-                    </div>
-                    <div class="diagram-card__footer">
-                        <span class="diagram-card__name">New Diagram</span>
-                    </div>
+            <section class="diagram-section">
+                <div class="diagram-section__header">
+                    <button class="diagram-section__toggle" type="button" @click="toggleSection('owned')">
+                        <span>{{ collapsedSections.owned ? '▸' : '▾' }}</span>
+                        <h3>My Diagrams</h3>
+                        <small>{{ filteredOwnedDiagrams.length }}</small>
+                    </button>
+                    <input v-model="sectionSearch.owned" class="diagram-section__search" type="search" placeholder="Search my diagrams" />
                 </div>
+                <div v-show="!collapsedSections.owned" class="diagrams-grid">
+                    <!-- New diagram card -->
+                    <div class="diagram-card diagram-card--new" @click="openNewForm">
+                        <div class="diagram-card__preview diagram-card__preview--empty">
+                            <SvgIcon name="plus" :size="40" class="new-diagram-plus" />
+                        </div>
+                        <div class="diagram-card__footer">
+                            <span class="diagram-card__name">New Diagram</span>
+                        </div>
+                    </div>
 
-                <!-- Existing diagrams -->
-                <div
-                    v-for="diagram in diagrams"
-                    :key="diagram.id"
-                    class="diagram-card"
-                    @click="viewDiagram(diagram.share_token)"
-                >
-                    <div class="diagram-card__preview">
-                        <DiagramPreview :schema="diagram.schema" />
-                        <button
-                            class="diagram-card__delete"
-                            @click.stop="deleteDiagram(diagram.id)"
-                            title="Delete"
-                        >
-                            <SvgIcon name="trash" :size="14" />
-                        </button>
-                    </div>
-                    <div class="diagram-card__footer">
-                        <img
-                            :src="dbIcons[diagram.db_type] || dbIcons.mysql"
-                            :alt="diagram.db_type"
-                            class="diagram-card__db-icon"
-                        />
-                        <input
-                            v-if="renamingId === diagram.id"
-                            ref="renameInput"
-                            v-model="diagram.name"
-                            class="diagram-card__name-input"
-                            @click.stop
-                            @keyup.enter="commitRename(diagram)"
-                            @keyup.escape="cancelRename(diagram)"
-                            @blur="commitRename(diagram)"
-                        />
-                        <span
-                            v-else
-                            class="diagram-card__name"
-                            title="Open diagram"
-                        >{{ diagram.name }}</span>
-                        <button
-                            v-if="renamingId !== diagram.id"
-                            class="diagram-card__rename"
-                            @click.stop="startRename(diagram)"
-                            title="Rename"
-                        >
-                            <SvgIcon name="edit" :size="13" />
-                        </button>
+                    <div
+                        v-for="diagram in filteredOwnedDiagrams"
+                        :key="`owned-${diagram.id}`"
+                        class="diagram-card"
+                        @click="viewDiagram(diagram.share_token)"
+                    >
+                        <div class="diagram-card__preview">
+                            <DiagramPreview :schema="diagram.schema" />
+                            <span
+                                v-if="visibilityStatus(diagram)"
+                                class="diagram-card__visibility"
+                                :class="`diagram-card__visibility--${visibilityStatus(diagram).kind}`"
+                                :title="visibilityStatus(diagram).title"
+                                :aria-label="visibilityStatus(diagram).title"
+                            >
+                                <SvgIcon :name="visibilityStatus(diagram).icon" :size="14" />
+                            </span>
+                            <button
+                                class="diagram-card__delete"
+                                @click.stop="deleteDiagram(diagram.id)"
+                                title="Delete"
+                            >
+                                <SvgIcon name="trash" :size="14" />
+                            </button>
+                        </div>
+                        <div class="diagram-card__footer">
+                            <img
+                                :src="dbIcons[diagram.db_type] || dbIcons.mysql"
+                                :alt="diagram.db_type"
+                                class="diagram-card__db-icon"
+                            />
+                            <input
+                                v-if="renamingId === diagram.id"
+                                ref="renameInput"
+                                v-model="diagram.name"
+                                class="diagram-card__name-input"
+                                @click.stop
+                                @keyup.enter="commitRename(diagram)"
+                                @keyup.escape="cancelRename(diagram)"
+                                @blur="commitRename(diagram)"
+                            />
+                            <span
+                                v-else
+                                class="diagram-card__name"
+                                title="Open diagram"
+                            >{{ diagram.name }}</span>
+                            <button
+                                v-if="renamingId !== diagram.id"
+                                class="diagram-card__rename"
+                                @click.stop="startRename(diagram)"
+                                title="Rename"
+                            >
+                                <SvgIcon name="edit" :size="13" />
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </section>
+
+            <section class="diagram-section">
+                <div class="diagram-section__header">
+                    <button class="diagram-section__toggle" type="button" @click="toggleSection('shared')">
+                        <span>{{ collapsedSections.shared ? '▸' : '▾' }}</span>
+                        <h3>Shared With Me</h3>
+                        <small>{{ filteredSharedDiagrams.length }}</small>
+                    </button>
+                    <input v-model="sectionSearch.shared" class="diagram-section__search" type="search" placeholder="Search shared diagrams" />
+                </div>
+                <div v-show="!collapsedSections.shared" class="diagrams-grid">
+                    <p v-if="!filteredSharedDiagrams.length" class="diagram-section__empty">No shared diagrams found.</p>
+                    <div
+                        v-for="diagram in filteredSharedDiagrams"
+                        :key="`shared-${diagram.id}`"
+                        class="diagram-card"
+                        @click="viewDiagram(diagram.share_token)"
+                    >
+                        <div class="diagram-card__preview">
+                            <DiagramPreview :schema="diagram.schema" />
+                            <span
+                                v-if="visibilityStatus(diagram)"
+                                class="diagram-card__visibility"
+                                :class="`diagram-card__visibility--${visibilityStatus(diagram).kind}`"
+                                :title="visibilityStatus(diagram).title"
+                                :aria-label="visibilityStatus(diagram).title"
+                            >
+                                <SvgIcon :name="visibilityStatus(diagram).icon" :size="14" />
+                            </span>
+                            <span class="diagram-card__badge">{{ accessLabel(diagram) }}</span>
+                            <button class="diagram-card__duplicate" @click.stop="duplicateDiagram(diagram)" title="Duplicate">
+                                <SvgIcon name="copy" :size="13" />
+                            </button>
+                        </div>
+                        <div class="diagram-card__footer">
+                            <img :src="dbIcons[diagram.db_type] || dbIcons.mysql" :alt="diagram.db_type" class="diagram-card__db-icon" />
+                            <span class="diagram-card__name" :title="diagram.owner_email ? `Shared by ${diagram.owner_email}` : 'Shared diagram'">{{ diagram.name }}</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="diagram-section">
+                <div class="diagram-section__header">
+                    <button class="diagram-section__toggle" type="button" @click="toggleSection('public')">
+                        <span>{{ collapsedSections.public ? '▸' : '▾' }}</span>
+                        <h3>Company Wide Diagrams</h3>
+                        <small>{{ filteredPublicDiagrams.length }}</small>
+                    </button>
+                    <input v-model="sectionSearch.public" class="diagram-section__search" type="search" placeholder="Search company diagrams" />
+                </div>
+                <div v-show="!collapsedSections.public" class="diagrams-grid">
+                    <p v-if="!filteredPublicDiagrams.length" class="diagram-section__empty">No company wide diagrams found.</p>
+                    <div
+                        v-for="diagram in filteredPublicDiagrams"
+                        :key="`public-${diagram.id}`"
+                        class="diagram-card"
+                        @click="viewDiagram(diagram.share_token)"
+                    >
+                        <div class="diagram-card__preview">
+                            <DiagramPreview :schema="diagram.schema" />
+                            <span
+                                v-if="visibilityStatus(diagram)"
+                                class="diagram-card__visibility"
+                                :class="`diagram-card__visibility--${visibilityStatus(diagram).kind}`"
+                                :title="visibilityStatus(diagram).title"
+                                :aria-label="visibilityStatus(diagram).title"
+                            >
+                                <SvgIcon :name="visibilityStatus(diagram).icon" :size="14" />
+                            </span>
+                            <span class="diagram-card__badge">{{ accessLabel(diagram) }}</span>
+                            <button class="diagram-card__duplicate" @click.stop="duplicateDiagram(diagram)" title="Duplicate">
+                                <SvgIcon name="copy" :size="13" />
+                            </button>
+                        </div>
+                        <div class="diagram-card__footer">
+                            <img :src="dbIcons[diagram.db_type] || dbIcons.mysql" :alt="diagram.db_type" class="diagram-card__db-icon" />
+                            <span class="diagram-card__name" :title="diagram.owner_email ? `Published by ${diagram.owner_email}` : 'Company wide diagram'">{{ diagram.name }}</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <p v-if="!ownedDiagrams.length && !sharedDiagrams.length && !publicDiagrams.length" class="diagrams-empty-state">
+                Create your first diagram or browse shared company diagrams when your coworkers publish them.
+            </p>
         </div>
 
         <!-- New Diagram Modal -->
@@ -124,13 +228,9 @@
                                 >Private</button>
                             </div>
                             <template v-if="newDiagramPublic">
-                                <label class="create-modal__checkbox-label">
-                                    <input type="checkbox" class="create-modal__checkbox" v-model="newDiagramInLibrary" />
-                                    <span>Add to Library</span>
-                                </label>
                                 <span class="create-modal__help-icon">
                                     ?
-                                    <span class="create-modal__tooltip">When enabled, this diagram appears in read-only mode in the public <a href="/library" target="_blank" style="color: var(--color-primary-text); cursor: pointer; text-decoration: underline;">Schema Library</a> for anyone to browse.</span>
+                                    <span class="create-modal__tooltip">Public diagrams appear in Company Wide Diagrams for logged-in users. They are read-only unless you enable edit access later.</span>
                                 </span>
                             </template>
                         </div>
@@ -150,6 +250,7 @@
 import axios from 'axios'
 import router from '../router/index.js'
 import { useToast } from 'vue-toast-notification'
+import { Diagram as DiagramApi } from '../services/Diagram.js'
 import DiagramPreview from './Diagram/DiagramPreview.vue'
 import SvgIcon from './SvgIcon.vue'
 import mysqlIcon from '../icons/mysql.svg'
@@ -165,11 +266,14 @@ export default {
     components: { DiagramPreview, SvgIcon },
     data() {
         return {
-            diagrams: [],
+            ownedDiagrams: [],
+            sharedDiagrams: [],
+            publicDiagrams: [],
+            collapsedSections: { owned: false, shared: false, public: true },
+            sectionSearch: { owned: '', shared: '', public: '' },
             newDiagramName: '',
             newDiagramDbType: 'ontology',
             newDiagramPublic: false,
-            newDiagramInLibrary: true,
             showNewForm: false,
             renamingId: null,
             originalName: null,
@@ -185,9 +289,54 @@ export default {
             ]
         }
     },
+    computed: {
+        filteredOwnedDiagrams() {
+            return this.filterDiagrams(this.ownedDiagrams, this.sectionSearch.owned)
+        },
+        filteredSharedDiagrams() {
+            return this.filterDiagrams(this.sharedDiagrams, this.sectionSearch.shared)
+        },
+        filteredPublicDiagrams() {
+            return this.filterDiagrams(this.publicDiagrams, this.sectionSearch.public)
+        }
+    },
     methods: {
+        filterDiagrams(diagrams, query) {
+            const q = query.trim().toLowerCase()
+            if (!q) return diagrams
+            return diagrams.filter(diagram => [diagram.name, diagram.owner_email, diagram.db_type]
+                .filter(Boolean)
+                .some(value => String(value).toLowerCase().includes(q)))
+        },
+        toggleSection(section) {
+            this.collapsedSections[section] = !this.collapsedSections[section]
+        },
         viewDiagram(token) {
             router.push({ name: 'diagram.show', params: { token } })
+        },
+        accessLabel(diagram) {
+            return diagram.effective_access === 'write' ? 'Can edit' : 'Read-only'
+        },
+        visibilityStatus(diagram) {
+            if (diagram.library) {
+                return {
+                    kind: 'public',
+                    icon: 'globe',
+                    title: diagram.effective_access === 'write' || diagram.share_access === 'write'
+                        ? 'Company-wide diagram: others can edit'
+                        : 'Company-wide diagram: others can view'
+                }
+            }
+            if (diagram.share_access || diagram.effective_access) {
+                return {
+                    kind: 'shared',
+                    icon: 'share',
+                    title: diagram.effective_access === 'write' || diagram.share_access === 'write'
+                        ? 'Shared diagram: others can edit'
+                        : 'Shared diagram: restricted access'
+                }
+            }
+            return null
         },
         openNewForm() {
             this.showNewForm = true
@@ -203,12 +352,11 @@ export default {
                     name: this.newDiagramName,
                     db_type: this.newDiagramDbType,
                     share_access: this.newDiagramPublic ? 'read' : null,
-                    library: this.newDiagramPublic ? this.newDiagramInLibrary : false
+                    library: this.newDiagramPublic
                 })
                 this.newDiagramName = ''
                 this.newDiagramDbType = 'mysql'
                 this.newDiagramPublic = true
-                this.newDiagramInLibrary = true
                 this.showNewForm = false
                 $toast.success(response.data.message)
                 await router.push({
@@ -235,6 +383,13 @@ export default {
             await this.fetchDiagrams()
             response.status ? $toast.success(response.data.message) : $toast.error(response.data.message)
         },
+        async duplicateDiagram(diagram) {
+            const copy = await DiagramApi.duplicateByToken(diagram.share_token)
+            if (copy?.share_token) {
+                $toast.success('Diagram duplicated')
+                await router.push({ name: 'diagram.show', params: { token: copy.share_token } })
+            }
+        },
         startRename(diagram) {
             this.originalName = diagram.name
             this.renamingId = diagram.id
@@ -259,8 +414,10 @@ export default {
         },
         async fetchDiagrams() {
             try {
-                const response = await axios.get('/api/diagrams')
-                this.diagrams = response.data.data
+                const response = await axios.get('/api/diagrams/dashboard')
+                this.ownedDiagrams = response.data.owned ?? []
+                this.sharedDiagrams = response.data.shared ?? []
+                this.publicDiagrams = response.data.public ?? []
             } catch (error) {
                 if (error.response) {
                     $toast.error(error.response.data.message)
@@ -302,6 +459,54 @@ export default {
 .diagrams-grid-container {
     flex: 1;
     overflow-y: auto;
+    padding-bottom: 2rem;
+}
+
+.diagram-section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.5rem 2rem 0;
+}
+
+.diagram-section__toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0;
+    color: var(--text-secondary);
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+}
+
+.diagram-section__header h3 {
+    margin: 0;
+    color: inherit;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.diagram-section__header small {
+    color: var(--text-muted);
+    font-size: 0.72rem;
+}
+
+.diagram-section__search {
+    width: min(260px, 45vw);
+    padding: 0.45rem 0.6rem;
+    color: var(--text-primary);
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    outline: none;
+}
+
+.diagram-section__search:focus {
+    border-color: var(--color-primary);
 }
 
 .diagrams-grid {
@@ -309,6 +514,23 @@ export default {
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 1.5rem;
     padding: 2rem;
+}
+
+.diagram-section + .diagram-section .diagrams-grid {
+    padding-top: 1rem;
+}
+
+.diagrams-empty-state {
+    margin: 2rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.diagram-section__empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
 }
 
 @media (max-width: 480px) {
@@ -320,6 +542,17 @@ export default {
 
     .diagrams-header {
         padding: 1rem;
+    }
+
+    .diagram-section__header {
+        align-items: stretch;
+        flex-direction: column;
+        gap: 0.75rem;
+        padding: 1.25rem 1rem 0;
+    }
+
+    .diagram-section__search {
+        width: 100%;
     }
 }
 
@@ -412,6 +645,80 @@ export default {
     background: rgba(239, 68, 68, 0.15);
     border-color: rgba(239, 68, 68, 0.35);
     color: #ef4444;
+}
+
+.diagram-card__duplicate {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 26px;
+    height: 26px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    color: var(--text-muted);
+    cursor: pointer;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-light);
+    border-radius: 50%;
+    transition: background 120ms, border-color 120ms, color 120ms;
+}
+
+.diagram-card:hover .diagram-card__duplicate {
+    display: flex;
+}
+
+.diagram-card__duplicate:hover {
+    color: var(--color-primary-text);
+    border-color: var(--color-primary);
+    background: rgba(61, 122, 92, 0.16);
+}
+
+.diagram-card__visibility {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    color: var(--text-secondary);
+    background: rgba(0, 0, 0, 0.48);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
+    pointer-events: none;
+    z-index: 2;
+}
+
+.diagram-card__visibility--public {
+    color: var(--color-primary);
+    border-color: color-mix(in srgb, var(--color-primary) 50%, rgba(255, 255, 255, 0.12));
+    background: color-mix(in srgb, var(--color-primary) 18%, rgba(0, 0, 0, 0.54));
+}
+
+.diagram-card__visibility--shared {
+    color: #93c5fd;
+    border-color: color-mix(in srgb, #60a5fa 45%, rgba(255, 255, 255, 0.12));
+    background: color-mix(in srgb, #60a5fa 16%, rgba(0, 0, 0, 0.54));
+}
+
+.diagram-card__badge {
+    position: absolute;
+    left: 8px;
+    bottom: 8px;
+    padding: 4px 7px;
+    color: var(--text-primary);
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 999px;
+    backdrop-filter: blur(4px);
 }
 
 /* ── Card footer ────────────────────────────────────────────── */

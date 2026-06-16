@@ -544,7 +544,7 @@ CREATE TABLE messages (
         <nav class="related-nav" aria-label="Related articles">
             <p class="related-label">Related Articles</p>
             <ul>
-                <li><a href="/library">SQL Designer Schema Library — ready-made templates &rarr;</a></li>
+                <li><a href="/diagrams">Open SQL Designer — create and browse shared diagrams &rarr;</a></li>
                 <li><a href="/blog/database-normalization">Database Normalization — 1NF, 2NF, 3NF Explained &rarr;</a></li>
                 <li><a href="/blog/mysql-foreign-key">MySQL Foreign Key — Syntax and Best Practices &rarr;</a></li>
                 <li><a href="/blog/crowfoot-notation">Crow's Foot Notation — ER Diagram Cardinality Explained &rarr;</a></li>

@@ -10,6 +10,15 @@
             <button v-if="isOwner || isDemo" class="dh-btn" @click="$emit('export')" title="Export">
                 <SvgIcon name="export" :size="17" />
             </button>
+            <span
+                v-if="sharingStatus"
+                class="dh-share-status"
+                :class="`dh-share-status--${sharingStatus.kind}`"
+                :title="sharingStatus.title"
+                :aria-label="sharingStatus.title"
+            >
+                <SvgIcon :name="sharingStatus.icon" :size="15" />
+            </span>
             <span v-if="!isOwner && !isDemo" class="dh-name">{{ diagramName }}</span>
         </div>
         <div class="dh-group">
@@ -50,18 +59,44 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import SvgIcon from '../SvgIcon.vue'
 
-defineProps({
+const props = defineProps({
     canEdit: Boolean,
     isOwner: Boolean,
     isDemo: Boolean,
     isSaved: Boolean,
     diagramName: String,
     dbType: { type: String, default: 'mysql' },
+    shareAccess: { type: String, default: null },
+    inLibrary: { type: Boolean, default: false },
     hasPendingVisitors: { type: Boolean, default: false },
 })
 defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-changelog', 'show-help', 'show-value-types'])
+
+const sharingStatus = computed(() => {
+    if (props.isDemo) return null
+    if (props.inLibrary) {
+        return {
+            kind: 'public',
+            icon: 'globe',
+            title: props.shareAccess === 'write'
+                ? 'Company-wide diagram: others can edit'
+                : 'Company-wide diagram: others can view',
+        }
+    }
+    if (props.shareAccess) {
+        return {
+            kind: 'shared',
+            icon: 'share',
+            title: props.shareAccess === 'write'
+                ? 'Shared diagram: others can edit'
+                : 'Shared diagram: restricted access',
+        }
+    }
+    return null
+})
 </script>
 
 <style scoped>
@@ -113,6 +148,31 @@ defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-change
     font-size: 0.82rem;
     color: var(--text-secondary);
     margin-left: 4px;
+}
+
+.dh-share-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    margin-left: 2px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    background: color-mix(in srgb, var(--bg-surface-alt) 80%, transparent);
+}
+
+.dh-share-status--public {
+    border-color: color-mix(in srgb, var(--color-primary) 55%, var(--border-color));
+    color: var(--color-primary);
+    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
+}
+
+.dh-share-status--shared {
+    border-color: color-mix(in srgb, #60a5fa 45%, var(--border-color));
+    color: #93c5fd;
+    background: color-mix(in srgb, #60a5fa 12%, transparent);
 }
 
 .dh-save-wrap {

@@ -7,6 +7,7 @@ namespace App\Repositories;
 use App\DTOs\CreateDiagramDTO;
 use App\DTOs\UpdateDiagramDTO;
 use App\Enums\ImportStatus;
+use App\Enums\VisitorStatus;
 use App\Models\Diagram;
 use App\Models\User;
 use App\Support\DiagramSchema;
@@ -18,18 +19,61 @@ class DiagramRepository implements DiagramRepositoryInterface
     public function all(User $user): Collection
     {
         return $user->diagrams()
-            ->select([
-                'id',
-                'name',
-                'db_type',
-                'user_id',
-                'share_token',
-                'share_access',
-                'require_approval',
-                'library',
-                'schema',
-            ])
+            ->select($this->summaryColumns())
             ->get();
+    }
+
+    /** @return array{owned: Collection<int, Diagram>, shared: Collection<int, Diagram>, public: Collection<int, Diagram>} */
+    public function dashboard(User $user): array
+    {
+        $owned = $this->all($user);
+
+        $shared = Diagram::query()
+            ->with([
+                'user:id,email',
+                'visitors' => fn ($query) => $query->where('user_id', $user->id),
+                'invites' => fn ($query) => $query->where('email', strtolower($user->email)),
+            ])
+            ->select($this->summaryColumns())
+            ->where('user_id', '!=', $user->id)
+            ->where(function ($query) use ($user) {
+                $query->whereHas('visitors', function ($visitorQuery) use ($user) {
+                    $visitorQuery->where('user_id', $user->id)
+                        ->where('status', VisitorStatus::APPROVED);
+                })->orWhereHas('invites', function ($inviteQuery) use ($user) {
+                    $inviteQuery->where('email', strtolower($user->email));
+                });
+            })
+            ->orderByDesc('updated_at')
+            ->get();
+
+        $shared->each(function (Diagram $diagram) {
+            $visitor = $diagram->visitors->first();
+            $invite = $diagram->invites->first();
+            $diagram->setAttribute('effective_access', $invite?->access?->value ?? $visitor?->access?->value ?? $diagram->share_access?->value);
+        });
+
+        $sharedIds = $shared->pluck('id')->all();
+
+        $public = Diagram::query()
+            ->with('user:id,email')
+            ->select($this->summaryColumns())
+            ->where('library', true)
+            ->whereNotNull('share_access')
+            ->when($sharedIds !== [], fn ($query) => $query->whereNotIn('id', $sharedIds))
+            ->whereDoesntHave('visitors', function ($query) use ($user) {
+                $query->where('user_id', $user->id)
+                    ->where('status', VisitorStatus::REVOKED);
+            })
+            ->orderByDesc('updated_at')
+            ->get();
+
+        $public->each(fn (Diagram $diagram) => $diagram->setAttribute(
+            'effective_access',
+            $diagram->share_access?->value === 'write' ? 'write' : 'read'
+        ));
+
+        return compact('owned', 'shared', 'public');
     }
 
     /** @deprecated Not used anywhere */
@@ -74,5 +118,22 @@ class DiagramRepository implements DiagramRepositoryInterface
     public function delete(Diagram $diagram): bool
     {
         return $diagram->delete();
+    }
+
+    /** @return list<string> */
+    private function summaryColumns(): array
+    {
+        return [
+            'id',
+            'name',
+            'db_type',
+            'user_id',
+            'share_token',
+            'share_access',
+            'require_approval',
+            'library',
+            'schema',
+            'updated_at',
+        ];
     }
 }

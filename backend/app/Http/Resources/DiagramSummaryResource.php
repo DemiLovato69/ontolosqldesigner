@@ -26,9 +26,11 @@ class DiagramSummaryResource extends JsonResource
             'schema' => $this->previewSchema($this->resource->schema ?? []),
             'share_token' => $this->resource->share_token,
             'share_access' => $this->resource->share_access?->value,
+            'effective_access' => $this->resource->getAttribute('effective_access') ?? $this->resource->share_access?->value,
             'require_approval' => (bool) $this->resource->require_approval,
             'library' => (bool) $this->resource->library,
             'is_owner' => $request->user()?->id === $this->resource->user_id,
+            'owner_email' => $this->whenLoaded('user', fn () => $this->resource->user->email),
         ];
     }
 

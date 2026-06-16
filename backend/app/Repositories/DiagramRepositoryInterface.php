@@ -15,6 +15,9 @@ interface DiagramRepositoryInterface
     /** @return Collection<int, Diagram> */
     public function all(User $user): Collection;
 
+    /** @return array{owned: Collection<int, Diagram>, shared: Collection<int, Diagram>, public: Collection<int, Diagram>} */
+    public function dashboard(User $user): array;
+
     /** @deprecated Not used anywhere */
     public function find(int $id): Diagram;
 

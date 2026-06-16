@@ -663,7 +663,7 @@
                     <div class="feat-glyph">&lt;/&gt;</div>
                     <div class="feat-body">
                         <h3>Embeds</h3>
-                        <p>Embed a diagram as an interactive iframe in any docs site, README, or internal wiki. Embedded diagrams with a backlink can be <a href="/library">featured in the schema library</a>.</p>
+                        <p>Embed a diagram as an interactive iframe in any docs site, README, or internal wiki. Shared diagrams can also be made visible to logged-in users from the diagrams dashboard.</p>
                     </div>
                 </div>
 

@@ -150,6 +150,24 @@ export const Diagram = {
             return response.data
         }),
 
+    getInvites: (id) =>
+        request(async () => {
+            const response = await axios.get(`/api/diagrams/${id}/invites`)
+            return response.data
+        }),
+
+    updateInvites: (id, invites) =>
+        request(async () => {
+            const response = await axios.put(`/api/diagrams/${id}/invites`, { invites })
+            return response.data
+        }),
+
+    searchShareUsers: (query) =>
+        request(async () => {
+            const response = await axios.get('/api/diagrams/share-users/search', { params: { q: query } })
+            return response.data
+        }),
+
     approveVisitor: (diagramId, visitorId) =>
         request(async () => {
             const response = await axios.post(`/api/diagrams/${diagramId}/visitors/${visitorId}/approve`)
@@ -160,6 +178,12 @@ export const Diagram = {
         request(async () => {
             const response = await axios.patch(`/api/diagrams/${diagramId}/visitors/${visitorId}`, { access })
             return response.data
+        }),
+
+    duplicateByToken: (token) =>
+        request(async () => {
+            const response = await axios.post(`/api/diagrams/shared/${token}/duplicate`)
+            return response.data.diagram
         }),
 
     getChangelog: (id) =>

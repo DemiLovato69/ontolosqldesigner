@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enums\ImportStatus;
 use App\Models\Diagram;
+use App\Models\DiagramVisitor;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
@@ -138,6 +139,156 @@ class DiagramControllerTest extends TestCase
 
         $this->assertContains('valid-edge', $previewIds);
         $this->assertNotContains('missing-source-edge', $previewIds);
+    }
+
+    public function test_dashboard_returns_owned_shared_and_public_diagrams(): void
+    {
+        $coworker = User::factory()->create(['email_verified_at' => now()]);
+        $sharedDiagram = Diagram::factory()->create([
+            'user_id' => $coworker->id,
+            'name' => 'Shared diagram',
+            'share_access' => 'per_user',
+        ]);
+        DiagramVisitor::factory()->create([
+            'diagram_id' => $sharedDiagram->id,
+            'user_id' => $this->user->id,
+            'status' => 'approved',
+            'access' => 'write',
+        ]);
+
+        $publicDiagram = Diagram::factory()->create([
+            'user_id' => $coworker->id,
+            'name' => 'Public diagram',
+            'share_access' => 'read',
+            'library' => true,
+        ]);
+
+        $this->auth()
+            ->getJson('/api/diagrams/dashboard')
+            ->assertStatus(200)
+            ->assertJsonPath('owned.0.id', $this->diagram->id)
+            ->assertJsonPath('shared.0.id', $sharedDiagram->id)
+            ->assertJsonPath('shared.0.effective_access', 'write')
+            ->assertJsonPath('public.0.id', $publicDiagram->id)
+            ->assertJsonPath('public.0.effective_access', 'read');
+    }
+
+    public function test_dashboard_returns_email_invited_diagrams_as_shared(): void
+    {
+        $coworker = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $coworker->id,
+            'share_access' => 'read',
+        ]);
+        $diagram->invites()->create(['email' => strtolower($this->user->email), 'access' => 'write']);
+
+        $this->auth()
+            ->getJson('/api/diagrams/dashboard')
+            ->assertStatus(200)
+            ->assertJsonPath('shared.0.id', $diagram->id)
+            ->assertJsonPath('shared.0.effective_access', 'write');
+    }
+
+    public function test_dashboard_returns_owned_public_diagrams_as_public(): void
+    {
+        $diagram = Diagram::factory()->create([
+            'user_id' => $this->user->id,
+            'share_access' => 'read',
+            'library' => true,
+        ]);
+
+        $response = $this->auth()
+            ->getJson('/api/diagrams/dashboard')
+            ->assertStatus(200);
+
+        $publicIds = collect($response->json('public'))->pluck('id')->all();
+
+        $this->assertContains($diagram->id, $publicIds);
+    }
+
+    public function test_dashboard_excludes_pending_revoked_and_duplicate_public_diagrams(): void
+    {
+        $coworker = User::factory()->create(['email_verified_at' => now()]);
+        $pendingDiagram = Diagram::factory()->create(['user_id' => $coworker->id, 'share_access' => 'per_user']);
+        DiagramVisitor::factory()->create([
+            'diagram_id' => $pendingDiagram->id,
+            'user_id' => $this->user->id,
+            'status' => 'pending',
+        ]);
+
+        $revokedPublicDiagram = Diagram::factory()->create([
+            'user_id' => $coworker->id,
+            'share_access' => 'read',
+            'library' => true,
+        ]);
+        DiagramVisitor::factory()->create([
+            'diagram_id' => $revokedPublicDiagram->id,
+            'user_id' => $this->user->id,
+            'status' => 'revoked',
+        ]);
+
+        $sharedPublicDiagram = Diagram::factory()->create([
+            'user_id' => $coworker->id,
+            'share_access' => 'read',
+            'library' => true,
+        ]);
+        DiagramVisitor::factory()->create([
+            'diagram_id' => $sharedPublicDiagram->id,
+            'user_id' => $this->user->id,
+            'status' => 'approved',
+            'access' => 'read',
+        ]);
+
+        $response = $this->auth()
+            ->getJson('/api/diagrams/dashboard')
+            ->assertStatus(200);
+
+        $sharedIds = collect($response->json('shared'))->pluck('id')->all();
+        $publicIds = collect($response->json('public'))->pluck('id')->all();
+
+        $this->assertContains($sharedPublicDiagram->id, $sharedIds);
+        $this->assertNotContains($pendingDiagram->id, $sharedIds);
+        $this->assertNotContains($revokedPublicDiagram->id, $publicIds);
+        $this->assertNotContains($sharedPublicDiagram->id, $publicIds);
+    }
+
+    public function test_duplicate_shared_diagram_creates_private_owned_copy(): void
+    {
+        $coworker = User::factory()->create(['email_verified_at' => now()]);
+        $source = Diagram::factory()->create([
+            'user_id' => $coworker->id,
+            'name' => 'Company model',
+            'db_type' => 'ontology',
+            'share_access' => 'read',
+            'library' => true,
+            'schema' => [['id' => 'table-1', 'type' => 'table', 'label' => 'users']],
+            'value_types' => [['id' => 'email-type', 'apiName' => 'Email', 'displayName' => 'Email', 'version' => '1.0.0', 'baseType' => ['type' => 'string']]],
+        ]);
+
+        $response = $this->auth()
+            ->postJson("/api/diagrams/shared/{$source->share_token}/duplicate")
+            ->assertStatus(201)
+            ->assertJsonFragment(['status' => true]);
+
+        $copy = Diagram::findOrFail($response->json('diagram.id'));
+
+        $this->assertSame($this->user->id, $copy->user_id);
+        $this->assertSame('Copy of Company model', $copy->name);
+        $this->assertSame($source->schema, $copy->schema);
+        $this->assertSame($source->value_types, $copy->value_types);
+        $this->assertNull($copy->share_access);
+        $this->assertFalse((bool) $copy->library);
+        $this->assertNotSame($source->share_token, $copy->share_token);
+    }
+
+    public function test_duplicate_requires_shared_access(): void
+    {
+        $coworker = User::factory()->create(['email_verified_at' => now()]);
+        $source = Diagram::factory()->create(['user_id' => $coworker->id, 'share_access' => null]);
+
+        $this->auth()
+            ->postJson("/api/diagrams/shared/{$source->share_token}/duplicate")
+            ->assertStatus(403);
     }
 
     public function test_store_creates_diagram(): void

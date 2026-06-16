@@ -19,6 +19,7 @@ use App\Http\Resources\DiagramResource;
 use App\Http\Resources\DiagramSummaryResource;
 use App\Http\Resources\DiagramVisitorResource;
 use App\Models\Diagram;
+use App\Models\DiagramInvite;
 use App\Models\DiagramVisitor;
 use App\Models\User;
 use App\Services\DiagramCrudService;
@@ -32,6 +33,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\Subgroup;
 
@@ -51,6 +53,18 @@ class DiagramController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         return DiagramSummaryResource::collection($this->crudService->getUserDiagrams($request->user()));
+    }
+
+    #[Subgroup('CRUD')]
+    public function dashboard(Request $request): JsonResponse
+    {
+        $diagrams = $this->crudService->getDashboardDiagrams($request->user());
+
+        return $this->success([
+            'owned' => DiagramSummaryResource::collection($diagrams['owned'])->resolve($request),
+            'shared' => DiagramSummaryResource::collection($diagrams['shared'])->resolve($request),
+            'public' => DiagramSummaryResource::collection($diagrams['public'])->resolve($request),
+        ]);
     }
 
     /**
@@ -335,6 +349,81 @@ class DiagramController extends Controller
      * @throws AuthorizationException
      */
     #[Subgroup('Sharing')]
+    public function getInvites(Diagram $diagram): JsonResponse
+    {
+        $this->authorize('update', $diagram);
+
+        return $this->success($diagram->invites()
+            ->orderBy('email')
+            ->get(['id', 'email', 'access'])
+            ->map(fn (DiagramInvite $invite) => [
+                'id' => $invite->id,
+                'email' => $invite->email,
+                'access' => $invite->access?->value ?? DiagramAccess::READ->value,
+            ])
+            ->values());
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    #[Subgroup('Sharing')]
+    public function updateInvites(Diagram $diagram, Request $request): JsonResponse
+    {
+        $this->authorize('update', $diagram);
+
+        $validated = $request->validate([
+            'invites' => ['present', 'array'],
+            'invites.*.email' => ['required', 'email', 'max:255'],
+            'invites.*.access' => ['required', Rule::in([DiagramAccess::READ->value, DiagramAccess::WRITE->value])],
+        ]);
+
+        $incoming = collect($validated['invites'])
+            ->map(fn (array $invite) => [
+                'email' => strtolower((string) $invite['email']),
+                'access' => (string) $invite['access'],
+            ])
+            ->unique('email')
+            ->values();
+
+        $diagram->invites()
+            ->whereNotIn('email', $incoming->pluck('email')->all())
+            ->delete();
+
+        foreach ($incoming as $invite) {
+            $diagram->invites()->updateOrCreate(
+                ['email' => $invite['email']],
+                ['access' => $invite['access']]
+            );
+        }
+
+        return $this->getInvites($diagram);
+    }
+
+    #[Subgroup('Sharing')]
+    public function searchShareUsers(Request $request): JsonResponse
+    {
+        $query = trim((string) $request->query('q', ''));
+        if (strlen($query) < 2) {
+            return $this->success([]);
+        }
+
+        $needle = mb_strtolower($query);
+        $users = User::query()
+            ->whereRaw('LOWER(email) LIKE ?', ["%{$needle}%"])
+            ->orderBy('email')
+            ->limit(8)
+            ->get(['email'])
+            ->pluck('email')
+            ->values();
+
+        return $this->success($users);
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    #[Subgroup('Sharing')]
     public function approveVisitor(Diagram $diagram, DiagramVisitor $visitor): JsonResponse
     {
         $this->authorize('update', $diagram);
@@ -411,5 +500,26 @@ class DiagramController extends Controller
         }
 
         return new DiagramResource($result['diagram']);
+    }
+
+    #[Subgroup('Sharing')]
+    public function duplicateByToken(string $token, Request $request): JsonResponse
+    {
+        $diagram = Diagram::where('share_token', $token)->firstOrFail();
+        $result = $this->sharingService->resolveSharedAccess($diagram, $request->user());
+
+        if ($result['status'] !== 'ok') {
+            abort(403);
+        }
+
+        $copy = $this->crudService->duplicateForUser($diagram->fresh(), $request->user());
+
+        return $this->created([
+            'status' => true,
+            'diagram' => [
+                'id' => $copy->id,
+                'share_token' => $copy->share_token,
+            ],
+        ]);
     }
 }

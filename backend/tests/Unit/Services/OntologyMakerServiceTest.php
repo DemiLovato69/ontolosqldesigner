@@ -372,8 +372,8 @@ class OntologyMakerServiceTest extends TestCase
         $module = $this->service->createModule($schema);
 
         $this->assertStringContainsString('primaryKeyPropertyApiName: "id"', $module);
-        $this->assertStringContainsString('"id": { type: "long", displayName: "Id", nullability: { noEmptyCollections: false, noNulls: true }, indexedForSearch: true }', $module);
-        $this->assertStringContainsString('"fullName": { type: "string", displayName: "Full Name", nullability: { noEmptyCollections: false, noNulls: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"id": { type: "long", displayName: "Id", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"fullName": { type: "string", displayName: "Full Name", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true }', $module);
         $this->assertStringContainsString('"nickname": { type: "string", displayName: "Nickname", indexedForSearch: true }', $module);
     }
 
@@ -396,7 +396,7 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('// - index: full_name', $module);
         $this->assertStringContainsString('// - unique together: tenant_id, external_id', $module);
         $this->assertStringContainsString('// - fulltext index: full_name', $module);
-        $this->assertStringContainsString('"externalId": { type: "string", displayName: "External Id", nullability: { noEmptyCollections: false, noNulls: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"externalId": { type: "string", displayName: "External Id", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true }', $module);
         $this->assertStringContainsString('"fullName": { type: "string", displayName: "Full Name", indexedForSearch: true }', $module);
     }
 
@@ -415,7 +415,7 @@ class OntologyMakerServiceTest extends TestCase
 
         $this->assertStringNotContainsString('missing_column', $module);
         $this->assertStringNotContainsString('unique together: tenant_id', $module);
-        $this->assertStringContainsString('"tenantId": { type: "long", displayName: "Tenant Id", nullability: { noEmptyCollections: false, noNulls: true }, indexedForSearch: true }', $module);
+        $this->assertStringContainsString('"tenantId": { type: "long", displayName: "Tenant Id", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true }', $module);
     }
 
     #[DataProvider('sqlTypeProvider')]

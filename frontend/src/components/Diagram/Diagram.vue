@@ -36,6 +36,8 @@
             :isSaved="isSaved"
             :diagramName="diagramName"
             :dbType="diagramDbType"
+            :shareAccess="diagramShareAccess"
+            :inLibrary="diagramInLibrary"
             :hasPendingVisitors="hasPendingVisitors"
             @add-table="addTable"
             @import="isDemo ? router.push({ name: 'login' }) : showImportModal = true"

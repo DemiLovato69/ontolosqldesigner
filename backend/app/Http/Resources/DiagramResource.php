@@ -21,7 +21,7 @@ class DiagramResource extends JsonResource
     #[ResponseField('share_token', 'string', 'Token used to share the diagram publicly.')]
     #[ResponseField('share_access', 'string', 'The share access level.')]
     #[ResponseField('require_approval', 'boolean', 'Whether viewer access requires approval.')]
-    #[ResponseField('library', 'boolean', 'Whether the diagram is in the public library.')]
+    #[ResponseField('library', 'boolean', 'Whether the diagram appears in Company Wide Diagrams.')]
     #[ResponseField('is_owner', 'boolean', 'Whether the authenticated user owns this diagram.')]
     public function toArray(Request $request): array
     {

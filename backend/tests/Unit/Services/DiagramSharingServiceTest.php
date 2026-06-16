@@ -55,21 +55,21 @@ class DiagramSharingServiceTest extends TestCase
     {
         $diagram = Diagram::factory()->create(['share_access' => DiagramAccess::READ, 'require_approval' => false, 'library' => false]);
         $result = $this->service->updateShareSettings($diagram, new ShareSettingsDTO(DiagramAccess::PER_USER, true, true));
-        $this->assertEquals(['share_access' => DiagramAccess::PER_USER->value, 'require_approval' => true, 'library' => true], $result);
+        $this->assertEquals(['share_access' => DiagramAccess::READ->value, 'require_approval' => false, 'library' => true], $result);
     }
 
-    public function test_update_share_settings_library_forces_per_user(): void
+    public function test_update_share_settings_library_defaults_to_read(): void
     {
         $diagram = Diagram::factory()->create(['share_access' => DiagramAccess::READ, 'library' => false]);
         $result = $this->service->updateShareSettings($diagram, new ShareSettingsDTO(library: true));
-        $this->assertEquals(DiagramAccess::PER_USER->value, $result['share_access']);
+        $this->assertEquals(DiagramAccess::READ->value, $result['share_access']);
     }
 
-    public function test_update_share_settings_library_skips_per_user_when_already(): void
+    public function test_update_share_settings_library_normalizes_per_user_to_read(): void
     {
         $diagram = Diagram::factory()->create(['share_access' => DiagramAccess::PER_USER, 'library' => false]);
         $result = $this->service->updateShareSettings($diagram, new ShareSettingsDTO(library: true));
-        $this->assertEquals(DiagramAccess::PER_USER->value, $result['share_access']);
+        $this->assertEquals(DiagramAccess::READ->value, $result['share_access']);
     }
 
     public function test_update_share_settings_null_inputs_skip(): void

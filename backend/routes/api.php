@@ -33,6 +33,9 @@ Route::middleware(['auth:sanctum', 'track.seen'])->group(function () {
 
     Route::group(['prefix' => 'diagrams', 'middleware' => ['verified']], function () {
         Route::get('/', [DiagramController::class, 'index']);
+        Route::get('/dashboard', [DiagramController::class, 'dashboard']);
+        Route::get('/share-users/search', [DiagramController::class, 'searchShareUsers']);
+        Route::post('/shared/{token}/duplicate', [DiagramController::class, 'duplicateByToken']);
         Route::get('/{diagram}', [DiagramController::class, 'show']);
         Route::post('/', [DiagramController::class, 'store']);
         Route::put('/{diagram}', [DiagramController::class, 'update']);
@@ -41,6 +44,8 @@ Route::middleware(['auth:sanctum', 'track.seen'])->group(function () {
         Route::post('/{diagram}/share', [DiagramController::class, 'share']);
         Route::delete('/{diagram}/share', [DiagramController::class, 'unshare']);
         Route::patch('/{diagram}/share', [DiagramController::class, 'updateShareAccess']);
+        Route::get('/{diagram}/invites', [DiagramController::class, 'getInvites']);
+        Route::put('/{diagram}/invites', [DiagramController::class, 'updateInvites']);
         Route::get('/{diagram}/visitors', [DiagramController::class, 'getVisitors']);
         Route::post('/{diagram}/visitors/{visitor}/approve', [DiagramController::class, 'approveVisitor']);
         Route::patch('/{diagram}/visitors/{visitor}', [DiagramController::class, 'updateVisitorAccess']);

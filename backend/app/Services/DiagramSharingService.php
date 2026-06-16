@@ -11,6 +11,7 @@ use App\Enums\VisitorStatus;
 use App\Events\VisitorAccessChanged;
 use App\Events\VisitorRequested;
 use App\Models\Diagram;
+use App\Models\DiagramInvite;
 use App\Models\DiagramVisitor;
 use App\Models\User;
 use App\Support\DiagramSchema;
@@ -19,8 +20,6 @@ use Illuminate\Database\Eloquent\Collection;
 
 class DiagramSharingService
 {
-    public function __construct(private readonly LibraryService $libraryService) {}
-
     /**
      * Ensure the diagram is shared (defaults to 'read' if not already set).
      *
@@ -31,10 +30,6 @@ class DiagramSharingService
         if (! $diagram->share_access) {
             $diagram->share_access = DiagramAccess::READ;
             $diagram->save();
-
-            if ($diagram->library) {
-                $this->libraryService->invalidate();
-            }
         }
 
         return ($diagram->share_access ?? DiagramAccess::READ)->value;
@@ -48,7 +43,6 @@ class DiagramSharingService
         $diagram->share_access = null;
         $diagram->library = false;
         $diagram->save();
-        $this->libraryService->invalidate();
     }
 
     /** @return array{share_access: string|null, require_approval: bool, library: bool} */
@@ -64,16 +58,16 @@ class DiagramSharingService
 
         if ($dto->library !== null) {
             $diagram->library = $dto->library;
-            if ($dto->library && $diagram->share_access !== DiagramAccess::PER_USER) {
-                $diagram->share_access = DiagramAccess::PER_USER;
+        }
+
+        if ($diagram->library) {
+            $diagram->require_approval = false;
+            if ($diagram->share_access !== DiagramAccess::WRITE) {
+                $diagram->share_access = DiagramAccess::READ;
             }
         }
 
         $diagram->save();
-
-        if ($dto->library !== null) {
-            $this->libraryService->invalidate();
-        }
 
         return [
             'share_access' => $diagram->share_access?->value,
@@ -177,11 +171,36 @@ class DiagramSharingService
     public function resolveSharedAccess(Diagram $diagram, User $user): array
     {
         if ($user->id === $diagram->user_id) {
+            if ($diagram->library) {
+                $this->applyPublicLibraryAccess($diagram);
+            }
+
             return ['status' => 'ok', 'diagram' => $diagram];
         }
 
         if (! $diagram->share_access) {
             return ['status' => 'not_shared'];
+        }
+
+        $invite = $this->inviteForUser($diagram, $user);
+        if ($invite) {
+            $diagram->share_access = $invite->access ?? DiagramAccess::READ;
+
+            return ['status' => 'ok', 'diagram' => $diagram];
+        }
+
+        if ($diagram->library) {
+            $visitor = DiagramVisitor::where('diagram_id', $diagram->id)
+                ->where('user_id', $user->id)
+                ->first();
+
+            if ($visitor?->status === VisitorStatus::REVOKED) {
+                return ['status' => 'revoked'];
+            }
+
+            $this->applyPublicLibraryAccess($diagram);
+
+            return ['status' => 'ok', 'diagram' => $diagram];
         }
 
         $defaultStatus = $diagram->require_approval ? VisitorStatus::PENDING : VisitorStatus::APPROVED;
@@ -219,6 +238,18 @@ class DiagramSharingService
 
     private function hasWriteAccess(Diagram $diagram, User $user): bool
     {
+        $invite = $this->inviteForUser($diagram, $user);
+        if ($invite) {
+            return $invite->access === DiagramAccess::WRITE;
+        }
+
+        if ($diagram->library && $diagram->share_access === DiagramAccess::WRITE) {
+            return ! DiagramVisitor::where('diagram_id', $diagram->id)
+                ->where('user_id', $user->id)
+                ->where('status', VisitorStatus::REVOKED)
+                ->exists();
+        }
+
         if ($diagram->share_access === DiagramAccess::PER_USER) {
             return DiagramVisitor::where('diagram_id', $diagram->id)
                 ->where('user_id', $user->id)
@@ -243,5 +274,24 @@ class DiagramSharingService
         }
 
         return false;
+    }
+
+    private function applyPublicLibraryAccess(Diagram $diagram): void
+    {
+        $diagram->share_access = $diagram->share_access === DiagramAccess::WRITE
+            ? DiagramAccess::WRITE
+            : DiagramAccess::READ;
+        $diagram->require_approval = false;
+
+        if ($diagram->isDirty(['share_access', 'require_approval'])) {
+            $diagram->saveQuietly();
+        }
+    }
+
+    private function inviteForUser(Diagram $diagram, User $user): ?DiagramInvite
+    {
+        return DiagramInvite::where('diagram_id', $diagram->id)
+            ->where('email', strtolower($user->email))
+            ->first();
     }
 }
