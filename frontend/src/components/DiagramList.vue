@@ -168,21 +168,21 @@ export default {
         return {
             diagrams: [],
             newDiagramName: '',
-            newDiagramDbType: 'mysql',
-            newDiagramPublic: true,
+            newDiagramDbType: 'ontology',
+            newDiagramPublic: false,
             newDiagramInLibrary: true,
             showNewForm: false,
             renamingId: null,
             originalName: null,
             dbIcons: { mysql: mysqlIcon, postgresql: postgresqlIcon, sqlite: sqliteIcon, oracle: oracleIcon, sqlserver: sqlserverIcon, msaccess: msaccessIcon, ontology: ontologyIcon },
             dbOptions: [
+                { type: 'ontology', label: 'Ontology', icon: '/palantir.svg' },
                 { type: 'mysql', label: 'MySQL' },
                 { type: 'postgresql', label: 'PostgreSQL' },
                 { type: 'sqlite', label: 'SQLite' },
                 { type: 'oracle', label: 'Oracle' },
                 { type: 'sqlserver', label: 'SQL Server' },
                 { type: 'msaccess', label: 'MS Access' },
-                { type: 'ontology', label: 'Ontology', icon: '/palantir.svg' },
             ]
         }
     },
