@@ -5,6 +5,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 const Layout = () => import('../components/Layout.vue');
 const Login = () => import('../components/Auth/Login.vue');
 const Logout = () => import('../components/Auth/Logout.vue');
+const OAuthCallback = () => import('../components/Auth/OAuthCallback.vue');
 const VerifyEmail = () => import('../components/Auth/VerifyEmail.vue');
 const DiagramList = () => import('../components/DiagramList.vue');
 const Diagram = () => import('../components/Diagram/Diagram.vue');
@@ -43,6 +44,7 @@ const routes = [
     children: [
       { path: 'register', redirect: { name: 'login' } },
       { path: 'login', name: 'login', component: Login },
+      { path: 'oauth/callback', name: 'oauth.callback', component: OAuthCallback },
       { path: 'logout', name: 'logout', component: Logout },
       { path: 'verify-email', name: 'verify-email', component: VerifyEmail },
       { path: 'diagrams', name: 'diagrams', component: DiagramList, beforeEnter: requireAuth },

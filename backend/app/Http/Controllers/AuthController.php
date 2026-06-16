@@ -11,7 +11,12 @@ use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
 use Knuckles\Scribe\Attributes\Group;
+use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
+use Throwable;
 
 #[Group('Authentication')]
 class AuthController extends Controller
@@ -27,6 +32,61 @@ class AuthController extends Controller
         }
 
         return $this->success(['status' => true, 'token' => $token, 'message' => 'Logged in successfully']);
+    }
+
+    public function redirectToGoogle(): RedirectResponse|SymfonyRedirectResponse
+    {
+        return Socialite::driver('google')->redirect();
+    }
+
+    public function handleGoogleCallback(): RedirectResponse
+    {
+        try {
+            $googleUser = Socialite::driver('google')->stateless()->user();
+        } catch (Throwable) {
+            return $this->oauthError();
+        }
+
+        $allowedDomain = strtolower((string) config('services.google.allowed_domain'));
+        $email = strtolower((string) $googleUser->getEmail());
+        $emailDomain = substr(strrchr($email, '@') ?: '', 1);
+
+        if (
+            $allowedDomain === ''
+            || strtolower((string) ($googleUser->getRaw()['hd'] ?? '')) !== $allowedDomain
+            || $emailDomain !== $allowedDomain
+        ) {
+            return $this->oauthError();
+        }
+
+        $user = $this->findOrCreateGoogleUser($googleUser, $email);
+        Auth::login($user);
+
+        $token = $user->createToken('API TOKEN')->plainTextToken;
+
+        return redirect('/oauth/callback?'.http_build_query([
+            'token' => $token,
+            'avatar' => $googleUser->getAvatar(),
+        ]));
+    }
+
+    private function findOrCreateGoogleUser(SocialiteUser $googleUser, string $email): User
+    {
+        $user = User::where('google_id', $googleUser->getId())->first()
+            ?? User::where('email', $email)->first()
+            ?? new User(['email' => $email]);
+
+        $user->forceFill([
+            'google_id' => $googleUser->getId(),
+            'email_verified_at' => now(),
+        ])->save();
+
+        return $user;
+    }
+
+    private function oauthError(): RedirectResponse
+    {
+        return redirect('/login?oauth_error=company_domain');
     }
 
     public function logout(Request $request): JsonResponse

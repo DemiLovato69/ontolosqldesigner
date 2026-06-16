@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Models\User;
+use Laravel\Socialite\Facades\Socialite;
+use Laravel\Socialite\Two\User as SocialiteUser;
+use Mockery;
 use Tests\TestCase;
 
 class AuthControllerTest extends TestCase
@@ -56,10 +59,89 @@ class AuthControllerTest extends TestCase
             ->assertJsonFragment(['status' => false]);
     }
 
-    public function test_oauth_routes_are_not_available(): void
+    public function test_google_callback_creates_allowed_domain_user(): void
     {
-        $this->get('/auth/google')->assertNotFound();
+        config()->set('services.google.allowed_domain', 'company.com');
+        $this->mockGoogleUser('google-1', 'new@company.com', 'company.com');
+
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect();
+        $this->assertStringContainsString('/oauth/callback?token=', $response->headers->get('Location'));
+
+        $this->assertDatabaseHas('users', [
+            'email' => 'new@company.com',
+            'google_id' => 'google-1',
+        ]);
+        $this->assertNotNull(User::where('email', 'new@company.com')->first()->email_verified_at);
+    }
+
+    public function test_google_callback_links_existing_email_user(): void
+    {
+        config()->set('services.google.allowed_domain', 'company.com');
+        $user = User::factory()->create(['email' => 'existing@company.com', 'google_id' => null]);
+        $this->mockGoogleUser('google-2', 'existing@company.com', 'company.com');
+
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect();
+        $this->assertStringContainsString('/oauth/callback?token=', $response->headers->get('Location'));
+
+        $this->assertSame('google-2', $user->refresh()->google_id);
+    }
+
+    public function test_google_callback_logs_in_existing_google_user(): void
+    {
+        config()->set('services.google.allowed_domain', 'company.com');
+        $user = User::factory()->create(['email' => 'user@company.com', 'google_id' => 'google-3']);
+        $this->mockGoogleUser('google-3', 'user@company.com', 'company.com');
+
+        $response = $this->get('/auth/google/callback');
+
+        $response->assertRedirect();
+        $this->assertStringContainsString('/oauth/callback?token=', $response->headers->get('Location'));
+
+        $this->assertSame(1, $user->tokens()->count());
+    }
+
+    public function test_google_callback_rejects_wrong_hosted_domain(): void
+    {
+        config()->set('services.google.allowed_domain', 'company.com');
+        $this->mockGoogleUser('google-4', 'user@company.com', 'other.com');
+
+        $this->get('/auth/google/callback')
+            ->assertRedirect('/login?oauth_error=company_domain');
+
+        $this->assertDatabaseMissing('users', ['google_id' => 'google-4']);
+    }
+
+    public function test_google_callback_rejects_wrong_email_domain(): void
+    {
+        config()->set('services.google.allowed_domain', 'company.com');
+        $this->mockGoogleUser('google-5', 'user@other.com', 'company.com');
+
+        $this->get('/auth/google/callback')
+            ->assertRedirect('/login?oauth_error=company_domain');
+
+        $this->assertDatabaseMissing('users', ['google_id' => 'google-5']);
+    }
+
+    public function test_non_google_oauth_routes_are_not_available(): void
+    {
         $this->get('/auth/github')->assertNotFound();
         $this->get('/auth/gitlab')->assertNotFound();
+    }
+
+    private function mockGoogleUser(string $id, string $email, ?string $hostedDomain): void
+    {
+        $provider = Mockery::mock();
+        $provider->shouldReceive('stateless')->once()->andReturnSelf();
+        $provider->shouldReceive('user')->once()->andReturn(
+            (new SocialiteUser())
+                ->setRaw(array_filter(['hd' => $hostedDomain]))
+                ->map(['id' => $id, 'email' => $email])
+        );
+
+        Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
     }
 }

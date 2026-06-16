@@ -34,6 +34,8 @@ Route::get('/sitemap', fn () => view('sitemap'));
 Route::get('/privacy', fn () => view('privacy'));
 Route::get('/terms', fn () => view('terms'));
 Route::redirect('/register', '/login');
+Route::get('/auth/google', [AuthController::class, 'redirectToGoogle'])->middleware('throttle:10,1');
+Route::get('/auth/google/callback', [AuthController::class, 'handleGoogleCallback'])->middleware('throttle:10,1');
 
 Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
     ->middleware(['signed', 'throttle:6,1'])
@@ -61,7 +63,7 @@ Route::prefix('/admin')->group(function () {
 });
 
 Route::get('/{any}', function ($any) {
-    $exactRoutes = ['login', 'logout', 'verify-email', 'demo', 'diagrams'];
+    $exactRoutes = ['login', 'logout', 'verify-email', 'demo', 'diagrams', 'oauth/callback'];
     $prefixRoutes = ['diagrams/', 'shared/', 'embed/'];
 
     if (in_array($any, $exactRoutes)) {

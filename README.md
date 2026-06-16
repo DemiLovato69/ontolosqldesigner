@@ -45,6 +45,17 @@ http://localhost:8080
 
 Vite runs on `http://localhost:5173`, but Nginx at `8080` is the normal entry point.
 
+Google login requires:
+
+```dotenv
+GOOGLE_CLIENT_ID=...
+GOOGLE_CLIENT_SECRET=...
+GOOGLE_ALLOWED_DOMAIN=company.com
+APP_URL=http://localhost:8080
+```
+
+Set the Google OAuth redirect URI to `${APP_URL}/auth/google/callback`. Use an Internal consent screen for Google Workspace projects.
+
 Useful commands:
 
 ```bash
