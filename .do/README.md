@@ -16,6 +16,14 @@ Update an existing app:
 doctl apps update APP_ID --spec .do/app.yaml
 ```
 
+For production, keep live secrets in an ignored local copy:
+
+```bash
+doctl apps update APP_ID --spec .do/app.production.yaml
+```
+
+Do not commit `.do/app.production.yaml`. The tracked `.do/app.yaml` is a template and intentionally contains placeholder secret values.
+
 ## Components
 
 The spec defines:

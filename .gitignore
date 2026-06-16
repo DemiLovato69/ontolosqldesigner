@@ -30,3 +30,5 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 ExampleOntology.json
+.do/app.production.yaml
+current-app.yaml
