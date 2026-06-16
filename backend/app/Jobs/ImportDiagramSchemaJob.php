@@ -92,6 +92,8 @@ class ImportDiagramSchemaJob implements ShouldQueue
 
             if (is_string($this->import->path)) {
                 Storage::disk($this->import->disk)->delete($this->import->path);
+                $this->import->path = null;
+                $this->import->save();
             }
         }
     }
