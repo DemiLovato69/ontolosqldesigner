@@ -59,28 +59,56 @@
             @close="showShareModal = false"
         />
 
-        <div class="diagram-canvas-wrapper" ref="canvasWrapperRef" @mousemove="onCanvasMouseMove">
-            <div class="cursor-layer" aria-hidden="true">
-                <RemoteCursor
-                    v-for="cursor in remoteCursors"
-                    :key="cursor.id"
-                    :x="cursor.screenX"
-                    :y="cursor.screenY"
-                    :name="cursor.name"
-                    :color="cursor.color"
-                />
-                <div
-                    v-for="ind in offScreenCursors"
-                    :key="'edge-' + ind.id"
-                    class="cursor-edge-indicator"
-                    :style="{ transform: `translate(calc(${ind.x}px - 50%), calc(${ind.y}px - 50%))` }"
-                >
-                    <svg class="cursor-edge-indicator__arrow" :style="{ transform: `rotate(${ind.angle}deg)` }" width="14" height="14" viewBox="0 0 14 14" :fill="ind.color">
-                        <polygon points="1,3 1,11 13,7" />
-                    </svg>
+        <div :class="['diagram-workspace', { 'is-sidebar-collapsed': !tableSidebarOpen }]">
+            <aside class="schema-sidebar" aria-label="Schema tables">
+                <button class="schema-sidebar__toggle" type="button" @click="tableSidebarOpen = !tableSidebarOpen" title="Tables">
+                    <SvgIcon name="table-list" :size="18" />
+                </button>
+                <template v-if="tableSidebarOpen">
+                    <input
+                        v-model="tableSearch"
+                        class="schema-sidebar__search"
+                        type="search"
+                        placeholder="Search tables"
+                        aria-label="Search tables"
+                    />
+                    <div class="schema-sidebar__list">
+                        <button
+                            v-for="t in filteredTables"
+                            :key="t.id"
+                            class="schema-sidebar__item"
+                            type="button"
+                            @dblclick.stop="navigateToTable(t.id)"
+                            @keydown.enter.prevent="navigateToTable(t.id)"
+                        >{{ t.label }}</button>
+                        <span v-if="!tables.length" class="schema-sidebar__empty">No tables</span>
+                        <span v-else-if="!filteredTables.length" class="schema-sidebar__empty">No matches</span>
+                    </div>
+                </template>
+            </aside>
+
+            <div class="diagram-canvas-wrapper" ref="canvasWrapperRef" @mousemove="onCanvasMouseMove">
+                <div class="cursor-layer" aria-hidden="true">
+                    <RemoteCursor
+                        v-for="cursor in remoteCursors"
+                        :key="cursor.id"
+                        :x="cursor.screenX"
+                        :y="cursor.screenY"
+                        :name="cursor.name"
+                        :color="cursor.color"
+                    />
+                    <div
+                        v-for="ind in offScreenCursors"
+                        :key="'edge-' + ind.id"
+                        class="cursor-edge-indicator"
+                        :style="{ transform: `translate(calc(${ind.x}px - 50%), calc(${ind.y}px - 50%))` }"
+                    >
+                        <svg class="cursor-edge-indicator__arrow" :style="{ transform: `rotate(${ind.angle}deg)` }" width="14" height="14" viewBox="0 0 14 14" :fill="ind.color">
+                            <polygon points="1,3 1,11 13,7" />
+                        </svg>
+                    </div>
                 </div>
-            </div>
-            <VueFlow
+                <VueFlow
                 :default-edge-options="{ type: 'chickenFoot' }"
                 @edge-update="canEdit && onEdgeUpdate($event)"
                 @edge-click="canEdit && openRelationshipModal($event)"
@@ -108,11 +136,8 @@
                 :edges-updatable="canEdit"
                 :class="['diagram-canvas', { 'is-placing-table': isPlacingTable, 'is-connecting': isConnecting, 'is-large-overview': isLargeOverview }]"
             >
-                <Panel position="top-left" class="table-navigator">
+                <Panel v-if="canEdit" position="top-left" class="table-navigator">
                     <div class="table-navigator__row">
-                        <button class="table-navigator__toggle" @click.stop="tableNavOpen = !tableNavOpen" title="Tables">
-                            <SvgIcon name="table-list" :size="18" />
-                        </button>
                         <template v-if="canEdit">
                             <label class="table-navigator__color-btn" title="Default table color">
                                 <span class="table-navigator__color-swatch table-navigator__color-swatch--table" :style="{ background: defaultTableColor }"></span>
@@ -123,15 +148,6 @@
                                 <input type="color" v-model="defaultConnectionColor" class="table-navigator__color-input" />
                             </label>
                         </template>
-                    </div>
-                    <div v-if="tableNavOpen" class="table-navigator__list">
-                        <button
-                            v-for="t in tables"
-                            :key="t.id"
-                            class="table-navigator__item"
-                            @click.stop="navigateToTable(t.id)"
-                        >{{ t.label }}</button>
-                        <span v-if="!tables.length" class="table-navigator__empty">No tables</span>
                     </div>
                 </Panel>
 
@@ -192,7 +208,8 @@
                     />
                 </template>
 
-            </VueFlow>
+                </VueFlow>
+            </div>
         </div>
 
         <RelationshipModal
@@ -294,7 +311,7 @@ import '@/css/header.css'
 
 const props = defineProps({ isDemo: { type: Boolean, default: false } })
 
-const { updateEdge, addEdges, setElements, viewport, screenToFlowCoordinate, flowToScreenCoordinate, findNode, fitView } = useVueFlow()
+const { updateEdge, addEdges, setElements, viewport, screenToFlowCoordinate, flowToScreenCoordinate, findNode, fitView, setCenter } = useVueFlow()
 const store = useStore()
 store.dispatch('initializeAuth')
 const router = useRouter()
@@ -313,6 +330,12 @@ const LARGE_DIAGRAM_ELEMENT_COUNT = 2000
 const isLargeDiagram = computed(() => schema.value.length > LARGE_DIAGRAM_ELEMENT_COUNT)
 const isLargeOverview = computed(() => isLargeDiagram.value && viewport.value.zoom < 0.18)
 const tables = computed(() => schema.value.filter(el => el.type === 'table'))
+const tableSearch = ref('')
+const filteredTables = computed(() => {
+    const q = tableSearch.value.trim().toLowerCase()
+    if (!q) return tables.value
+    return tables.value.filter(table => (table.label ?? '').toLowerCase().includes(q))
+})
 const tableById = computed(() => new Map(tables.value.map(table => [table.id, table])))
 const rowsByTableId = computed(() => {
     const rows = new Map()
@@ -422,7 +445,7 @@ const isValidConnection = ({ source, target }) => {
 
 // --- Table navigator & support ---
 
-const tableNavOpen = ref(false)
+const tableSidebarOpen = ref(true)
 const showSupportModal = ref(false)
 const supportUserEmail = ref('')
 
@@ -436,12 +459,54 @@ const openSupportModal = async () => {
     showSupportModal.value = true
 }
 
+const nodeSize = (node, fallbackWidth = 400, fallbackHeight = 40) => {
+    const styleWidth = parseFloat(node.style?.width)
+    const styleHeight = parseFloat(node.style?.height)
+    return {
+        width: node.dimensions?.width ?? (Number.isFinite(styleWidth) ? styleWidth : fallbackWidth),
+        height: node.dimensions?.height ?? (Number.isFinite(styleHeight) ? styleHeight : fallbackHeight),
+    }
+}
+
+const tableBounds = (tableNode) => {
+    const tableX = tableNode.position?.x ?? 0
+    const tableY = tableNode.position?.y ?? 0
+    const tableSize = nodeSize(tableNode)
+    let maxX = tableX + tableSize.width
+    let maxY = tableY + tableSize.height
+    for (const row of rowsByTableId.value.get(tableNode.id) ?? []) {
+        const rowSize = nodeSize(row)
+        maxX = Math.max(maxX, tableX + (row.position?.x ?? 0) + rowSize.width)
+        maxY = Math.max(maxY, tableY + (row.position?.y ?? 0) + rowSize.height)
+    }
+    return {
+        x: tableX,
+        y: tableY,
+        width: maxX - tableX,
+        height: maxY - tableY,
+    }
+}
+
 const navigateToTable = (tableId) => {
-    tableNavOpen.value = false
     const tableNode = tableById.value.get(tableId)
     if (!tableNode) return
-    const childIds = (rowsByTableId.value.get(tableId) ?? []).map(el => el.id)
-    fitView({ nodes: [tableId, ...childIds], duration: 300, padding: 0.3 })
+    if (typeof setCenter === 'function') {
+        const maxTableNavZoom = 1.25
+        const bounds = tableBounds(tableNode)
+        const canvasWidth = canvasWrapperRef.value?.clientWidth ?? 0
+        const canvasHeight = canvasWrapperRef.value?.clientHeight ?? 0
+        const fitZoom = canvasWidth && canvasHeight
+            ? Math.min((canvasWidth * 0.8) / bounds.width, (canvasHeight * 0.8) / bounds.height, 4)
+            : 4
+        const zoom = Math.min(fitZoom, maxTableNavZoom)
+        setCenter(
+            bounds.x + bounds.width / 2,
+            bounds.y + bounds.height / 2,
+            { zoom, duration: 350 }
+        )
+        return
+    }
+    fitView({ nodes: [tableId, ...(rowsByTableId.value.get(tableId) ?? []).map(row => row.id)], duration: 350, padding: 0.2 })
 }
 
 const focusLargeDiagram = () => {
@@ -777,8 +842,102 @@ onUnmounted(() => {
     margin-top: 0.4rem;
 }
 
+.diagram-workspace {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    background: var(--bg-page);
+}
+
+.schema-sidebar {
+    width: 240px;
+    flex: 0 0 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border-right: 1px solid var(--border-color);
+    background: var(--bg-surface);
+    min-height: 0;
+}
+
+.diagram-workspace.is-sidebar-collapsed .schema-sidebar {
+    width: 48px;
+    flex-basis: 48px;
+    align-items: center;
+}
+
+.schema-sidebar__toggle {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--bg-surface);
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.schema-sidebar__toggle:hover {
+    background: var(--hover-bg-alt);
+}
+
+.schema-sidebar__search {
+    width: 100%;
+    height: 32px;
+    padding: 0 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.schema-sidebar__search:focus {
+    outline: none;
+    border-color: var(--border-strong);
+}
+
+.schema-sidebar__list {
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.schema-sidebar__item {
+    width: 100%;
+    padding: 7px 8px;
+    border: none;
+    border-radius: 4px;
+    background: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.schema-sidebar__item:hover,
+.schema-sidebar__item:focus {
+    outline: none;
+    background: var(--hover-bg-alt);
+}
+
+.schema-sidebar__empty {
+    padding: 8px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
 .diagram-canvas-wrapper {
     flex: 1;
+    min-width: 0;
     min-height: 0;
     position: relative;
     overflow: hidden;
@@ -850,25 +1009,6 @@ onUnmounted(() => {
     align-items: center;
 }
 
-.table-navigator__toggle {
-    width: 32px;
-    height: 32px;
-    padding: 6px;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    background: var(--bg-surface);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.12);
-    color: var(--text-secondary);
-}
-
-.table-navigator__toggle:hover {
-    background: var(--hover-bg-alt);
-}
-
 .table-navigator__color-btn {
     width: 32px;
     height: 32px;
@@ -916,39 +1056,4 @@ onUnmounted(() => {
     border-radius: 2px;
 }
 
-.table-navigator__list {
-    margin-top: 4px;
-    background: var(--bg-surface);
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-    min-width: 160px;
-    max-height: 280px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-}
-
-.table-navigator__item {
-    padding: 6px 12px;
-    background: none;
-    border: none;
-    color: var(--text-primary);
-    font-size: 13px;
-    cursor: pointer;
-    text-align: left;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.table-navigator__item:hover {
-    background: var(--hover-bg-alt);
-}
-
-.table-navigator__empty {
-    padding: 8px 12px;
-    font-size: 12px;
-    color: var(--text-muted);
-}
 </style>
