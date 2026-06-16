@@ -587,6 +587,7 @@ const importSql = async () => {
     }
 
     let attempts = 0
+    let queueWarningShown = false
     const poll = setInterval(async () => {
         attempts++
         if (attempts > 150) {
@@ -599,6 +600,25 @@ const importSql = async () => {
         }
         const status = await Diagram.importStatus(diagramId.value)
         if (!status) return
+        if (status.upload?.status === 'failed') {
+            clearInterval(poll)
+            importLoading.value = false
+            isSaved.value = false
+            importUploadPhase.value = ''
+            $toast.error('Import failed: ' + (status.upload.error || status.error || 'Unknown error'))
+            return
+        }
+        if (status.status === 'pending' && status.upload?.status === 'uploaded') {
+            importUploadPhase.value = status.upload.age_seconds > 60
+                ? 'Waiting for import worker'
+                : 'Queued for import'
+            if (status.upload.age_seconds > 120 && !queueWarningShown) {
+                queueWarningShown = true
+                $toast.warning('Import is uploaded but waiting for the import worker to process it')
+            }
+        } else if (status.status === 'processing' || status.upload?.status === 'processing') {
+            importUploadPhase.value = 'Processing import'
+        }
         if (status.status === 'done') {
             clearInterval(poll)
             await applySchema(status.schema, status.value_types ?? [], status.warnings ?? [], status.db_type)

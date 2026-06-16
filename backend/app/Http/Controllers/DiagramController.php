@@ -259,8 +259,18 @@ class DiagramController extends Controller
     {
         $this->authorize('import', $diagram);
 
+        $latestImport = $diagram->imports()->latest()->first();
+
         return $this->success([
             'status' => $diagram->import_status,
+            'upload' => $latestImport ? [
+                'id' => $latestImport->id,
+                'status' => $latestImport->status,
+                'format' => $latestImport->format,
+                'error' => $latestImport->error,
+                'updated_at' => $latestImport->updated_at?->toIso8601String(),
+                'age_seconds' => $latestImport->updated_at?->diffInSeconds(now()),
+            ] : null,
             'schema' => $diagram->import_status === ImportStatus::DONE
                 ? DiagramSchema::withoutRuntimeState($diagram->schema)
                 : null,

@@ -1,0 +1,263 @@
+name: ontolosql-designer
+region: tor
+
+envs:
+  - key: APP_NAME
+    scope: RUN_AND_BUILD_TIME
+    value: sql-designer
+  - key: APP_ENV
+    scope: RUN_AND_BUILD_TIME
+    value: production
+  - key: APP_KEY
+    scope: RUN_AND_BUILD_TIME
+    value: CHANGE_ME_GENERATE_WITH_PHP_ARTISAN_KEY_GENERATE_SHOW
+    type: SECRET
+  - key: APP_DEBUG
+    scope: RUN_AND_BUILD_TIME
+    value: "false"
+  - key: APP_URL
+    scope: RUN_AND_BUILD_TIME
+    value: https://ontolosql-designer-kripb.ondigitalocean.app
+
+  - key: LOG_CHANNEL
+    scope: RUN_AND_BUILD_TIME
+    value: stack
+  - key: LOG_LEVEL
+    scope: RUN_AND_BUILD_TIME
+    value: error
+
+  - key: DB_CONNECTION
+    scope: RUN_AND_BUILD_TIME
+    value: pgsql
+  - key: DATABASE_URL
+    scope: RUN_AND_BUILD_TIME
+    value: ${snydiagram.DATABASE_URL}
+  - key: DB_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: ${snydiagram.HOSTNAME}
+  - key: DB_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: ${snydiagram.PORT}
+  - key: DB_DATABASE
+    scope: RUN_AND_BUILD_TIME
+    value: ${snydiagram.DATABASE}
+  - key: DB_USERNAME
+    scope: RUN_AND_BUILD_TIME
+    value: ${snydiagram.USERNAME}
+  - key: DB_PASSWORD
+    scope: RUN_AND_BUILD_TIME
+    value: ${snydiagram.PASSWORD}
+    type: SECRET
+
+  - key: CACHE_STORE
+    scope: RUN_AND_BUILD_TIME
+    value: database
+  - key: CACHE_DRIVER
+    scope: RUN_AND_BUILD_TIME
+    value: database
+  - key: QUEUE_CONNECTION
+    scope: RUN_AND_BUILD_TIME
+    value: database
+  - key: FILESYSTEM_DISK
+    scope: RUN_AND_BUILD_TIME
+    value: local
+  - key: IMPORTS_FILESYSTEM_DISK
+    scope: RUN_AND_BUILD_TIME
+    value: s3
+
+  - key: BROADCAST_CONNECTION
+    scope: RUN_AND_BUILD_TIME
+    value: reverb
+  - key: REVERB_APP_ID
+    scope: RUN_AND_BUILD_TIME
+    value: snydiagram
+  - key: REVERB_APP_KEY
+    scope: RUN_AND_BUILD_TIME
+    value: snydiagram-key
+  - key: REVERB_APP_SECRET
+    scope: RUN_AND_BUILD_TIME
+    value: CHANGE_ME_REVERB_SECRET
+    type: SECRET
+  - key: REVERB_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: ontolosql-designer-kripb.ondigitalocean.app
+  - key: REVERB_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "443"
+  - key: REVERB_SCHEME
+    scope: RUN_AND_BUILD_TIME
+    value: https
+  - key: REVERB_INTERNAL_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: ontolosql-designer-kripb.ondigitalocean.app
+  - key: REVERB_INTERNAL_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "443"
+  - key: REVERB_INTERNAL_SCHEME
+    scope: RUN_AND_BUILD_TIME
+    value: https
+  - key: REVERB_SERVER_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: 0.0.0.0
+  - key: REVERB_SERVER_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "6001"
+
+  - key: VITE_REVERB_APP_KEY
+    scope: RUN_AND_BUILD_TIME
+    value: ${REVERB_APP_KEY}
+  - key: VITE_REVERB_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: ${REVERB_HOST}
+  - key: VITE_REVERB_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "443"
+  - key: VITE_REVERB_SCHEME
+    scope: RUN_AND_BUILD_TIME
+    value: ${REVERB_SCHEME}
+
+  - key: SESSION_DRIVER
+    scope: RUN_AND_BUILD_TIME
+    value: cookie
+  - key: SESSION_LIFETIME
+    scope: RUN_AND_BUILD_TIME
+    value: "120"
+  - key: SESSION_DOMAIN
+    scope: RUN_AND_BUILD_TIME
+    value: ontolosql-designer-kripb.ondigitalocean.app
+  - key: SESSION_SECURE_COOKIE
+    scope: RUN_AND_BUILD_TIME
+    value: "true"
+  - key: SANCTUM_STATEFUL_DOMAINS
+    scope: RUN_AND_BUILD_TIME
+    value: ontolosql-designer-kripb.ondigitalocean.app
+
+  - key: GOOGLE_CLIENT_ID
+    scope: RUN_TIME
+    value: CHANGE_ME
+    type: SECRET
+  - key: GOOGLE_CLIENT_SECRET
+    scope: RUN_TIME
+    value: CHANGE_ME
+    type: SECRET
+  - key: GOOGLE_ALLOWED_DOMAIN
+    scope: RUN_AND_BUILD_TIME
+    value: cavtera.com
+
+  - key: AWS_ACCESS_KEY_ID
+    scope: RUN_AND_BUILD_TIME
+    value: CHANGE_ME_SPACES_KEY
+    type: SECRET
+  - key: AWS_SECRET_ACCESS_KEY
+    scope: RUN_AND_BUILD_TIME
+    value: CHANGE_ME_SPACES_SECRET
+    type: SECRET
+  - key: AWS_DEFAULT_REGION
+    scope: RUN_AND_BUILD_TIME
+    value: tor1
+  - key: AWS_BUCKET
+    scope: RUN_AND_BUILD_TIME
+    value: CHANGE_ME_IMPORTS_BUCKET
+  - key: AWS_ENDPOINT
+    scope: RUN_AND_BUILD_TIME
+    value: https://tor1.digitaloceanspaces.com
+  - key: AWS_USE_PATH_STYLE_ENDPOINT
+    scope: RUN_AND_BUILD_TIME
+    value: "false"
+
+  - key: MAIL_MAILER
+    scope: RUN_AND_BUILD_TIME
+    value: log
+  - key: MAIL_HOST
+    scope: RUN_AND_BUILD_TIME
+    value: smtp.gmail.com
+  - key: MAIL_PORT
+    scope: RUN_AND_BUILD_TIME
+    value: "587"
+  - key: MAIL_USERNAME
+    scope: RUN_AND_BUILD_TIME
+    value: CHANGE_ME
+    type: SECRET
+  - key: MAIL_PASSWORD
+    scope: RUN_AND_BUILD_TIME
+    value: CHANGE_ME
+    type: SECRET
+  - key: MAIL_ENCRYPTION
+    scope: RUN_AND_BUILD_TIME
+    value: tls
+  - key: MAIL_FROM_ADDRESS
+    scope: RUN_AND_BUILD_TIME
+    value: noreply@localhost
+  - key: MAIL_FROM_NAME
+    scope: RUN_AND_BUILD_TIME
+    value: ${APP_NAME}
+
+services:
+  - name: ontolosqldesigner
+    github:
+      repo: DemiLovato69/ontolosqldesigner
+      branch: master
+      deploy_on_push: true
+    dockerfile_path: docker/app/Dockerfile
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-1gb
+    routes:
+      - path: /
+
+  - name: reverb
+    github:
+      repo: DemiLovato69/ontolosqldesigner
+      branch: master
+      deploy_on_push: true
+    dockerfile_path: docker/app/Dockerfile
+    http_port: 6001
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-0.5gb
+    routes:
+      - path: /app
+        preserve_path_prefix: true
+      - path: /apps
+        preserve_path_prefix: true
+    run_command: php artisan reverb:start --host=0.0.0.0 --port=6001 --no-interaction
+
+workers:
+  - name: diagram-worker
+    github:
+      repo: DemiLovato69/ontolosqldesigner
+      branch: master
+      deploy_on_push: true
+    dockerfile_path: docker/app/Dockerfile
+    instance_count: 1
+    instance_size_slug: basic-xs
+    run_command: php artisan queue:work database --queue=diagrams --tries=1 --sleep=3 --timeout=1800
+
+  - name: queue-emails
+    github:
+      repo: DemiLovato69/ontolosqldesigner
+      branch: master
+      deploy_on_push: true
+    dockerfile_path: docker/app/Dockerfile
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    run_command: php artisan queue:work database --queue=emails --tries=5 --sleep=3 --timeout=30
+
+jobs:
+  - name: migrate
+    kind: PRE_DEPLOY
+    github:
+      repo: DemiLovato69/ontolosqldesigner
+      branch: master
+      deploy_on_push: true
+    dockerfile_path: docker/app/Dockerfile
+    instance_size_slug: basic-xxs
+    run_command: php artisan migrate --force
+
+databases:
+  - name: snydiagram
+    engine: PG
+    version: "17"
+
+alerts:
+  - rule: DEPLOYMENT_FAILED
+  - rule: DOMAIN_FAILED

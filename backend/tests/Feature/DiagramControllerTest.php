@@ -667,6 +667,27 @@ class DiagramControllerTest extends TestCase
             ->assertJsonStructure(['status']);
     }
 
+    public function test_import_status_returns_latest_chunked_upload_state(): void
+    {
+        $this->diagram->update(['import_status' => ImportStatus::PENDING]);
+        $import = DiagramImport::factory()->create([
+            'diagram_id' => $this->diagram->id,
+            'user_id' => $this->user->id,
+            'format' => 'backup-json',
+            'status' => DiagramImport::STATUS_UPLOADED,
+            'error' => null,
+        ]);
+
+        $this->auth()
+            ->getJson("/api/diagrams/sql/import-status/{$this->diagram->id}")
+            ->assertStatus(200)
+            ->assertJsonPath('status', ImportStatus::PENDING->value)
+            ->assertJsonPath('upload.id', $import->id)
+            ->assertJsonPath('upload.status', DiagramImport::STATUS_UPLOADED)
+            ->assertJsonPath('upload.format', 'backup-json')
+            ->assertJsonStructure(['upload' => ['updated_at', 'age_seconds']]);
+    }
+
     public function test_export_returns_pending(): void
     {
         Queue::fake();

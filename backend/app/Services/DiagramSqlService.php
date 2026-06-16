@@ -87,14 +87,15 @@ class DiagramSqlService
         }
 
         $directory = 'diagrams/'.$diagram->id.'/'.Str::uuid()->toString();
-        Storage::disk('imports')->makeDirectory($directory.'/chunks');
+        $diskName = (string) config('filesystems.imports_disk', 'imports');
+        Storage::disk($diskName)->makeDirectory($directory.'/chunks');
 
         return DiagramImport::create([
             'diagram_id' => $diagram->id,
             'user_id' => $user->id,
             'format' => $data['format'],
             'status' => DiagramImport::STATUS_UPLOADING,
-            'disk' => 'imports',
+            'disk' => $diskName,
             'directory' => $directory,
             'path' => null,
             'original_name' => $data['original_name'] ?? null,

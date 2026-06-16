@@ -17,6 +17,8 @@ return [
 
     'default' => env('FILESYSTEM_DISK', 'local'),
 
+    'imports_disk' => env('IMPORTS_FILESYSTEM_DISK', 'imports'),
+
     /*
     |--------------------------------------------------------------------------
     | Filesystem Disks
