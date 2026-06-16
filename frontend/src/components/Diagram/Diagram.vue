@@ -617,11 +617,12 @@ const captureSvg = async () => {
     }
 }
 
-const updateValueTypes = (nextValueTypes) => {
+const updateValueTypes = (nextValueTypes, nextSchema = null) => {
     snapshot()
     valueTypes.value = nextValueTypes
+    if (nextSchema) schema.value = nextSchema
     isSaved.value = false
-    whisper('value-types-sync', { valueTypes: valueTypes.value })
+    whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
 }
 
 // --- Save ---

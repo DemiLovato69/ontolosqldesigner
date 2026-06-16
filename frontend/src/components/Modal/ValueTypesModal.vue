@@ -164,9 +164,33 @@
                     </section>
 
                     <section class="vt-delete-section">
-                        <p v-if="references.length" class="vt-reference-warning">
-                            Used by {{ references.join(', ') }}. Reassign these fields before deleting.
-                        </p>
+                        <div v-if="references.length" class="vt-reference-warning">
+                            <h4>Reassign these fields before deleting</h4>
+                            <div class="vt-reference-list">
+                                <label v-for="reference in references" :key="reference.id" class="vt-reference-row">
+                                    <span>{{ reference.label }}</span>
+                                    <select
+                                        :disabled="!canEdit"
+                                        :value="selectedId"
+                                        @change="reassignReference(reference.id, $event.target.value)"
+                                    >
+                                        <option :value="selectedId" disabled>
+                                            Choose replacement
+                                        </option>
+                                        <optgroup v-if="reassignOptions.length" label="Value Types">
+                                            <option v-for="valueType in reassignOptions" :key="valueType.id" :value="`value-type:${valueType.id}`">
+                                                {{ valueType.displayName }}
+                                            </option>
+                                        </optgroup>
+                                        <optgroup v-for="(options, groupLabel) in ontologyTypeGroups" :key="groupLabel" :label="groupLabel">
+                                            <option v-for="option in options" :key="option.value" :value="`basic:${option.value}`">
+                                                {{ option.label }}
+                                            </option>
+                                        </optgroup>
+                                    </select>
+                                </label>
+                            </div>
+                        </div>
                         <button
                             v-if="canEdit"
                             type="button"
@@ -198,6 +222,7 @@
 <script setup>
 import { computed, ref } from 'vue'
 import SvgIcon from '../SvgIcon.vue'
+import { typeGroupsFor } from '@/services/rowTypes.js'
 
 const props = defineProps({
     valueTypes: { type: Array, default: () => [] },
@@ -216,18 +241,24 @@ const API_NAME_RE = /^[A-Za-z][A-Za-z0-9_]{0,99}$/
 const clone = (value) => JSON.parse(JSON.stringify(value))
 const createId = (prefix) => `${prefix}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`
 const localValueTypes = ref(clone(props.valueTypes))
+const localSchema = ref(clone(props.schema))
 const selectedId = ref(localValueTypes.value[0]?.id ?? null)
 const constraintToAdd = ref('')
 const error = ref('')
 
 const selectedValueType = computed(() => localValueTypes.value.find(item => item.id === selectedId.value) ?? null)
+const ontologyTypeGroups = typeGroupsFor('ontology')
 const references = computed(() => {
     if (!selectedId.value) return []
-    const tables = new Map(props.schema.filter(item => item.type === 'table').map(item => [item.id, item.label]))
-    return props.schema
+    const tables = new Map(localSchema.value.filter(item => item.type === 'table').map(item => [item.id, item.label]))
+    return localSchema.value
         .filter(item => item.type === 'row' && item.data?.valueTypeId === selectedId.value)
-        .map(item => `${tables.get(item.parentNode) ?? 'table'}.${item.label}`)
+        .map(item => ({
+            id: item.id,
+            label: `${tables.get(item.parentNode) ?? 'table'}.${item.label}`,
+        }))
 })
+const reassignOptions = computed(() => localValueTypes.value.filter(item => item.id !== selectedId.value))
 const availableConstraintTypes = computed(() => {
     const used = new Set(selectedValueType.value?.constraints?.map(item => item.type) ?? [])
     return CONSTRAINT_TYPES.filter(type => !used.has(type))
@@ -299,6 +330,41 @@ const removeConstraint = (id) => {
     selectedValueType.value.constraints = selectedValueType.value.constraints.filter(item => item.id !== id)
 }
 
+const reassignReference = (rowId, replacement) => {
+    const row = localSchema.value.find(item => item.id === rowId)
+    if (!row || !replacement) return
+
+    if (replacement.startsWith('value-type:')) {
+        const valueTypeId = replacement.slice('value-type:'.length)
+        const valueType = localValueTypes.value.find(item => item.id === valueTypeId)
+        if (!valueType || valueTypeId === selectedId.value) return
+        row.data = {
+            ...(row.data ?? {}),
+            valueTypeId,
+            sqlType: canvasTypeForValueType(valueType),
+            ontologyBaseType: null,
+            ontologyImportedSqlType: null,
+        }
+        return
+    }
+
+    if (replacement.startsWith('basic:')) {
+        row.data = {
+            ...(row.data ?? {}),
+            valueTypeId: null,
+            sqlType: replacement.slice('basic:'.length),
+        }
+    }
+}
+
+const canvasTypeForValueType = (valueType) => {
+    const baseType = valueType.baseType ?? { type: 'string' }
+    if (baseType.type === 'array') return `ARRAY<${String(baseType.elementType ?? 'string').toUpperCase()}>`
+    if (baseType.type === 'struct') return 'STRUCT'
+    if (baseType.type === 'decimal') return 'DECIMAL(10,2)'
+    return String(baseType.type ?? 'string').toUpperCase()
+}
+
 const deleteSelected = () => {
     if (references.value.length) return
     const index = localValueTypes.value.findIndex(item => item.id === selectedId.value)
@@ -346,7 +412,7 @@ const validate = () => {
 const applyChanges = () => {
     error.value = validate()
     if (error.value) return
-    emit('update', clone(localValueTypes.value))
+    emit('update', clone(localValueTypes.value), clone(localSchema.value))
     emit('close')
 }
 </script>
@@ -385,8 +451,16 @@ const applyChanges = () => {
 }
 
 .vt-header {
+    position: relative;
+    justify-content: center;
     padding: 20px 24px;
+    text-align: center;
     border-bottom: 1px solid var(--border-color);
+}
+
+.vt-header > .vt-icon-button {
+    position: absolute;
+    right: 18px;
 }
 
 .vt-header h2,
@@ -545,25 +619,74 @@ const applyChanges = () => {
 }
 
 .danger,
-.vt-delete-button,
-.vt-error,
-.vt-reference-warning {
+.vt-error {
     color: #ef4444;
 }
 
 .vt-delete-section {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    padding-top: 18px;
+    margin-top: 22px;
+    border-top: 1px solid var(--border-color);
 }
 
 .vt-reference-warning {
     margin: 0;
+    padding: 14px 16px;
+    color: #fecaca;
     font-size: 12px;
+    line-height: 1.45;
+    background: rgba(127, 29, 29, 0.18);
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    border-radius: 7px;
+}
+
+.vt-reference-warning h4 {
+    margin: 0 0 8px;
+    color: #fca5a5;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.vt-reference-list {
+    display: grid;
+    gap: 8px;
+}
+
+.vt-reference-row {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 240px);
+    align-items: center;
+    gap: 10px !important;
+    padding: 9px 10px;
+    color: #fee2e2 !important;
+    background: rgba(0, 0, 0, 0.16);
+    border: 1px solid rgba(239, 68, 68, 0.18);
+    border-radius: 6px;
+}
+
+.vt-reference-row span {
+    overflow: hidden;
+    font-weight: 500;
+    text-align: left;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.vt-reference-row select {
+    height: 34px;
 }
 
 .vt-delete-button {
-    padding: 7px 10px;
+    align-self: center;
+    width: 160px;
+    height: 40px;
+    padding: 0 14px;
+    color: #ef4444;
     cursor: pointer;
     background: transparent;
     border: 1px solid #7f1d1d;
