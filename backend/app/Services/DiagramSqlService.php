@@ -197,8 +197,14 @@ class DiagramSqlService
 
         $disk = Storage::disk($import->disk);
         $payloadPath = $import->directory.'/payload';
-        $target = fopen($disk->path($payloadPath), 'wb');
+        $temporaryPath = tempnam(sys_get_temp_dir(), 'diagram-import-');
+        if ($temporaryPath === false) {
+            throw new RuntimeException('Could not create temporary import payload.');
+        }
+
+        $target = fopen($temporaryPath, 'wb');
         if ($target === false) {
+            @unlink($temporaryPath);
             throw new RuntimeException('Could not create import payload.');
         }
 
@@ -209,7 +215,7 @@ class DiagramSqlService
                     throw new RuntimeException('Import is missing one or more chunks.');
                 }
 
-                $source = fopen($disk->path($chunkPath), 'rb');
+                $source = $disk->readStream($chunkPath);
                 if ($source === false) {
                     throw new RuntimeException('Could not read import chunk.');
                 }
@@ -218,6 +224,19 @@ class DiagramSqlService
             }
         } finally {
             fclose($target);
+        }
+
+        $payload = fopen($temporaryPath, 'rb');
+        if ($payload === false) {
+            @unlink($temporaryPath);
+            throw new RuntimeException('Could not read assembled import payload.');
+        }
+
+        try {
+            $disk->put($payloadPath, $payload);
+        } finally {
+            fclose($payload);
+            @unlink($temporaryPath);
         }
 
         if ($disk->size($payloadPath) !== $import->size) {
