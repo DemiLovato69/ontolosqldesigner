@@ -232,7 +232,8 @@
             :loading="importLoading"
             :selected-import-file="importFile"
             :upload-progress="importUploadProgress"
-            @import-file="file => { importFile = file; importUploadProgress = 0 }"
+            :upload-phase="importUploadPhase"
+            @import-file="file => { importFile = file; importUploadProgress = 0; importUploadPhase = '' }"
             @primary-action="importSql"
             @close="showImportModal = false"
         />
@@ -530,6 +531,7 @@ const importFile = ref(null)
 const importType = ref('sql')
 const importLoading = ref(false)
 const importUploadProgress = ref(0)
+const importUploadPhase = ref('')
 const showExportModal = ref(false)
 
 const importSql = async () => {
@@ -539,16 +541,22 @@ const importSql = async () => {
     }
     importLoading.value = true
     importUploadProgress.value = 0
+    importUploadPhase.value = importFile.value ? 'Preparing upload' : ''
     // Keep autosave from replacing the queued import with the current editor state.
     isSaved.value = true
     const result = importFile.value
-        ? await Diagram.importFile(diagramId.value, importType.value, importFile.value, progress => { importUploadProgress.value = progress })
+        ? await Diagram.importFile(diagramId.value, importType.value, importFile.value, (progress, phase) => {
+            importUploadProgress.value = progress
+            importUploadPhase.value = phase
+        })
         : await Diagram.import(diagramId.value, importType.value, importContent.value)
     if (!result) {
         importLoading.value = false
         isSaved.value = false
+        importUploadPhase.value = ''
         return
     }
+    if (importFile.value) importUploadPhase.value = 'Processing import'
 
     const applySchema = async (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null) => {
         // Replace Vue Flow's internal graph instead of relying on v-model
@@ -566,6 +574,7 @@ const importSql = async () => {
         showImportModal.value = false
         importFile.value = null
         importUploadProgress.value = 0
+        importUploadPhase.value = ''
         whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
         for (const warning of warnings) {
             $toast.warning(warning)
@@ -584,6 +593,7 @@ const importSql = async () => {
             clearInterval(poll)
             importLoading.value = false
             isSaved.value = false
+            importUploadPhase.value = ''
             $toast.error('Import timed out')
             return
         }
@@ -596,6 +606,7 @@ const importSql = async () => {
             clearInterval(poll)
             importLoading.value = false
             isSaved.value = false
+            importUploadPhase.value = ''
             $toast.error('Import failed: ' + (status.error || 'Unknown error'))
         }
     }, 2000)

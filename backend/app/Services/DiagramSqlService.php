@@ -25,8 +25,10 @@ use App\Services\SqlDialects\SqliteDialect;
 use App\Services\SqlDialects\SqlServerDialect;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Throwable;
 use ZipArchive;
 
 class DiagramSqlService
@@ -54,7 +56,7 @@ class DiagramSqlService
         $diagram->save();
 
         ImportDiagramSchemaJob::dispatch($diagram);
-        broadcast(new SchemaImported($diagram->share_token, (string) $user->id));
+        $this->broadcastSchemaImported($diagram, $user);
 
         DiagramChangelog::create([
             'diagram_id' => $diagram->id,
@@ -155,6 +157,44 @@ class DiagramSqlService
         }
 
         $disk = Storage::disk($import->disk);
+        foreach ($expected as $index) {
+            if (! $disk->exists($import->directory."/chunks/{$index}.part")) {
+                throw new RuntimeException('Import is missing one or more chunks.');
+            }
+        }
+
+        $import->status = DiagramImport::STATUS_UPLOADED;
+        $import->error = null;
+        $import->save();
+
+        $diagram->script = null;
+        $diagram->import_status = ImportStatus::PENDING;
+        $diagram->import_error = null;
+        $diagram->import_warnings = null;
+        $diagram->save();
+
+        ImportDiagramSchemaJob::dispatch($diagram, $import);
+        $this->broadcastSchemaImported($diagram, $user);
+
+        DiagramChangelog::create([
+            'diagram_id' => $diagram->id,
+            'user_id' => $user->id,
+            'user_name' => $user->email,
+            'action' => ChangelogAction::IMPORT_SQL,
+            'details' => null,
+        ]);
+    }
+
+    public function assembleChunkedImport(DiagramImport $import): string
+    {
+        $received = array_values(array_unique(array_map('intval', $import->chunks_received ?? [])));
+        sort($received);
+        $expected = range(0, $import->chunks_total - 1);
+        if ($received !== $expected) {
+            throw new RuntimeException('Import is missing one or more chunks.');
+        }
+
+        $disk = Storage::disk($import->disk);
         $payloadPath = $import->directory.'/payload';
         $target = fopen($disk->path($payloadPath), 'wb');
         if ($target === false) {
@@ -186,27 +226,23 @@ class DiagramSqlService
 
         $disk->deleteDirectory($import->directory.'/chunks');
 
-        $import->status = DiagramImport::STATUS_UPLOADED;
         $import->path = $payloadPath;
-        $import->error = null;
         $import->save();
 
-        $diagram->script = null;
-        $diagram->import_status = ImportStatus::PENDING;
-        $diagram->import_error = null;
-        $diagram->import_warnings = null;
-        $diagram->save();
+        return $payloadPath;
+    }
 
-        ImportDiagramSchemaJob::dispatch($diagram, $import);
-        broadcast(new SchemaImported($diagram->share_token, (string) $user->id));
-
-        DiagramChangelog::create([
-            'diagram_id' => $diagram->id,
-            'user_id' => $user->id,
-            'user_name' => $user->email,
-            'action' => ChangelogAction::IMPORT_SQL,
-            'details' => null,
-        ]);
+    private function broadcastSchemaImported(Diagram $diagram, User $user): void
+    {
+        try {
+            broadcast(new SchemaImported($diagram->share_token, (string) $user->id));
+        } catch (Throwable $exception) {
+            Log::warning('Schema import broadcast failed', [
+                'diagram_id' => $diagram->id,
+                'user_id' => $user->id,
+                'error' => $exception->getMessage(),
+            ]);
+        }
     }
 
     public function startExport(Diagram $diagram, User $user): void

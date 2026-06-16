@@ -49,7 +49,7 @@ services:
             REVERB_INTERNAL_HOST: reverb
             REVERB_INTERNAL_PORT: 6001
             REVERB_INTERNAL_SCHEME: http
-        command: ["php", "artisan", "queue:work", "database", "--queue=diagrams", "--tries=1", "--sleep=3", "--timeout=300"]
+        command: ["php", "artisan", "queue:work", "database", "--queue=diagrams", "--tries=1", "--sleep=3", "--timeout=1800"]
 
     queue-emails:
         build:

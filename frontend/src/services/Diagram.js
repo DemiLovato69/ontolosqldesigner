@@ -7,7 +7,11 @@ async function request(fn) {
     try {
         return await fn()
     } catch (error) {
-        $toast.error(error.response?.data.message ?? 'Something went wrong!')
+        if (error.response?.status === 413) {
+            $toast.error('Upload chunk is too large for the server. Please try again or contact support.')
+        } else {
+            $toast.error(error.response?.data.message ?? 'Something went wrong!')
+        }
     }
 }
 
@@ -75,7 +79,7 @@ export const Diagram = {
 
     importFile: (id, format, file, onProgress = null) =>
         request(async () => {
-            const chunkSize = 16 * 1024 * 1024
+            const chunkSize = 4 * 1024 * 1024
             const chunksTotal = Math.ceil(file.size / chunkSize)
             const upload = await axios.post(`/api/diagrams/${id}/imports`, {
                 format,
@@ -93,10 +97,12 @@ export const Diagram = {
                     file.slice(start, end),
                     { headers: { 'Content-Type': 'application/octet-stream' } }
                 )
-                if (onProgress) onProgress(Math.round(((index + 1) / chunksTotal) * 100))
+                if (onProgress) onProgress(Math.round(((index + 1) / chunksTotal) * 100), 'Uploading file')
             }
 
+            if (onProgress) onProgress(100, 'Finalizing upload')
             const response = await axios.post(`/api/diagrams/${id}/imports/${upload.data.id}/complete`)
+            if (onProgress) onProgress(100, 'Processing import')
             return response.data
         }),
 

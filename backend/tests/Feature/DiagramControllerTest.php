@@ -9,6 +9,7 @@ use App\Models\Diagram;
 use App\Models\DiagramImport;
 use App\Models\DiagramVisitor;
 use App\Models\User;
+use App\Services\DiagramSqlService;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -582,8 +583,13 @@ class DiagramControllerTest extends TestCase
 
         $import = DiagramImport::findOrFail($importId);
         $this->assertSame(DiagramImport::STATUS_UPLOADED, $import->status);
-        $this->assertNotNull($import->path);
-        Storage::disk('imports')->assertExists($import->path);
+        $this->assertNull($import->path);
+        Storage::disk('imports')->assertExists($import->directory.'/chunks/0.part');
+        Storage::disk('imports')->assertExists($import->directory.'/chunks/1.part');
+
+        $payloadPath = app(DiagramSqlService::class)->assembleChunkedImport($import);
+        Storage::disk('imports')->assertExists($payloadPath);
+        $this->assertSame('123456789012345678abcdefghijklmnopqr', Storage::disk('imports')->get($payloadPath));
 
         $this->diagram->refresh();
         $this->assertNull($this->diagram->script);

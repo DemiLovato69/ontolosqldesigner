@@ -32,7 +32,7 @@
             </div>
             <div v-if="primaryLabel === 'Import' && selectedImportFile" class="selected-import-file">
                 <span>{{ selectedImportFile.name }}</span>
-                <small>{{ uploadProgress > 0 ? `${uploadProgress}% uploaded` : formatBytes(selectedImportFile.size) }}</small>
+                <small>{{ uploadStatusText }}</small>
                 <button type="button" @click="clearSelectedFile" :disabled="loading">Remove</button>
             </div>
             <div class="modal-footer">
@@ -75,6 +75,7 @@ const props = defineProps({
     importType: { type: String, default: 'sql' },
     selectedImportFile: { type: Object, default: null },
     uploadProgress: { type: Number, default: 0 },
+    uploadPhase: { type: String, default: '' },
 })
 
 const emit = defineEmits(['update:modelValue', 'update:importType', 'import-file', 'primary-action', 'close'])
@@ -113,6 +114,18 @@ const importOptions = [
 const activeImportOption = computed(() =>
     importOptions.find(option => option.value === props.importType) ?? importOptions[0]
 )
+
+const uploadStatusText = computed(() => {
+    if (props.uploadPhase) {
+        return props.uploadProgress > 0
+            ? `${props.uploadPhase} (${props.uploadProgress}%)`
+            : props.uploadPhase
+    }
+
+    return props.uploadProgress > 0
+        ? `${props.uploadProgress}% uploaded`
+        : formatBytes(props.selectedImportFile?.size ?? 0)
+})
 
 const selectImportType = (type) => {
     emit('update:importType', type)

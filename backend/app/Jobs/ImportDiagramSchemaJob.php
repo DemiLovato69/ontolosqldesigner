@@ -112,17 +112,22 @@ class ImportDiagramSchemaJob implements ShouldQueue
 
         $this->import->refresh();
         if ($this->import->diagram_id !== $this->diagram->id
-            || ! in_array($this->import->status, [DiagramImport::STATUS_UPLOADED, DiagramImport::STATUS_PROCESSING], true)
-            || ! is_string($this->import->path)) {
+            || ! in_array($this->import->status, [DiagramImport::STATUS_UPLOADED, DiagramImport::STATUS_PROCESSING], true)) {
             return null;
         }
 
         $this->import->status = DiagramImport::STATUS_PROCESSING;
         $this->import->save();
 
+        $path = is_string($this->import->path)
+            ? $this->import->path
+            : $service->assembleChunkedImport($this->import);
+
+        $this->import->refresh();
+
         return [
             'format' => $this->import->format,
-            'content' => Storage::disk($this->import->disk)->get($this->import->path),
+            'content' => Storage::disk($this->import->disk)->get($path),
         ];
     }
 
