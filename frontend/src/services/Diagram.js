@@ -11,6 +11,40 @@ async function request(fn) {
     }
 }
 
+const transientElementKeys = new Set([
+    'computedPosition',
+    'dimensions',
+    'dragging',
+    'events',
+    'handleBounds',
+    'initialized',
+    'isParent',
+    'resizing',
+    'selected',
+])
+
+const transientDataKeys = new Set([
+    'editing',
+    'modalPosition',
+    'showModal',
+    'showOptionsModal',
+])
+
+function schemaForSave(schema) {
+    return schema.map((element) => {
+        const clean = {}
+        for (const [key, value] of Object.entries(element)) {
+            if (!transientElementKeys.has(key)) clean[key] = value
+        }
+        if (clean.data && typeof clean.data === 'object') {
+            clean.data = Object.fromEntries(
+                Object.entries(clean.data).filter(([key]) => !transientDataKeys.has(key))
+            )
+        }
+        return clean
+    })
+}
+
 export const Diagram = {
     get: (id) =>
         request(async () => {
@@ -70,7 +104,7 @@ export const Diagram = {
 
     save: (id, schema, valueTypes = []) =>
         request(async () => {
-            const response = await axios.put(`/api/diagrams/${id}`, { id, schema, value_types: valueTypes })
+            const response = await axios.put(`/api/diagrams/${id}`, { id, schema: schemaForSave(schema), value_types: valueTypes })
             $toast.success(response.data.message)
             return true
         }),
@@ -88,7 +122,7 @@ export const Diagram = {
 
     saveByToken: (token, schema, valueTypes = []) =>
         request(async () => {
-            await axios.patch(`/api/diagrams/shared/${token}`, { schema, value_types: valueTypes })
+            await axios.patch(`/api/diagrams/shared/${token}`, { schema: schemaForSave(schema), value_types: valueTypes })
             return true
         }),
 

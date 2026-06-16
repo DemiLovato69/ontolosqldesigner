@@ -2,12 +2,14 @@ import { computed } from 'vue'
 
 const EDGE_PADDING = 44
 
-export function useOffScreenCursors({ remoteCursors, canvasWidth, canvasHeight }) {
+export function useOffScreenCursors({ remoteCursors, canvasWrapperRef }) {
     const offScreenCursors = computed(() => {
-        const w = canvasWidth.value
-        const h = canvasHeight.value
+        const cursors = Object.values(remoteCursors)
+        if (!cursors.length) return []
+        const w = canvasWrapperRef.value?.clientWidth
+        const h = canvasWrapperRef.value?.clientHeight
         if (!w || !h) return []
-        return Object.values(remoteCursors).filter(c => {
+        return cursors.filter(c => {
             if (c.flowX === undefined) return false
             return c.screenX < 0 || c.screenX > w || c.screenY < 0 || c.screenY > h
         }).map(c => {

@@ -26,7 +26,13 @@ class SaveByTokenRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             $this->validateDiagramSchema($validator, true, false);
 
-            if (! $this->has('value_types')) {
+            $valueTypes = $this->input('value_types', []);
+            if ($this->has('value_types')) {
+                $rule = new ValueTypeDefinitions;
+                $rule->validate('value_types', $valueTypes, fn (string $message) => $validator->errors()->add('value_types', $message));
+            }
+
+            if (! is_array($valueTypes)) {
                 return;
             }
 
@@ -34,7 +40,7 @@ class SaveByTokenRequest extends FormRequest
                 fn (mixed $definition): ?string => is_array($definition) && is_string($definition['id'] ?? null)
                     ? $definition['id']
                     : null,
-                $this->input('value_types', [])
+                $valueTypes
             )), true);
 
             foreach ($this->diagramSchema() ?? [] as $item) {

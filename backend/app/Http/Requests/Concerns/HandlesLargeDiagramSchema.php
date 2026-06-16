@@ -13,6 +13,7 @@ trait HandlesLargeDiagramSchema
     {
         $data = parent::validationData();
         unset($data['schema']);
+        unset($data['value_types']);
 
         return $data;
     }

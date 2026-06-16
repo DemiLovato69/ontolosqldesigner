@@ -1,127 +1,141 @@
 <template>
-    <!-- Drag handle -->
-    <span
-        v-if="canEdit"
-        class="drag_handle_icon"
-        title="Drag to reorder"
-        @mousedown.stop.prevent="$emit('row-drag-start', id)"
-    ><SvgIcon name="drag" :size="14" /></span>
-
-    <input
-        class="input input_designer_row ml-5 mr-5"
-        :value="label"
-        @mousedown.stop
-        @focus="(e) => { if (!canEdit) return; data.editing = true; e.target.select(); }"
-        @blur="(e) => { data.editing = false; $emit('update-label', id, label); e.target.scrollLeft = 0; }"
-        @input="$emit('update-label', id, $event.target.value)"
-        @keydown="(e) => {
-            if (e.shiftKey && e.key === 'Enter' && canEdit) { e.preventDefault(); $emit('add-row-after', id) }
-            else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); $emit('tab-prev', id) }
-        }"
-        :readonly="!data.editing || !canEdit"
-    />
-
-    <!-- Constraint badges + enum button grouped together -->
-    <div v-if="badges.length || (isEnum && canEdit)" class="constraint_badges">
-        <span v-for="b in badges" :key="b.label" :class="['constraint_badge', b.cls]">{{ b.label }}</span>
-        <button v-if="isEnum && canEdit" ref="enumBtnRef" class="table_button enum_values_btn" @mousedown.stop @click="showEnumModal = !showEnumModal" title="Edit enum values">
-            <SvgIcon name="list" :size="13" />
-        </button>
-        <span v-if="isEnum && isEnumEmpty && canEdit" class="enum_empty_wrapper">
-            <SvgIcon name="warning" :size="13" stroke="#ef4444" />
+    <template v-if="compact">
+        <span class="row_compact_label" @dblclick.stop="canEdit && (data.editing = true)">{{ label }}</span>
+        <span v-if="badges.length" class="constraint_badges">
+            <span v-for="b in badges" :key="b.label" :class="['constraint_badge', b.cls]">{{ b.label }}</span>
         </span>
-    </div>
+        <span class="row_compact_type">{{ data.sqlType }}</span>
+        <Handle type="source" position="left" id="source-left" />
+        <Handle type="target" position="left" id="target-left" />
+        <Handle type="source" position="right" id="source-right" />
+        <Handle type="target" position="right" id="target-right" />
+    </template>
 
-    <!-- Enum values modal -->
-    <EnumValuesModal
-        v-if="isEnum && showEnumModal"
-        :data="data"
-        :dbType="dbType"
-        :ignore="[enumBtnRef]"
-        @change="emitChange()"
-        @close="showEnumModal = false"
-    />
+    <template v-else>
+        <!-- Drag handle -->
+        <span
+            v-if="canEdit"
+            class="drag_handle_icon"
+            title="Drag to reorder"
+            @mousedown.stop.prevent="$emit('row-drag-start', id)"
+        ><SvgIcon name="drag" :size="14" /></span>
 
-    <!-- SQL Type -->
-    <div class="type_cell">
         <input
-            v-if="isLengthType"
-            type="number"
-            class="length_input"
-            :value="typeLengthValue"
-            min="1"
-            :disabled="!canEdit"
+            class="input input_designer_row ml-5 mr-5"
+            :value="label"
             @mousedown.stop
-            @change="onLengthChange"
+            @focus="(e) => { if (!canEdit) return; data.editing = true; e.target.select(); }"
+            @blur="(e) => { data.editing = false; $emit('update-label', id, label); e.target.scrollLeft = 0; }"
+            @input="$emit('update-label', id, $event.target.value)"
+            @keydown="(e) => {
+                if (e.shiftKey && e.key === 'Enter' && canEdit) { e.preventDefault(); $emit('add-row-after', id) }
+                else if (e.key === 'Tab' && e.shiftKey) { e.preventDefault(); $emit('tab-prev', id) }
+            }"
+            :readonly="!data.editing || !canEdit"
         />
-        <select v-model="sqlTypeForSelect" @change="emitChange()" :disabled="!canEdit">
-            <optgroup v-if="dbType === 'ontology' && valueTypes.length" label="Value Types">
-                <option v-for="valueType in valueTypes" :key="valueType.id" :value="`__value_type__:${valueType.id}`">
-                    {{ valueType.displayName }}
-                </option>
-            </optgroup>
-            <optgroup v-for="(options, groupLabel) in typeGroups" :key="groupLabel" :label="groupLabel">
-                <option v-for="opt in options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
-            </optgroup>
-            <option :value="data.sqlType">{{ data.sqlType }}</option>
-        </select>
-    </div>
 
-    <!-- Options -->
-    <button
-        v-if="canEdit || description"
-        ref="noteBtnRef"
-        :class="['table_button', { 'table_button--has-note': description }]"
-        @mousedown.stop
-        @click.stop.prevent="showNote = !showNote"
-        :title="description || 'Add row description'"
-    >
-        <SvgIcon name="note" :size="13" />
-    </button>
+        <!-- Constraint badges + enum button grouped together -->
+        <div v-if="badges.length || (isEnum && canEdit)" class="constraint_badges">
+            <span v-for="b in badges" :key="b.label" :class="['constraint_badge', b.cls]">{{ b.label }}</span>
+            <button v-if="isEnum && canEdit" ref="enumBtnRef" class="table_button enum_values_btn" @mousedown.stop @click="showEnumModal = !showEnumModal" title="Edit enum values">
+                <SvgIcon name="list" :size="13" />
+            </button>
+            <span v-if="isEnum && isEnumEmpty && canEdit" class="enum_empty_wrapper">
+                <SvgIcon name="warning" :size="13" stroke="#ef4444" />
+            </span>
+        </div>
 
-    <button v-if="canEdit" ref="gearBtnRef" class="table_button" @mousedown.stop @click="$emit('toggle-options-modal', id)">
-        <SvgIcon name="gear" :size="13" />
-    </button>
+        <!-- Enum values modal -->
+        <EnumValuesModal
+            v-if="isEnum && showEnumModal"
+            :data="data"
+            :dbType="dbType"
+            :ignore="[enumBtnRef]"
+            @change="emitChange()"
+            @close="showEnumModal = false"
+        />
 
-    <NodeNoteModal
-        v-if="showNote"
-        title="Row description"
-        :note="description"
-        :canEdit="canEdit"
-        :anchor="noteBtnRef"
-        :ignore="[noteBtnRef]"
-        @save="$emit('update-note', id, $event)"
-        @close="showNote = false"
-    />
+        <!-- SQL Type -->
+        <div class="type_cell">
+            <input
+                v-if="isLengthType"
+                type="number"
+                class="length_input"
+                :value="typeLengthValue"
+                min="1"
+                :disabled="!canEdit"
+                @mousedown.stop
+                @change="onLengthChange"
+            />
+            <select v-model="sqlTypeForSelect" @change="emitChange()" :disabled="!canEdit">
+                <optgroup v-if="dbType === 'ontology' && valueTypes.length" label="Value Types">
+                    <option v-for="valueType in valueTypes" :key="valueType.id" :value="`__value_type__:${valueType.id}`">
+                        {{ valueType.displayName }}
+                    </option>
+                </optgroup>
+                <optgroup v-for="(options, groupLabel) in typeGroups" :key="groupLabel" :label="groupLabel">
+                    <option v-for="opt in options" :key="opt.value" :value="opt.value">{{ opt.label }}</option>
+                </optgroup>
+                <option :value="data.sqlType">{{ data.sqlType }}</option>
+            </select>
+        </div>
 
-    <!-- Options modal -->
-    <RowOptionsModal
-        v-if="data.showOptionsModal"
-        :data="data"
-        :dbType="dbType"
-        :label="label"
-        :tableColumns="tableColumns"
-        :tableUniqueTogether="tableUniqueTogether"
-        :tableFulltextIndexes="tableFulltextIndexes"
-        :ignore="[gearBtnRef]"
-        @change="emitChange()"
-        @close="$emit('toggle-options-modal', id)"
-        @update-table-constraints="$emit('update-table-constraints', $event)"
-        @update-table-fulltext="$emit('update-table-fulltext', $event)"
-    />
+        <!-- Options -->
+        <button
+            v-if="canEdit || description"
+            ref="noteBtnRef"
+            :class="['table_button', { 'table_button--has-note': description }]"
+            @mousedown.stop
+            @click.stop.prevent="showNote = !showNote"
+            :title="description || 'Add row description'"
+        >
+            <SvgIcon name="note" :size="13" />
+        </button>
 
-    <!-- Delete row -->
-    <button v-if="canEdit" class="table_button" @mousedown.stop @click="$emit('delete-node', id)" @keydown="(e) => { if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); $emit('tab-next', id) } }">
-        <SvgIcon name="trash" :size="13" />
-    </button>
+        <button v-if="canEdit" ref="gearBtnRef" class="table_button" @mousedown.stop @click="$emit('toggle-options-modal', id)">
+            <SvgIcon name="gear" :size="13" />
+        </button>
 
-    <!-- Left side handles -->
-    <Handle type="source" position="left" id="source-left" />
-    <Handle type="target" position="left" id="target-left" />
+        <NodeNoteModal
+            v-if="showNote"
+            title="Row description"
+            :note="description"
+            :canEdit="canEdit"
+            :anchor="noteBtnRef"
+            :ignore="[noteBtnRef]"
+            @save="$emit('update-note', id, $event)"
+            @close="showNote = false"
+        />
 
-    <!-- Right side handles -->
-    <Handle type="source" position="right" id="source-right" />
-    <Handle type="target" position="right" id="target-right" />
+        <!-- Options modal -->
+        <RowOptionsModal
+            v-if="data.showOptionsModal"
+            :data="data"
+            :dbType="dbType"
+            :label="label"
+            :tableColumns="tableColumns"
+            :tableUniqueTogether="tableUniqueTogether"
+            :tableFulltextIndexes="tableFulltextIndexes"
+            :ignore="[gearBtnRef]"
+            @change="emitChange()"
+            @close="$emit('toggle-options-modal', id)"
+            @update-table-constraints="$emit('update-table-constraints', $event)"
+            @update-table-fulltext="$emit('update-table-fulltext', $event)"
+        />
+
+        <!-- Delete row -->
+        <button v-if="canEdit" class="table_button" @mousedown.stop @click="$emit('delete-node', id)" @keydown="(e) => { if (e.key === 'Tab' && !e.shiftKey) { e.preventDefault(); $emit('tab-next', id) } }">
+            <SvgIcon name="trash" :size="13" />
+        </button>
+
+        <!-- Left side handles -->
+        <Handle type="source" position="left" id="source-left" />
+        <Handle type="target" position="left" id="target-left" />
+
+        <!-- Right side handles -->
+        <Handle type="source" position="right" id="source-right" />
+        <Handle type="target" position="right" id="target-right" />
+    </template>
 </template>
 
 <script setup>
@@ -131,6 +145,7 @@ import SvgIcon from './SvgIcon.vue'
 import RowOptionsModal from './RowOptionsModal.vue'
 import EnumValuesModal from './EnumValuesModal.vue'
 import NodeNoteModal from './NodeNoteModal.vue'
+import { typeGroupsFor } from '@/services/rowTypes.js'
 
 const props = defineProps({
     id: String,
@@ -142,6 +157,7 @@ const props = defineProps({
     tableUniqueTogether: { type: Array, default: () => [] },
     tableFulltextIndexes: { type: Array, default: () => [] },
     valueTypes: { type: Array, default: () => [] },
+    compact: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev', 'update-note'])
@@ -175,235 +191,7 @@ const badges = computed(() => {
     return result
 })
 
-// --- Type groups ---
-
-const MYSQL_TYPES = {
-    'Numeric': [
-        { value: 'TINYINT', label: 'TINYINT' },
-        { value: 'SMALLINT', label: 'SMALLINT' },
-        { value: 'MEDIUMINT', label: 'MEDIUMINT' },
-        { value: 'INT', label: 'INT' },
-        { value: 'BIGINT', label: 'BIGINT' },
-        { value: 'DECIMAL(10,2)', label: 'DECIMAL' },
-        { value: 'FLOAT', label: 'FLOAT' },
-        { value: 'DOUBLE', label: 'DOUBLE' },
-        { value: 'BIT', label: 'BIT' },
-    ],
-    'String': [
-        { value: 'CHAR(255)', label: 'CHAR' },
-        { value: 'VARCHAR(255)', label: 'VARCHAR' },
-        { value: 'TINYTEXT', label: 'TINYTEXT' },
-        { value: 'TEXT', label: 'TEXT' },
-        { value: 'MEDIUMTEXT', label: 'MEDIUMTEXT' },
-        { value: 'LONGTEXT', label: 'LONGTEXT' },
-        { value: 'BINARY(255)', label: 'BINARY' },
-        { value: 'VARBINARY(255)', label: 'VARBINARY' },
-        { value: 'TINYBLOB', label: 'TINYBLOB' },
-        { value: 'BLOB', label: 'BLOB' },
-        { value: 'MEDIUMBLOB', label: 'MEDIUMBLOB' },
-        { value: 'LONGBLOB', label: 'LONGBLOB' },
-        { value: "ENUM('')", label: 'ENUM' },
-        { value: "SET('')", label: 'SET' },
-    ],
-    'Date & Time': [
-        { value: 'DATE', label: 'DATE' },
-        { value: 'TIME', label: 'TIME' },
-        { value: 'DATETIME', label: 'DATETIME' },
-        { value: 'TIMESTAMP', label: 'TIMESTAMP' },
-        { value: 'YEAR', label: 'YEAR' },
-    ],
-    'Other': [
-        { value: 'JSON', label: 'JSON' },
-        { value: 'UUID', label: 'UUID' },
-        { value: 'BOOLEAN', label: 'BOOLEAN' },
-    ],
-}
-
-const POSTGRESQL_TYPES = {
-    'Numeric': [
-        { value: 'SMALLINT', label: 'SMALLINT' },
-        { value: 'INTEGER', label: 'INTEGER' },
-        { value: 'BIGINT', label: 'BIGINT' },
-        { value: 'DECIMAL(10,2)', label: 'DECIMAL' },
-        { value: 'NUMERIC(10,2)', label: 'NUMERIC' },
-        { value: 'REAL', label: 'REAL' },
-        { value: 'DOUBLE PRECISION', label: 'DOUBLE PRECISION' },
-        { value: 'SMALLSERIAL', label: 'SMALLSERIAL' },
-        { value: 'SERIAL', label: 'SERIAL' },
-        { value: 'BIGSERIAL', label: 'BIGSERIAL' },
-    ],
-    'String': [
-        { value: 'CHAR(255)', label: 'CHAR' },
-        { value: 'VARCHAR(255)', label: 'VARCHAR' },
-        { value: 'TEXT', label: 'TEXT' },
-        { value: 'BYTEA', label: 'BYTEA' },
-        { value: "ENUM('')", label: 'ENUM' },
-    ],
-    'Date & Time': [
-        { value: 'DATE', label: 'DATE' },
-        { value: 'TIME', label: 'TIME' },
-        { value: 'TIMESTAMP', label: 'TIMESTAMP' },
-        { value: 'TIMESTAMPTZ', label: 'TIMESTAMPTZ' },
-        { value: 'INTERVAL', label: 'INTERVAL' },
-    ],
-    'Other': [
-        { value: 'BOOLEAN', label: 'BOOLEAN' },
-        { value: 'JSON', label: 'JSON' },
-        { value: 'JSONB', label: 'JSONB' },
-        { value: 'UUID', label: 'UUID' },
-    ],
-}
-
-const MSACCESS_TYPES = {
-    'Numeric': [
-        { value: 'BYTE', label: 'BYTE' },
-        { value: 'SHORT', label: 'SHORT' },
-        { value: 'LONG', label: 'LONG' },
-        { value: 'SINGLE', label: 'SINGLE' },
-        { value: 'DOUBLE', label: 'DOUBLE' },
-        { value: 'CURRENCY', label: 'CURRENCY' },
-        { value: 'DECIMAL(10,2)', label: 'DECIMAL' },
-        { value: 'AUTOINCREMENT', label: 'AUTOINCREMENT' },
-    ],
-    'String': [
-        { value: 'TEXT(255)', label: 'TEXT' },
-        { value: 'CHAR(255)', label: 'CHAR' },
-        { value: 'VARCHAR(255)', label: 'VARCHAR' },
-        { value: 'MEMO', label: 'MEMO' },
-    ],
-    'Date & Time': [
-        { value: 'DATETIME', label: 'DATETIME' },
-        { value: 'DATE', label: 'DATE' },
-    ],
-    'Other': [
-        { value: 'YESNO', label: 'YESNO' },
-        { value: 'OLEOBJECT', label: 'OLEOBJECT' },
-        { value: 'GUID', label: 'GUID' },
-    ],
-}
-
-const SQLSERVER_TYPES = {
-    'Numeric': [
-        { value: 'TINYINT', label: 'TINYINT' },
-        { value: 'SMALLINT', label: 'SMALLINT' },
-        { value: 'INT', label: 'INT' },
-        { value: 'BIGINT', label: 'BIGINT' },
-        { value: 'DECIMAL(10,2)', label: 'DECIMAL' },
-        { value: 'FLOAT', label: 'FLOAT' },
-        { value: 'REAL', label: 'REAL' },
-        { value: 'MONEY', label: 'MONEY' },
-        { value: 'SMALLMONEY', label: 'SMALLMONEY' },
-    ],
-    'String': [
-        { value: 'NVARCHAR(255)', label: 'NVARCHAR' },
-        { value: 'VARCHAR(255)', label: 'VARCHAR' },
-        { value: 'NCHAR(255)', label: 'NCHAR' },
-        { value: 'CHAR(255)', label: 'CHAR' },
-        { value: 'NVARCHAR(MAX)', label: 'NVARCHAR(MAX)' },
-        { value: 'VARCHAR(MAX)', label: 'VARCHAR(MAX)' },
-    ],
-    'Date & Time': [
-        { value: 'DATE', label: 'DATE' },
-        { value: 'TIME', label: 'TIME' },
-        { value: 'DATETIME2', label: 'DATETIME2' },
-        { value: 'DATETIME', label: 'DATETIME' },
-        { value: 'SMALLDATETIME', label: 'SMALLDATETIME' },
-        { value: 'DATETIMEOFFSET', label: 'DATETIMEOFFSET' },
-    ],
-    'Other': [
-        { value: 'BIT', label: 'BIT' },
-        { value: 'UNIQUEIDENTIFIER', label: 'UNIQUEIDENTIFIER' },
-        { value: 'VARBINARY(MAX)', label: 'VARBINARY(MAX)' },
-        { value: 'XML', label: 'XML' },
-    ],
-}
-
-const ORACLE_TYPES = {
-    'Numeric': [
-        { value: 'NUMBER', label: 'NUMBER' },
-        { value: 'NUMBER(10,2)', label: 'NUMBER(p,s)' },
-        { value: 'FLOAT', label: 'FLOAT' },
-        { value: 'BINARY_FLOAT', label: 'BINARY_FLOAT' },
-        { value: 'BINARY_DOUBLE', label: 'BINARY_DOUBLE' },
-    ],
-    'String': [
-        { value: 'VARCHAR2(255)', label: 'VARCHAR2' },
-        { value: 'CHAR(255)', label: 'CHAR' },
-        { value: 'NVARCHAR2(255)', label: 'NVARCHAR2' },
-        { value: 'NCHAR(255)', label: 'NCHAR' },
-        { value: 'CLOB', label: 'CLOB' },
-        { value: 'NCLOB', label: 'NCLOB' },
-    ],
-    'Date & Time': [
-        { value: 'DATE', label: 'DATE' },
-        { value: 'TIMESTAMP', label: 'TIMESTAMP' },
-        { value: 'TIMESTAMP WITH TIME ZONE', label: 'TIMESTAMP WITH TZ' },
-        { value: 'INTERVAL YEAR TO MONTH', label: 'INTERVAL YEAR TO MONTH' },
-        { value: 'INTERVAL DAY TO SECOND', label: 'INTERVAL DAY TO SECOND' },
-    ],
-    'Other': [
-        { value: 'BLOB', label: 'BLOB' },
-        { value: 'RAW(255)', label: 'RAW' },
-        { value: 'XMLTYPE', label: 'XMLTYPE' },
-    ],
-}
-
-const SQLITE_TYPES = {
-    'Numeric': [
-        { value: 'INTEGER', label: 'INTEGER' },
-        { value: 'REAL', label: 'REAL' },
-        { value: 'NUMERIC(10,2)', label: 'NUMERIC' },
-    ],
-    'String': [
-        { value: 'TEXT', label: 'TEXT' },
-        { value: 'BLOB', label: 'BLOB' },
-    ],
-    'Date & Time': [
-        { value: 'TEXT', label: 'TEXT (ISO 8601)' },
-        { value: 'NUMERIC', label: 'NUMERIC (epoch)' },
-    ],
-    'Other': [
-        { value: 'INTEGER', label: 'BOOLEAN' },
-    ],
-}
-
-const ONTOLOGY_TYPES = {
-    'Primitive': [
-        { value: 'BOOLEAN', label: 'BOOLEAN' },
-        { value: 'BYTE', label: 'BYTE' },
-        { value: 'SHORT', label: 'SHORT' },
-        { value: 'INTEGER', label: 'INTEGER' },
-        { value: 'LONG', label: 'LONG' },
-        { value: 'FLOAT', label: 'FLOAT' },
-        { value: 'DOUBLE', label: 'DOUBLE' },
-        { value: 'DECIMAL(10,2)', label: 'DECIMAL' },
-        { value: 'STRING', label: 'STRING' },
-        { value: "ENUM('')", label: 'ENUM / VALUE TYPE' },
-        { value: 'DATE', label: 'DATE' },
-        { value: 'TIMESTAMP', label: 'TIMESTAMP' },
-        { value: 'ATTACHMENT', label: 'ATTACHMENT' },
-        { value: 'ARRAY<STRING>', label: 'ARRAY' },
-        { value: 'VECTOR', label: 'VECTOR' },
-        { value: 'STRUCT', label: 'STRUCT' },
-    ],
-    'Geospatial & Media': [
-        { value: 'GEOPOINT', label: 'GEOPOINT' },
-        { value: 'GEOHASH', label: 'GEOHASH' },
-        { value: 'GEOSHAPE', label: 'GEOSHAPE' },
-        { value: 'MEDIAREFERENCE', label: 'MEDIA REFERENCE' },
-        { value: 'GEOTIMESERIES', label: 'GEOTIME SERIES' },
-    ],
-}
-
-const typeGroups = computed(() => {
-    if (props.dbType === 'ontology') return ONTOLOGY_TYPES
-    if (props.dbType === 'postgresql') return POSTGRESQL_TYPES
-    if (props.dbType === 'sqlite') return SQLITE_TYPES
-    if (props.dbType === 'oracle') return ORACLE_TYPES
-    if (props.dbType === 'sqlserver') return SQLSERVER_TYPES
-    if (props.dbType === 'msaccess') return MSACCESS_TYPES
-    return MYSQL_TYPES
-})
+const typeGroups = computed(() => typeGroupsFor(props.dbType))
 
 const isEnum = computed(() => /^ENUM\(/i.test(props.data.sqlType))
 
@@ -500,6 +288,26 @@ const canvasTypeForValueType = (valueType) => {
 
 .ml-5 { margin-left: 5px; }
 .mr-5 { margin-right: 5px; }
+
+.row_compact_label {
+    flex: 1;
+    min-width: 0;
+    padding: 0 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 12px;
+}
+
+.row_compact_type {
+    max-width: 120px;
+    padding-left: 6px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-secondary);
+    font-size: 11px;
+}
 
 .enum_values_btn {
     width: 18px;

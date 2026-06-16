@@ -97,15 +97,13 @@ class DiagramController extends Controller
     {
         $this->authorize('update', $diagram);
 
-        $validated = $request->validated();
-
         $dto = new UpdateDiagramDTO(
-            name: $validated['name'] ?? null,
-            dbType: isset($validated['db_type']) ? DbType::from($validated['db_type']) : null,
-            shareAccess: isset($validated['share_access']) ? DiagramAccess::from($validated['share_access']) : null,
-            library: isset($validated['library']) ? (bool) $validated['library'] : null,
+            name: $request->has('name') ? (string) $request->input('name') : null,
+            dbType: $request->has('db_type') ? DbType::from((string) $request->input('db_type')) : null,
+            shareAccess: $request->has('share_access') ? DiagramAccess::from((string) $request->input('share_access')) : null,
+            library: $request->has('library') ? (bool) $request->input('library') : null,
             schema: $request->exists('schema') ? $request->diagramSchema() : null,
-            valueTypes: $validated['value_types'] ?? null,
+            valueTypes: $request->has('value_types') ? $request->input('value_types', []) : null,
         );
 
         return $this->crudService->updateDiagram($diagram, $dto)
@@ -372,12 +370,11 @@ class DiagramController extends Controller
     {
         $diagram = Diagram::where('share_token', $token)->firstOrFail();
 
-        $validated = $request->validated();
         if (! $this->sharingService->saveByToken(
             $diagram,
             $request->user(),
             $request->diagramSchema() ?? [],
-            $validated['value_types'] ?? null
+            $request->has('value_types') ? $request->input('value_types', []) : null
         )) {
             abort(403);
         }

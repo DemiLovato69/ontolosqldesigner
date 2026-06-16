@@ -6,14 +6,15 @@ export function useRowDrag({ schema, isSaved, whisper, snapshot }) {
     const startRowDrag = (id) => {
         snapshot()
         draggingRowId.value = id
+        const nodesById = new Map(schema.value.map(el => [el.id, el]))
 
         const onMouseMove = (e) => {
             const rowNodeEl = document.elementsFromPoint(e.clientX, e.clientY)
                 .find(el => el.classList.contains('vue-flow__node-row') && el.getAttribute('data-id') !== draggingRowId.value)
             if (!rowNodeEl) return
 
-            const sourceNode = schema.value.find(el => el.id === draggingRowId.value)
-            const targetNode = schema.value.find(el => el.id === rowNodeEl.getAttribute('data-id'))
+            const sourceNode = nodesById.get(draggingRowId.value)
+            const targetNode = nodesById.get(rowNodeEl.getAttribute('data-id'))
 
             if (!sourceNode || !targetNode || sourceNode.type !== 'row' || targetNode.type !== 'row' || sourceNode.parentNode !== targetNode.parentNode) return
 

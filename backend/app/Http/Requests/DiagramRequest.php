@@ -34,13 +34,18 @@ class DiagramRequest extends FormRequest
         $validator->after(function (Validator $validator): void {
             $this->validateDiagramSchema($validator, false, true);
 
-            if (! $this->has('value_types')) {
+            $valueTypes = $this->input('value_types', []);
+            if ($this->has('value_types')) {
+                $rule = new ValueTypeDefinitions;
+                $rule->validate('value_types', $valueTypes, fn (string $message) => $validator->errors()->add('value_types', $message));
+            }
+
+            if (! is_array($valueTypes)) {
                 return;
             }
 
-            $valueTypes = $this->input('value_types', []);
             $diagram = $this->route('diagram');
-            $dbType = (string) ($this->input('db_type') ?? $diagram->db_type->value);
+            $dbType = (string) ($this->input('db_type') ?? ($diagram?->db_type->value ?? ''));
             if ($valueTypes !== [] && $dbType !== 'ontology') {
                 $validator->errors()->add('value_types', 'Value types are only available for ontology diagrams.');
             }

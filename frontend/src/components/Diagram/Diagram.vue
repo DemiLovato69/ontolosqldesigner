@@ -106,7 +106,7 @@
                 :nodes-draggable="canEdit"
                 :nodes-connectable="canEdit"
                 :edges-updatable="canEdit"
-                :class="['diagram-canvas', { 'is-placing-table': isPlacingTable, 'is-connecting': isConnecting }]"
+                :class="['diagram-canvas', { 'is-placing-table': isPlacingTable, 'is-connecting': isConnecting, 'is-large-overview': isLargeOverview }]"
             >
                 <Panel position="top-left" class="table-navigator">
                     <div class="table-navigator__row">
@@ -137,7 +137,7 @@
 
 
                 <template #edge-chickenFoot="props">
-                    <ChickenFootEdge v-bind="props" :simple-routing="isLargeDiagram" />
+                    <ChickenFootEdge v-if="!isLargeOverview" v-bind="props" :simple-routing="isLargeDiagram" />
                 </template>
 
                 <Panel position="bottom-right" class="support-panel">
@@ -167,6 +167,7 @@
 
                 <template #node-row="nodeProps">
                     <RowNode
+                        v-if="!isLargeOverview"
                         :id="nodeProps.id"
                         :data="nodeProps.data"
                         :label="nodeProps.label"
@@ -176,6 +177,7 @@
                         :tableUniqueTogether="tableById.get(nodeProps.parentNodeId)?.data?.uniqueTogether ?? []"
                         :tableFulltextIndexes="tableById.get(nodeProps.parentNodeId)?.data?.fulltextIndexes ?? []"
                         :valueTypes="valueTypes"
+                        :compact="isLargeDiagram && !nodeProps.data.editing && !nodeProps.data.showOptionsModal"
                         @update-label="updateLabel"
                         @toggle-options-modal="toggleOptionsModal"
                         @delete-node="deleteNode"
@@ -281,7 +283,6 @@ import SupportModal from '../Modal/SupportModal.vue'
 import ChangelogModal from '../Modal/ChangelogModal.vue'
 import HotkeysModal from '../Modal/HotkeysModal.vue'
 import ValueTypesModal from '../Modal/ValueTypesModal.vue'
-import { useElementSize } from '@vueuse/core'
 import { useToast } from 'vue-toast-notification'
 import { useRoute, useRouter } from 'vue-router'
 import { useStore } from 'vuex'
@@ -310,6 +311,7 @@ const schema = ref([])
 const valueTypes = ref([])
 const LARGE_DIAGRAM_ELEMENT_COUNT = 2000
 const isLargeDiagram = computed(() => schema.value.length > LARGE_DIAGRAM_ELEMENT_COUNT)
+const isLargeOverview = computed(() => isLargeDiagram.value && viewport.value.zoom < 0.18)
 const tables = computed(() => schema.value.filter(el => el.type === 'table'))
 const tableById = computed(() => new Map(tables.value.map(table => [table.id, table])))
 const rowsByTableId = computed(() => {
@@ -352,8 +354,6 @@ const canvasWrapperRef = ref(null)
 
 const canEdit = computed(() => props.isDemo || isOwner.value || diagramShareAccess.value === 'write')
 
-const { width: canvasWidth, height: canvasHeight } = useElementSize(canvasWrapperRef)
-
 const { snapshot, undo, redo } = useUndoHistory(schema, valueTypes)
 
 const { remoteCursors, whisper, initEcho, cleanupEcho, onCanvasMouseMove, broadcastCursor } = useDiagramPresence({
@@ -365,10 +365,10 @@ const { hasPendingVisitors, startVisitorPolling, stopVisitorPolling, startGuestA
     diagramId, isOwner, diagramRequireApproval, token, diagramShareAccess, pendingApproval, notAvailable,
 })
 
-const { offScreenCursors } = useOffScreenCursors({ remoteCursors, canvasWidth, canvasHeight })
+const { offScreenCursors } = useOffScreenCursors({ remoteCursors, canvasWrapperRef })
 
 const { onNodeMouseEnter, onNodeMouseLeave, elevateTable, onNodeDragStart, onNodeDrag, onNodeDragStop, lastInteractedTableId } = useTableInteraction({
-    findNode, schema, whisper, isSaved, broadcastCursor, snapshot,
+    schema, whisper, isSaved, broadcastCursor, snapshot,
 })
 
 const { startTableResize } = useTableResize({ schema, viewport, whisper, isSaved, snapshot })

@@ -1,58 +1,13 @@
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 
-export function useTableInteraction({ findNode, schema, whisper, isSaved, broadcastCursor, snapshot }) {
+export function useTableInteraction({ schema, whisper, isSaved, broadcastCursor, snapshot }) {
     const lastInteractedTableId = ref(null)
-    // Keep last-row border-radius in sync whenever row positions change
-    watch(
-        () => {
-            const lastRows = {}
-            for (const node of schema.value ?? []) {
-                if (node.type !== 'row') continue
-                if (!lastRows[node.parentNode] || node.position.y > lastRows[node.parentNode].position.y) {
-                    lastRows[node.parentNode] = node
-                }
-            }
-            return Object.keys(lastRows)
-                .sort()
-                .map(parentId => `${parentId}:${lastRows[parentId].id}:${lastRows[parentId].position.y}`)
-                .join(',')
-        },
-        () => {
-            if (!schema.value) return
-            const best = {}
-            schema.value.filter(n => n.type === 'row').forEach(n => {
-                if (!best[n.parentNode] || n.position.y > best[n.parentNode].position.y)
-                    best[n.parentNode] = n
-            })
-            const lastIds = new Set(Object.values(best).map(n => n.id))
-            schema.value.forEach(n => {
-                if (n.type !== 'row' || !n.style) return
-                if (lastIds.has(n.id)) n.style.borderRadius = '0 0 6px 6px'
-                else delete n.style.borderRadius
-            })
-        },
-        { immediate: true }
-    )
-
-    let hoverLeaveTimer = null
-
-    const setTableHovered = (tableId, hovered) => {
-        document.querySelectorAll('.vue-flow__node-row').forEach(el => {
-            const n = findNode(el.getAttribute('data-id'))
-            if (n?.parentNode === tableId) el.classList.toggle('table-hovered', hovered)
-        })
-    }
 
     const onNodeMouseEnter = ({ node }) => {
-        clearTimeout(hoverLeaveTimer)
-        const tableId = node.type === 'table' ? node.id : node.parentNode
-        if (tableId) setTableHovered(tableId, true)
+        lastInteractedTableId.value = node.type === 'table' ? node.id : node.parentNode
     }
 
-    const onNodeMouseLeave = ({ node }) => {
-        const tableId = node.type === 'table' ? node.id : node.parentNode
-        hoverLeaveTimer = setTimeout(() => setTableHovered(tableId, false), 50)
-    }
+    const onNodeMouseLeave = () => {}
 
     const elevateTable = (node) => {
         const tableId = node.type === 'table' ? node.id : node.parentNode
