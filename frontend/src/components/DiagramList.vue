@@ -158,7 +158,6 @@ import sqliteIcon from '../icons/sqlite.svg'
 import oracleIcon from '../icons/oracle.svg'
 import sqlserverIcon from '../icons/sqlserver.svg'
 import msaccessIcon from '../icons/msaccess.svg'
-import ontologyIcon from '../icons/ontology.svg'
 
 const $toast = useToast()
 
@@ -174,7 +173,7 @@ export default {
             showNewForm: false,
             renamingId: null,
             originalName: null,
-            dbIcons: { mysql: mysqlIcon, postgresql: postgresqlIcon, sqlite: sqliteIcon, oracle: oracleIcon, sqlserver: sqlserverIcon, msaccess: msaccessIcon, ontology: ontologyIcon },
+            dbIcons: { mysql: mysqlIcon, postgresql: postgresqlIcon, sqlite: sqliteIcon, oracle: oracleIcon, sqlserver: sqlserverIcon, msaccess: msaccessIcon, ontology: '/palantir.svg' },
             dbOptions: [
                 { type: 'ontology', label: 'Ontology', icon: '/palantir.svg' },
                 { type: 'mysql', label: 'MySQL' },

@@ -27,6 +27,7 @@ class DiagramRepository implements DiagramRepositoryInterface
                 'share_access',
                 'require_approval',
                 'library',
+                'schema',
             ])
             ->get();
     }

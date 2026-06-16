@@ -29,22 +29,115 @@ class DiagramControllerTest extends TestCase
         return $this->actingAs($this->user, 'sanctum');
     }
 
-    public function test_index_returns_diagrams(): void
+    public function test_index_returns_diagram_schema_preview(): void
     {
         $this->diagram->update([
-            'schema' => [[
-                'id' => 'large-table',
-                'type' => 'table',
-                'label' => str_repeat('large schema data', 1000),
-            ]],
+            'schema' => [
+                [
+                    'id' => 'users',
+                    'type' => 'table',
+                    'label' => 'users',
+                    'position' => ['x' => 0, 'y' => 0],
+                ],
+                [
+                    'id' => 'users-id',
+                    'type' => 'row',
+                    'label' => 'id',
+                    'parentNode' => 'users',
+                    'position' => ['x' => 0, 'y' => 40],
+                ],
+            ],
         ]);
 
         $this->auth()
             ->getJson('/api/diagrams')
             ->assertStatus(200)
             ->assertJsonPath('data.0.id', $this->diagram->id)
-            ->assertJsonPath('data.0.schema', [])
-            ->assertJsonMissingPath('data.0.schema.0');
+            ->assertJsonPath('data.0.schema.0.id', 'users')
+            ->assertJsonPath('data.0.schema.0.type', 'table')
+            ->assertJsonPath('data.0.schema.1.id', 'users-id')
+            ->assertJsonPath('data.0.schema.1.type', 'row');
+    }
+
+    public function test_index_schema_preview_is_limited(): void
+    {
+        $schema = [];
+
+        for ($table = 1; $table <= 20; $table++) {
+            $tableId = "table-{$table}";
+
+            $schema[] = [
+                'id' => $tableId,
+                'type' => 'table',
+                'label' => $tableId,
+                'position' => ['x' => $table * 420, 'y' => 0],
+            ];
+
+            for ($row = 1; $row <= 10; $row++) {
+                $schema[] = [
+                    'id' => "{$tableId}-row-{$row}",
+                    'type' => 'row',
+                    'label' => "row_{$row}",
+                    'parentNode' => $tableId,
+                    'position' => ['x' => 0, 'y' => $row * 40],
+                ];
+            }
+        }
+
+        $this->diagram->update(['schema' => $schema]);
+
+        $response = $this->auth()
+            ->getJson('/api/diagrams')
+            ->assertStatus(200);
+
+        $previewSchema = $response->json('data.0.schema');
+
+        $this->assertNotEmpty($previewSchema);
+        $this->assertLessThan(count($schema), count($previewSchema));
+    }
+
+    public function test_index_schema_preview_only_includes_rows_for_previewed_tables(): void
+    {
+        $this->diagram->update([
+            'schema' => [
+                ['id' => 'included-table', 'type' => 'table', 'label' => 'Included', 'position' => ['x' => 0, 'y' => 0]],
+                ['id' => 'included-row', 'type' => 'row', 'label' => 'id', 'parentNode' => 'included-table', 'position' => ['x' => 0, 'y' => 40]],
+                ['id' => 'orphan-row', 'type' => 'row', 'label' => 'orphan', 'parentNode' => 'missing-table', 'position' => ['x' => 0, 'y' => 40]],
+            ],
+        ]);
+
+        $response = $this->auth()
+            ->getJson('/api/diagrams')
+            ->assertStatus(200);
+
+        $previewIds = collect($response->json('data.0.schema'))->pluck('id')->all();
+
+        $this->assertContains('included-table', $previewIds);
+        $this->assertContains('included-row', $previewIds);
+        $this->assertNotContains('orphan-row', $previewIds);
+    }
+
+    public function test_index_schema_preview_only_includes_edges_for_previewed_rows(): void
+    {
+        $this->diagram->update([
+            'schema' => [
+                ['id' => 'users', 'type' => 'table', 'label' => 'users', 'position' => ['x' => 0, 'y' => 0]],
+                ['id' => 'orders', 'type' => 'table', 'label' => 'orders', 'position' => ['x' => 420, 'y' => 0]],
+                ['id' => 'users-id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'position' => ['x' => 0, 'y' => 40]],
+                ['id' => 'orders-user-id', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 'orders', 'position' => ['x' => 0, 'y' => 40]],
+                ['id' => 'valid-edge', 'type' => 'chickenFoot', 'source' => 'orders-user-id', 'target' => 'users-id'],
+                ['id' => 'missing-source-edge', 'type' => 'chickenFoot', 'source' => 'missing-row', 'target' => 'users-id'],
+            ],
+        ]);
+
+        $response = $this->auth()
+            ->getJson('/api/diagrams')
+            ->assertStatus(200);
+
+        $previewIds = collect($response->json('data.0.schema'))->pluck('id')->all();
+
+        $this->assertContains('valid-edge', $previewIds);
+        $this->assertNotContains('missing-source-edge', $previewIds);
     }
 
     public function test_store_creates_diagram(): void
