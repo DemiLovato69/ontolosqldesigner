@@ -9,17 +9,10 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use SensitiveParameter;
 
 class AdminService
 {
-    public function authenticate(string $username, #[SensitiveParameter] string $password): bool
-    {
-        return hash_equals('admin', $username)
-            && hash_equals((string) config('app.admin_password'), $password);
-    }
-
     /** @return array{users: LengthAwarePaginator<int, User>, totalUsers: int, registrationsByDay: array<string, int>, activityByDay: array<string, int>, returningUsers: int, retentionRate: float} */
     public function getDashboardData(string $sort = 'registered'): array
     {
@@ -132,9 +125,26 @@ class AdminService
     {
         return User::create([
             'email' => $email,
-            'password' => Hash::make($password),
+            'password' => $password,
+            'role' => 'user',
             'email_verified_at' => now(),
         ]);
+    }
+
+    public function updateUserRole(User $user, string $role): bool
+    {
+        if (! in_array($role, ['user', 'admin'], true)) {
+            return false;
+        }
+
+        if ($user->role === 'admin' && $role !== 'admin' && User::where('role', 'admin')->count() <= 1) {
+            return false;
+        }
+
+        $user->role = $role;
+        $user->save();
+
+        return true;
     }
 
     public function verifyUser(User $user): bool

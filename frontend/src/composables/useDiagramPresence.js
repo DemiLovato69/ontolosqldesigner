@@ -17,15 +17,18 @@ export const CURSOR_COLORS = ['#E53935', '#D81B60', '#8E24AA', '#3949AB', '#1E88
  * @param {import('vue').Ref} opts.canvasWrapperRef
  * @param {Function} opts.onDiagramSaved           - called when a remote user saves
  */
-export function useDiagramPresence({ token, ownerIdentity, viewport, schema, valueTypes, canvasWrapperRef, onDiagramSaved, onVisitorRequested, onAccessChanged }) {
+export function useDiagramPresence({ token, ownerIdentity, viewport, schema, valueTypes, canvasWrapperRef, canEdit, onDiagramSaved, onVisitorRequested, onAccessChanged }) {
     const FULL_SCHEMA_SYNC_LIMIT = 2000
+    const WRITER_EVENTS = new Set(['schema-sync', 'value-types-sync', 'schema-patch'])
     const remoteCursors = reactive({})
     let echo = null
     let presenceChannel = null
+    let writerChannel = null
 
     const whisper = (event, data) => {
         if (event === 'schema-sync' && data?.schema?.length > FULL_SCHEMA_SYNC_LIMIT) return
-        presenceChannel?.whisper(event, data)
+        const channel = WRITER_EVENTS.has(event) ? writerChannel : presenceChannel
+        channel?.whisper(event, data)
     }
 
     const broadcastCursor = useThrottleFn((event) => {
@@ -40,34 +43,15 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
 
     const onCanvasMouseMove = (event) => broadcastCursor(event)
 
-    const initEcho = () => {
-        if (!ownerIdentity.value) return
-        echo = createEcho()
-        presenceChannel = echo.join(`diagram.${token}`)
-            .here((users) => {
-                for (const u of users) {
-                    if (u.id !== ownerIdentity.value.id) {
-                        remoteCursors[u.id] = { ...u, screenX: -999, screenY: -999 }
-                    }
-                }
-            })
+    const joinWriterChannel = () => {
+        if (!echo || writerChannel || !canEdit?.value) return
+        writerChannel = echo.join(`diagram.${token}.writers`)
             .joining((user) => {
-                if (user.id !== ownerIdentity.value.id) {
-                    remoteCursors[user.id] = { ...user, screenX: -999, screenY: -999 }
+                if (user.id !== ownerIdentity.value?.id) {
                     setTimeout(() => {
                         whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes?.value ?? [], forUserId: user.id })
                     }, Math.random() * 200)
                 }
-            })
-            .leaving((user) => {
-                delete remoteCursors[user.id]
-            })
-            .listenForWhisper('cursor-moved', ({ id, x, y }) => {
-                if (!id || id === ownerIdentity.value?.id || !remoteCursors[id]) return
-                remoteCursors[id].flowX = x
-                remoteCursors[id].flowY = y
-                remoteCursors[id].screenX = x * viewport.value.zoom + viewport.value.x
-                remoteCursors[id].screenY = y * viewport.value.zoom + viewport.value.y
             })
             .listenForWhisper('schema-sync', ({ schema: incoming, valueTypes: incomingValueTypes, forUserId }) => {
                 if (forUserId && forUserId !== ownerIdentity.value?.id) return
@@ -97,6 +81,40 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
                     }
                 }
             })
+    }
+
+    const leaveWriterChannel = () => {
+        if (!echo || !writerChannel) return
+        echo.leave(`diagram.${token}.writers`)
+        writerChannel = null
+    }
+
+    const initEcho = () => {
+        if (!ownerIdentity.value) return
+        echo = createEcho()
+        presenceChannel = echo.join(`diagram.${token}`)
+            .here((users) => {
+                for (const u of users) {
+                    if (u.id !== ownerIdentity.value.id) {
+                        remoteCursors[u.id] = { ...u, screenX: -999, screenY: -999 }
+                    }
+                }
+            })
+            .joining((user) => {
+                if (user.id !== ownerIdentity.value.id) {
+                    remoteCursors[user.id] = { ...user, screenX: -999, screenY: -999 }
+                }
+            })
+            .leaving((user) => {
+                delete remoteCursors[user.id]
+            })
+            .listenForWhisper('cursor-moved', ({ id, x, y }) => {
+                if (!id || id === ownerIdentity.value?.id || !remoteCursors[id]) return
+                remoteCursors[id].flowX = x
+                remoteCursors[id].flowY = y
+                remoteCursors[id].screenX = x * viewport.value.zoom + viewport.value.x
+                remoteCursors[id].screenY = y * viewport.value.zoom + viewport.value.y
+            })
             .listenForWhisper('diagram-saved', () => {
                 if (onDiagramSaved) onDiagramSaved()
             })
@@ -112,10 +130,12 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
             .listen('.visitor.access.changed', ({ user_id, access }) => {
                 if (String(user_id) === ownerIdentity.value?.id && onAccessChanged) onAccessChanged(access)
             })
+        joinWriterChannel()
     }
 
     const cleanupEcho = () => {
         if (echo) {
+            leaveWriterChannel()
             echo.leave(`diagram.${token}`)
             echo.disconnect()
         }
@@ -133,6 +153,11 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
             }
         }
     }, { deep: true })
+
+    watch(canEdit, (editable) => {
+        if (!echo) return
+        editable ? joinWriterChannel() : leaveWriterChannel()
+    })
 
     return { remoteCursors, whisper, initEcho, cleanupEcho, onCanvasMouseMove, broadcastCursor }
 }

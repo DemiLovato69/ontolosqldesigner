@@ -6,10 +6,12 @@ namespace Tests\Feature;
 
 use App\Enums\ImportStatus;
 use App\Models\Diagram;
+use App\Models\DiagramImport;
 use App\Models\DiagramVisitor;
 use App\Models\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class DiagramControllerTest extends TestCase
@@ -525,6 +527,132 @@ class DiagramControllerTest extends TestCase
             ->assertStatus(422);
     }
 
+    public function test_chunked_import_upload_stores_chunks_and_queues_import(): void
+    {
+        Queue::fake();
+        Event::fake();
+        Storage::fake('imports');
+
+        $upload = $this->auth()
+            ->postJson("/api/diagrams/{$this->diagram->id}/imports", [
+                'format' => 'sql',
+                'size' => 36,
+                'chunk_size' => 18,
+                'chunks_total' => 2,
+                'original_name' => 'schema.sql',
+            ])
+            ->assertCreated()
+            ->assertJsonPath('status', DiagramImport::STATUS_UPLOADING)
+            ->json();
+
+        $importId = $upload['id'];
+
+        $this->auth()
+            ->call(
+                'PUT',
+                "/api/diagrams/{$this->diagram->id}/imports/{$importId}/chunks/0",
+                [],
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/octet-stream'],
+                '123456789012345678'
+            )
+            ->assertOk()
+            ->assertJsonPath('received', 1)
+            ->assertJsonPath('complete', false);
+
+        $this->auth()
+            ->call(
+                'PUT',
+                "/api/diagrams/{$this->diagram->id}/imports/{$importId}/chunks/1",
+                [],
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/octet-stream'],
+                'abcdefghijklmnopqr'
+            )
+            ->assertOk()
+            ->assertJsonPath('received', 2)
+            ->assertJsonPath('complete', true);
+
+        $this->auth()
+            ->postJson("/api/diagrams/{$this->diagram->id}/imports/{$importId}/complete")
+            ->assertStatus(202)
+            ->assertJsonPath('status', 'pending');
+
+        $import = DiagramImport::findOrFail($importId);
+        $this->assertSame(DiagramImport::STATUS_UPLOADED, $import->status);
+        $this->assertNotNull($import->path);
+        Storage::disk('imports')->assertExists($import->path);
+
+        $this->diagram->refresh();
+        $this->assertNull($this->diagram->script);
+        $this->assertSame(ImportStatus::PENDING, $this->diagram->import_status);
+    }
+
+    public function test_chunked_import_rejects_missing_chunks(): void
+    {
+        Queue::fake();
+        Storage::fake('imports');
+
+        $importId = $this->auth()
+            ->postJson("/api/diagrams/{$this->diagram->id}/imports", [
+                'format' => 'sql',
+                'size' => 10,
+                'chunk_size' => 5,
+                'chunks_total' => 2,
+            ])
+            ->assertCreated()
+            ->json('id');
+
+        $this->auth()
+            ->call(
+                'PUT',
+                "/api/diagrams/{$this->diagram->id}/imports/{$importId}/chunks/0",
+                [],
+                [],
+                [],
+                ['CONTENT_TYPE' => 'application/octet-stream'],
+                '12345'
+            )
+            ->assertOk();
+
+        $this->auth()
+            ->postJson("/api/diagrams/{$this->diagram->id}/imports/{$importId}/complete")
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Import is missing one or more chunks.');
+    }
+
+    public function test_chunked_import_rejects_files_larger_than_two_gigabytes(): void
+    {
+        Storage::fake('imports');
+
+        $this->auth()
+            ->postJson("/api/diagrams/{$this->diagram->id}/imports", [
+                'format' => 'sql',
+                'size' => 2147483649,
+                'chunk_size' => 16777216,
+                'chunks_total' => 129,
+            ])
+            ->assertStatus(422)
+            ->assertJsonPath('message', 'Import file must be between 1 byte and 2GB.');
+    }
+
+    public function test_chunked_import_requires_owner_access(): void
+    {
+        Storage::fake('imports');
+        $otherUser = User::factory()->create(['email_verified_at' => now()]);
+
+        $this->actingAs($otherUser, 'sanctum')
+            ->postJson("/api/diagrams/{$this->diagram->id}/imports", [
+                'format' => 'sql',
+                'size' => 10,
+                'chunk_size' => 10,
+                'chunks_total' => 1,
+            ])
+            ->assertForbidden();
+    }
+
     public function test_import_status_returns_status(): void
     {
         $this->auth()
@@ -631,14 +759,6 @@ class DiagramControllerTest extends TestCase
             ->get("/api/diagrams/migration/export/{$this->diagram->id}")
             ->assertStatus(200)
             ->assertHeader('Content-Type', 'application/zip');
-    }
-
-    public function test_show_embed_returns_data(): void
-    {
-        $this->diagram->update(['share_access' => 'read']);
-
-        $this->getJson("/api/diagrams/embed/{$this->diagram->share_token}")
-            ->assertStatus(200);
     }
 
     public function test_show_by_token_returns_diagram(): void

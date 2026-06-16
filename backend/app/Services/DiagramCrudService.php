@@ -66,16 +66,6 @@ class DiagramCrudService
         ]);
     }
 
-    /** @return array{name: string, db_type: string, schema: mixed} */
-    public function getEmbedData(Diagram $diagram): array
-    {
-        return [
-            'name' => $diagram->name,
-            'db_type' => $diagram->db_type->value,
-            'schema' => DiagramSchema::withoutRuntimeState($diagram->schema),
-        ];
-    }
-
     private function copyName(string $name, User $user): string
     {
         $base = "Copy of {$name}";

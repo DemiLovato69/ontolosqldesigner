@@ -141,7 +141,7 @@ class DiagramSharingService
      */
     public function saveByToken(Diagram $diagram, User $user, array $schema, ?array $valueTypes = null): bool
     {
-        if (! $this->hasWriteAccess($diagram, $user)) {
+        if (! $this->canWrite($diagram, $user)) {
             return false;
         }
 
@@ -161,6 +161,52 @@ class DiagramSharingService
         $diagram->save();
 
         return true;
+    }
+
+    public function canRead(Diagram $diagram, User $user): bool
+    {
+        if ($user->id === $diagram->user_id) {
+            return true;
+        }
+
+        if (! $diagram->share_access) {
+            return false;
+        }
+
+        if ($this->inviteForUser($diagram, $user)) {
+            return true;
+        }
+
+        $visitor = DiagramVisitor::where('diagram_id', $diagram->id)
+            ->where('user_id', $user->id)
+            ->first();
+
+        if ($visitor?->status === VisitorStatus::REVOKED) {
+            return false;
+        }
+
+        if ($diagram->library) {
+            return true;
+        }
+
+        if ($diagram->share_access === DiagramAccess::PER_USER) {
+            return $visitor?->status === VisitorStatus::APPROVED;
+        }
+
+        if ($diagram->require_approval) {
+            return $visitor?->status === VisitorStatus::APPROVED;
+        }
+
+        return true;
+    }
+
+    public function canWrite(Diagram $diagram, User $user): bool
+    {
+        if ($user->id === $diagram->user_id) {
+            return true;
+        }
+
+        return $this->hasWriteAccess($diagram, $user);
     }
 
     /**

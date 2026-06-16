@@ -6,15 +6,11 @@ namespace Tests\Feature;
 
 use App\Models\Diagram;
 use App\Models\User;
-use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;
 
 class AdminControllerTest extends TestCase
 {
-
-    private array $adminSession = ['admin_authenticated' => true];
-
     public function test_login_page_returns_ok(): void
     {
         $this->get('/admin/login')->assertStatus(200);
@@ -27,21 +23,21 @@ class AdminControllerTest extends TestCase
 
     public function test_dashboard_returns_ok(): void
     {
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->get('/admin')
             ->assertStatus(200);
     }
 
     public function test_library_returns_ok(): void
     {
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->get('/admin/library')
             ->assertStatus(200);
     }
 
     public function test_reviews_returns_ok(): void
     {
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->get('/admin/reviews')
             ->assertStatus(200);
     }
@@ -50,7 +46,7 @@ class AdminControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->getJson("/admin/users/{$user->id}/activity")
             ->assertStatus(200);
     }
@@ -59,7 +55,7 @@ class AdminControllerTest extends TestCase
     {
         $user = User::factory()->create(['email_verified_at' => null]);
 
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->postJson("/admin/users/{$user->id}/verify")
             ->assertOk()
             ->assertJson([
@@ -74,7 +70,7 @@ class AdminControllerTest extends TestCase
     {
         $email = 'internal_'.uniqid().'@example.com';
 
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->postJson('/admin/users', [
                 'email' => $email,
                 'password' => 'Secret123',
@@ -103,7 +99,7 @@ class AdminControllerTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->postJson('/admin/users', [
                 'email' => $user->email,
                 'password' => 'Secret123',
@@ -118,7 +114,7 @@ class AdminControllerTest extends TestCase
         $verifiedAt = now()->subDay()->startOfSecond();
         $user = User::factory()->create(['email_verified_at' => $verifiedAt]);
 
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->postJson("/admin/users/{$user->id}/verify")
             ->assertOk()
             ->assertJson([
@@ -146,7 +142,7 @@ class AdminControllerTest extends TestCase
     {
         $diagram = Diagram::factory()->create();
 
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->postJson("/admin/diagrams/{$diagram->id}/feature", ['url' => 'https://example.com/img.png'])
             ->assertStatus(200)
             ->assertJson(['ok' => true]);
@@ -156,33 +152,76 @@ class AdminControllerTest extends TestCase
     {
         $diagram = Diagram::factory()->create(['featured' => true]);
 
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->deleteJson("/admin/diagrams/{$diagram->id}/feature")
             ->assertStatus(204);
     }
 
     public function test_logout_redirects(): void
     {
-        $this->withSession($this->adminSession)
+        $this->asAdmin()
             ->post('/admin/logout')
             ->assertRedirect('/admin/login');
     }
 
     public function test_login_with_correct_credentials_sets_session_and_redirects(): void
     {
-        Config::set('app.admin_password', 'test-admin-secret');
+        $admin = User::factory()->create(['role' => 'admin', 'password' => bcrypt('test-admin-secret')]);
 
-        $this->post('/admin/login', ['username' => 'admin', 'password' => 'test-admin-secret'])
+        $this->post('/admin/login', ['email' => $admin->email, 'password' => 'test-admin-secret'])
             ->assertRedirect('/admin');
 
-        $this->assertTrue(session('admin_authenticated') === true);
+        $this->assertAuthenticatedAs($admin);
     }
 
     public function test_login_with_wrong_credentials_returns_errors(): void
     {
-        Config::set('app.admin_password', 'correct-secret');
+        $admin = User::factory()->create(['role' => 'admin', 'password' => bcrypt('correct-secret')]);
 
-        $this->post('/admin/login', ['username' => 'admin', 'password' => 'wrong-secret'])
+        $this->post('/admin/login', ['email' => $admin->email, 'password' => 'wrong-secret'])
             ->assertSessionHasErrors(['credentials']);
+    }
+
+    public function test_non_admin_cannot_login_to_admin(): void
+    {
+        $user = User::factory()->create(['role' => 'user', 'password' => bcrypt('Secret123')]);
+
+        $this->post('/admin/login', ['email' => $user->email, 'password' => 'Secret123'])
+            ->assertSessionHasErrors(['credentials']);
+    }
+
+    public function test_admin_can_promote_and_demote_user(): void
+    {
+        $user = User::factory()->create(['role' => 'user']);
+
+        $this->asAdmin()
+            ->patchJson("/admin/users/{$user->id}/role", ['role' => 'admin'])
+            ->assertOk()
+            ->assertJsonPath('role', 'admin');
+
+        $this->assertSame('admin', $user->fresh()->role);
+
+        $this->asAdmin()
+            ->patchJson("/admin/users/{$user->id}/role", ['role' => 'user'])
+            ->assertOk()
+            ->assertJsonPath('role', 'user');
+
+        $this->assertSame('user', $user->fresh()->role);
+    }
+
+    public function test_admin_cannot_demote_last_admin(): void
+    {
+        $admin = User::factory()->create(['role' => 'admin']);
+
+        $this->actingAs($admin)
+            ->patchJson("/admin/users/{$admin->id}/role", ['role' => 'user'])
+            ->assertStatus(422);
+
+        $this->assertSame('admin', $admin->fresh()->role);
+    }
+
+    private function asAdmin(): self
+    {
+        return $this->actingAs(User::factory()->create(['role' => 'admin']));
     }
 }

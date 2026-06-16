@@ -7,6 +7,7 @@ namespace Tests\Feature;
 use App\Models\Diagram;
 use App\Models\DiagramVisitor;
 use App\Models\User;
+use App\Services\DiagramSharingService;
 use Illuminate\Support\Facades\Event;
 use Tests\TestCase;
 
@@ -262,5 +263,73 @@ class DiagramSharingTest extends TestCase
             ->getJson('/api/diagrams/share-users/search?q=ali')
             ->assertStatus(200)
             ->assertJsonFragment(['alice@example.com']);
+    }
+
+    public function test_access_helpers_allow_owner_and_reject_private_non_owner(): void
+    {
+        $owner = User::factory()->create(['email_verified_at' => now()]);
+        $other = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create(['user_id' => $owner->id, 'share_access' => null]);
+        $service = app(DiagramSharingService::class);
+
+        $this->assertTrue($service->canRead($diagram, $owner));
+        $this->assertTrue($service->canWrite($diagram, $owner));
+        $this->assertFalse($service->canRead($diagram, $other));
+        $this->assertFalse($service->canWrite($diagram, $other));
+    }
+
+    public function test_access_helpers_enforce_pending_and_revoked_visitors(): void
+    {
+        $owner = User::factory()->create(['email_verified_at' => now()]);
+        $visitor = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $owner->id,
+            'share_access' => 'per_user',
+            'require_approval' => true,
+        ]);
+        $service = app(DiagramSharingService::class);
+
+        DiagramVisitor::factory()->create([
+            'diagram_id' => $diagram->id,
+            'user_id' => $visitor->id,
+            'status' => 'pending',
+            'access' => 'write',
+        ]);
+
+        $this->assertFalse($service->canRead($diagram, $visitor));
+        $this->assertFalse($service->canWrite($diagram, $visitor));
+
+        DiagramVisitor::where('diagram_id', $diagram->id)
+            ->where('user_id', $visitor->id)
+            ->update(['status' => 'approved']);
+
+        $this->assertTrue($service->canRead($diagram, $visitor));
+        $this->assertTrue($service->canWrite($diagram, $visitor));
+
+        DiagramVisitor::where('diagram_id', $diagram->id)
+            ->where('user_id', $visitor->id)
+            ->update(['status' => 'revoked', 'access' => null]);
+
+        $this->assertFalse($service->canRead($diagram, $visitor));
+        $this->assertFalse($service->canWrite($diagram, $visitor));
+    }
+
+    public function test_access_helpers_allow_company_wide_read_and_invited_write(): void
+    {
+        $owner = User::factory()->create(['email_verified_at' => now()]);
+        $reader = User::factory()->create(['email_verified_at' => now()]);
+        $writer = User::factory()->create(['email' => 'writer@example.com', 'email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $owner->id,
+            'share_access' => 'read',
+            'library' => true,
+        ]);
+        $diagram->invites()->create(['email' => 'writer@example.com', 'access' => 'write']);
+        $service = app(DiagramSharingService::class);
+
+        $this->assertTrue($service->canRead($diagram, $reader));
+        $this->assertFalse($service->canWrite($diagram, $reader));
+        $this->assertTrue($service->canRead($diagram, $writer));
+        $this->assertTrue($service->canWrite($diagram, $writer));
     }
 }

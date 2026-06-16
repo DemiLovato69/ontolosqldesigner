@@ -117,8 +117,8 @@
 
             <form method="POST" action="{{ route('admin.login.post') }}">
                 @csrf
-                <label for="username">Username</label>
-                <input type="text" id="username" name="username" value="{{ old('username') }}" autocomplete="username" autofocus>
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" value="{{ old('email') }}" autocomplete="username" autofocus>
 
                 <label for="password">Password</label>
                 <input type="password" id="password" name="password" autocomplete="current-password">

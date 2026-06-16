@@ -21,23 +21,32 @@ class AuthControllerTest extends TestCase
         ])->assertMethodNotAllowed();
     }
 
-    public function test_login_returns_token(): void
+    public function test_login_returns_user_and_authenticates_session(): void
     {
         $user = User::factory()->create(['password' => bcrypt('Secret1!')]);
 
-        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'Secret1!'])
+        $this->fromFrontend()->postJson('/api/login', ['email' => $user->email, 'password' => 'Secret1!'])
             ->assertStatus(200)
             ->assertJsonFragment(['status' => true])
-            ->assertJsonStructure(['token']);
+            ->assertJsonPath('user.email', $user->email);
+
+        $this->assertAuthenticatedAs($user);
     }
 
     public function test_logout_succeeds(): void
     {
-        $user = User::factory()->create();
+        $user = User::factory()->create(['password' => bcrypt('Secret1!')]);
 
-        $this->actingAs($user, 'sanctum')
+        $this->fromFrontend()->postJson('/api/login', ['email' => $user->email, 'password' => 'Secret1!'])
+            ->assertOk();
+
+        $this->fromFrontend()
             ->postJson('/api/logout')
             ->assertStatus(200);
+
+        $this->fromFrontend()
+            ->getJson('/api/user')
+            ->assertUnauthorized();
     }
 
     public function test_resend_verification_succeeds(): void
@@ -54,7 +63,7 @@ class AuthControllerTest extends TestCase
     {
         $user = User::factory()->create(['password' => bcrypt('correct-pass')]);
 
-        $this->postJson('/api/login', ['email' => $user->email, 'password' => 'wrong-pass'])
+        $this->fromFrontend()->postJson('/api/login', ['email' => $user->email, 'password' => 'wrong-pass'])
             ->assertStatus(401)
             ->assertJsonFragment(['status' => false]);
     }
@@ -67,7 +76,7 @@ class AuthControllerTest extends TestCase
         $response = $this->get('/auth/google/callback');
 
         $response->assertRedirect();
-        $this->assertStringContainsString('/oauth/callback?token=', $response->headers->get('Location'));
+        $this->assertSame('http://localhost:8080/oauth/callback', $response->headers->get('Location'));
 
         $this->assertDatabaseHas('users', [
             'email' => 'new@company.com',
@@ -85,7 +94,7 @@ class AuthControllerTest extends TestCase
         $response = $this->get('/auth/google/callback');
 
         $response->assertRedirect();
-        $this->assertStringContainsString('/oauth/callback?token=', $response->headers->get('Location'));
+        $this->assertSame('http://localhost:8080/oauth/callback', $response->headers->get('Location'));
 
         $this->assertSame('google-2', $user->refresh()->google_id);
     }
@@ -99,9 +108,10 @@ class AuthControllerTest extends TestCase
         $response = $this->get('/auth/google/callback');
 
         $response->assertRedirect();
-        $this->assertStringContainsString('/oauth/callback?token=', $response->headers->get('Location'));
+        $this->assertSame('http://localhost:8080/oauth/callback', $response->headers->get('Location'));
 
-        $this->assertSame(1, $user->tokens()->count());
+        $this->assertAuthenticatedAs($user);
+        $this->assertSame(0, $user->tokens()->count());
     }
 
     public function test_google_callback_rejects_wrong_hosted_domain(): void
@@ -143,5 +153,10 @@ class AuthControllerTest extends TestCase
         );
 
         Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
+    }
+
+    private function fromFrontend(): self
+    {
+        return $this->withHeader('referer', config('app.url'));
     }
 }

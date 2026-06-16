@@ -1,39 +1,42 @@
 import { createStore } from 'vuex';
 import axios from '@/axios';
 
-function initializeAxiosHeaders(token) {
-    if (token) {
-        axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-        delete axios.defaults.headers.common['Authorization'];
-    }
-}
-
 export default createStore({
     state: {
-        auth_token: localStorage.getItem('auth_token') || null,
+        authenticated: false,
+        authChecked: false,
         user: null,
     },
     mutations: {
-        login(state, token) {
-            state.auth_token = token;
-            localStorage.setItem('auth_token', token);
-            initializeAxiosHeaders(token);
+        setUser(state, user) {
+            state.user = user;
+            state.authenticated = !!user;
+            state.authChecked = true;
         },
-        logout(state) {
-            state.auth_token = null;
-            localStorage.removeItem('auth_token');
-            initializeAxiosHeaders(null);
+        clearUser(state) {
+            state.user = null;
+            state.authenticated = false;
+            state.authChecked = true;
         },
     },
     getters: {
-        authToken(state) {
-            return state.auth_token;
+        isAuthenticated(state) {
+            return state.authenticated;
         }
     },
     actions: {
-        initializeAuth({ state }) {
-            initializeAxiosHeaders(state.auth_token);
+        async fetchUser({ commit }) {
+            const response = await axios.get('/api/user');
+            commit('setUser', response.data);
+            return response.data;
+        },
+        async initializeAuth({ dispatch, commit }) {
+            try {
+                return await dispatch('fetchUser');
+            } catch {
+                commit('clearUser');
+                return null;
+            }
         }
     }
 });

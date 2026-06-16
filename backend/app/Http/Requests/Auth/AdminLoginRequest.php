@@ -7,7 +7,7 @@ namespace App\Http\Requests\Auth;
 use Illuminate\Foundation\Http\FormRequest;
 use Knuckles\Scribe\Attributes\BodyParam;
 
-#[BodyParam('username', 'string', 'The admin username.', example: 'admin')]
+#[BodyParam('email', 'string', 'The admin email.', example: 'admin@example.com')]
 #[BodyParam('password', 'string', 'The admin password.', example: 'secret')]
 class AdminLoginRequest extends FormRequest
 {
@@ -15,7 +15,7 @@ class AdminLoginRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'username' => 'required|string',
+            'email' => 'required|string|email',
             'password' => 'required|string',
         ];
     }

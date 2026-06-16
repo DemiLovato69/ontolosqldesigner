@@ -18,6 +18,8 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
+        $middleware->statefulApi();
+        $middleware->redirectGuestsTo(fn () => null);
 
         $isDiagramImport = fn ($request): bool => $request->is('api/diagrams/sql/import/*');
         $middleware->trimStrings(except: [$isDiagramImport]);

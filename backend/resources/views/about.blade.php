@@ -242,7 +242,7 @@
             </div>
             <div class="tool-item">
                 <h4>Collaboration &amp; Sharing</h4>
-                <p>Real-time multiplayer editing, shareable links with read-only or edit access, and embeddable iframes.</p>
+                <p>Real-time multiplayer editing, shareable links with read-only or edit access, and company-wide diagram publishing.</p>
             </div>
         </div>
 

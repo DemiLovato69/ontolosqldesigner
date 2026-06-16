@@ -50,6 +50,7 @@ Route::prefix('/admin')->group(function () {
         Route::post('/users', [AdminController::class, 'storeUser'])->name('admin.users.store');
         Route::post('/impersonate/{user}', [AdminController::class, 'impersonate'])->name('admin.impersonate');
         Route::post('/users/{user}/verify', [AdminController::class, 'verifyUser'])->name('admin.users.verify');
+        Route::patch('/users/{user}/role', [AdminController::class, 'updateUserRole'])->name('admin.users.role');
         Route::delete('/users/{user}', [AdminController::class, 'destroy'])->name('admin.users.destroy');
         Route::post('/diagrams/{diagram}/feature', [AdminController::class, 'featureDiagram'])->name('admin.diagrams.feature');
         Route::delete('/diagrams/{diagram}/feature', [AdminController::class, 'unfeatureDiagram'])->name('admin.diagrams.unfeature');
@@ -62,7 +63,7 @@ Route::prefix('/admin')->group(function () {
 
 Route::get('/{any}', function ($any) {
     $exactRoutes = ['login', 'logout', 'verify-email', 'demo', 'diagrams', 'oauth/callback'];
-    $prefixRoutes = ['diagrams/', 'shared/', 'embed/'];
+    $prefixRoutes = ['diagrams/', 'shared/'];
 
     if (in_array($any, $exactRoutes)) {
         return view('layouts.app');

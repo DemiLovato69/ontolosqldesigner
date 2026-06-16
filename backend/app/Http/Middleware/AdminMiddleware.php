@@ -6,12 +6,15 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class AdminMiddleware
 {
     public function handle(Request $request, Closure $next): mixed
     {
-        if (! session('admin_authenticated')) {
+        $user = Auth::user();
+
+        if (! $user?->isAdmin()) {
             return redirect('/admin/login');
         }
 

@@ -131,7 +131,7 @@
                     "name": "What is the best free ERD tool for team collaboration?",
                     "acceptedAnswer": {
                         "@type": "Answer",
-                        "text": "SQL Designer includes real-time multiplayer editing, shareable diagram links, and embeddable iframes on the free tier — no collaboration paywall. DrawSQL supports sharing and commenting. Lucidchart has strong collaboration features but the free tier limits the number of objects per diagram. dbdiagram.io's collaboration features require a paid plan. For free collaboration on database diagrams specifically, SQL Designer is the most capable option."
+                        "text": "SQL Designer includes real-time multiplayer editing, shareable diagram links, and company-wide diagram publishing on the free tier — no collaboration paywall. DrawSQL supports sharing and commenting. Lucidchart has strong collaboration features but the free tier limits the number of objects per diagram. dbdiagram.io's collaboration features require a paid plan. For free collaboration on database diagrams specifically, SQL Designer is the most capable option."
                     }
                 },
                 {
@@ -319,7 +319,7 @@
             <h3>1. SQL Designer — sql-designer.com</h3>
             <img src="/images/designer_screenshot.webp" alt="SQL Designer canvas showing an ER diagram with tables and foreign key relationships" width="720" height="400" loading="eager">
             <p>SQL Designer is a browser-based schema design tool for MySQL, PostgreSQL, SQLite, Oracle, SQL Server, and Microsoft Access. The workflow is visual: drag tables onto a canvas, add columns with real database types (<code>INT</code>, <code>VARCHAR</code>, <code>DECIMAL</code>, <code>TIMESTAMP</code>), set <code>PRIMARY KEY</code>, <code>UNIQUE</code>, <code>NOT NULL</code>, and <code>AUTO_INCREMENT</code> or <code>SERIAL</code> constraints with toggles, and draw foreign key relationships by connecting columns. The diagram uses crow's foot notation. When the schema is ready, export a complete <code>CREATE TABLE</code> DDL script for your target engine in one click — or paste existing SQL to visualise it instantly.</p>
-            <p>The free tier has no table cap, no diagram limit, and no paywall on SQL export. Collaboration features — shareable links, embeddable iframes, and real-time multiplayer editing — are included at no cost. No credit card required; the <a href="/demo">demo canvas</a> works without an account.</p>
+            <p>The free tier has no table cap, no diagram limit, and no paywall on SQL export. Collaboration features — shareable links, company-wide diagram publishing, and real-time multiplayer editing — are included at no cost. No credit card required; the <a href="/demo">demo canvas</a> works without an account.</p>
             <p><strong>Limitations:</strong> there is no reverse-engineering from a live database connection; you import SQL scripts, not live databases. The tool is focused on schema design, not query execution or database administration.</p>
             <p class="verdict">Verdict: the strongest free option for visual database schema design from a blank canvas, with no meaningful free-tier restrictions and broad multi-dialect SQL export.</p>
         </div>
@@ -509,7 +509,7 @@
 
             <div class="faq-item">
                 <p class="faq-q">What is the best free ERD tool for team collaboration?</p>
-                <p class="faq-a">SQL Designer includes real-time multiplayer editing, shareable diagram links, and embeddable iframes on the free tier — no collaboration paywall. DrawSQL supports sharing and commenting. Lucidchart has strong collaboration features but the free tier limits the number of objects per diagram. dbdiagram.io's collaboration features require a paid plan. For free collaboration on database diagrams specifically, SQL Designer is the most capable option with no upgrade required.</p>
+                <p class="faq-a">SQL Designer includes real-time multiplayer editing, shareable diagram links, and company-wide diagram publishing on the free tier — no collaboration paywall. DrawSQL supports sharing and commenting. Lucidchart has strong collaboration features but the free tier limits the number of objects per diagram. dbdiagram.io's collaboration features require a paid plan. For free collaboration on database diagrams specifically, SQL Designer is the most capable option with no upgrade required.</p>
             </div>
 
             <div class="faq-item">

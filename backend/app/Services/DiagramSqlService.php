@@ -14,6 +14,7 @@ use App\Jobs\ExportDiagramJob;
 use App\Jobs\ImportDiagramSchemaJob;
 use App\Models\Diagram;
 use App\Models\DiagramChangelog;
+use App\Models\DiagramImport;
 use App\Models\User;
 use App\Services\SqlDialects\MsAccessDialect;
 use App\Services\SqlDialects\MysqlDialect;
@@ -23,6 +24,9 @@ use App\Services\SqlDialects\SqlDialectInterface;
 use App\Services\SqlDialects\SqliteDialect;
 use App\Services\SqlDialects\SqlServerDialect;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use RuntimeException;
 use ZipArchive;
 
 class DiagramSqlService
@@ -30,6 +34,10 @@ class DiagramSqlService
     private const BACKUP_FORMAT = 'ontolosql-designer';
 
     private const BACKUP_VERSION = 1;
+
+    public const MAX_IMPORT_BYTES = 2147483648;
+
+    public const MAX_IMPORT_CHUNK_BYTES = 33554432;
 
     public function __construct(
         private readonly OntologyMakerService $ontologyMakerService,
@@ -46,6 +54,150 @@ class DiagramSqlService
         $diagram->save();
 
         ImportDiagramSchemaJob::dispatch($diagram);
+        broadcast(new SchemaImported($diagram->share_token, (string) $user->id));
+
+        DiagramChangelog::create([
+            'diagram_id' => $diagram->id,
+            'user_id' => $user->id,
+            'user_name' => $user->email,
+            'action' => ChangelogAction::IMPORT_SQL,
+            'details' => null,
+        ]);
+    }
+
+    /** @param array{format: string, size: int, chunk_size: int, chunks_total: int, original_name?: string|null} $data */
+    public function createChunkedImport(Diagram $diagram, User $user, array $data): DiagramImport
+    {
+        $size = (int) $data['size'];
+        $chunkSize = (int) $data['chunk_size'];
+        $chunksTotal = (int) $data['chunks_total'];
+
+        if ($size < 1 || $size > self::MAX_IMPORT_BYTES) {
+            throw new RuntimeException('Import file must be between 1 byte and 2GB.');
+        }
+
+        if ($chunkSize < 1 || $chunkSize > self::MAX_IMPORT_CHUNK_BYTES) {
+            throw new RuntimeException('Import chunks must be between 1 byte and 32MB.');
+        }
+
+        if ($chunksTotal !== (int) ceil($size / $chunkSize)) {
+            throw new RuntimeException('Chunk count does not match the file size and chunk size.');
+        }
+
+        $directory = 'diagrams/'.$diagram->id.'/'.Str::uuid()->toString();
+        Storage::disk('imports')->makeDirectory($directory.'/chunks');
+
+        return DiagramImport::create([
+            'diagram_id' => $diagram->id,
+            'user_id' => $user->id,
+            'format' => $data['format'],
+            'status' => DiagramImport::STATUS_UPLOADING,
+            'disk' => 'imports',
+            'directory' => $directory,
+            'path' => null,
+            'original_name' => $data['original_name'] ?? null,
+            'size' => $size,
+            'chunk_size' => $chunkSize,
+            'chunks_total' => $chunksTotal,
+            'chunks_received' => [],
+            'error' => null,
+        ]);
+    }
+
+    public function storeImportChunk(DiagramImport $import, int $index, string $content): array
+    {
+        if ($import->status !== DiagramImport::STATUS_UPLOADING) {
+            throw new RuntimeException('Import is not accepting chunks.');
+        }
+
+        if ($index < 0 || $index >= $import->chunks_total) {
+            throw new RuntimeException('Chunk index is out of range.');
+        }
+
+        $length = strlen($content);
+        if ($length < 1 || $length > $import->chunk_size) {
+            throw new RuntimeException('Chunk size is invalid.');
+        }
+
+        Storage::disk($import->disk)->put($import->directory."/chunks/{$index}.part", $content);
+
+        $received = array_values(array_unique(array_map('intval', $import->chunks_received ?? [])));
+        $received[] = $index;
+        $received = array_values(array_unique($received));
+        sort($received);
+
+        $import->chunks_received = $received;
+        $import->error = null;
+        $import->save();
+
+        return [
+            'received' => count($received),
+            'chunks_total' => $import->chunks_total,
+            'complete' => count($received) === $import->chunks_total,
+        ];
+    }
+
+    public function completeChunkedImport(Diagram $diagram, DiagramImport $import, User $user): void
+    {
+        if ($import->diagram_id !== $diagram->id) {
+            throw new RuntimeException('Import does not belong to this diagram.');
+        }
+
+        if ($import->status !== DiagramImport::STATUS_UPLOADING) {
+            throw new RuntimeException('Import has already been completed.');
+        }
+
+        $received = array_values(array_unique(array_map('intval', $import->chunks_received ?? [])));
+        sort($received);
+        $expected = range(0, $import->chunks_total - 1);
+        if ($received !== $expected) {
+            throw new RuntimeException('Import is missing one or more chunks.');
+        }
+
+        $disk = Storage::disk($import->disk);
+        $payloadPath = $import->directory.'/payload';
+        $target = fopen($disk->path($payloadPath), 'wb');
+        if ($target === false) {
+            throw new RuntimeException('Could not create import payload.');
+        }
+
+        try {
+            foreach ($expected as $index) {
+                $chunkPath = $import->directory."/chunks/{$index}.part";
+                if (! $disk->exists($chunkPath)) {
+                    throw new RuntimeException('Import is missing one or more chunks.');
+                }
+
+                $source = fopen($disk->path($chunkPath), 'rb');
+                if ($source === false) {
+                    throw new RuntimeException('Could not read import chunk.');
+                }
+                stream_copy_to_stream($source, $target);
+                fclose($source);
+            }
+        } finally {
+            fclose($target);
+        }
+
+        if ($disk->size($payloadPath) !== $import->size) {
+            $disk->delete($payloadPath);
+            throw new RuntimeException('Assembled import size does not match the uploaded file.');
+        }
+
+        $disk->deleteDirectory($import->directory.'/chunks');
+
+        $import->status = DiagramImport::STATUS_UPLOADED;
+        $import->path = $payloadPath;
+        $import->error = null;
+        $import->save();
+
+        $diagram->script = null;
+        $diagram->import_status = ImportStatus::PENDING;
+        $diagram->import_error = null;
+        $diagram->import_warnings = null;
+        $diagram->save();
+
+        ImportDiagramSchemaJob::dispatch($diagram, $import);
         broadcast(new SchemaImported($diagram->share_token, (string) $user->id));
 
         DiagramChangelog::create([
@@ -170,7 +322,7 @@ class DiagramSqlService
                     $parts[] = $row['key_mod'];
                 }
                 if ($row['default_value'] !== null && $row['default_value'] !== '') {
-                    $parts[] = "DEFAULT '{$row['default_value']}'";
+                    $parts[] = "DEFAULT '".str_replace("'", "''", $row['default_value'])."'";
                 }
                 if ($dialect->supportsColumnComment() && $row['comment'] !== null && $row['comment'] !== '') {
                     $parts[] = "COMMENT '".str_replace("'", "''", $row['comment'])."'";
@@ -523,12 +675,12 @@ class DiagramSqlService
                     }
                     $sourceTable = $tablesById->get($sourceRow['table_id'])['name'];
 
-                    return "            \$table->foreign('{$targetRow['name']}')->references('{$sourceRow['name']}')->on('{$sourceTable}');";
+                    return '            $table->foreign('.$this->phpString($targetRow['name']).')->references('.$this->phpString($sourceRow['name']).')->on('.$this->phpString($sourceTable).');';
                 })->filter()->values()->all();
 
             $body = implode("\n", array_merge($colLines, $fkLines));
             $pad = str_pad((string) ($index + 1), 6, '0', STR_PAD_LEFT);
-            $filename = "2025_01_01_{$pad}_create_{$table['name']}_table.php";
+            $filename = "2025_01_01_{$pad}_create_".$this->safeMigrationSlug($table['name'])."_table.php";
 
             $files[] = ['filename' => $filename, 'content' => $this->buildMigrationFileContent($table['name'], $body)];
         }
@@ -1489,13 +1641,16 @@ class DiagramSqlService
     {
         $t = '$table';
 
-        return "<?php\n\nuse Illuminate\\Database\\Migrations\\Migration;\nuse Illuminate\\Database\\Schema\\Blueprint;\nuse Illuminate\\Support\\Facades\\Schema;\n\nreturn new class extends Migration\n{\n    public function up(): void\n    {\n        Schema::create('{$tableName}', function (Blueprint {$t}) {\n{$body}\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::dropIfExists('{$tableName}');\n    }\n};\n";
+        $table = $this->phpString($tableName);
+
+        return "<?php\n\nuse Illuminate\\Database\\Migrations\\Migration;\nuse Illuminate\\Database\\Schema\\Blueprint;\nuse Illuminate\\Support\\Facades\\Schema;\n\nreturn new class extends Migration\n{\n    public function up(): void\n    {\n        Schema::create({$table}, function (Blueprint {$t}) {\n{$body}\n        });\n    }\n\n    public function down(): void\n    {\n        Schema::dropIfExists({$table});\n    }\n};\n";
     }
 
     /** @param array<string, mixed> $col */
     private function buildLaravelColumn(array $col): ?string
     {
         $name = $col['name'];
+        $phpName = $this->phpString($name);
         $rawType = trim($col['sql_type'] ?? 'VARCHAR(255)');
         $typeUpper = strtoupper($rawType);
         $firstWord = strtoupper(preg_replace('/[\s(].*/', '', $typeUpper));
@@ -1508,62 +1663,62 @@ class DiagramSqlService
         $sizeStr = $sizeMatch[1] ?? null;
 
         if (preg_match('/^TINYINT\s*\(\s*1\s*\)/i', $rawType)) {
-            $method = "boolean('{$name}')";
+            $method = "boolean({$phpName})";
         } elseif (preg_match('/^TINYINT/i', $typeUpper)) {
-            $method = $col['unsigned'] ? "unsignedTinyInteger('{$name}')" : "tinyInteger('{$name}')";
+            $method = $col['unsigned'] ? "unsignedTinyInteger({$phpName})" : "tinyInteger({$phpName})";
         } elseif (preg_match('/^SMALLINT/i', $typeUpper)) {
-            $method = $col['unsigned'] ? "unsignedSmallInteger('{$name}')" : "smallInteger('{$name}')";
+            $method = $col['unsigned'] ? "unsignedSmallInteger({$phpName})" : "smallInteger({$phpName})";
         } elseif (preg_match('/^MEDIUMINT/i', $typeUpper)) {
-            $method = $col['unsigned'] ? "unsignedMediumInteger('{$name}')" : "mediumInteger('{$name}')";
+            $method = $col['unsigned'] ? "unsignedMediumInteger({$phpName})" : "mediumInteger({$phpName})";
         } elseif (preg_match('/^BIGINT/i', $typeUpper)) {
-            $method = $col['unsigned'] ? "unsignedBigInteger('{$name}')" : "bigInteger('{$name}')";
+            $method = $col['unsigned'] ? "unsignedBigInteger({$phpName})" : "bigInteger({$phpName})";
         } elseif (preg_match('/^INT/i', $typeUpper)) {
-            $method = $col['unsigned'] ? "unsignedInteger('{$name}')" : "integer('{$name}')";
+            $method = $col['unsigned'] ? "unsignedInteger({$phpName})" : "integer({$phpName})";
         } elseif (preg_match('/^VARCHAR/i', $typeUpper)) {
-            $method = ($sizeStr && $sizeStr !== '255') ? "string('{$name}', {$sizeStr})" : "string('{$name}')";
+            $method = ($sizeStr && $sizeStr !== '255') ? "string({$phpName}, {$sizeStr})" : "string({$phpName})";
         } elseif (preg_match('/^CHAR/i', $typeUpper)) {
-            $method = $sizeStr ? "char('{$name}', {$sizeStr})" : "char('{$name}')";
+            $method = $sizeStr ? "char({$phpName}, {$sizeStr})" : "char({$phpName})";
         } elseif (preg_match('/^LONGTEXT/i', $typeUpper)) {
-            $method = "longText('{$name}')";
+            $method = "longText({$phpName})";
         } elseif (preg_match('/^MEDIUMTEXT/i', $typeUpper)) {
-            $method = "mediumText('{$name}')";
+            $method = "mediumText({$phpName})";
         } elseif (preg_match('/^TINYTEXT/i', $typeUpper)) {
-            $method = "tinyText('{$name}')";
+            $method = "tinyText({$phpName})";
         } elseif (preg_match('/^TEXT/i', $typeUpper)) {
-            $method = "text('{$name}')";
+            $method = "text({$phpName})";
         } elseif (preg_match('/^DECIMAL/i', $typeUpper)) {
             if ($sizeStr) {
                 $parts = array_map('trim', explode(',', $sizeStr, 2));
                 [$prec, $scale] = [$parts[0], $parts[1] ?? null];
-                $method = $scale ? "decimal('{$name}', {$prec}, {$scale})" : "decimal('{$name}', {$prec})";
+                $method = $scale ? "decimal({$phpName}, {$prec}, {$scale})" : "decimal({$phpName}, {$prec})";
             } else {
-                $method = "decimal('{$name}')";
+                $method = "decimal({$phpName})";
             }
         } elseif (preg_match('/^DOUBLE/i', $typeUpper)) {
-            $method = "double('{$name}')";
+            $method = "double({$phpName})";
         } elseif (preg_match('/^FLOAT/i', $typeUpper)) {
-            $method = "float('{$name}')";
+            $method = "float({$phpName})";
         } elseif (preg_match('/^DATETIME/i', $typeUpper)) {
-            $method = "dateTime('{$name}')";
+            $method = "dateTime({$phpName})";
         } elseif (preg_match('/^TIMESTAMP/i', $typeUpper)) {
-            $method = "timestamp('{$name}')";
+            $method = "timestamp({$phpName})";
         } elseif (preg_match('/^DATE/i', $typeUpper)) {
-            $method = "date('{$name}')";
+            $method = "date({$phpName})";
         } elseif (preg_match('/^TIME/i', $typeUpper)) {
-            $method = "time('{$name}')";
+            $method = "time({$phpName})";
         } elseif (preg_match('/^YEAR/i', $typeUpper)) {
-            $method = "year('{$name}')";
+            $method = "year({$phpName})";
         } elseif (preg_match('/^BOOL/i', $typeUpper)) {
-            $method = "boolean('{$name}')";
+            $method = "boolean({$phpName})";
         } elseif (preg_match('/^JSON/i', $typeUpper)) {
-            $method = "json('{$name}')";
+            $method = "json({$phpName})";
         } elseif (preg_match('/^(BLOB|BINARY|VARBINARY)/i', $typeUpper)) {
-            $method = "binary('{$name}')";
+            $method = "binary({$phpName})";
         } elseif (preg_match('/^ENUM/i', $typeUpper)) {
             preg_match('/ENUM\s*\((.+)\)/i', $rawType, $enumMatch);
-            $method = $enumMatch ? "enum('{$name}', [{$enumMatch[1]}])" : "string('{$name}')";
+            $method = $enumMatch ? "enum({$phpName}, [{$enumMatch[1]}])" : "string({$phpName})";
         } else {
-            $method = "string('{$name}')";
+            $method = "string({$phpName})";
         }
 
         $mods = '';
@@ -1577,17 +1732,30 @@ class DiagramSqlService
             } elseif (is_numeric($dv)) {
                 $mods .= "->default({$dv})";
             } else {
-                $mods .= "->default('".str_replace("'", "\\'", $dv)."')";
+                $mods .= '->default('.$this->phpString($dv).')';
             }
         }
         if ($col['key_mod'] === 'PRIMARY KEY') {
             $mods .= '->primary()';
         }
         if ($col['comment']) {
-            $mods .= "->comment('".str_replace("'", "\\'", $col['comment'])."')";
+            $mods .= '->comment('.$this->phpString($col['comment']).')';
         }
 
         return "            \$table->{$method}{$mods};";
+    }
+
+    private function phpString(string $value): string
+    {
+        return var_export($value, true);
+    }
+
+    private function safeMigrationSlug(string $value): string
+    {
+        $slug = strtolower((string) preg_replace('/[^A-Za-z0-9_]+/', '_', $value));
+        $slug = trim($slug, '_');
+
+        return $slug !== '' ? $slug : 'diagram';
     }
 
     /**

@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace App\Policies;
 
-use App\Enums\DiagramAccess;
-use App\Enums\VisitorStatus;
 use App\Models\Diagram;
-use App\Models\DiagramVisitor;
 use App\Models\User;
+use App\Services\DiagramSharingService;
 
 class DiagramPolicy
 {
@@ -39,35 +37,12 @@ class DiagramPolicy
 
     public function viewChangelog(User $user, Diagram $diagram): bool
     {
-        if ($this->ownsDiagram($user, $diagram)) {
-            return true;
-        }
-
-        return DiagramVisitor::where('diagram_id', $diagram->id)
-            ->where('user_id', $user->id)
-            ->where('status', VisitorStatus::APPROVED)
-            ->exists();
+        return app(DiagramSharingService::class)->canRead($diagram, $user);
     }
 
     public function addChangelog(User $user, Diagram $diagram): bool
     {
-        if ($this->ownsDiagram($user, $diagram)) {
-            return true;
-        }
-
-        if ($diagram->share_access === DiagramAccess::WRITE) {
-            return true;
-        }
-
-        if ($diagram->share_access === DiagramAccess::PER_USER) {
-            return DiagramVisitor::where('diagram_id', $diagram->id)
-                ->where('user_id', $user->id)
-                ->where('status', VisitorStatus::APPROVED)
-                ->where('access', DiagramAccess::WRITE)
-                ->exists();
-        }
-
-        return false;
+        return app(DiagramSharingService::class)->canWrite($diagram, $user);
     }
 
     private function ownsDiagram(User $user, Diagram $diagram): bool

@@ -19,6 +19,7 @@ use App\Http\Resources\DiagramResource;
 use App\Http\Resources\DiagramSummaryResource;
 use App\Http\Resources\DiagramVisitorResource;
 use App\Models\Diagram;
+use App\Models\DiagramImport;
 use App\Models\DiagramInvite;
 use App\Models\DiagramVisitor;
 use App\Models\User;
@@ -34,6 +35,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
+use RuntimeException;
 use Knuckles\Scribe\Attributes\Group;
 use Knuckles\Scribe\Attributes\Subgroup;
 
@@ -173,6 +175,78 @@ class DiagramController extends Controller
         /** @var User $user */
         $user = $request->user();
         $this->sqlService->startImport($diagram, $script, $user, $format);
+
+        return $this->success(['status' => 'pending'], 202);
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    #[Subgroup('Import')]
+    public function createImportUpload(Diagram $diagram, Request $request): JsonResponse
+    {
+        $this->authorize('import', $diagram);
+
+        $data = $request->validate([
+            'format' => ['required', 'string', Rule::in(['sql', 'ontology-json', 'backup-json', 'maker-mts'])],
+            'size' => ['required', 'integer', 'min:1'],
+            'chunk_size' => ['required', 'integer', 'min:1', 'max:'.DiagramSqlService::MAX_IMPORT_CHUNK_BYTES],
+            'chunks_total' => ['required', 'integer', 'min:1'],
+            'original_name' => ['nullable', 'string', 'max:255'],
+        ]);
+
+        try {
+            /** @var User $user */
+            $user = $request->user();
+            $import = $this->sqlService->createChunkedImport($diagram, $user, $data);
+        } catch (RuntimeException $exception) {
+            return $this->success(['message' => $exception->getMessage()], 422);
+        }
+
+        return $this->created([
+            'id' => $import->id,
+            'status' => $import->status,
+            'chunk_size' => $import->chunk_size,
+            'chunks_total' => $import->chunks_total,
+        ]);
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    #[Subgroup('Import')]
+    public function uploadImportChunk(Diagram $diagram, DiagramImport $import, int $index, Request $request): JsonResponse
+    {
+        $this->authorize('import', $diagram);
+        if ($import->diagram_id !== $diagram->id) {
+            abort(404);
+        }
+
+        try {
+            return $this->success($this->sqlService->storeImportChunk($import, $index, $request->getContent()));
+        } catch (RuntimeException $exception) {
+            return $this->success(['message' => $exception->getMessage()], 422);
+        }
+    }
+
+    /**
+     * @throws AuthorizationException
+     */
+    #[Subgroup('Import')]
+    public function completeImportUpload(Diagram $diagram, DiagramImport $import, Request $request): JsonResponse
+    {
+        $this->authorize('import', $diagram);
+        if ($import->diagram_id !== $diagram->id) {
+            abort(404);
+        }
+
+        try {
+            /** @var User $user */
+            $user = $request->user();
+            $this->sqlService->completeChunkedImport($diagram, $import, $user);
+        } catch (RuntimeException $exception) {
+            return $this->success(['message' => $exception->getMessage()], 422);
+        }
 
         return $this->success(['status' => 'pending'], 202);
     }
@@ -469,18 +543,6 @@ class DiagramController extends Controller
         }
 
         return $this->success(['status' => true]);
-    }
-
-    #[Subgroup('Sharing')]
-    public function showEmbed(string $token): JsonResponse
-    {
-        $diagram = Diagram::where('share_token', $token)->firstOrFail();
-
-        if (! $diagram->share_access) {
-            abort(403, 'This diagram is not shared.');
-        }
-
-        return $this->success($this->crudService->getEmbedData($diagram));
     }
 
     #[Subgroup('Sharing')]

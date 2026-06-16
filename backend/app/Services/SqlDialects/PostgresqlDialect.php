@@ -8,7 +8,7 @@ class PostgresqlDialect implements SqlDialectInterface
 {
     public function quote(string $identifier): string
     {
-        return "\"{$identifier}\"";
+        return '"'.str_replace('"', '""', $identifier).'"';
     }
 
     public function supportsIfNotExists(): bool

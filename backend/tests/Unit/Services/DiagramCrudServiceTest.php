@@ -47,9 +47,4 @@ class DiagramCrudServiceTest extends TestCase
         $this->assertDatabaseMissing(Diagram::class, ['id' => $diagram->id]);
     }
 
-    public function test_get_embed_data(): void
-    {
-        $diagram = Diagram::factory()->create(['name' => 'My Diagram', 'db_type' => 'mysql', 'schema' => []]);
-        $this->assertEquals(['name' => 'My Diagram', 'db_type' => 'mysql', 'schema' => []], $this->service->getEmbedData($diagram));
-    }
 }

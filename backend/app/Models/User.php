@@ -23,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected $fillable = [
         'email',
         'password',
+        'role',
         'email_verified_at',
         'google_id',
         'github_id',
@@ -48,5 +49,10 @@ class User extends Authenticatable implements MustVerifyEmail
     public function diagrams(): HasMany
     {
         return $this->hasMany(Diagram::class);
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
     }
 }

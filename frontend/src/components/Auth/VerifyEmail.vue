@@ -27,8 +27,8 @@ const resent = ref(false);
 const loading = ref(false);
 
 onMounted(async () => {
-    if (!store.state.auth_token) return;
     const response = await axios.get('/api/user');
+    store.commit('setUser', response.data);
     userEmail.value = response.data.email;
     if (response.data.email_verified_at) {
         await router.push({ name: 'diagrams' });

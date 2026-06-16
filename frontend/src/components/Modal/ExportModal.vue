@@ -124,6 +124,17 @@ const isExporting  = ref(false)
 const activeExport = ref(null)
 const sqlCache     = ref(null)
 
+const safeFilename = (name) => {
+    const cleaned = String(name || 'schema')
+        .trim()
+        .replace(/[\\/:*?"<>|\x00-\x1F]/g, '_')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .slice(0, 120)
+
+    return cleaned || 'schema'
+}
+
 const withExporting = async (key, fn) => {
     isExporting.value  = true
     activeExport.value = key
@@ -192,7 +203,7 @@ const downloadScript = () => withExporting('sql', async () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${props.filename}.${extension}`
+    a.download = `${safeFilename(props.filename)}.${extension}`
     a.click()
     URL.revokeObjectURL(url)
 })
@@ -204,7 +215,7 @@ const downloadJson = () => withExporting('json', async () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${props.filename}.json`
+    a.download = `${safeFilename(props.filename)}.json`
     a.click()
     URL.revokeObjectURL(url)
 })
@@ -224,7 +235,7 @@ const downloadOntology = () => withExporting('ontology', async () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${props.filename}.mts`
+    a.download = `${safeFilename(props.filename)}.mts`
     a.click()
     URL.revokeObjectURL(url)
 })

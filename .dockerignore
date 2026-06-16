@@ -1,3 +1,12 @@
 node_modules/
 .git
 .gitignore
+.env
+.env.*
+backend/.env
+backend/.env.*
+frontend/.env
+frontend/.env.*
+auth.json
+backend/auth.json
+frontend/auth.json

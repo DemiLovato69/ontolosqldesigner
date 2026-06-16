@@ -26,12 +26,13 @@ class AuthController extends Controller
     public function login(LoginRequest $request): JsonResponse
     {
         try {
-            $token = $this->authService->login($request->input('email'), $request->input('password'));
+            $user = $this->authService->login($request->input('email'), $request->input('password'));
+            $request->session()->regenerate();
         } catch (AuthenticationException) {
             return $this->success(['status' => false, 'message' => 'Wrong email or password'], 401);
         }
 
-        return $this->success(['status' => true, 'token' => $token, 'message' => 'Logged in successfully']);
+        return $this->success(['status' => true, 'user' => $user, 'message' => 'Logged in successfully']);
     }
 
     public function redirectToGoogle(): RedirectResponse|SymfonyRedirectResponse
@@ -39,7 +40,7 @@ class AuthController extends Controller
         return Socialite::driver('google')->redirect();
     }
 
-    public function handleGoogleCallback(): RedirectResponse
+    public function handleGoogleCallback(Request $request): RedirectResponse
     {
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
@@ -61,13 +62,9 @@ class AuthController extends Controller
 
         $user = $this->findOrCreateGoogleUser($googleUser, $email);
         Auth::login($user);
+        $request->session()->regenerate();
 
-        $token = $user->createToken('API TOKEN')->plainTextToken;
-
-        return redirect('/oauth/callback?'.http_build_query([
-            'token' => $token,
-            'avatar' => $googleUser->getAvatar(),
-        ]));
+        return redirect('/oauth/callback');
     }
 
     private function findOrCreateGoogleUser(SocialiteUser $googleUser, string $email): User
@@ -91,8 +88,19 @@ class AuthController extends Controller
 
     public function logout(Request $request): JsonResponse
     {
+        $user = $request->user();
+        if ($user) {
+            $user->tokens()->delete();
+        }
+
+        Auth::guard('web')->logout();
+        $request->session()->flush();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        Auth::forgetGuards();
+
         return $this->success([
-            'status' => $this->authService->logout($request->user()),
+            'status' => true,
             'message' => 'Logged out successfully',
         ]);
     }

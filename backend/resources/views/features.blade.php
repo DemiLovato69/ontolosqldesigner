@@ -56,7 +56,7 @@
             "Foreign key relationships with crow's foot notation",
             "PRIMARY KEY, UNIQUE, NOT NULL constraints",
             "Share links with read-only, editable, or approval-based access",
-            "Embeddable iframe diagrams",
+            "Company-wide diagram publishing",
             "Auto-save to account",
             "Unlimited diagrams"
         ],
@@ -99,7 +99,7 @@
                 { "@type": "ListItem", "position": 14, "name": "SQL Import" },
                 { "@type": "ListItem", "position": 15, "name": "One-Click Copy" },
                 { "@type": "ListItem", "position": 16, "name": "Share Links" },
-                { "@type": "ListItem", "position": 17, "name": "Embeds" },
+                { "@type": "ListItem", "position": 17, "name": "Company-Wide Diagrams" },
                 { "@type": "ListItem", "position": 18, "name": "Multiple Diagrams" },
                 { "@type": "ListItem", "position": 19, "name": "Browser-Based, Nothing to Install" }
             ]
@@ -143,7 +143,7 @@
                 "name": "Can I share my database diagram with someone else?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes. SQL Designer generates shareable links with three access modes: read-only (anyone with the link can view), editable (anyone can edit), or approval-based (you approve each visitor individually). Diagrams can also be embedded as interactive iframes in any webpage or documentation site."
+                    "text": "Yes. SQL Designer generates shareable links with three access modes: read-only, editable, or approval-based. Diagrams can also be published to Company Wide Diagrams for logged-in users."
                 }
             },
             {
@@ -180,10 +180,10 @@
             },
             {
                 "@type": "Question",
-                "name": "Can I embed a SQL Designer diagram in my website?",
+                "name": "Can I publish a diagram for my company?",
                 "acceptedAnswer": {
                     "@type": "Answer",
-                    "text": "Yes. SQL Designer generates an iframe embed code for any shared diagram. Paste it into a blog post, documentation page, or internal wiki and the diagram renders as an interactive preview."
+                    "text": "Yes. Mark a diagram as company-wide to make it available in the Company Wide Diagrams section for logged-in users. Company-wide diagrams are read-only unless you explicitly allow editing."
                 }
             },
             {
@@ -483,7 +483,7 @@
                 <a class="sidebar-section" href="#sharing">Sharing</a>
                 <ul class="sidebar-sub">
                     <li><a href="#share-links">Share links</a></li>
-                    <li><a href="#embeds">Embeds</a></li>
+                    <li><a href="#company-wide">Company-wide diagrams</a></li>
                 </ul>
             </li>
             <li>
@@ -648,7 +648,7 @@
 
         <section class="docs-section" id="sharing" aria-labelledby="share-h2">
             <p class="section-eyebrow">04 / Sharing</p>
-            <h2 class="section-h2" id="share-h2">Sharing &amp; embedding</h2>
+            <h2 class="section-h2" id="share-h2">Sharing &amp; publishing</h2>
             <div class="feat-list">
 
                 <div class="feat" id="share-links">
@@ -659,11 +659,11 @@
                     </div>
                 </div>
 
-                <div class="feat" id="embeds">
-                    <div class="feat-glyph">&lt;/&gt;</div>
+                <div class="feat" id="company-wide">
+                    <div class="feat-glyph">◎</div>
                     <div class="feat-body">
-                        <h3>Embeds</h3>
-                        <p>Embed a diagram as an interactive iframe in any docs site, README, or internal wiki. Shared diagrams can also be made visible to logged-in users from the diagrams dashboard.</p>
+                        <h3>Company-wide diagrams</h3>
+                        <p>Publish diagrams to the Company Wide Diagrams section so logged-in users can discover and duplicate shared schema models from the dashboard.</p>
                     </div>
                 </div>
 

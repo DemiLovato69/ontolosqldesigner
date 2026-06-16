@@ -230,6 +230,9 @@
             v-model:importType="importType"
             primaryLabel="Import"
             :loading="importLoading"
+            :selected-import-file="importFile"
+            :upload-progress="importUploadProgress"
+            @import-file="file => { importFile = file; importUploadProgress = 0 }"
             @primary-action="importSql"
             @close="showImportModal = false"
         />
@@ -304,7 +307,6 @@ import HotkeysModal from '../Modal/HotkeysModal.vue'
 import ValueTypesModal from '../Modal/ValueTypesModal.vue'
 import { useToast } from 'vue-toast-notification'
 import { useRoute, useRouter } from 'vue-router'
-import { useStore } from 'vuex'
 import axios from '@/axios.js'
 import '@vue-flow/core/dist/style.css'
 import '@vue-flow/core/dist/theme-default.css'
@@ -314,8 +316,6 @@ import '@/css/header.css'
 const props = defineProps({ isDemo: { type: Boolean, default: false } })
 
 const { updateEdge, addEdges, setElements, viewport, screenToFlowCoordinate, flowToScreenCoordinate, findNode, fitView, setCenter } = useVueFlow()
-const store = useStore()
-store.dispatch('initializeAuth')
 const router = useRouter()
 const $toast = useToast()
 
@@ -386,6 +386,7 @@ const { snapshot, undo, redo } = useUndoHistory(schema, valueTypes)
 
 const { remoteCursors, whisper, initEcho, cleanupEcho, onCanvasMouseMove, broadcastCursor } = useDiagramPresence({
     token, ownerIdentity, viewport, schema, valueTypes, canvasWrapperRef,
+    canEdit,
     onDiagramSaved: () => $toast.success('Diagram saved'),
 })
 
@@ -525,19 +526,24 @@ const focusLargeDiagram = () => {
 
 const showImportModal = ref(false)
 const importContent = ref('')
+const importFile = ref(null)
 const importType = ref('sql')
 const importLoading = ref(false)
+const importUploadProgress = ref(0)
 const showExportModal = ref(false)
 
 const importSql = async () => {
-    if (!importContent.value.trim()) {
+    if (!importFile.value && !importContent.value.trim()) {
         $toast.error('Cannot import an empty file')
         return
     }
     importLoading.value = true
+    importUploadProgress.value = 0
     // Keep autosave from replacing the queued import with the current editor state.
     isSaved.value = true
-    const result = await Diagram.import(diagramId.value, importType.value, importContent.value)
+    const result = importFile.value
+        ? await Diagram.importFile(diagramId.value, importType.value, importFile.value, progress => { importUploadProgress.value = progress })
+        : await Diagram.import(diagramId.value, importType.value, importContent.value)
     if (!result) {
         importLoading.value = false
         isSaved.value = false
@@ -558,6 +564,8 @@ const importSql = async () => {
         $toast.success('Imported successfully')
         isSaved.value = false
         showImportModal.value = false
+        importFile.value = null
+        importUploadProgress.value = 0
         whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
         for (const warning of warnings) {
             $toast.warning(warning)

@@ -15,13 +15,16 @@ class AuthService
     /**
      * @throws AuthenticationException If the credentials are invalid.
      */
-    public function login(string $email, #[SensitiveParameter] string $password): string
+    public function login(string $email, #[SensitiveParameter] string $password): User
     {
         if (! Auth::attempt(['email' => $email, 'password' => $password])) {
             throw new AuthenticationException('Invalid credentials.');
         }
 
-        return Auth::user()->createToken('API TOKEN')->plainTextToken;
+        /** @var User $user */
+        $user = Auth::user();
+
+        return $user;
     }
 
     public function verifyEmail(User $user, string $hash): bool

@@ -6,9 +6,10 @@ import axios from '@/axios'
 async function authenticate(endpoint, userData, redirectTo) {
     const $toast = useToast({ position: 'bottom-right' })
     try {
+        await axios.get('/sanctum/csrf-cookie')
         const response = await axios.post(endpoint, { email: userData.email, password: userData.password })
         $toast.success(response.data.message)
-        store.commit('login', response.data.token)
+        store.commit('setUser', response.data.user)
         await router.push({ name: redirectTo })
     } catch (error) {
         $toast.error(error.response?.data?.message ?? 'An error occurred')
@@ -21,7 +22,7 @@ export const Auth = {
     async logout() {
         const $toast = useToast({ position: 'bottom-right' })
         const response = await axios.post('/api/logout')
-        store.commit('logout')
+        store.commit('clearUser')
         response.status ? $toast.success(response.data.message) : $toast.error(response.data.message)
         window.location.href = '/' //TODO potentially will prevent SSR in the future and gives 1 sec of white screen
     }

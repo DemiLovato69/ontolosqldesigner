@@ -487,6 +487,8 @@
                             Registered: {{ $user->created_at->setTimezone('Europe/Moscow')->format('d M Y H:i') }} MSK
                             &nbsp;&middot;&nbsp;
                             Diagrams: {{ $user->diagrams->count() }}
+                            &nbsp;&middot;&nbsp;
+                            Role: <span id="role-label-{{ $user->id }}">{{ strtoupper($user->role ?? 'user') }}</span>
                         </div>
                     </div>
                     <div style="display:flex;gap:8px">
@@ -517,6 +519,24 @@
                         >
                             Activity
                         </button>
+                        @if ($user->isAdmin())
+                            <button
+                                class="email-btn"
+                                style="border-color:#d8b060;color:#8a5a00;"
+                                onclick="updateUserRole({{ $user->id }}, 'user', this)"
+                                @if (auth()->id() === $user->id) disabled title="You cannot demote yourself" @endif
+                            >
+                                Demote
+                            </button>
+                        @else
+                            <button
+                                class="email-btn"
+                                style="border-color:#9bc8ae;color:#2e7d52;"
+                                onclick="updateUserRole({{ $user->id }}, 'admin', this)"
+                            >
+                                Promote
+                            </button>
+                        @endif
                         <button
                             class="delete-btn"
                             onclick="deleteUser({{ $user->id }}, '{{ addslashes($user->email) }}', this)"
@@ -745,6 +765,31 @@
             t.textContent = msg;
             t.className = 'toast show' + (isError ? ' error' : '');
             setTimeout(() => { t.className = 'toast'; }, 3000);
+        }
+
+        async function updateUserRole(userId, role, btn) {
+            const verb = role === 'admin' ? 'promote' : 'demote';
+            if (!confirm(`${verb.charAt(0).toUpperCase()}${verb.slice(1)} this user?`)) return;
+
+            const old = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Saving…';
+            try {
+                const res = await fetch(`/admin/users/${userId}/role`, {
+                    method: 'PATCH',
+                    headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                    body: JSON.stringify({ role })
+                });
+                const data = await res.json().catch(() => ({}));
+                if (!res.ok) throw new Error(data.message || 'Role update failed');
+                document.getElementById(`role-label-${userId}`).textContent = data.role.toUpperCase();
+                showToast('Role updated');
+                setTimeout(() => window.location.reload(), 500);
+            } catch (e) {
+                showToast(e.message || 'Role update failed', true);
+                btn.disabled = false;
+                btn.textContent = old;
+            }
         }
 
         function openCreateUserModal() {

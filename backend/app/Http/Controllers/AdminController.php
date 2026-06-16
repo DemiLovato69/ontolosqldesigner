@@ -19,6 +19,7 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Routing\Redirector;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Knuckles\Scribe\Attributes\Group;
@@ -30,7 +31,7 @@ class AdminController extends Controller
 
     public function showLogin(): View|Factory|Redirector|RedirectResponse
     {
-        if (session('admin_authenticated')) {
+        if (Auth::user()?->isAdmin()) {
             return redirect('/admin');
         }
 
@@ -39,10 +40,16 @@ class AdminController extends Controller
 
     public function login(AdminLoginRequest $request): Redirector|RedirectResponse
     {
-        if ($this->adminService->authenticate($request->input('username'), $request->input('password'))) {
-            session(['admin_authenticated' => true]);
+        if (Auth::attempt(['email' => $request->input('email'), 'password' => $request->input('password')])) {
+            $request->session()->regenerate();
 
-            return redirect('/admin');
+            if ($request->user()?->isAdmin()) {
+                return redirect('/admin');
+            }
+
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
         }
 
         return back()->withErrors(['credentials' => 'Неверный логин или пароль.']);
@@ -107,6 +114,21 @@ class AdminController extends Controller
         ]);
     }
 
+    public function updateUserRole(User $user, \Illuminate\Http\Request $request): JsonResponse
+    {
+        $validated = $request->validate(['role' => ['required', 'string', 'in:user,admin']]);
+
+        if ($request->user()?->id === $user->id && $validated['role'] !== 'admin') {
+            return $this->success(['message' => 'You cannot demote your own admin account.'], 422);
+        }
+
+        if (! $this->adminService->updateUserRole($user, $validated['role'])) {
+            return $this->success(['message' => 'Cannot update user role.'], 422);
+        }
+
+        return $this->success(['role' => $user->fresh()->role]);
+    }
+
     public function destroy(User $user): JsonResponse
     {
         $this->adminService->deleteUser($user);
@@ -159,9 +181,11 @@ class AdminController extends Controller
         return view('admin.reviews', compact('reviews'));
     }
 
-    public function logout(): Redirector|RedirectResponse
+    public function logout(\Illuminate\Http\Request $request): Redirector|RedirectResponse
     {
-        session()->forget('admin_authenticated');
+        Auth::guard('web')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
         return redirect('/admin/login');
     }

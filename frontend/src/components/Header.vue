@@ -6,11 +6,11 @@
             </a>
         </div>
         <div class="flex-items">
-            <button v-if="!store.state.auth_token && route.name === 'demo'" class="hbtn-cta" @click="router.push({ name: 'login' })">Sign in</button>
-            <button v-if="store.state.auth_token" class="hbtn" @click="router.push({ name: 'diagrams' })" title="View diagrams">
+            <button v-if="!store.getters.isAuthenticated && route.name === 'demo'" class="hbtn-cta" @click="router.push({ name: 'login' })">Sign in</button>
+            <button v-if="store.getters.isAuthenticated" class="hbtn" @click="router.push({ name: 'diagrams' })" title="View diagrams">
                 <SvgIcon name="eye" :size="17" />
             </button>
-            <button v-if="store.state.auth_token" class="hbtn" @click="Auth.logout()" title="Log out">
+            <button v-if="store.getters.isAuthenticated" class="hbtn" @click="Auth.logout()" title="Log out">
                 <SvgIcon name="logout" :size="17" />
             </button>
         </div>

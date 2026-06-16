@@ -1,4 +1,3 @@
-import axios from '@/axios';
 import store from '@/store/index.js';
 import { createRouter, createWebHistory } from 'vue-router';
 
@@ -9,34 +8,27 @@ const OAuthCallback = () => import('../components/Auth/OAuthCallback.vue');
 const VerifyEmail = () => import('../components/Auth/VerifyEmail.vue');
 const DiagramList = () => import('../components/DiagramList.vue');
 const Diagram = () => import('../components/Diagram/Diagram.vue');
-const DiagramEmbed = () => import('../components/DiagramEmbed.vue');
 
 function requireAuth(to, from, next) {
-  if (!store.state.auth_token) {
-    next({ name: 'login' });
-  } else {
-    axios.get('/api/user', {
-      headers: {
-        Authorization: `Bearer ${store.state.auth_token}`
-      }
-    })
+  if (store.getters.isAuthenticated) {
+    next();
+    return;
+  }
+
+  store.dispatch('fetchUser')
       .then(() => {
         next();
       })
       .catch(() => {
-        store.commit('logout');
+        store.commit('clearUser');
         next({ name: 'login' });
       });
-  }
 }
 
 const routes = [
-  { path: '/embed/:token', name: 'embed', component: DiagramEmbed },
   {
     path: '/',
-    redirect: () => store.state.auth_token
-      ? { name: 'diagrams' }
-      : { name: 'login' },
+    redirect: { name: 'diagrams' },
   },
   {
     path: '/',

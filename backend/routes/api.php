@@ -16,8 +16,6 @@ Route::get('/stats', [StatsController::class, 'index'])->middleware('throttle:60
 Route::middleware('throttle:10,1')->post('/login', [AuthController::class, 'login']);
 Route::middleware('throttle:5,1')->post('/support', [SupportController::class, 'send']);
 
-Route::get('/diagrams/embed/{token}', [DiagramController::class, 'showEmbed']);
-
 Route::middleware(['auth:sanctum', 'track.seen'])->group(function () {
     Route::get('/diagrams/shared/{token}', [DiagramController::class, 'showByToken']);
     Route::patch('/diagrams/shared/{token}', [DiagramController::class, 'saveByToken']);
@@ -59,6 +57,10 @@ Route::middleware(['auth:sanctum', 'track.seen'])->group(function () {
 
         Route::post('/import/{format}/{diagram}', [DiagramController::class, 'importFormat'])
             ->whereIn('format', ['sql', 'ontology-json', 'backup-json', 'maker-mts']);
+        Route::post('/{diagram}/imports', [DiagramController::class, 'createImportUpload']);
+        Route::put('/{diagram}/imports/{import}/chunks/{index}', [DiagramController::class, 'uploadImportChunk'])
+            ->whereNumber('index');
+        Route::post('/{diagram}/imports/{import}/complete', [DiagramController::class, 'completeImportUpload']);
         Route::get('/json/export/{diagram}', [DiagramController::class, 'exportJson']);
         Route::get('/migration/export/{diagram}', [DiagramController::class, 'exportMigration']);
         Route::get('/ontology/export/{diagram}', [DiagramController::class, 'exportOntology']);

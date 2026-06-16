@@ -23,12 +23,17 @@
                 <textarea
                     class="sql-textarea"
                     :value="modelValue"
-                    @input="$emit('update:modelValue', $event.target.value)"
+                    @input="handleTextInput"
                     :placeholder="primaryLabel === 'Import' ? activeImportOption.placeholder : ''"
                 ></textarea>
                 <button v-if="primaryLabel === 'Export'" class="sql-copy-btn" @click="copyText" title="Copy all">
                     <SvgIcon name="copy" :size="14" />
                 </button>
+            </div>
+            <div v-if="primaryLabel === 'Import' && selectedImportFile" class="selected-import-file">
+                <span>{{ selectedImportFile.name }}</span>
+                <small>{{ uploadProgress > 0 ? `${uploadProgress}% uploaded` : formatBytes(selectedImportFile.size) }}</small>
+                <button type="button" @click="clearSelectedFile" :disabled="loading">Remove</button>
             </div>
             <div class="modal-footer">
                 <div v-if="primaryLabel === 'Export'" class="download-dropdown">
@@ -68,9 +73,11 @@ const props = defineProps({
     jsonContent: { type: String, default: null },
     loading: { type: Boolean, default: false },
     importType: { type: String, default: 'sql' },
+    selectedImportFile: { type: Object, default: null },
+    uploadProgress: { type: Number, default: 0 },
 })
 
-const emit = defineEmits(['update:modelValue', 'update:importType', 'primary-action', 'close'])
+const emit = defineEmits(['update:modelValue', 'update:importType', 'import-file', 'primary-action', 'close'])
 
 const importOptions = [
     {
@@ -110,6 +117,16 @@ const activeImportOption = computed(() =>
 const selectImportType = (type) => {
     emit('update:importType', type)
     emit('update:modelValue', '')
+    emit('import-file', null)
+}
+
+const handleTextInput = (event) => {
+    emit('import-file', null)
+    emit('update:modelValue', event.target.value)
+}
+
+const clearSelectedFile = () => {
+    emit('import-file', null)
 }
 
 const copyText = async () => {
@@ -132,30 +149,44 @@ const downloadJson = () => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${props.filename}.json`
+    a.download = `${safeFilename(props.filename)}.json`
     a.click()
     URL.revokeObjectURL(url)
+}
+
+const safeFilename = (name) => {
+    const cleaned = String(name || 'schema')
+        .trim()
+        .replace(/[\\/:*?"<>|\x00-\x1F]/g, '_')
+        .replace(/\s+/g, '_')
+        .replace(/_+/g, '_')
+        .slice(0, 120)
+
+    return cleaned || 'schema'
+}
+
+const formatBytes = (bytes) => {
+    if (bytes < 1024) return `${bytes} B`
+    const units = ['KB', 'MB', 'GB']
+    let value = bytes / 1024
+    let unitIndex = 0
+    while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024
+        unitIndex++
+    }
+    return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`
 }
 
 const handleFileUpload = (event) => {
     const file = event.target.files[0]
     if (!file) return
     event.target.value = ''
-    const reader = new FileReader()
-    reader.onload = (e) => {
-        const content = e.target.result
-        if (props.importType === 'ontology-json' || props.importType === 'backup-json') {
-            try {
-                JSON.parse(content)
-                emit('update:modelValue', content)
-            } catch {
-                $toast.error('Invalid JSON file')
-            }
-        } else {
-            emit('update:modelValue', content)
-        }
+    if (file.size > 2 * 1024 * 1024 * 1024) {
+        $toast.error('Import files must be 2GB or smaller')
+        return
     }
-    reader.readAsText(file)
+    emit('update:modelValue', '')
+    emit('import-file', file)
 }
 </script>
 
@@ -313,6 +344,37 @@ const handleFileUpload = (event) => {
     background: var(--bg-surface);
     border-top: 1px solid var(--border-light);
     flex-shrink: 0;
+}
+
+.selected-import-file {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+.selected-import-file span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.selected-import-file small {
+    color: var(--text-secondary);
+    margin-left: auto;
+    white-space: nowrap;
+}
+
+.selected-import-file button {
+    background: none;
+    border: 0;
+    color: var(--accent-color);
+    cursor: pointer;
+    font-size: 12px;
 }
 
 .import-footer {

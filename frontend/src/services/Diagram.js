@@ -73,6 +73,33 @@ export const Diagram = {
             return response.data
         }),
 
+    importFile: (id, format, file, onProgress = null) =>
+        request(async () => {
+            const chunkSize = 16 * 1024 * 1024
+            const chunksTotal = Math.ceil(file.size / chunkSize)
+            const upload = await axios.post(`/api/diagrams/${id}/imports`, {
+                format,
+                size: file.size,
+                chunk_size: chunkSize,
+                chunks_total: chunksTotal,
+                original_name: file.name,
+            })
+
+            for (let index = 0; index < chunksTotal; index++) {
+                const start = index * chunkSize
+                const end = Math.min(start + chunkSize, file.size)
+                await axios.put(
+                    `/api/diagrams/${id}/imports/${upload.data.id}/chunks/${index}`,
+                    file.slice(start, end),
+                    { headers: { 'Content-Type': 'application/octet-stream' } }
+                )
+                if (onProgress) onProgress(Math.round(((index + 1) / chunksTotal) * 100))
+            }
+
+            const response = await axios.post(`/api/diagrams/${id}/imports/${upload.data.id}/complete`)
+            return response.data
+        }),
+
     importStatus: (id) =>
         request(async () => {
             const response = await axios.get(`/api/diagrams/sql/import-status/${id}`)
