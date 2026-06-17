@@ -43,6 +43,34 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('cardinality: "OneToMany"', $module);
     }
 
+    public function test_excludes_reference_tables_reference_links_and_transforms(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'STRING']],
+            ['id' => 'orders', 'type' => 'table', 'label' => 'orders'],
+            ['id' => 'order_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'orders', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'STRING']],
+            ['id' => 'order_user_id', 'type' => 'row', 'label' => 'user_id', 'parentNode' => 'orders', 'data' => ['sqlType' => 'STRING']],
+            ['id' => 'ref', 'type' => 'table', 'label' => 'ExternalRef', 'data' => ['tableKind' => 'reference', 'reference' => true]],
+            ['id' => 'ref_id', 'type' => 'row', 'label' => 'external_id', 'parentNode' => 'ref', 'data' => ['sqlType' => 'STRING', 'reference' => true]],
+            ['id' => 'transform-1', 'type' => 'pipeline-transform', 'label' => 'Normalize External Users', 'data' => ['exportable' => false, 'sourceRowIds' => ['ref_id'], 'targetRowIds' => ['order_user_id']]],
+            ['source' => 'user_id', 'target' => 'order_user_id', 'data' => ['relationshipType' => 'one-to-many']],
+            ['source' => 'ref_id', 'target' => 'user_id', 'data' => ['linkKind' => 'reference', 'exportable' => false]],
+            ['source' => 'ref_id', 'target' => 'transform-1', 'type' => 'transform', 'data' => ['linkKind' => 'transform', 'exportable' => false]],
+            ['source' => 'transform-1', 'target' => 'order_user_id', 'type' => 'transform', 'data' => ['linkKind' => 'transform', 'exportable' => false]],
+        ], JSON_THROW_ON_ERROR);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('export const users = defineObject({', $module);
+        $this->assertStringContainsString('export const orders = defineObject({', $module);
+        $this->assertStringContainsString('export const userToOrders = defineLink({', $module);
+        $this->assertStringNotContainsString('ExternalRef', $module);
+        $this->assertStringNotContainsString('external_id', $module);
+        $this->assertStringNotContainsString('Normalize External Users', $module);
+        $this->assertSame(1, substr_count($module, 'defineLink({'));
+    }
+
     public function test_uses_selected_title_property(): void
     {
         $schema = json_encode([

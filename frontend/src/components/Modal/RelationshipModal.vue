@@ -1,7 +1,8 @@
 <template>
     <div class="rel-modal" ref="modalRef"
          :style="{ left: `${position.x}px`, top: `${position.y}px` }">
-        <label class="rel-color-picker" title="Line color">
+        <div v-if="visualOnly" class="rel-label">{{ visualOnlyLabel }}</div>
+        <label v-if="!visualOnly" class="rel-color-picker" title="Line color">
             <input
                 type="color"
                 :value="edgeColor || '#b1b1b7'"
@@ -9,10 +10,12 @@
                 class="table_color_input"
             />
         </label>
-        <button class="rel-btn" @click="$emit('update-type', 'one-to-one')" title="One to one">1 → 1</button>
-        <button class="rel-btn" @click="$emit('update-type', 'one-to-many')" title="One to many">1 → N</button>
-        <button class="rel-btn" @click="$emit('update-type', 'many-to-one')" title="Many to one">N → 1</button>
-        <button class="rel-btn" @click="$emit('update-type', 'many-to-many')" title="Many to many">N → N</button>
+        <template v-if="!visualOnly">
+            <button class="rel-btn" @click="$emit('update-type', 'one-to-one')" title="One to one">1 → 1</button>
+            <button class="rel-btn" @click="$emit('update-type', 'one-to-many')" title="One to many">1 → N</button>
+            <button class="rel-btn" @click="$emit('update-type', 'many-to-one')" title="Many to one">N → 1</button>
+            <button class="rel-btn" @click="$emit('update-type', 'many-to-many')" title="Many to many">N → N</button>
+        </template>
         <button class="rel-btn rel-btn--delete" @click="$emit('delete')" title="Delete">
             <SvgIcon name="trash" :size="14" />
         </button>
@@ -27,6 +30,8 @@ import SvgIcon from '../SvgIcon.vue'
 defineProps({
     position: Object,
     edgeColor: String,
+    visualOnly: { type: Boolean, default: false },
+    visualOnlyLabel: { type: String, default: 'Visual link' },
 })
 
 const emit = defineEmits(['update-type', 'delete', 'close', 'update-color'])
@@ -65,6 +70,15 @@ onClickOutside(modalRef, () => emit('close'))
     align-items: center;
     justify-content: center;
     gap: 5px;
+    white-space: nowrap;
+}
+
+.rel-label {
+    padding: 4px 8px 6px;
+    color: #c4b5fd;
+    font-size: 0.74rem;
+    font-weight: 800;
+    text-align: center;
     white-space: nowrap;
 }
 

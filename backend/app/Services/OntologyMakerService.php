@@ -232,15 +232,31 @@ class OntologyMakerService
         $tables = [];
         $rows = [];
         $connections = [];
+        $referenceTableIds = [];
+        $rowTableIds = [];
         foreach ($decoded as $item) {
-            if (($item['type'] ?? null) === 'table') {
+            if (! is_array($item)) {
+                continue;
+            }
+            if (($item['type'] ?? null) === 'table' && $this->isReferenceTableItem($item)) {
+                $referenceTableIds[(string) $item['id']] = true;
+            }
+            if (($item['type'] ?? null) === 'row') {
+                $rowTableIds[(string) $item['id']] = (string) ($item['parentNode'] ?? '');
+            }
+        }
+        foreach ($decoded as $item) {
+            if (! is_array($item) || $this->isNonExportableDiagramItem($item)) {
+                continue;
+            }
+            if (($item['type'] ?? null) === 'table' && ! isset($referenceTableIds[(string) $item['id']])) {
                 $tables[] = [
                     'id' => (string) $item['id'],
                     'name' => (string) $item['label'],
                     'note' => trim((string) ($item['data']['description'] ?? $item['data']['note'] ?? '')),
                     'data' => $item['data'] ?? [],
                 ];
-            } elseif (($item['type'] ?? null) === 'row') {
+            } elseif (($item['type'] ?? null) === 'row' && ! isset($referenceTableIds[(string) ($item['parentNode'] ?? '')])) {
                 $rows[] = [
                     'id' => (string) $item['id'],
                     'name' => (string) $item['label'],
@@ -265,7 +281,7 @@ class OntologyMakerService
                 // reconnecting an edge. The scalar endpoint fields are canonical.
                 $sourceId = $item['source'] ?? $item['sourceNode']['id'] ?? null;
                 $targetId = $item['target'] ?? $item['targetNode']['id'] ?? null;
-                if ($sourceId !== null && $targetId !== null) {
+                if ($sourceId !== null && $targetId !== null && $this->isExportableConnectionItem($item, $rowTableIds, $referenceTableIds)) {
                     $connections[] = [
                         'source_id' => (string) $sourceId,
                         'target_id' => (string) $targetId,
@@ -276,6 +292,42 @@ class OntologyMakerService
         }
 
         return [$tables, $rows, $connections];
+    }
+
+    /** @param array<string, mixed> $item */
+    private function isReferenceTableItem(array $item): bool
+    {
+        return (bool) ($item['data']['reference'] ?? false)
+            || ($item['data']['tableKind'] ?? null) === 'reference';
+    }
+
+    /** @param array<string, mixed> $item */
+    private function isNonExportableDiagramItem(array $item): bool
+    {
+        return ($item['type'] ?? null) === 'pipeline-transform'
+            || ($item['data']['exportable'] ?? true) === false
+            || in_array($item['data']['linkKind'] ?? null, ['reference', 'transform'], true);
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     * @param array<string, string> $rowTableIds
+     * @param array<string, true> $referenceTableIds
+     */
+    private function isExportableConnectionItem(array $item, array $rowTableIds, array $referenceTableIds): bool
+    {
+        $sourceId = $item['source'] ?? $item['sourceNode']['id'] ?? null;
+        $targetId = $item['target'] ?? $item['targetNode']['id'] ?? null;
+        if (! is_string($sourceId) || ! is_string($targetId)) {
+            return false;
+        }
+        $sourceTableId = $rowTableIds[$sourceId] ?? null;
+        $targetTableId = $rowTableIds[$targetId] ?? null;
+
+        return $sourceTableId !== null
+            && $targetTableId !== null
+            && ! isset($referenceTableIds[$sourceTableId])
+            && ! isset($referenceTableIds[$targetTableId]);
     }
 
     /**

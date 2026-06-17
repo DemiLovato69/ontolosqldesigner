@@ -33,18 +33,14 @@
             :canEdit="canEdit"
             :isOwner="isOwner"
             :isDemo="isDemo"
-            :isSaved="isSaved"
-            :diagramName="diagramName"
             :dbType="diagramDbType"
-            :shareAccess="diagramShareAccess"
-            :inLibrary="diagramInLibrary"
             :hasPendingVisitors="hasPendingVisitors"
             @add-table="addTable"
-            @import="isDemo ? router.push({ name: 'login' }) : showImportModal = true"
-            @export="isDemo ? router.push({ name: 'login' }) : openExportModal()"
-            @save="saveDiagram"
             @show-share="showShareModal = true"
             @show-help="showHotkeysModal = true"
+            @add-reference-table="addReferenceTable"
+            @add-pipeline="onAddPipeline"
+            @open-reference-json-import="showReferenceJsonImportModal = true"
             @show-value-types="showValueTypesModal = true"
             @show-shared-property-types="showSharedPropertyTypesModal = true"
             @show-interfaces="showInterfacesModal = true"
@@ -84,7 +80,10 @@
                             type="button"
                             @dblclick.stop="navigateToTable(t.id)"
                             @keydown.enter.prevent="navigateToTable(t.id)"
-                        >{{ t.label }}</button>
+                        >
+                            <span>{{ t.label }}</span>
+                            <span v-if="t.data?.reference || t.data?.tableKind === 'reference'" class="schema-sidebar__tag">REF</span>
+                        </button>
                         <span v-if="!tables.length" class="schema-sidebar__empty">No tables</span>
                         <span v-else-if="!filteredTables.length" class="schema-sidebar__empty">No matches</span>
                     </div>
@@ -123,7 +122,7 @@
                 @node-drag="onNodeDrag"
                 @node-drag-stop="onNodeDragStop"
                 @node-click="({ node }) => elevateTable(node)"
-                @pane-click="onPaneClick"
+                @pane-click="onCanvasPaneClick"
                 @node-mouse-enter="onNodeMouseEnter"
                 @node-mouse-leave="onNodeMouseLeave"
                 :is-valid-connection="isValidConnection"
@@ -160,6 +159,10 @@
                     <ChickenFootEdge v-if="!isLargeOverview" v-bind="props" :simple-routing="isLargeDiagram" />
                 </template>
 
+                <template #edge-transform="props">
+                    <TransformEdge v-if="!isLargeOverview" v-bind="props" />
+                </template>
+
                 <Panel position="bottom-right" class="support-panel">
                     <button class="support-panel__btn" @click.stop="openSupportModal" title="Support">
                         ?
@@ -186,6 +189,18 @@
                     />
                 </template>
 
+                <template #node-pipeline-transform="nodeProps">
+                    <PipelineTransformNode
+                        :id="nodeProps.id"
+                        :data="nodeProps.data"
+                        :label="nodeProps.label"
+                        :canEdit="canEdit"
+                        @delete-node="deleteNode"
+                        @attach-selected="onAttachSelectedRowsToTransform"
+                        @update-label="updateTransformLabel"
+                    />
+                </template>
+
                 <template #node-row="nodeProps">
                     <RowNode
                         v-if="!isLargeOverview"
@@ -199,6 +214,7 @@
                         :tableFulltextIndexes="tableById.get(nodeProps.parentNodeId)?.data?.fulltextIndexes ?? []"
                         :valueTypes="valueTypes"
                         :compact="isLargeDiagram && !nodeProps.data.editing && !nodeProps.data.showOptionsModal"
+                        :selected="selectedRowIds.includes(nodeProps.id)"
                         @update-label="updateLabel"
                         @toggle-options-modal="toggleOptionsModal"
                         @delete-node="deleteNode"
@@ -210,6 +226,7 @@
                         @update-table-constraints="onTableConstraintsChange(nodeProps.parentNodeId, $event)"
                         @update-table-fulltext="onTableFulltextChange(nodeProps.parentNodeId, $event)"
                         @update-note="updateNote"
+                        @row-select="toggleRowSelection"
                     />
                 </template>
 
@@ -238,6 +255,8 @@
             v-if="showRelationshipModal"
             :position="modalPosition"
             :edge-color="selectedEdge?.data?.color"
+            :visual-only="selectedEdge?.data?.linkKind === 'reference' || selectedEdge?.data?.linkKind === 'transform' || selectedEdge?.data?.exportable === false"
+            :visual-only-label="selectedEdge?.data?.linkKind === 'transform' ? 'Pipeline link' : 'Reference link'"
             @update-type="updateConnectionLineType"
             @delete="deleteEdge"
             @close="closeRelationshipModal"
@@ -256,6 +275,12 @@
             @import-file="file => { importFile = file; importUploadProgress = 0; importUploadPhase = '' }"
             @primary-action="importSql"
             @close="showImportModal = false"
+        />
+
+        <ReferenceJsonImportModal
+            v-if="showReferenceJsonImportModal"
+            @import="onImportReferenceJsonFromModal"
+            @close="showReferenceJsonImportModal = false"
         />
 
         <ExportModal
@@ -336,14 +361,18 @@ import { useTableResize } from '@/composables/useTableResize.js'
 import { useRowDrag } from '@/composables/useRowDrag.js'
 import { useSchemaActions } from '@/composables/useSchemaActions.js'
 import { useUndoHistory } from '@/composables/useUndoHistory.js'
+import { clearDiagramHeaderActions, setDiagramHeaderActions } from '@/composables/useAppHeaderActions.js'
 import SvgIcon from '../SvgIcon.vue'
 import DiagramHeader from './DiagramHeader.vue'
 import ShareModal from '../Modal/ShareModal.vue'
 import ChickenFootEdge from '../ChickenFootEdge.vue'
+import TransformEdge from '../TransformEdge.vue'
 import TableNode from './TableNode.vue'
+import PipelineTransformNode from './PipelineTransformNode.vue'
 import RowNode from '../RowNode.vue'
 import RelationshipModal from '../Modal/RelationshipModal.vue'
 import SqlModal from '../Modal/SqlModal.vue'
+import ReferenceJsonImportModal from '../Modal/ReferenceJsonImportModal.vue'
 import ExportModal from '../Modal/ExportModal.vue'
 import RemoteCursor from '../RemoteCursor.vue'
 import SupportModal from '../Modal/SupportModal.vue'
@@ -420,6 +449,13 @@ const tableColumns = computed(() => {
     }
     return columns
 })
+const selectedRows = computed(() => selectedRowIds.value
+    .map(id => schema.value.find(el => el.id === id && el.type === 'row'))
+    .filter(Boolean)
+    .map(row => {
+        const table = tableById.value.get(row.parentNode)
+        return { id: row.id, label: row.label, table: table?.label ?? '', reference: !!table?.data?.reference }
+    }))
 const diagramName = ref('schema')
 const diagramDbType = ref('mysql')
 const showShareModal = ref(false)
@@ -428,6 +464,7 @@ const showValueTypesModal = ref(false)
 const showSharedPropertyTypesModal = ref(false)
 const showInterfacesModal = ref(false)
 const showCustomActionsModal = ref(false)
+const showReferenceJsonImportModal = ref(false)
 const diagramShareAccess = ref(null)
 const diagramRequireApproval = ref(false)
 const diagramInLibrary = ref(false)
@@ -441,6 +478,29 @@ const ownerIdentity = ref(null)
 const canvasWrapperRef = ref(null)
 
 const canEdit = computed(() => props.isDemo || isOwner.value || diagramShareAccess.value === 'write')
+
+const headerSharingStatus = computed(() => {
+    if (props.isDemo) return null
+    if (diagramInLibrary.value) {
+        return {
+            kind: 'public',
+            icon: 'globe',
+            title: diagramShareAccess.value === 'write'
+                ? 'Company-wide diagram: others can edit'
+                : 'Company-wide diagram: others can view',
+        }
+    }
+    if (diagramShareAccess.value) {
+        return {
+            kind: 'shared',
+            icon: 'share',
+            title: diagramShareAccess.value === 'write'
+                ? 'Shared diagram: others can edit'
+                : 'Shared diagram: restricted access',
+        }
+    }
+    return null
+})
 
 const ontologyMetadata = { interfaces, interfaceLinkConstraints, customActions, sharedPropertyTypes }
 const metadataPayload = () => ({
@@ -539,13 +599,60 @@ const defaultConnectionColor = ref('#4a7a9b')
 
 const {
     isPlacingTable, isConnecting, copyingTableId,
-    selectedEdge, showRelationshipModal, modalPosition,
-    addTable, copyTable, onPaneClick,
+    selectedEdge, showRelationshipModal, modalPosition, selectedRowIds,
+    addTable, addReferenceTable, importReferenceJsonSchemas, copyTable, onPaneClick,
     addRow, addRowAfter, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
-    updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor, updateNote, updateTableActions,
+    updateConnectionLineType, onRowChange, updateLabel, updateTransformLabel, updateEdgeColor, updateTableColor, updateNote, updateTableActions,
     onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
+    toggleRowSelection, clearRowSelection, createTransformFromSelection, createEmptyTransform, attachSelectedRowsToTransform,
     openRelationshipModal, closeRelationshipModal,
 } = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction, defaultTableColor, defaultConnectionColor })
+
+const onCanvasPaneClick = (event) => {
+    if (!isPlacingTable.value) clearRowSelection()
+    onPaneClick(event)
+}
+
+const onImportReferenceJson = (content) => {
+    try {
+        const imported = importReferenceJsonSchemas(content)
+        $toast.success(`Imported ${imported.length} reference table${imported.length === 1 ? '' : 's'}`)
+    } catch (error) {
+        $toast.error(error?.message || 'Could not import reference JSON')
+    }
+}
+
+const onImportReferenceJsonFromModal = (content) => {
+    onImportReferenceJson(content)
+    showReferenceJsonImportModal.value = false
+}
+
+const onCreateTransform = () => {
+    try {
+        createTransformFromSelection()
+        $toast.success('Created pipeline transform')
+    } catch (error) {
+        $toast.error(error?.message || 'Could not create transform')
+    }
+}
+
+const onAddPipeline = () => {
+    try {
+        createEmptyTransform()
+        $toast.success('Created pipeline transform')
+    } catch (error) {
+        $toast.error(error?.message || 'Could not create pipeline')
+    }
+}
+
+const onAttachSelectedRowsToTransform = (transformId) => {
+    try {
+        const count = attachSelectedRowsToTransform(transformId)
+        $toast.success(`Attached ${count} selected row${count === 1 ? '' : 's'} to pipeline`)
+    } catch (error) {
+        $toast.error(error?.message || 'Could not attach selected rows')
+    }
+}
 
 const tabToRow = (rowId, direction) => {
     const row = schema.value?.find(el => el.id === rowId)
@@ -569,6 +676,12 @@ const tabToRow = (rowId, direction) => {
 }
 
 const isValidConnection = ({ source, target }) => {
+    const sourceElement = schema.value.find(el => el.id === source)
+    const targetElement = schema.value.find(el => el.id === target)
+    if ((sourceElement?.type === 'row' && targetElement?.type === 'pipeline-transform')
+        || (sourceElement?.type === 'pipeline-transform' && targetElement?.type === 'row')) {
+        return true
+    }
     const sourceNode = findNode(source)
     const targetNode = findNode(target)
     return sourceNode?.parentNode !== targetNode?.parentNode
@@ -885,6 +998,28 @@ const saveDiagram = async (silent = false) => {
     return true
 }
 
+const diagramHeaderActions = {
+    isDemo: computed(() => props.isDemo),
+    isSaved,
+    diagramName,
+    sharingStatus: headerSharingStatus,
+    import: {
+        visible: computed(() => canEdit.value || props.isDemo),
+        run: () => { props.isDemo ? router.push({ name: 'login' }) : showImportModal.value = true },
+    },
+    export: {
+        visible: true,
+        run: () => { props.isDemo ? router.push({ name: 'login' }) : openExportModal() },
+    },
+    save: {
+        visible: computed(() => canEdit.value),
+        disabled: computed(() => !props.isDemo && isSaved.value),
+        run: () => saveDiagram(),
+    },
+}
+
+setDiagramHeaderActions(diagramHeaderActions)
+
 // --- Load ---
 
 const retryAccess = async () => {
@@ -1039,6 +1174,7 @@ onUnmounted(() => {
     stopGuestAccessPolling()
     if (!isSaved.value && canEdit.value && !props.isDemo) saveDiagram()
     cleanupEcho()
+    clearDiagramHeaderActions(diagramHeaderActions)
     document.removeEventListener('keydown', onKeyDown)
 })
 </script>
@@ -1166,6 +1302,10 @@ onUnmounted(() => {
     width: 100%;
     flex: 0 0 auto;
     min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
     padding: 7px 8px;
     border: none;
     border-radius: 4px;
@@ -1175,9 +1315,25 @@ onUnmounted(() => {
     line-height: 18px;
     cursor: pointer;
     text-align: left;
-    white-space: nowrap;
+}
+
+.schema-sidebar__item span:first-child {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.schema-sidebar__tag {
+    flex: 0 0 auto;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(139, 92, 246, 0.18);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.38);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
 }
 
 .schema-sidebar__item:hover,

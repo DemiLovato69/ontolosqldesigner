@@ -1,33 +1,28 @@
 <template>
     <header class="dh">
-        <div class="dh-group">
+        <div class="dh-group dh-group--primary">
             <button v-if="canEdit" class="dh-btn" @click="$emit('add-table')" title="Add Table (Ctrl/⌘+Shift+A)">
                 <SvgIcon name="plus" :size="17" />
             </button>
-            <button v-if="canEdit || isDemo" class="dh-btn" @click="$emit('import')" title="Import schema">
-                <SvgIcon name="import" :size="17" />
+            <button v-if="canEdit" class="dh-btn dh-btn--ref-table" @click="$emit('add-reference-table')" title="Add Reference Table">
+                <SvgIcon name="plus" :size="17" />
+                <span>REF</span>
             </button>
-            <button class="dh-btn" @click="$emit('export')" title="Export">
-                <SvgIcon name="export" :size="17" />
-            </button>
-            <span
-                v-if="sharingStatus"
-                class="dh-share-status"
-                :class="`dh-share-status--${sharingStatus.kind}`"
-                :title="sharingStatus.title"
-                :aria-label="sharingStatus.title"
-            >
-                <SvgIcon :name="sharingStatus.icon" :size="15" />
-            </span>
-            <span v-if="!isOwner && !isDemo" class="dh-name">{{ diagramName }}</span>
-        </div>
-        <div class="dh-group">
-            <div v-if="canEdit" class="dh-save-wrap">
-                <button class="dh-btn" @click="$emit('save')" title="Save (Ctrl/⌘+S)" :disabled="!isDemo && isSaved">
-                    <SvgIcon name="save" :size="17" />
+            <div v-if="canEdit" ref="pipelineMenuRef" class="dh-menu">
+                <button class="dh-btn" type="button" @click="pipelineMenuOpen = !pipelineMenuOpen" title="Pipeline tools" aria-label="Pipeline tools">
+                    <SvgIcon name="pipe-plus" :size="17" />
                 </button>
-                <span v-if="!isDemo" class="dh-save-dot" :class="{ 'dh-save-dot--saved': isSaved }"></span>
+                <div v-if="pipelineMenuOpen" class="dh-menu__content">
+                    <button type="button" @click="emitPipelineCreate" title="Add Pipeline" aria-label="Add Pipeline">
+                        <SvgIcon name="pipe-plus" :size="17" />
+                    </button>
+                    <button type="button" @click="emitReferenceJsonImport" title="Import Reference JSON" aria-label="Import Reference JSON">
+                        <SvgIcon name="pipe-json" :size="17" />
+                    </button>
+                </div>
             </div>
+        </div>
+        <div class="dh-group dh-group--actions">
             <button
                 v-if="dbType === 'ontology'"
                 class="dh-btn"
@@ -83,44 +78,32 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref } from 'vue'
+import { onClickOutside } from '@vueuse/core'
 import SvgIcon from '../SvgIcon.vue'
 
 const props = defineProps({
     canEdit: Boolean,
     isOwner: Boolean,
     isDemo: Boolean,
-    isSaved: Boolean,
-    diagramName: String,
     dbType: { type: String, default: 'mysql' },
-    shareAccess: { type: String, default: null },
-    inLibrary: { type: Boolean, default: false },
     hasPendingVisitors: { type: Boolean, default: false },
 })
-defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-help', 'show-value-types', 'show-shared-property-types', 'show-interfaces', 'show-custom-actions'])
+const emit = defineEmits(['add-table', 'add-reference-table', 'add-pipeline', 'open-reference-json-import', 'show-share', 'show-help', 'show-value-types', 'show-shared-property-types', 'show-interfaces', 'show-custom-actions'])
 
-const sharingStatus = computed(() => {
-    if (props.isDemo) return null
-    if (props.inLibrary) {
-        return {
-            kind: 'public',
-            icon: 'globe',
-            title: props.shareAccess === 'write'
-                ? 'Company-wide diagram: others can edit'
-                : 'Company-wide diagram: others can view',
-        }
-    }
-    if (props.shareAccess) {
-        return {
-            kind: 'shared',
-            icon: 'share',
-            title: props.shareAccess === 'write'
-                ? 'Shared diagram: others can edit'
-                : 'Shared diagram: restricted access',
-        }
-    }
-    return null
-})
+const pipelineMenuOpen = ref(false)
+const pipelineMenuRef = ref(null)
+onClickOutside(pipelineMenuRef, () => { pipelineMenuOpen.value = false })
+
+const emitPipelineCreate = () => {
+    pipelineMenuOpen.value = false
+    emit('add-pipeline')
+}
+
+const emitReferenceJsonImport = () => {
+    pipelineMenuOpen.value = false
+    emit('open-reference-json-import')
+}
 </script>
 
 <style scoped>
@@ -142,6 +125,14 @@ const sharingStatus = computed(() => {
     display: flex;
     gap: 4px;
     align-items: center;
+}
+
+.dh-group--primary {
+    margin-right: auto;
+}
+
+.dh-group--actions {
+    margin-left: auto;
 }
 
 .dh-btn {
@@ -168,57 +159,60 @@ const sharingStatus = computed(() => {
     cursor: default;
 }
 
-.dh-name {
-    font-size: 0.82rem;
-    color: var(--text-secondary);
-    margin-left: 4px;
+.dh-btn--ref-table {
+    position: relative;
 }
 
-.dh-share-status {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 26px;
-    height: 26px;
-    margin-left: 2px;
-    border-radius: 999px;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
-    background: color-mix(in srgb, var(--bg-surface-alt) 80%, transparent);
+.dh-btn--ref-table span {
+    position: absolute;
+    right: 2px;
+    bottom: 1px;
+    padding: 0 2px;
+    border-radius: 3px;
+    background: rgba(139, 92, 246, 0.95);
+    color: #fff;
+    font-size: 7px;
+    font-weight: 800;
+    line-height: 10px;
+    letter-spacing: 0.04em;
 }
 
-.dh-share-status--public {
-    border-color: color-mix(in srgb, var(--color-primary) 55%, var(--border-color));
-    color: var(--color-primary);
-    background: color-mix(in srgb, var(--color-primary) 14%, transparent);
-}
-
-.dh-share-status--shared {
-    border-color: color-mix(in srgb, #60a5fa 45%, var(--border-color));
-    color: #93c5fd;
-    background: color-mix(in srgb, #60a5fa 12%, transparent);
-}
-
-.dh-save-wrap {
+.dh-menu {
     position: relative;
     display: inline-flex;
     align-items: center;
 }
 
-.dh-save-dot {
+.dh-menu__content {
     position: absolute;
-    top: 6px;
-    right: 4px;
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background: #f59e0b;
-    border: 1.5px solid var(--bg-page);
-    pointer-events: none;
+    top: calc(100% + 6px);
+    left: 0;
+    display: flex;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 9px;
+    background: var(--bg-surface);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.34);
+    z-index: 70;
 }
 
-.dh-save-dot--saved {
-    background: var(--color-primary-text);
+.dh-menu__content button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.dh-menu__content button:hover {
+    background: var(--bg-surface-alt);
 }
 
 .dh-share-wrap {

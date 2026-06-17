@@ -206,6 +206,22 @@ const ACTION_LABELS = {
             return `Changed ${d.from_table}.${d.from_column} -> ${d.to_table}.${d.to_column}${type}`
         return `Changed relationship${type}`
     },
+    reference_table_created: (d) => `Created reference table${d?.table_name ? ` "${d.table_name}"` : ''}`,
+    reference_table_imported: (d) => d?.tables?.length ? `Imported reference ${d.tables.join(', ')}` : 'Imported reference tables',
+    reference_table_deleted: (d) => `Deleted reference table${d?.table_name ? ` "${d.table_name}"` : ''}`,
+    reference_link_created: (d) => {
+        if (d?.from_table && d?.from_column && d?.to_table && d?.to_column)
+            return `Linked reference ${d.from_table}.${d.from_column} -> ${d.to_table}.${d.to_column}`
+        return 'Created reference link'
+    },
+    reference_link_deleted: (d) => {
+        if (d?.from_table && d?.from_column && d?.to_table && d?.to_column)
+            return `Removed reference ${d.from_table}.${d.from_column} -> ${d.to_table}.${d.to_column}`
+        return 'Deleted reference link'
+    },
+    pipeline_transform_created: (d) => `Created pipeline transform${d?.inputs || d?.outputs ? ` (${d?.inputs ?? 0} refs -> ${d?.outputs ?? 0} rows)` : ''}`,
+    pipeline_transform_deleted: () => 'Deleted pipeline transform',
+    pipeline_transform_changed: () => 'Changed pipeline transform',
     column_added: (d) => d?.table_name ? `Added column to "${d.table_name}"` : 'Added column',
     column_deleted: (d) => {
         if (d?.column_name && d?.table_name) return `Deleted column "${d.column_name}" from "${d.table_name}"`
@@ -230,6 +246,14 @@ const ACTION_COLORS = {
     column_deleted: '#ef4444',
     connection_deleted: '#ef4444',
     relationship_changed: '#f97316',
+    reference_table_created: '#8b5cf6',
+    reference_table_imported: '#8b5cf6',
+    reference_table_deleted: '#ef4444',
+    reference_link_created: '#8b5cf6',
+    reference_link_deleted: '#ef4444',
+    pipeline_transform_created: '#f59e0b',
+    pipeline_transform_deleted: '#ef4444',
+    pipeline_transform_changed: '#f59e0b',
     value_types_changed: '#a78bfa',
     shared_property_types_changed: '#38bdf8',
     interfaces_changed: '#facc15',

@@ -875,17 +875,34 @@ class DiagramSqlService
         $tables = collect();
         $rows = collect();
         $connections = collect();
+        $referenceTableIds = collect($decoded)
+            ->filter(fn (mixed $item): bool => is_array($item)
+                && ($item['type'] ?? null) === 'table'
+                && $this->isReferenceTableItem($item))
+            ->map(fn (array $item): string => (string) $item['id'])
+            ->all();
+        $referenceTableIds = array_fill_keys($referenceTableIds, true);
+        $rowTableIds = [];
 
         foreach ($decoded as $item) {
+            if (is_array($item) && ($item['type'] ?? null) === 'row') {
+                $rowTableIds[(string) $item['id']] = (string) ($item['parentNode'] ?? '');
+            }
+        }
+
+        foreach ($decoded as $item) {
+            if (! is_array($item) || $this->isNonExportableDiagramItem($item)) {
+                continue;
+            }
             match ($item['type'] ?? null) {
-                'table' => $tables->push([
+                'table' => isset($referenceTableIds[(string) $item['id']]) ? null : $tables->push([
                     'id' => $item['id'],
                     'name' => $item['label'],
                     'note' => trim((string) ($item['data']['description'] ?? $item['data']['note'] ?? '')),
                     'unique_together' => $item['data']['uniqueTogether'] ?? [],
                     'fulltext_indexes' => $item['data']['fulltextIndexes'] ?? [],
                 ]),
-                'row' => $rows->push([
+                'row' => isset($referenceTableIds[(string) ($item['parentNode'] ?? '')]) ? null : $rows->push([
                     'id' => $item['id'],
                     'name' => $item['label'],
                     'table_id' => $item['parentNode'],
@@ -901,13 +918,49 @@ class DiagramSqlService
                         ? $item['data']['valueTypeId']
                         : null,
                 ]),
-                default => isset($item['sourceNode']['id'], $item['targetNode']['id'])
-                    ? $connections->push(['source_id' => $item['sourceNode']['id'], 'target_id' => $item['targetNode']['id']])
+                default => $this->isExportableConnectionItem($item, $rowTableIds, $referenceTableIds)
+                    ? $connections->push(['source_id' => $item['source'] ?? $item['sourceNode']['id'], 'target_id' => $item['target'] ?? $item['targetNode']['id']])
                     : null,
             };
         }
 
         return [$tables, $rows, $connections];
+    }
+
+    /** @param array<string, mixed> $item */
+    private function isReferenceTableItem(array $item): bool
+    {
+        return (bool) ($item['data']['reference'] ?? false)
+            || ($item['data']['tableKind'] ?? null) === 'reference';
+    }
+
+    /** @param array<string, mixed> $item */
+    private function isNonExportableDiagramItem(array $item): bool
+    {
+        return ($item['type'] ?? null) === 'pipeline-transform'
+            || ($item['data']['exportable'] ?? true) === false
+            || in_array($item['data']['linkKind'] ?? null, ['reference', 'transform'], true);
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     * @param array<string, string> $rowTableIds
+     * @param array<string, true> $referenceTableIds
+     */
+    private function isExportableConnectionItem(array $item, array $rowTableIds, array $referenceTableIds): bool
+    {
+        $sourceId = $item['source'] ?? $item['sourceNode']['id'] ?? null;
+        $targetId = $item['target'] ?? $item['targetNode']['id'] ?? null;
+        if (! is_string($sourceId) || ! is_string($targetId)) {
+            return false;
+        }
+        $sourceTableId = $rowTableIds[$sourceId] ?? null;
+        $targetTableId = $rowTableIds[$targetId] ?? null;
+
+        return $sourceTableId !== null
+            && $targetTableId !== null
+            && ! isset($referenceTableIds[$sourceTableId])
+            && ! isset($referenceTableIds[$targetTableId]);
     }
 
     /** @return array<int, string> */

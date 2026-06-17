@@ -64,6 +64,27 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertStringContainsString('users', $result);
     }
 
+    public function test_create_script_excludes_reference_tables_links_and_transforms(): void
+    {
+        $schema = json_encode([
+            ['id' => 'users', 'type' => 'table', 'label' => 'users'],
+            ['id' => 'user_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'users', 'data' => ['keyMod' => 'PRIMARY KEY', 'sqlType' => 'INT', 'nullable' => false]],
+            ['id' => 'ref', 'type' => 'table', 'label' => 'ExternalRef', 'data' => ['tableKind' => 'reference', 'reference' => true]],
+            ['id' => 'ref_id', 'type' => 'row', 'label' => 'external_id', 'parentNode' => 'ref', 'data' => ['sqlType' => 'STRING', 'reference' => true]],
+            ['id' => 'transform-1', 'type' => 'pipeline-transform', 'label' => 'Pipeline Transform', 'data' => ['exportable' => false]],
+            ['source' => 'ref_id', 'target' => 'user_id', 'data' => ['linkKind' => 'reference', 'exportable' => false]],
+            ['source' => 'ref_id', 'target' => 'transform-1', 'type' => 'transform', 'data' => ['linkKind' => 'transform', 'exportable' => false]],
+            ['source' => 'transform-1', 'target' => 'user_id', 'type' => 'transform', 'data' => ['linkKind' => 'transform', 'exportable' => false]],
+        ], JSON_THROW_ON_ERROR);
+
+        $script = $this->service->createScript($schema, 'mysql');
+
+        $this->assertStringContainsString('CREATE TABLE IF NOT EXISTS `users`', $script);
+        $this->assertStringNotContainsString('ExternalRef', $script);
+        $this->assertStringNotContainsString('external_id', $script);
+        $this->assertStringNotContainsString('Pipeline Transform', $script);
+    }
+
     public function test_create_script_emits_table_and_row_notes(): void
     {
         $schema = json_encode([
@@ -507,6 +528,77 @@ class DiagramSqlServiceTest extends TestCase
             ],
             ['id' => 'r1', 'type' => 'row', 'label' => 'email', 'parentNode' => 't1', 'data' => ['sqlType' => 'STRING', 'valueTypeId' => 'email-type']],
             ['id' => 'e1', 'source' => 'r1', 'target' => 'r1', 'style' => ['stroke' => '#fedcba'], 'data' => ['color' => '#fedcba']],
+            [
+                'id' => 'ref_users',
+                'type' => 'table',
+                'label' => 'Reference Users',
+                'position' => ['x' => 720, 'y' => 120],
+                'data' => [
+                    'tableKind' => 'reference',
+                    'reference' => true,
+                    'color' => '#4c3f78',
+                    'exportable' => false,
+                    'jsonSchemaTitle' => 'Reference Users',
+                ],
+                'style' => [
+                    'background' => 'rgba(76, 63, 120, 0.25)',
+                    'border' => '1px dashed #8b5cf6',
+                    'borderColor' => '#8b5cf6',
+                ],
+            ],
+            [
+                'id' => 'ref_users_external_id',
+                'type' => 'row',
+                'label' => 'external_id',
+                'parentNode' => 'ref_users',
+                'data' => [
+                    'reference' => true,
+                    'jsonSchemaType' => 'string',
+                    'jsonSchema' => ['type' => 'string', 'description' => 'External source identifier'],
+                    'sqlType' => 'STRING',
+                    'nullable' => true,
+                    'exportable' => false,
+                ],
+            ],
+            [
+                'id' => 'transform_normalize_users',
+                'type' => 'pipeline-transform',
+                'label' => 'Normalize External Users',
+                'position' => ['x' => 980, 'y' => 260],
+                'data' => [
+                    'exportable' => false,
+                    'sourceRowIds' => ['ref_users_external_id'],
+                    'targetRowIds' => ['r1'],
+                ],
+                'style' => ['width' => '220px'],
+            ],
+            [
+                'id' => 'ref_link_1',
+                'source' => 'ref_users_external_id',
+                'target' => 'r1',
+                'type' => 'reference',
+                'animated' => true,
+                'style' => ['stroke' => '#8b5cf6', 'strokeDasharray' => '6 4'],
+                'data' => ['linkKind' => 'reference', 'exportable' => false, 'color' => '#8b5cf6'],
+            ],
+            [
+                'id' => 'transform_input_1',
+                'source' => 'ref_users_external_id',
+                'target' => 'transform_normalize_users',
+                'type' => 'transform',
+                'animated' => true,
+                'style' => ['stroke' => '#f59e0b', 'strokeDasharray' => '8 5'],
+                'data' => ['linkKind' => 'transform', 'exportable' => false, 'direction' => 'input'],
+            ],
+            [
+                'id' => 'transform_output_1',
+                'source' => 'transform_normalize_users',
+                'target' => 'r1',
+                'type' => 'transform',
+                'animated' => true,
+                'style' => ['stroke' => '#f59e0b', 'strokeDasharray' => '8 5'],
+                'data' => ['linkKind' => 'transform', 'exportable' => false, 'direction' => 'output'],
+            ],
         ];
         $valueTypes = [[
             'id' => 'email-type',
@@ -528,6 +620,7 @@ class DiagramSqlServiceTest extends TestCase
         $this->service->importSchema($diagram, json_encode($backup), 'backup-json');
         $diagram->refresh();
 
+        $this->assertSame($schema, $backup['diagram']['schema']);
         $this->assertSame($schema, $diagram->schema);
         $this->assertSame($valueTypes, $diagram->value_types);
         $this->assertSame($metadata['interfaces'], $diagram->interfaces);
