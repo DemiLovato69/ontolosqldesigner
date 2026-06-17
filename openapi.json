@@ -1,0 +1,2440 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "OntoloSQL Designer Desktop API",
+    "version": "1.0.0",
+    "description": "Versioned API for native desktop clients. Web SPA authentication remains Sanctum cookie/session based; this API uses Google OAuth with PKCE and expiring Sanctum bearer tokens."
+  },
+  "servers": [
+    {
+      "url": "https://ontolosql-designer-kripb.ondigitalocean.app",
+      "description": "Production"
+    },
+    {
+      "url": "http://localhost:8080",
+      "description": "Local Docker development"
+    }
+  ],
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Desktop OAuth and token management"
+    },
+    {
+      "name": "Realtime",
+      "description": "Reverb client config and private/presence channel authorization"
+    },
+    {
+      "name": "Diagrams",
+      "description": "Owned diagram CRUD and dashboard data"
+    },
+    {
+      "name": "Shared Diagrams",
+      "description": "Diagram access through share tokens"
+    },
+    {
+      "name": "Sharing",
+      "description": "Share settings, invites, visitors, and user lookup"
+    },
+    {
+      "name": "Imports",
+      "description": "Raw and chunked schema import"
+    },
+    {
+      "name": "Exports",
+      "description": "Export jobs and direct backup/migration/Maker exports"
+    },
+    {
+      "name": "Changelog",
+      "description": "Diagram changelog entries"
+    },
+    {
+      "name": "Review",
+      "description": "Review prompt/status endpoints reused by the app"
+    }
+  ],
+  "paths": {
+    "/api/v1/auth/oauth/google/authorize": {
+      "get": {
+        "tags": ["Auth"],
+        "operationId": "authorizeGoogleDesktopOAuth",
+        "summary": "Start desktop Google OAuth",
+        "description": "Stores the PKCE request and redirects the system browser to Google OAuth.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OAuthState"
+          },
+          {
+            "name": "code_challenge",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 43,
+              "maxLength": 128
+            }
+          },
+          {
+            "name": "code_challenge_method",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "const": "S256"
+            }
+          },
+          {
+            "name": "device_name",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 120
+            }
+          },
+          {
+            "name": "redirect_uri",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "examples": ["ontolosql://oauth/callback"]
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to Google OAuth"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/google/callback": {
+      "get": {
+        "tags": ["Auth"],
+        "operationId": "handleGoogleDesktopOAuthCallback",
+        "summary": "Handle Google OAuth callback",
+        "description": "Validates the Google account domain, creates a one-time desktop grant, and redirects to the configured native callback URI with code and state.",
+        "security": [],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/OAuthState"
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to native desktop callback URI"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/oauth/google/token": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "exchangeDesktopOAuthGrant",
+        "summary": "Exchange one-time OAuth grant for bearer token",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/OAuthTokenRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Bearer token response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OAuthTokenResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/me": {
+      "get": {
+        "tags": ["Auth"],
+        "operationId": "getCurrentDesktopUser",
+        "summary": "Get current user",
+        "description": "Requires abilities: desktop.",
+        "responses": {
+          "200": {
+            "description": "Current user",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/User"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/tokens": {
+      "get": {
+        "tags": ["Auth"],
+        "operationId": "listDesktopTokens",
+        "summary": "List current user's tokens",
+        "description": "Requires abilities: desktop, tokens:manage. Plaintext tokens are never returned.",
+        "responses": {
+          "200": {
+            "description": "Token list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Token"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/token/current": {
+      "delete": {
+        "tags": ["Auth"],
+        "operationId": "revokeCurrentDesktopToken",
+        "summary": "Revoke current bearer token",
+        "description": "Requires abilities: desktop.",
+        "responses": {
+          "204": {
+            "description": "Current token revoked"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/tokens/{token}": {
+      "delete": {
+        "tags": ["Auth"],
+        "operationId": "revokeDesktopTokenById",
+        "summary": "Revoke one of the current user's tokens",
+        "description": "Requires abilities: desktop, tokens:manage.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/TokenId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Token revoked"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/email/resend": {
+      "post": {
+        "tags": ["Auth"],
+        "operationId": "resendVerificationEmailV1",
+        "summary": "Resend verification email",
+        "responses": {
+          "200": {
+            "description": "Verification email status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MessageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      }
+    },
+    "/api/v1/broadcasting/auth": {
+      "post": {
+        "tags": ["Realtime"],
+        "operationId": "authorizeBroadcastChannelV1",
+        "summary": "Authorize Reverb channel subscription",
+        "description": "Requires abilities: desktop, presence:read. Writer channels also require presence:write in channel authorization.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BroadcastAuthRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Broadcast auth payload"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/realtime/config": {
+      "get": {
+        "tags": ["Realtime"],
+        "operationId": "getRealtimeConfigV1",
+        "summary": "Get Reverb client config",
+        "description": "Requires abilities: desktop, presence:read.",
+        "responses": {
+          "200": {
+            "description": "Realtime config",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RealtimeConfigResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams": {
+      "get": {
+        "tags": ["Diagrams"],
+        "operationId": "listOwnedDiagramsV1",
+        "summary": "List current user's diagrams",
+        "description": "Requires abilities: desktop, diagrams:read.",
+        "responses": {
+          "200": {
+            "description": "Pageless diagram summary collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DiagramSummary"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Diagrams"],
+        "operationId": "createDiagramV1",
+        "summary": "Create diagram",
+        "description": "Requires abilities: desktop, diagrams:write.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDiagramRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/DiagramCreated"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/dashboard": {
+      "get": {
+        "tags": ["Diagrams"],
+        "operationId": "getDiagramDashboardV1",
+        "summary": "Get owned, shared, and public diagrams",
+        "description": "Requires abilities: desktop, diagrams:read.",
+        "responses": {
+          "200": {
+            "description": "Dashboard diagram groups",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/share-users/search": {
+      "get": {
+        "tags": ["Sharing"],
+        "operationId": "searchShareUsersV1",
+        "summary": "Search users by email for sharing",
+        "description": "Requires abilities: desktop, sharing:write. Query must be at least two characters to return matches.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 2
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Email matches",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "string",
+                    "format": "email"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": ["Diagrams"],
+        "operationId": "getDiagramV1",
+        "summary": "Get diagram",
+        "description": "Requires abilities: desktop, diagrams:read plus diagram read permission.",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DiagramResource"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Diagrams"],
+        "operationId": "replaceDiagramV1",
+        "summary": "Update diagram",
+        "description": "Requires abilities: desktop, diagrams:write plus diagram write permission.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UpdateDiagram"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StatusMessage"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Diagrams"],
+        "operationId": "patchDiagramV1",
+        "summary": "Partially update diagram",
+        "description": "Requires abilities: desktop, diagrams:write plus diagram write permission.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/UpdateDiagram"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StatusMessage"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Diagrams"],
+        "operationId": "deleteDiagramV1",
+        "summary": "Delete diagram",
+        "description": "Requires abilities: desktop, diagrams:delete plus ownership/delete permission.",
+        "responses": {
+          "204": {
+            "description": "Diagram deleted"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/shared/diagrams/{token}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/ShareToken"
+        }
+      ],
+      "get": {
+        "tags": ["Shared Diagrams"],
+        "operationId": "getSharedDiagramV1",
+        "summary": "Get diagram by share token",
+        "description": "Requires abilities: desktop, diagrams:read plus effective shared read permission.",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/DiagramResource"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Shared Diagrams"],
+        "operationId": "saveSharedDiagramV1",
+        "summary": "Save shared diagram schema",
+        "description": "Requires abilities: desktop, diagrams:write plus effective shared write permission.",
+        "requestBody": {
+          "$ref": "#/components/requestBodies/SharedSave"
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StatusOnly"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/shared/diagrams/{token}/duplicate": {
+      "post": {
+        "tags": ["Shared Diagrams"],
+        "operationId": "duplicateSharedDiagramV1",
+        "summary": "Duplicate shared diagram into current user's account",
+        "description": "Requires abilities: desktop, diagrams:write plus effective shared read permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/ShareToken"
+          }
+        ],
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/DiagramCreated"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/share": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "post": {
+        "tags": ["Sharing"],
+        "operationId": "enableDiagramSharingV1",
+        "summary": "Ensure diagram is shared",
+        "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
+        "responses": {
+          "200": {
+            "description": "Current share access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "share_access": {
+                      "$ref": "#/components/schemas/DiagramAccess"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "patch": {
+        "tags": ["Sharing"],
+        "operationId": "updateDiagramShareSettingsV1",
+        "summary": "Update diagram share settings",
+        "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShareSettingsRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated share settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShareSettings"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Sharing"],
+        "operationId": "disableDiagramSharingV1",
+        "summary": "Disable sharing and library visibility",
+        "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
+        "responses": {
+          "204": {
+            "description": "Sharing disabled"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/invites": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": ["Sharing"],
+        "operationId": "listDiagramInvitesV1",
+        "summary": "List diagram email invites",
+        "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
+        "responses": {
+          "200": {
+            "description": "Invite list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Invite"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "put": {
+        "tags": ["Sharing"],
+        "operationId": "replaceDiagramInvitesV1",
+        "summary": "Replace diagram email invites",
+        "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["invites"],
+                "properties": {
+                  "invites": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "required": ["email", "access"],
+                      "properties": {
+                        "email": {
+                          "type": "string",
+                          "format": "email"
+                        },
+                        "access": {
+                          "$ref": "#/components/schemas/DiagramAccess"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated invite list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Invite"
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/visitors": {
+      "get": {
+        "tags": ["Sharing"],
+        "operationId": "listDiagramVisitorsV1",
+        "summary": "List diagram visitors",
+        "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Visitor resource collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/Visitor"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/visitors/{visitor}/approve": {
+      "post": {
+        "tags": ["Sharing"],
+        "operationId": "approveDiagramVisitorV1",
+        "summary": "Approve visitor access",
+        "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          },
+          {
+            "$ref": "#/components/parameters/VisitorId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StatusOnly"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/visitors/{visitor}": {
+      "patch": {
+        "tags": ["Sharing"],
+        "operationId": "updateDiagramVisitorAccessV1",
+        "summary": "Update or revoke visitor access",
+        "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          },
+          {
+            "$ref": "#/components/parameters/VisitorId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["access"],
+                "properties": {
+                  "access": {
+                    "type": "string",
+                    "enum": ["read", "write", "revoked"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/StatusOnly"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/imports/{format}": {
+      "post": {
+        "tags": ["Imports"],
+        "operationId": "startRawDiagramImportV1",
+        "summary": "Start raw import",
+        "description": "Requires abilities: desktop, imports:write plus diagram write permission. Accepts JSON `{script}` or raw text body.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          },
+          {
+            "name": "format",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/ImportFormat"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["script"],
+                "properties": {
+                  "script": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "text/plain": {
+              "schema": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/PendingStatus"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/imports": {
+      "post": {
+        "tags": ["Imports"],
+        "operationId": "createChunkedDiagramImportV1",
+        "summary": "Create chunked import upload",
+        "description": "Requires abilities: desktop, imports:write plus diagram write permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportUploadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Chunked import upload created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportUploadResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/imports/{import}/chunks/{index}": {
+      "put": {
+        "tags": ["Imports"],
+        "operationId": "uploadDiagramImportChunkV1",
+        "summary": "Upload one import chunk",
+        "description": "Requires abilities: desktop, imports:write plus diagram write permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          },
+          {
+            "$ref": "#/components/parameters/ImportId"
+          },
+          {
+            "name": "index",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/octet-stream": {
+              "schema": {
+                "type": "string",
+                "format": "binary"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Chunk stored",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "received": {
+                      "type": "integer"
+                    },
+                    "complete": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/imports/{import}/complete": {
+      "post": {
+        "tags": ["Imports"],
+        "operationId": "completeChunkedDiagramImportV1",
+        "summary": "Complete chunked import upload",
+        "description": "Requires abilities: desktop, imports:write plus diagram write permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          },
+          {
+            "$ref": "#/components/parameters/ImportId"
+          }
+        ],
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/PendingStatus"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/imports/status": {
+      "get": {
+        "tags": ["Imports"],
+        "operationId": "getDiagramImportStatusV1",
+        "summary": "Get latest import status",
+        "description": "Requires abilities: desktop, imports:write plus diagram write permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Import status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportStatusResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/exports": {
+      "post": {
+        "tags": ["Exports"],
+        "operationId": "startDiagramExportV1",
+        "summary": "Start SQL export job",
+        "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          }
+        ],
+        "responses": {
+          "202": {
+            "$ref": "#/components/responses/PendingStatus"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/exports/status": {
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "getDiagramExportStatusV1",
+        "summary": "Get SQL export job status",
+        "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Export status",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExportStatusResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/exports/backup-json": {
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "exportDiagramBackupJsonV1",
+        "summary": "Export lossless backup JSON",
+        "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Backup JSON v2",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BackupExport"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/exports/migration": {
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "exportDiagramMigrationZipV1",
+        "summary": "Export Laravel migration zip",
+        "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Migration zip",
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/exports/ontology": {
+      "get": {
+        "tags": ["Exports"],
+        "operationId": "exportDiagramOntologyMakerV1",
+        "summary": "Export Maker .mts module",
+        "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/DiagramId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Maker TypeScript module",
+            "content": {
+              "text/typescript": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/changelog": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": ["Changelog"],
+        "operationId": "listDiagramChangelogV1",
+        "summary": "List diagram changelog entries",
+        "description": "Requires abilities: desktop, changelog:read plus diagram read permission.",
+        "responses": {
+          "200": {
+            "description": "Changelog resource collection",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/ChangelogEntry"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Changelog"],
+        "operationId": "createDiagramChangelogEntryV1",
+        "summary": "Create changelog entry",
+        "description": "Requires abilities: desktop, changelog:write plus diagram write permission.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["action"],
+                "properties": {
+                  "action": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "details": {
+                    "type": ["object", "array", "null"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "$ref": "#/components/responses/StatusOnly"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/review": {
+      "get": {
+        "tags": ["Review"],
+        "operationId": "checkReviewPromptV1",
+        "summary": "Check review prompt state",
+        "responses": {
+          "200": {
+            "description": "Review prompt state"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          }
+        }
+      },
+      "post": {
+        "tags": ["Review"],
+        "operationId": "storeReviewV1",
+        "summary": "Submit review response",
+        "responses": {
+          "200": {
+            "description": "Review response stored"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "Sanctum"
+      }
+    },
+    "parameters": {
+      "DiagramId": {
+        "name": "diagram",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "ImportId": {
+        "name": "import",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "OAuthState": {
+        "name": "state",
+        "in": "query",
+        "required": true,
+        "schema": {
+          "type": "string",
+          "minLength": 16,
+          "maxLength": 255
+        }
+      },
+      "ShareToken": {
+        "name": "token",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "TokenId": {
+        "name": "token",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "VisitorId": {
+        "name": "visitor",
+        "in": "path",
+        "required": true,
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "requestBodies": {
+      "UpdateDiagram": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/UpdateDiagramRequest"
+            }
+          }
+        }
+      },
+      "SharedSave": {
+        "required": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "schema": {
+                  "$ref": "#/components/schemas/DiagramSchema"
+                },
+                "value_types": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "responses": {
+      "DiagramCreated": {
+        "description": "Diagram created",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["status", "diagram"],
+              "properties": {
+                "status": {
+                  "type": "boolean"
+                },
+                "message": {
+                  "type": "string"
+                },
+                "diagram": {
+                  "type": "object",
+                  "required": ["id", "share_token"],
+                  "properties": {
+                    "id": {
+                      "type": "integer"
+                    },
+                    "share_token": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DiagramResource": {
+        "description": "Diagram resource",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["data"],
+              "properties": {
+                "data": {
+                  "$ref": "#/components/schemas/Diagram"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Authenticated token lacks the required ability or diagram permission",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "PendingStatus": {
+        "description": "Background job queued",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "required": ["status"],
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "const": "pending"
+                }
+              }
+            }
+          }
+        }
+      },
+      "StatusMessage": {
+        "description": "Status message",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/StatusMessageResponse"
+            }
+          }
+        }
+      },
+      "StatusOnly": {
+        "description": "Boolean status response",
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing, invalid, or expired bearer token",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ErrorResponse"
+            }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation failed",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/ValidationErrorResponse"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "BackupExport": {
+        "type": "object",
+        "required": ["format", "version", "diagram"],
+        "properties": {
+          "format": {
+            "type": "string",
+            "const": "ontolosql-designer"
+          },
+          "version": {
+            "type": "integer",
+            "const": 2
+          },
+          "diagram": {
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "dbType": {
+                "$ref": "#/components/schemas/DbType"
+              },
+              "schema": {
+                "$ref": "#/components/schemas/DiagramSchema"
+              },
+              "valueTypes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "interfaces": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "interfaceLinkConstraints": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "customActions": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "sharedPropertyTypes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "BroadcastAuthRequest": {
+        "type": "object",
+        "required": ["socket_id", "channel_name"],
+        "properties": {
+          "socket_id": {
+            "type": "string",
+            "examples": ["1234.5678"]
+          },
+          "channel_name": {
+            "type": "string",
+            "examples": ["presence-diagram.shareToken", "presence-diagram.shareToken.writers"]
+          }
+        }
+      },
+      "ChangelogEntry": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "action": {
+            "type": "string"
+          },
+          "details": {
+            "type": ["object", "array", "null"]
+          },
+          "created_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        }
+      },
+      "CreateDiagramRequest": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "db_type": {
+            "$ref": "#/components/schemas/DbType"
+          },
+          "share_access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagramAccess"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "library": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DashboardResponse": {
+        "type": "object",
+        "required": ["owned", "shared", "public"],
+        "properties": {
+          "owned": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiagramSummary"
+            }
+          },
+          "shared": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiagramSummary"
+            }
+          },
+          "public": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiagramSummary"
+            }
+          }
+        }
+      },
+      "DbType": {
+        "type": "string",
+        "enum": ["mysql", "postgresql", "sqlite", "oracle", "sqlserver", "msaccess", "ontology"]
+      },
+      "Diagram": {
+        "type": "object",
+        "required": ["id", "name", "db_type", "schema", "share_token", "require_approval", "library", "is_owner"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "db_type": {
+            "$ref": "#/components/schemas/DbType"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/DiagramSchema"
+          },
+          "value_types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "interfaces": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "interface_link_constraints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "custom_actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "shared_property_types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "import_warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "share_token": {
+            "type": "string"
+          },
+          "share_access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagramAccess"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "require_approval": {
+            "type": "boolean"
+          },
+          "library": {
+            "type": "boolean"
+          },
+          "is_owner": {
+            "type": "boolean"
+          }
+        }
+      },
+      "DiagramAccess": {
+        "type": "string",
+        "enum": ["read", "write", "per_user"]
+      },
+      "DiagramSchema": {
+        "type": "array",
+        "description": "Vue Flow schema elements. Runtime-only keys such as hidden, selected, dimensions, and editing are not persisted and are stripped from save/load paths.",
+        "items": {
+          "type": "object",
+          "additionalProperties": true
+        }
+      },
+      "DiagramSummary": {
+        "type": "object",
+        "required": ["id", "name", "db_type", "schema", "share_token", "require_approval", "library", "is_owner"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "db_type": {
+            "$ref": "#/components/schemas/DbType"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/DiagramSchema"
+          },
+          "share_token": {
+            "type": "string"
+          },
+          "share_access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagramAccess"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "effective_access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagramAccess"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "require_approval": {
+            "type": "boolean"
+          },
+          "library": {
+            "type": "boolean"
+          },
+          "is_owner": {
+            "type": "boolean"
+          },
+          "owner_email": {
+            "type": ["string", "null"],
+            "format": "email"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "ExportStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": ["string", "null"],
+            "enum": ["pending", "processing", "done", "failed", null]
+          },
+          "script": {
+            "type": ["string", "null"]
+          },
+          "json": {
+            "type": ["object", "array", "string", "null"]
+          },
+          "error": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "ImportFormat": {
+        "type": "string",
+        "enum": ["sql", "ontology-json", "backup-json", "maker-mts"]
+      },
+      "ImportStatusResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": ["string", "null"],
+            "enum": ["pending", "processing", "done", "failed", null]
+          },
+          "upload": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ImportUploadStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "schema": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagramSchema"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "value_types": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "interfaces": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "interface_link_constraints": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "custom_actions": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "shared_property_types": {
+            "type": ["array", "null"],
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "db_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DbType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "error": {
+            "type": ["string", "null"]
+          }
+        }
+      },
+      "ImportUploadRequest": {
+        "type": "object",
+        "required": ["format", "size", "chunk_size", "chunks_total"],
+        "properties": {
+          "format": {
+            "$ref": "#/components/schemas/ImportFormat"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 2147483648
+          },
+          "chunk_size": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "chunks_total": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "original_name": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          }
+        }
+      },
+      "ImportUploadResponse": {
+        "type": "object",
+        "required": ["id", "status", "chunk_size", "chunks_total"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "chunk_size": {
+            "type": "integer"
+          },
+          "chunks_total": {
+            "type": "integer"
+          }
+        }
+      },
+      "ImportUploadStatus": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "status": {
+            "type": "string"
+          },
+          "format": {
+            "$ref": "#/components/schemas/ImportFormat"
+          },
+          "error": {
+            "type": ["string", "null"]
+          },
+          "updated_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "age_seconds": {
+            "type": ["integer", "null"]
+          }
+        }
+      },
+      "Invite": {
+        "type": "object",
+        "required": ["id", "email", "access"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "access": {
+            "$ref": "#/components/schemas/DiagramAccess"
+          }
+        }
+      },
+      "MessageResponse": {
+        "type": "object",
+        "required": ["message"],
+        "properties": {
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "OAuthTokenRequest": {
+        "type": "object",
+        "required": ["code", "code_verifier"],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "code_verifier": {
+            "type": "string",
+            "minLength": 43,
+            "maxLength": 128
+          },
+          "device_name": {
+            "type": "string",
+            "maxLength": 120
+          }
+        }
+      },
+      "OAuthTokenResponse": {
+        "type": "object",
+        "required": ["token_type", "access_token", "expires_at", "user"],
+        "properties": {
+          "token_type": {
+            "type": "string",
+            "const": "Bearer"
+          },
+          "access_token": {
+            "type": "string"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "user": {
+            "$ref": "#/components/schemas/User"
+          }
+        }
+      },
+      "RealtimeConfigResponse": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "type": "object",
+            "required": ["driver", "app_key", "host", "port", "scheme", "auth_endpoint", "channels", "events"],
+            "properties": {
+              "driver": {
+                "type": "string",
+                "const": "reverb"
+              },
+              "app_key": {
+                "type": ["string", "null"]
+              },
+              "host": {
+                "type": ["string", "null"]
+              },
+              "port": {
+                "type": "integer"
+              },
+              "scheme": {
+                "type": ["string", "null"],
+                "enum": ["http", "https", null]
+              },
+              "auth_endpoint": {
+                "type": "string",
+                "format": "uri"
+              },
+              "channels": {
+                "type": "object",
+                "properties": {
+                  "presence": {
+                    "type": "string"
+                  },
+                  "writers": {
+                    "type": "string"
+                  }
+                }
+              },
+              "events": {
+                "type": "object",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "ShareSettings": {
+        "type": "object",
+        "required": ["share_access", "require_approval", "library"],
+        "properties": {
+          "share_access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagramAccess"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "require_approval": {
+            "type": "boolean"
+          },
+          "library": {
+            "type": "boolean"
+          }
+        }
+      },
+      "ShareSettingsRequest": {
+        "type": "object",
+        "properties": {
+          "access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagramAccess"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "require_approval": {
+            "type": "boolean"
+          },
+          "library": {
+            "type": "boolean"
+          }
+        }
+      },
+      "StatusMessageResponse": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "boolean"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Token": {
+        "type": "object",
+        "required": ["id", "name", "abilities", "created_at"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "abilities": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "last_used_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "expires_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          },
+          "created_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        }
+      },
+      "UpdateDiagramRequest": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "db_type": {
+            "$ref": "#/components/schemas/DbType"
+          },
+          "share_access": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/DiagramAccess"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "library": {
+            "type": "boolean"
+          },
+          "schema": {
+            "$ref": "#/components/schemas/DiagramSchema"
+          },
+          "value_types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "interfaces": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "interface_link_constraints": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "custom_actions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "shared_property_types": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "email"],
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "email": {
+            "type": "string",
+            "format": "email"
+          },
+          "email_verified_at": {
+            "type": ["string", "null"],
+            "format": "date-time"
+          }
+        }
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "Visitor": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "email": {
+            "type": ["string", "null"],
+            "format": "email"
+          },
+          "status": {
+            "type": "string"
+          },
+          "access": {
+            "type": ["string", "null"],
+            "enum": ["read", "write", null]
+          }
+        }
+      }
+    }
+  }
+}

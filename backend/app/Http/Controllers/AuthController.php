@@ -7,13 +7,14 @@ namespace App\Http\Controllers;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\User;
 use App\Services\AuthService;
+use App\Services\GoogleOAuthService;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
 use Laravel\Socialite\Facades\Socialite;
-use Laravel\Socialite\Two\User as SocialiteUser;
 use Knuckles\Scribe\Attributes\Group;
 use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 use Throwable;
@@ -21,7 +22,10 @@ use Throwable;
 #[Group('Authentication')]
 class AuthController extends Controller
 {
-    public function __construct(private readonly AuthService $authService) {}
+    public function __construct(
+        private readonly AuthService $authService,
+        private readonly GoogleOAuthService $googleOAuthService,
+    ) {}
 
     public function login(LoginRequest $request): JsonResponse
     {
@@ -48,37 +52,16 @@ class AuthController extends Controller
             return $this->oauthError();
         }
 
-        $allowedDomain = strtolower((string) config('services.google.allowed_domain'));
-        $email = strtolower((string) $googleUser->getEmail());
-        $emailDomain = substr(strrchr($email, '@') ?: '', 1);
-
-        if (
-            $allowedDomain === ''
-            || strtolower((string) ($googleUser->getRaw()['hd'] ?? '')) !== $allowedDomain
-            || $emailDomain !== $allowedDomain
-        ) {
+        try {
+            $user = $this->googleOAuthService->findOrCreateAllowedUser($googleUser);
+        } catch (AuthenticationException) {
             return $this->oauthError();
         }
 
-        $user = $this->findOrCreateGoogleUser($googleUser, $email);
         Auth::login($user);
         $request->session()->regenerate();
 
         return redirect('/oauth/callback');
-    }
-
-    private function findOrCreateGoogleUser(SocialiteUser $googleUser, string $email): User
-    {
-        $user = User::where('google_id', $googleUser->getId())->first()
-            ?? User::where('email', $email)->first()
-            ?? new User(['email' => $email]);
-
-        $user->forceFill([
-            'google_id' => $googleUser->getId(),
-            'email_verified_at' => now(),
-        ])->save();
-
-        return $user;
     }
 
     private function oauthError(): RedirectResponse
@@ -89,8 +72,9 @@ class AuthController extends Controller
     public function logout(Request $request): JsonResponse
     {
         $user = $request->user();
-        if ($user) {
-            $user->tokens()->delete();
+        $token = $user?->currentAccessToken();
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
         }
 
         Auth::guard('web')->logout();
