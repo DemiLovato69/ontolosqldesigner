@@ -8,8 +8,11 @@ use App\Exceptions\InvalidSchemaException;
 
 class OntologyMakerService
 {
-    /** @param list<array<string, mixed>> $definitions */
-    public function createModule(string $schema, array $definitions = []): string
+    /**
+     * @param list<array<string, mixed>> $definitions
+     * @param array<string, list<array<string, mixed>>> $metadata
+     */
+    public function createModule(string $schema, array $definitions = [], array $metadata = []): string
     {
         [$tables, $rows, $connections] = $this->parseSchema($schema);
         $rowsById = [];
@@ -133,6 +136,9 @@ class OntologyMakerService
                 'primary_key' => $primaryKey,
                 'title_property' => $titleProperty,
                 'properties' => $properties,
+                'implements_interfaces' => is_array($table['data']['implementsInterfaces'] ?? null)
+                    ? array_values($table['data']['implementsInterfaces'])
+                    : [],
                 'constraints' => $this->objectConstraints($table, $tableRows, $primaryRows),
                 'actions' => $this->ontologyActions($table),
             ];
@@ -205,7 +211,7 @@ class OntologyMakerService
             ];
         }
 
-        return $this->render($valueTypes, $objects, array_values($linksByRelationship));
+        return $this->render($valueTypes, $objects, array_values($linksByRelationship), $metadata);
     }
 
     /** @return array{0: list<array<string, mixed>>, 1: list<array<string, mixed>>, 2: list<array<string, string>>} */
@@ -226,15 +232,31 @@ class OntologyMakerService
         $tables = [];
         $rows = [];
         $connections = [];
+        $referenceTableIds = [];
+        $rowTableIds = [];
         foreach ($decoded as $item) {
-            if (($item['type'] ?? null) === 'table') {
+            if (! is_array($item)) {
+                continue;
+            }
+            if (($item['type'] ?? null) === 'table' && $this->isReferenceTableItem($item)) {
+                $referenceTableIds[(string) $item['id']] = true;
+            }
+            if (($item['type'] ?? null) === 'row') {
+                $rowTableIds[(string) $item['id']] = (string) ($item['parentNode'] ?? '');
+            }
+        }
+        foreach ($decoded as $item) {
+            if (! is_array($item) || $this->isNonExportableDiagramItem($item)) {
+                continue;
+            }
+            if (($item['type'] ?? null) === 'table' && ! isset($referenceTableIds[(string) $item['id']])) {
                 $tables[] = [
                     'id' => (string) $item['id'],
                     'name' => (string) $item['label'],
                     'note' => trim((string) ($item['data']['description'] ?? $item['data']['note'] ?? '')),
                     'data' => $item['data'] ?? [],
                 ];
-            } elseif (($item['type'] ?? null) === 'row') {
+            } elseif (($item['type'] ?? null) === 'row' && ! isset($referenceTableIds[(string) ($item['parentNode'] ?? '')])) {
                 $rows[] = [
                     'id' => (string) $item['id'],
                     'name' => (string) $item['label'],
@@ -259,7 +281,7 @@ class OntologyMakerService
                 // reconnecting an edge. The scalar endpoint fields are canonical.
                 $sourceId = $item['source'] ?? $item['sourceNode']['id'] ?? null;
                 $targetId = $item['target'] ?? $item['targetNode']['id'] ?? null;
-                if ($sourceId !== null && $targetId !== null) {
+                if ($sourceId !== null && $targetId !== null && $this->isExportableConnectionItem($item, $rowTableIds, $referenceTableIds)) {
                     $connections[] = [
                         'source_id' => (string) $sourceId,
                         'target_id' => (string) $targetId,
@@ -270,6 +292,42 @@ class OntologyMakerService
         }
 
         return [$tables, $rows, $connections];
+    }
+
+    /** @param array<string, mixed> $item */
+    private function isReferenceTableItem(array $item): bool
+    {
+        return (bool) ($item['data']['reference'] ?? false)
+            || ($item['data']['tableKind'] ?? null) === 'reference';
+    }
+
+    /** @param array<string, mixed> $item */
+    private function isNonExportableDiagramItem(array $item): bool
+    {
+        return ($item['type'] ?? null) === 'pipeline-transform'
+            || ($item['data']['exportable'] ?? true) === false
+            || in_array($item['data']['linkKind'] ?? null, ['reference', 'transform'], true);
+    }
+
+    /**
+     * @param array<string, mixed> $item
+     * @param array<string, string> $rowTableIds
+     * @param array<string, true> $referenceTableIds
+     */
+    private function isExportableConnectionItem(array $item, array $rowTableIds, array $referenceTableIds): bool
+    {
+        $sourceId = $item['source'] ?? $item['sourceNode']['id'] ?? null;
+        $targetId = $item['target'] ?? $item['targetNode']['id'] ?? null;
+        if (! is_string($sourceId) || ! is_string($targetId)) {
+            return false;
+        }
+        $sourceTableId = $rowTableIds[$sourceId] ?? null;
+        $targetTableId = $rowTableIds[$targetId] ?? null;
+
+        return $sourceTableId !== null
+            && $targetTableId !== null
+            && ! isset($referenceTableIds[$sourceTableId])
+            && ! isset($referenceTableIds[$targetTableId]);
     }
 
     /**
@@ -754,10 +812,23 @@ class OntologyMakerService
      * @param array<string, array<string, mixed>> $valueTypes
      * @param list<array<string, mixed>> $objects
      * @param list<array<string, mixed>> $links
+     * @param array<string, list<array<string, mixed>>> $metadata
      */
-    private function render(array $valueTypes, array $objects, array $links): string
+    private function render(array $valueTypes, array $objects, array $links, array $metadata = []): string
     {
         $imports = ['defineObject'];
+        if (($metadata['interfaces'] ?? []) !== []) {
+            $imports[] = 'defineInterface';
+        }
+        if (($metadata['interface_link_constraints'] ?? []) !== []) {
+            $imports[] = 'defineInterfaceLinkConstraint';
+        }
+        if (($metadata['shared_property_types'] ?? []) !== []) {
+            $imports[] = 'defineSharedPropertyType';
+        }
+        if (($metadata['custom_actions'] ?? []) !== []) {
+            $imports[] = 'defineAction';
+        }
         if ($valueTypes !== []) {
             $imports[] = 'defineValueType';
         }
@@ -779,6 +850,14 @@ class OntologyMakerService
         sort($imports);
 
         $blocks = ['import { '.implode(', ', $imports).' } from "@osdk/maker";'];
+
+        foreach ($metadata['shared_property_types'] ?? [] as $definition) {
+            $constName = $this->metadataConstName($definition);
+            if ($constName === null) {
+                continue;
+            }
+            $blocks[] = "export const {$constName} = defineSharedPropertyType(".$this->renderJsLiteral($this->makerDefinition($definition)).");";
+        }
 
         foreach ($valueTypes as $constName => $valueType) {
             if (isset($valueType['values'])) {
@@ -810,6 +889,14 @@ export const {$constName} = defineValueType({
 MTS;
         }
 
+        foreach ($metadata['interfaces'] ?? [] as $definition) {
+            $constName = $this->metadataConstName($definition);
+            if ($constName === null) {
+                continue;
+            }
+            $blocks[] = "export const {$constName} = defineInterface(".$this->renderJsLiteral($this->makerDefinition($definition)).");";
+        }
+
         foreach ($objects as $object) {
             $propertyLines = [];
             foreach ($object['properties'] as $property) {
@@ -831,6 +918,16 @@ MTS;
             $description = $object['description'] !== ''
                 ? "\n  description: \"".$this->escape($object['description'])."\","
                 : '';
+            $implementsInterfaces = '';
+            if ($object['implements_interfaces'] !== []) {
+                $interfaces = implode(', ', array_map(
+                    fn (mixed $apiName): string => $this->apiName((string) $apiName),
+                    array_filter($object['implements_interfaces'], fn (mixed $apiName): bool => is_string($apiName) && $apiName !== '')
+                ));
+                if ($interfaces !== '') {
+                    $implementsInterfaces = "\n  implementsInterfaces: [{$interfaces}],";
+                }
+            }
             $constraintComments = '';
             if ($object['constraints'] !== []) {
                 $constraintComments = "\n  // SQL constraints captured from the diagram:";
@@ -844,7 +941,7 @@ export const {$object['const_name']} = defineObject({
   displayName: "{$this->escape($object['display_name'])}",
   pluralDisplayName: "{$this->escape($object['plural_display_name'])}",{$description}
   titlePropertyApiName: "{$object['title_property']}",
-  primaryKeyPropertyApiName: "{$object['primary_key']}",{$constraintComments}
+  primaryKeyPropertyApiName: "{$object['primary_key']}",{$implementsInterfaces}{$constraintComments}
   properties: {
 {$properties}
   },
@@ -903,6 +1000,14 @@ export const {$link['const_name']} = defineLink({
 MTS;
         }
 
+        foreach ($metadata['interface_link_constraints'] ?? [] as $definition) {
+            $constName = $this->metadataConstName($definition);
+            if ($constName === null) {
+                continue;
+            }
+            $blocks[] = "export const {$constName} = defineInterfaceLinkConstraint(".$this->renderJsLiteral($this->makerDefinition($definition)).");";
+        }
+
         foreach ($objects as $object) {
             $actionName = $this->upperFirst($object['const_name']);
             if ($object['actions']['create']) {
@@ -928,6 +1033,95 @@ MTS;
             }
         }
 
+        foreach ($metadata['custom_actions'] ?? [] as $definition) {
+            $constName = $this->metadataConstName($definition);
+            if ($constName === null) {
+                continue;
+            }
+            $blocks[] = "export const {$constName} = defineAction(".$this->renderJsLiteral($this->makerDefinition($definition)).");";
+        }
+
         return implode("\n\n", $blocks)."\n";
+    }
+
+    /** @param array<string, mixed> $definition */
+    private function metadataConstName(array $definition): ?string
+    {
+        $apiName = (string) ($definition['apiName'] ?? '');
+        if ($apiName === '') {
+            return null;
+        }
+
+        return $this->apiName($apiName);
+    }
+
+    private function renderJsLiteral(mixed $value): string
+    {
+        if (is_array($value)) {
+            if (isset($value['__raw']) && is_string($value['__raw'])) {
+                return $this->apiName($value['__raw']);
+            }
+            if (array_is_list($value)) {
+                return '['.implode(', ', array_map(fn (mixed $item): string => $this->renderJsLiteral($item), $value)).']';
+            }
+
+            $pairs = [];
+            foreach ($value as $key => $item) {
+                $pairs[] = json_encode((string) $key, JSON_THROW_ON_ERROR).': '.$this->renderJsLiteral($item);
+            }
+
+            return '{ '.implode(', ', $pairs).' }';
+        }
+
+        if (is_bool($value)) {
+            return $value ? 'true' : 'false';
+        }
+
+        if ($value === null) {
+            return 'null';
+        }
+
+        if (is_int($value) || is_float($value)) {
+            return (string) $value;
+        }
+
+        return json_encode((string) $value, JSON_THROW_ON_ERROR);
+    }
+
+    /** @param array<string, mixed> $definition */
+    private function makerDefinition(array $definition): array
+    {
+        unset($definition['id']);
+        if (isset($definition['makerParameters']) && is_array($definition['makerParameters'])) {
+            $definition['parameters'] = $definition['makerParameters'];
+            unset($definition['makerParameters']);
+        }
+        if (isset($definition['properties']) && is_array($definition['properties']) && array_is_list($definition['properties'])) {
+            $properties = [];
+            foreach ($definition['properties'] as $property) {
+                if (! is_array($property)) {
+                    continue;
+                }
+                $apiName = (string) ($property['apiName'] ?? '');
+                if ($apiName === '') {
+                    continue;
+                }
+                unset($property['id'], $property['apiName']);
+                $properties[$apiName] = $property;
+            }
+            $definition['properties'] = $properties;
+        }
+        if (isset($definition['from']) && is_string($definition['from']) && $definition['from'] !== '') {
+            $definition['from'] = ['__raw' => $definition['from']];
+        }
+        if (isset($definition['toMany']['interface']) && is_string($definition['toMany']['interface']) && $definition['toMany']['interface'] !== '') {
+            $definition['toMany']['interface'] = ['__raw' => $definition['toMany']['interface']];
+        }
+        if (isset($definition['toOne']['interface']) && is_string($definition['toOne']['interface']) && $definition['toOne']['interface'] !== '') {
+            $definition['toOne']['interface'] = ['__raw' => $definition['toOne']['interface']];
+        }
+        unset($definition['actionType'], $definition['rules'], $definition['functionRid'], $definition['functionVersion']);
+
+        return $definition;
     }
 }

@@ -13,6 +13,13 @@ export const TABLE_STYLE = {
     borderRadius: '8px 8px 0 0',
 }
 
+export const REFERENCE_TABLE_STYLE = {
+    ...TABLE_STYLE,
+    border: '1px dashed #8b5cf6',
+    background: 'rgba(76, 63, 120, 0.25)',
+    borderColor: '#8b5cf6',
+}
+
 export const ROW_STYLE = {
     display: 'flex',
     border: '1px solid var(--border-color)',
@@ -23,6 +30,12 @@ export const ROW_STYLE = {
     height: '40px',
     alignItems: 'center',
     justifyContent: 'space-between',
+}
+
+export const REFERENCE_ROW_STYLE = {
+    ...ROW_STYLE,
+    borderColor: '#8b5cf6',
+    background: 'color-mix(in srgb, #8b5cf6 10%, var(--bg-surface))',
 }
 
 const MARKER = {
@@ -56,6 +69,27 @@ function uniqueName(name, existingNames) {
     })
 
     return `${name}_${suffix}`
+}
+
+function jsonSchemaTypes(type) {
+    return Array.isArray(type) ? type : [type ?? 'string']
+}
+
+function nullableFromJsonSchema(property) {
+    return jsonSchemaTypes(property?.type).includes('null')
+}
+
+function sqlTypeFromJsonSchema(property) {
+    const type = jsonSchemaTypes(property?.type).find(item => item && item !== 'null') ?? 'string'
+    if (type === 'integer') return 'INTEGER'
+    if (type === 'number') return 'DOUBLE'
+    if (type === 'boolean') return 'BOOLEAN'
+    if (type === 'array') {
+        const itemType = jsonSchemaTypes(property?.items?.type).find(item => item && item !== 'null') ?? 'string'
+        return `ARRAY<${sqlTypeFromJsonSchema({ type: itemType })}>`
+    }
+    if (type === 'object') return 'STRUCT'
+    return 'STRING'
 }
 
 export const TableActions = {
@@ -109,22 +143,33 @@ export const TableActions = {
         return newTableId
     },
 
-    addTable(schemaRef, name, position, dbType = 'mysql', color = '#3d7a5c') {
+    addTable(schemaRef, name, position, dbType = 'mysql', color = '#3d7a5c', options = {}) {
         const schema = schemaRef.value
         const tableId = Math.random().toString()
         const existingTables = schema.filter(el => el.type === 'table')
         const zIndex = this._nextZIndex(schema)
 
         const tableName = uniqueName(name, existingTables.map(t => t.label))
+        const isReference = options.tableKind === 'reference' || options.reference === true
 
         schemaRef.value = [...schema, {
             id: tableId,
             type: 'table',
             label: tableName,
             zIndex,
-            data: { toolbarPosition: Position.Top, toolbarVisible: true, color, description: '', titlePropertyRowId: null, ontologyActions: { create: false, modify: false, delete: false } },
+            data: {
+                toolbarPosition: Position.Top,
+                toolbarVisible: true,
+                color: isReference ? '#4c3f78' : color,
+                description: '',
+                titlePropertyRowId: null,
+                ontologyActions: { create: false, modify: false, delete: false },
+                tableKind: isReference ? 'reference' : 'object',
+                reference: isReference,
+                referenceSource: options.referenceSource ?? null,
+            },
             position,
-            style: { ...TABLE_STYLE, background: color, borderColor: color },
+            style: isReference ? { ...REFERENCE_TABLE_STYLE } : { ...TABLE_STYLE, background: color, borderColor: color },
         }]
 
         this.addRow(schemaRef, { id: tableId, data: {} }, {
@@ -133,10 +178,113 @@ export const TableActions = {
             sqlType: defaultIntType(dbType),
             nullable: false,
             indexed: true,
-            unsigned: false
+            unsigned: false,
+            reference: isReference,
         })
 
         return tableId
+    },
+
+    addReferenceTable(schemaRef, name, position) {
+        return this.addTable(schemaRef, name, position, 'ontology', '#4c3f78', {
+            tableKind: 'reference',
+            reference: true,
+            referenceSource: { importedFrom: 'manual' },
+        })
+    },
+
+    importReferenceJsonSchemas(schemaRef, content) {
+        const decoded = typeof content === 'string' ? JSON.parse(content) : content
+        const schemas = Array.isArray(decoded) ? decoded : [decoded]
+        const changedTableIds = []
+
+        for (const [schemaIndex, jsonSchema] of schemas.entries()) {
+            if (!jsonSchema || typeof jsonSchema !== 'object' || jsonSchema.type !== 'object' || !jsonSchema.properties || typeof jsonSchema.properties !== 'object') {
+                throw new Error('Reference JSON must be a JSON Schema object with properties.')
+            }
+
+            const title = jsonSchema.title || `ReferenceSchema${schemaIndex + 1}`
+            let schema = schemaRef.value
+            let table = schema.find(item => item.type === 'table'
+                && (item.data?.tableKind === 'reference' || item.data?.reference)
+                && (item.data?.referenceSource?.schemaTitle === title || item.label === title))
+
+            if (!table) {
+                const existingTables = schema.filter(el => el.type === 'table')
+                const x = 80 + (existingTables.length % 4) * 440
+                const y = 80 + Math.floor(existingTables.length / 4) * 360
+                const tableId = Math.random().toString()
+                table = {
+                    id: tableId,
+                    type: 'table',
+                    label: uniqueName(title, existingTables.map(t => t.label)),
+                    zIndex: this._nextZIndex(schema),
+                    data: {
+                        toolbarPosition: Position.Top,
+                        toolbarVisible: true,
+                        color: '#4c3f78',
+                        description: jsonSchema.description ?? '',
+                        tableKind: 'reference',
+                        reference: true,
+                        referenceSource: { importedFrom: 'json-schema', schemaTitle: title, schema: jsonSchema.$schema ?? null },
+                        ontologyActions: { create: false, modify: false, delete: false },
+                    },
+                    position: { x, y },
+                    style: { ...REFERENCE_TABLE_STYLE },
+                }
+                schemaRef.value = [...schema, table]
+                schema = schemaRef.value
+            } else {
+                table.data = {
+                    ...table.data,
+                    tableKind: 'reference',
+                    reference: true,
+                    description: jsonSchema.description ?? table.data?.description ?? '',
+                    referenceSource: { ...(table.data?.referenceSource ?? {}), importedFrom: 'json-schema', schemaTitle: title, schema: jsonSchema.$schema ?? null },
+                }
+                table.style = { ...REFERENCE_TABLE_STYLE, width: table.style?.width ?? REFERENCE_TABLE_STYLE.width }
+            }
+
+            changedTableIds.push(table.id)
+            const existingRows = schemaRef.value.filter(item => item.type === 'row' && item.parentNode === table.id)
+            const existingByName = new Map(existingRows.map(row => [row.label, row]))
+            let rowIndex = existingRows.length
+
+            for (const [propertyName, property] of Object.entries(jsonSchema.properties)) {
+                const row = existingByName.get(propertyName)
+                const rowData = {
+                    reference: true,
+                    jsonSchemaType: property?.type ?? 'string',
+                    jsonSchema: property,
+                    keyMod: 'None',
+                    sqlType: sqlTypeFromJsonSchema(property),
+                    nullable: nullableFromJsonSchema(property),
+                    indexed: true,
+                    unsigned: false,
+                    defaultValue: '',
+                    description: property?.description ?? '',
+                }
+                if (row) {
+                    row.data = { ...row.data, ...rowData }
+                    row.style = { ...REFERENCE_ROW_STYLE, width: table.style?.width ?? REFERENCE_ROW_STYLE.width }
+                    continue
+                }
+
+                schemaRef.value = [...schemaRef.value, {
+                    id: Math.floor(Math.random() * 100000).toString(),
+                    type: 'row',
+                    label: propertyName,
+                    zIndex: table.zIndex ?? 1,
+                    position: { x: 0, y: 40 + 40 * rowIndex++ },
+                    style: { ...REFERENCE_ROW_STYLE, width: table.style?.width ?? REFERENCE_ROW_STYLE.width },
+                    draggable: false,
+                    parentNode: table.id,
+                    data: rowData,
+                }]
+            }
+        }
+
+        return changedTableIds
     },
 
     insertRowAfter(schemaRef, tableId, afterY, rowProps) {
@@ -145,7 +293,8 @@ export const TableActions = {
         const tableNode = schema.find(el => el.id === tableId)
         const rowName = uniqueName(rowProps.rowName, existingRows.map(r => r.label))
         const id = Math.floor(Math.random() * 100000).toString()
-        const rowStyle = tableNode?.style?.width ? { ...ROW_STYLE, width: tableNode.style.width } : ROW_STYLE
+        const rowBaseStyle = tableNode?.data?.reference ? REFERENCE_ROW_STYLE : ROW_STYLE
+        const rowStyle = tableNode?.style?.width ? { ...rowBaseStyle, width: tableNode.style.width } : rowBaseStyle
         const newY = afterY + 40
 
         // Shift rows below the insertion point down by 40
@@ -172,7 +321,8 @@ export const TableActions = {
                 indexed: rowProps.indexed ?? true,
                 unsigned: rowProps.unsigned,
                 defaultValue: rowProps.defaultValue ?? '',
-                description: rowProps.description ?? rowProps.comment ?? ''
+                description: rowProps.description ?? rowProps.comment ?? '',
+                reference: rowProps.reference ?? tableNode?.data?.reference ?? false,
             }
         }]
 
@@ -191,8 +341,8 @@ export const TableActions = {
 
         const tableNode = schema.find(el => el.id === nodeProps.id)
         const rowStyle = tableNode?.style?.width
-            ? { ...ROW_STYLE, width: tableNode.style.width }
-            : ROW_STYLE
+            ? { ...(tableNode?.data?.reference ? REFERENCE_ROW_STYLE : ROW_STYLE), width: tableNode.style.width }
+            : (tableNode?.data?.reference ? REFERENCE_ROW_STYLE : ROW_STYLE)
 
         const newRowY = position.y + 40 + 40 * existingRows.length
         schemaRef.value = [...schema, {
@@ -214,7 +364,8 @@ export const TableActions = {
                 indexed: rowProps.indexed ?? true,
                 unsigned: rowProps.unsigned,
                 defaultValue: rowProps.defaultValue ?? '',
-                description: rowProps.description ?? rowProps.comment ?? ''
+                description: rowProps.description ?? rowProps.comment ?? '',
+                reference: rowProps.reference ?? tableNode?.data?.reference ?? false,
             }
         }]
 
@@ -312,11 +463,16 @@ export const TableActions = {
     deleteNode(schemaRef, nodeId) {
         const schema = schemaRef.value
         const nodeToDelete = schema.find(el => el.id === nodeId)
+        if (!nodeToDelete) return
+        const connectedEdgeIds = new Set(schema
+            .filter(el => el.source === nodeId || el.target === nodeId)
+            .map(el => el.id))
 
         if (nodeToDelete.type === 'table') {
-            schemaRef.value = schema.filter(el => el.id !== nodeId && el.parentNode !== nodeId)
+            const childIds = new Set(schema.filter(el => el.parentNode === nodeId).map(el => el.id))
+            schemaRef.value = schema.filter(el => el.id !== nodeId && el.parentNode !== nodeId && !childIds.has(el.source) && !childIds.has(el.target) && !connectedEdgeIds.has(el.id))
         } else if (nodeToDelete.type === 'row') {
-            schemaRef.value = schema.filter(el => el.id !== nodeId)
+            schemaRef.value = schema.filter(el => el.id !== nodeId && el.source !== nodeId && el.target !== nodeId)
             schema
                 .filter(el => el.parentNode === nodeToDelete.parentNode && el.type === 'row' && el.position.y > nodeToDelete.position.y)
                 .sort((a, b) => a.position.y - b.position.y)
@@ -325,6 +481,8 @@ export const TableActions = {
             const remainingRows = schemaRef.value.filter(el => el.parentNode === nodeToDelete.parentNode && el.type === 'row')
             const button = schemaRef.value.find(el => el.type === 'add-row-button' && el.parentNode === nodeToDelete.parentNode)
             if (button) button.position = { x: 0, y: 40 + 40 * remainingRows.length }
+        } else if (nodeToDelete.type === 'pipeline-transform') {
+            schemaRef.value = schema.filter(el => el.id !== nodeId && el.source !== nodeId && el.target !== nodeId)
         }
     }
 }

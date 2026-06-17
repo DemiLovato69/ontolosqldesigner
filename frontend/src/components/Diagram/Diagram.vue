@@ -33,20 +33,18 @@
             :canEdit="canEdit"
             :isOwner="isOwner"
             :isDemo="isDemo"
-            :isSaved="isSaved"
-            :diagramName="diagramName"
             :dbType="diagramDbType"
-            :shareAccess="diagramShareAccess"
-            :inLibrary="diagramInLibrary"
             :hasPendingVisitors="hasPendingVisitors"
             @add-table="addTable"
-            @import="isDemo ? router.push({ name: 'login' }) : showImportModal = true"
-            @export="isDemo ? router.push({ name: 'login' }) : openExportModal()"
-            @save="saveDiagram"
             @show-share="showShareModal = true"
-            @show-changelog="showChangelogModal = true"
             @show-help="showHotkeysModal = true"
+            @add-reference-table="addReferenceTable"
+            @add-pipeline="onAddPipeline"
+            @open-reference-json-import="showReferenceJsonImportModal = true"
             @show-value-types="showValueTypesModal = true"
+            @show-shared-property-types="showSharedPropertyTypesModal = true"
+            @show-interfaces="showInterfacesModal = true"
+            @show-custom-actions="showCustomActionsModal = true"
         />
 
         <ShareModal
@@ -74,17 +72,55 @@
                         placeholder="Search tables"
                         aria-label="Search tables"
                     />
+                    <div class="schema-sidebar__section-head">
+                        <span>Tables</span>
+                        <button v-if="tables.length" type="button" @click="toggleAllTablesVisibility">
+                            {{ allTablesHidden ? 'Show all' : 'Hide all' }}
+                        </button>
+                    </div>
                     <div class="schema-sidebar__list">
-                        <button
+                        <div
                             v-for="t in filteredTables"
                             :key="t.id"
-                            class="schema-sidebar__item"
-                            type="button"
-                            @dblclick.stop="navigateToTable(t.id)"
-                            @keydown.enter.prevent="navigateToTable(t.id)"
-                        >{{ t.label }}</button>
+                            :class="['schema-sidebar__item', { 'schema-sidebar__item--hidden': isTableEffectivelyHidden(t) }]"
+                        >
+                            <button
+                                class="schema-sidebar__item-main"
+                                type="button"
+                                @dblclick.stop="navigateToTable(t.id)"
+                                @keydown.enter.prevent="navigateToTable(t.id)"
+                                :title="isTableEffectivelyHidden(t) ? 'Table is hidden' : 'Double-click to focus table'"
+                            >
+                                <span>{{ t.label }}</span>
+                                <span v-if="t.data?.reference || t.data?.tableKind === 'reference'" class="schema-sidebar__tag">REF</span>
+                            </button>
+                            <button
+                                class="schema-sidebar__eye"
+                                type="button"
+                                :title="isTableEffectivelyHidden(t) ? 'Show table' : 'Hide table'"
+                                :aria-label="isTableEffectivelyHidden(t) ? `Show ${t.label}` : `Hide ${t.label}`"
+                                @click.stop="toggleTableVisibility(t)"
+                            >
+                                <SvgIcon :name="isTableEffectivelyHidden(t) ? 'eye-off' : 'eye'" :size="15" />
+                            </button>
+                        </div>
                         <span v-if="!tables.length" class="schema-sidebar__empty">No tables</span>
                         <span v-else-if="!filteredTables.length" class="schema-sidebar__empty">No matches</span>
+                    </div>
+                    <div class="schema-sidebar__filters" aria-label="View filters">
+                        <div class="schema-sidebar__filters-head">
+                            <span>View</span>
+                        </div>
+                        <button
+                            v-for="option in viewFilterOptions"
+                            :key="option.key"
+                            :class="['schema-sidebar__filter', { 'schema-sidebar__filter--off': !viewFilters[option.key] }]"
+                            type="button"
+                            @click="toggleViewFilter(option.key)"
+                        >
+                            <span>{{ option.label }}</span>
+                            <span class="schema-sidebar__switch" aria-hidden="true"></span>
+                        </button>
                     </div>
                 </template>
             </aside>
@@ -121,7 +157,7 @@
                 @node-drag="onNodeDrag"
                 @node-drag-stop="onNodeDragStop"
                 @node-click="({ node }) => elevateTable(node)"
-                @pane-click="onPaneClick"
+                @pane-click="onCanvasPaneClick"
                 @node-mouse-enter="onNodeMouseEnter"
                 @node-mouse-leave="onNodeMouseLeave"
                 :is-valid-connection="isValidConnection"
@@ -158,6 +194,10 @@
                     <ChickenFootEdge v-if="!isLargeOverview" v-bind="props" :simple-routing="isLargeDiagram" />
                 </template>
 
+                <template #edge-transform="props">
+                    <TransformEdge v-if="!isLargeOverview" v-bind="props" />
+                </template>
+
                 <Panel position="bottom-right" class="support-panel">
                     <button class="support-panel__btn" @click.stop="openSupportModal" title="Support">
                         ?
@@ -171,6 +211,7 @@
                         :label="nodeProps.label"
                         :dbType="diagramDbType"
                         :columns="tableColumns.get(nodeProps.id) ?? []"
+                        :interfaces="interfaces"
                         :canEdit="canEdit"
                         @delete-node="deleteNode"
                         @update-label="updateLabel"
@@ -180,6 +221,18 @@
                         @update-color="updateTableColor"
                         @update-note="updateNote"
                         @update-actions="updateTableActions"
+                    />
+                </template>
+
+                <template #node-pipeline-transform="nodeProps">
+                    <PipelineTransformNode
+                        :id="nodeProps.id"
+                        :data="nodeProps.data"
+                        :label="nodeProps.label"
+                        :canEdit="canEdit"
+                        @delete-node="deleteNode"
+                        @attach-selected="onAttachSelectedRowsToTransform"
+                        @update-label="updateTransformLabel"
                     />
                 </template>
 
@@ -196,6 +249,7 @@
                         :tableFulltextIndexes="tableById.get(nodeProps.parentNodeId)?.data?.fulltextIndexes ?? []"
                         :valueTypes="valueTypes"
                         :compact="isLargeDiagram && !nodeProps.data.editing && !nodeProps.data.showOptionsModal"
+                        :selected="selectedRowIds.includes(nodeProps.id)"
                         @update-label="updateLabel"
                         @toggle-options-modal="toggleOptionsModal"
                         @delete-node="deleteNode"
@@ -207,17 +261,37 @@
                         @update-table-constraints="onTableConstraintsChange(nodeProps.parentNodeId, $event)"
                         @update-table-fulltext="onTableFulltextChange(nodeProps.parentNodeId, $event)"
                         @update-note="updateNote"
+                        @row-select="toggleRowSelection"
                     />
                 </template>
 
                 </VueFlow>
             </div>
+            <DiagramRightSidebar
+                :diagramId="diagramId"
+                :open="rightSidebarOpen"
+                :refreshKey="changelogRefreshKey"
+                :dbType="diagramDbType"
+                :valueTypes="valueTypes"
+                :sharedPropertyTypes="sharedPropertyTypes"
+                :interfaces="interfaces"
+                :interfaceLinkConstraints="interfaceLinkConstraints"
+                :customActions="customActions"
+                @toggle="rightSidebarOpen = !rightSidebarOpen"
+                @open-value-type="openValueTypeFromSidebar"
+                @open-shared-property-type="openSharedPropertyTypeFromSidebar"
+                @open-interface="openInterfaceFromSidebar"
+                @open-interface-link-constraint="openInterfaceLinkConstraintFromSidebar"
+                @open-custom-action="openCustomActionFromSidebar"
+            />
         </div>
 
         <RelationshipModal
             v-if="showRelationshipModal"
             :position="modalPosition"
             :edge-color="selectedEdge?.data?.color"
+            :visual-only="selectedEdge?.data?.linkKind === 'reference' || selectedEdge?.data?.linkKind === 'transform' || selectedEdge?.data?.exportable === false"
+            :visual-only-label="selectedEdge?.data?.linkKind === 'transform' ? 'Pipeline link' : 'Reference link'"
             @update-type="updateConnectionLineType"
             @delete="deleteEdge"
             @close="closeRelationshipModal"
@@ -238,6 +312,12 @@
             @close="showImportModal = false"
         />
 
+        <ReferenceJsonImportModal
+            v-if="showReferenceJsonImportModal"
+            @import="onImportReferenceJsonFromModal"
+            @close="showReferenceJsonImportModal = false"
+        />
+
         <ExportModal
             v-if="showExportModal"
             :filename="diagramName"
@@ -254,12 +334,6 @@
             @close="showSupportModal = false"
         />
 
-        <ChangelogModal
-            v-if="showChangelogModal"
-            :diagramId="diagramId"
-            @close="showChangelogModal = false"
-        />
-
         <HotkeysModal
             v-if="showHotkeysModal"
             @close="showHotkeysModal = false"
@@ -270,15 +344,45 @@
             :valueTypes="valueTypes"
             :schema="schema"
             :canEdit="canEdit"
+            :initialSelectedKey="selectedValueTypeKey"
             @update="updateValueTypes"
             @close="showValueTypesModal = false"
+        />
+
+        <SharedPropertyTypesModal
+            v-if="showSharedPropertyTypesModal"
+            :sharedPropertyTypes="sharedPropertyTypes"
+            :canEdit="canEdit"
+            :initialSelectedKey="selectedSharedPropertyTypeKey"
+            @update="updateSharedPropertyTypes"
+            @close="showSharedPropertyTypesModal = false"
+        />
+
+        <InterfacesModal
+            v-if="showInterfacesModal"
+            :interfaces="interfaces"
+            :interfaceLinkConstraints="interfaceLinkConstraints"
+            :canEdit="canEdit"
+            :initialSelectedKey="selectedInterfaceKey"
+            @update="updateInterfaces"
+            @close="showInterfacesModal = false"
+        />
+
+        <CustomActionsModal
+            v-if="showCustomActionsModal"
+            :customActions="customActions"
+            :tables="tables"
+            :canEdit="canEdit"
+            :initialSelectedKey="selectedCustomActionKey"
+            @update="updateCustomActions"
+            @close="showCustomActionsModal = false"
         />
 
     </template>
 </template>
 
 <script setup>
-import { computed, onBeforeMount, onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { computed, onBeforeMount, onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
 import { Panel, Position, useVueFlow, VueFlow } from '@vue-flow/core'
 import { TABLE_STYLE } from '@/services/TableActions.js'
 import { Diagram } from '@/services/Diagram.js'
@@ -292,20 +396,27 @@ import { useTableResize } from '@/composables/useTableResize.js'
 import { useRowDrag } from '@/composables/useRowDrag.js'
 import { useSchemaActions } from '@/composables/useSchemaActions.js'
 import { useUndoHistory } from '@/composables/useUndoHistory.js'
+import { clearDiagramHeaderActions, setDiagramHeaderActions } from '@/composables/useAppHeaderActions.js'
 import SvgIcon from '../SvgIcon.vue'
 import DiagramHeader from './DiagramHeader.vue'
 import ShareModal from '../Modal/ShareModal.vue'
 import ChickenFootEdge from '../ChickenFootEdge.vue'
+import TransformEdge from '../TransformEdge.vue'
 import TableNode from './TableNode.vue'
+import PipelineTransformNode from './PipelineTransformNode.vue'
 import RowNode from '../RowNode.vue'
 import RelationshipModal from '../Modal/RelationshipModal.vue'
 import SqlModal from '../Modal/SqlModal.vue'
+import ReferenceJsonImportModal from '../Modal/ReferenceJsonImportModal.vue'
 import ExportModal from '../Modal/ExportModal.vue'
 import RemoteCursor from '../RemoteCursor.vue'
 import SupportModal from '../Modal/SupportModal.vue'
-import ChangelogModal from '../Modal/ChangelogModal.vue'
+import DiagramRightSidebar from './DiagramRightSidebar.vue'
 import HotkeysModal from '../Modal/HotkeysModal.vue'
 import ValueTypesModal from '../Modal/ValueTypesModal.vue'
+import SharedPropertyTypesModal from '../Modal/SharedPropertyTypesModal.vue'
+import InterfacesModal from '../Modal/InterfacesModal.vue'
+import CustomActionsModal from '../Modal/CustomActionsModal.vue'
 import { useToast } from 'vue-toast-notification'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/axios.js'
@@ -329,11 +440,38 @@ const loading = ref(false)
 const isSaved = ref(true)
 const schema = ref([])
 const valueTypes = ref([])
+const interfaces = ref([])
+const interfaceLinkConstraints = ref([])
+const customActions = ref([])
+const sharedPropertyTypes = ref([])
 const LARGE_DIAGRAM_ELEMENT_COUNT = 2000
 const isLargeDiagram = computed(() => schema.value.length > LARGE_DIAGRAM_ELEMENT_COUNT)
 const isLargeOverview = computed(() => isLargeDiagram.value && viewport.value.zoom < 0.18)
 const tables = computed(() => schema.value.filter(el => el.type === 'table'))
 const tableSearch = ref('')
+const DEFAULT_VIEW_FILTERS = {
+    referenceTables: true,
+    referenceLinks: true,
+    pipelines: true,
+    pipelineLinks: true,
+}
+const viewFilters = ref({ ...DEFAULT_VIEW_FILTERS })
+const hiddenTableIds = ref([])
+const viewStateLoaded = ref(false)
+const viewStorageKey = computed(() => {
+    if (props.isDemo) return 'ontolosql:view:demo'
+    if (token) return `ontolosql:view:token:${token}`
+    if (diagramId.value) return `ontolosql:view:diagram:${diagramId.value}`
+    return null
+})
+const viewFilterOptions = [
+    { key: 'referenceTables', label: 'Reference Tables' },
+    { key: 'referenceLinks', label: 'Reference Links' },
+    { key: 'pipelines', label: 'Pipelines' },
+    { key: 'pipelineLinks', label: 'Pipeline Links' },
+]
+const hiddenTableIdSet = computed(() => new Set(hiddenTableIds.value))
+const allTablesHidden = computed(() => tables.value.length > 0 && tables.value.every(table => hiddenTableIdSet.value.has(table.id)))
 const filteredTables = computed(() => {
     const q = tableSearch.value.trim().toLowerCase()
     const list = q
@@ -343,6 +481,141 @@ const filteredTables = computed(() => {
     return [...list].sort((a, b) => (a.label ?? '').localeCompare(b.label ?? '', undefined, { sensitivity: 'base' }))
 })
 const tableById = computed(() => new Map(tables.value.map(table => [table.id, table])))
+const isReferenceTable = (table) => !!(table?.data?.reference || table?.data?.tableKind === 'reference')
+const isReferenceLink = (element) => element?.data?.linkKind === 'reference'
+const isPipelineNode = (element) => element?.type === 'pipeline-transform'
+const isPipelineLink = (element) => element?.type === 'transform' || element?.data?.linkKind === 'transform'
+const stripViewOnlyState = (element) => {
+    if (!element || typeof element !== 'object') return element
+    const { hidden, ...rest } = element
+    return rest
+}
+const stripViewOnlySchema = (elements) => Array.isArray(elements) ? elements.map(stripViewOnlyState) : []
+let applyingViewVisibility = false
+const isTableHidden = (tableId) => hiddenTableIdSet.value.has(tableId)
+const isTableEffectivelyHidden = (table) => isTableHidden(table?.id) || (!viewFilters.value.referenceTables && isReferenceTable(table))
+const toggleTableVisibility = (table) => {
+    const tableId = table?.id
+    if (!tableId) return
+    if (!viewFilters.value.referenceTables && isReferenceTable(table)) {
+        viewFilters.value = { ...viewFilters.value, referenceTables: true }
+        hiddenTableIds.value = hiddenTableIds.value.filter(id => id !== tableId)
+        return
+    }
+    hiddenTableIds.value = isTableHidden(tableId)
+        ? hiddenTableIds.value.filter(id => id !== tableId)
+        : [...hiddenTableIds.value, tableId]
+}
+const showAllTables = () => {
+    hiddenTableIds.value = []
+}
+const hideAllTables = () => {
+    hiddenTableIds.value = tables.value.map(table => table.id)
+}
+const toggleAllTablesVisibility = () => {
+    allTablesHidden.value ? showAllTables() : hideAllTables()
+}
+const toggleViewFilter = (key) => {
+    viewFilters.value = { ...viewFilters.value, [key]: !viewFilters.value[key] }
+}
+const viewVisibilitySignature = computed(() => schema.value.map(element => [
+    element.id,
+    element.type,
+    element.parentNode,
+    element.source,
+    element.target,
+    element.data?.linkKind,
+    element.data?.reference ? 'ref' : '',
+    element.data?.tableKind ?? '',
+].join(':')).join('|'))
+const hiddenElementIds = () => {
+    const hiddenIds = new Set()
+    const hiddenRows = new Set()
+
+    for (const element of schema.value) {
+        if (element.type === 'table' && (hiddenTableIdSet.value.has(element.id) || (!viewFilters.value.referenceTables && isReferenceTable(element)))) {
+            hiddenIds.add(element.id)
+        }
+        if (isPipelineNode(element) && !viewFilters.value.pipelines) {
+            hiddenIds.add(element.id)
+        }
+    }
+
+    for (const element of schema.value) {
+        if (element.type === 'row' && hiddenIds.has(element.parentNode)) {
+            hiddenIds.add(element.id)
+            hiddenRows.add(element.id)
+        }
+    }
+
+    for (const element of schema.value) {
+        if (!element.source && !element.target) continue
+        if (hiddenIds.has(element.source)
+            || hiddenIds.has(element.target)
+            || hiddenRows.has(element.source)
+            || hiddenRows.has(element.target)
+            || (!viewFilters.value.referenceLinks && isReferenceLink(element))
+            || (!viewFilters.value.pipelineLinks && isPipelineLink(element))) {
+            hiddenIds.add(element.id)
+        }
+    }
+
+    return hiddenIds
+}
+const applyViewVisibility = () => {
+    if (applyingViewVisibility) return
+    applyingViewVisibility = true
+    const hiddenIds = hiddenElementIds()
+    let changed = false
+    const nextSchema = schema.value.map(element => {
+        const shouldHide = hiddenIds.has(element.id)
+        if (shouldHide && element.hidden !== true) {
+            changed = true
+            return { ...element, hidden: true }
+        }
+        if (!shouldHide && element.hidden !== false) {
+            changed = true
+            return { ...element, hidden: false }
+        }
+        return element
+    })
+    if (changed) {
+        schema.value = nextSchema
+    }
+    applyingViewVisibility = false
+}
+const loadViewState = (key) => {
+    viewStateLoaded.value = false
+    viewFilters.value = { ...DEFAULT_VIEW_FILTERS }
+    hiddenTableIds.value = []
+    if (key) {
+        try {
+            const stored = JSON.parse(localStorage.getItem(key) || 'null')
+            if (stored && typeof stored === 'object') {
+                viewFilters.value = { ...DEFAULT_VIEW_FILTERS, ...(stored.filters ?? {}) }
+                hiddenTableIds.value = Array.isArray(stored.hiddenTableIds) ? stored.hiddenTableIds.filter(Boolean) : []
+            }
+        } catch {
+            localStorage.removeItem(key)
+        }
+    }
+    viewStateLoaded.value = true
+}
+watch(viewStorageKey, loadViewState, { immediate: true })
+watch([viewFilters, hiddenTableIds], () => {
+    if (!viewStateLoaded.value || !viewStorageKey.value) return
+    try {
+        localStorage.setItem(viewStorageKey.value, JSON.stringify({
+            filters: viewFilters.value,
+            hiddenTableIds: hiddenTableIds.value,
+        }))
+    } catch { /* local view state is best-effort */ }
+    applyViewVisibility()
+}, { deep: true })
+watch(tables, (nextTables) => {
+    const tableIds = new Set(nextTables.map(table => table.id))
+    hiddenTableIds.value = hiddenTableIds.value.filter(id => tableIds.has(id))
+}, { deep: true })
 const rowsByTableId = computed(() => {
     const rows = new Map()
     for (const element of schema.value) {
@@ -355,6 +628,7 @@ const rowsByTableId = computed(() => {
     }
     return rows
 })
+watch(viewVisibilitySignature, () => nextTick(applyViewVisibility))
 const tableColumnLabels = computed(() => {
     const labels = new Map()
     for (const [tableId, rows] of rowsByTableId.value) {
@@ -369,24 +643,72 @@ const tableColumns = computed(() => {
     }
     return columns
 })
+const selectedRows = computed(() => selectedRowIds.value
+    .map(id => schema.value.find(el => el.id === id && el.type === 'row'))
+    .filter(Boolean)
+    .map(row => {
+        const table = tableById.value.get(row.parentNode)
+        return { id: row.id, label: row.label, table: table?.label ?? '', reference: !!table?.data?.reference }
+    }))
 const diagramName = ref('schema')
 const diagramDbType = ref('mysql')
 const showShareModal = ref(false)
-const showChangelogModal = ref(false)
 const showHotkeysModal = ref(false)
 const showValueTypesModal = ref(false)
+const showSharedPropertyTypesModal = ref(false)
+const showInterfacesModal = ref(false)
+const showCustomActionsModal = ref(false)
+const showReferenceJsonImportModal = ref(false)
 const diagramShareAccess = ref(null)
 const diagramRequireApproval = ref(false)
 const diagramInLibrary = ref(false)
+const rightSidebarOpen = ref(true)
+const changelogRefreshKey = ref(0)
+const selectedValueTypeKey = ref(null)
+const selectedSharedPropertyTypeKey = ref(null)
+const selectedInterfaceKey = ref(null)
+const selectedCustomActionKey = ref(null)
 const ownerIdentity = ref(null)
 const canvasWrapperRef = ref(null)
 
 const canEdit = computed(() => props.isDemo || isOwner.value || diagramShareAccess.value === 'write')
 
-const { snapshot, undo, redo } = useUndoHistory(schema, valueTypes)
+const headerSharingStatus = computed(() => {
+    if (props.isDemo) return null
+    if (diagramInLibrary.value) {
+        return {
+            kind: 'public',
+            icon: 'globe',
+            title: diagramShareAccess.value === 'write'
+                ? 'Company-wide diagram: others can edit'
+                : 'Company-wide diagram: others can view',
+        }
+    }
+    if (diagramShareAccess.value) {
+        return {
+            kind: 'shared',
+            icon: 'share',
+            title: diagramShareAccess.value === 'write'
+                ? 'Shared diagram: others can edit'
+                : 'Shared diagram: restricted access',
+        }
+    }
+    return null
+})
+
+const ontologyMetadata = { interfaces, interfaceLinkConstraints, customActions, sharedPropertyTypes }
+const metadataPayload = () => ({
+    interfaces: interfaces.value,
+    interfaceLinkConstraints: interfaceLinkConstraints.value,
+    customActions: customActions.value,
+    sharedPropertyTypes: sharedPropertyTypes.value,
+})
+const syncPayload = () => ({ schema: stripViewOnlySchema(schema.value), valueTypes: valueTypes.value, metadata: metadataPayload() })
+
+const { snapshot, undo, redo } = useUndoHistory(schema, valueTypes, ontologyMetadata)
 
 const { remoteCursors, whisper, initEcho, cleanupEcho, onCanvasMouseMove, broadcastCursor } = useDiagramPresence({
-    token, ownerIdentity, viewport, schema, valueTypes, canvasWrapperRef,
+    token, ownerIdentity, viewport, schema, valueTypes, ontologyMetadata, canvasWrapperRef,
     canEdit,
     onDiagramSaved: () => $toast.success('Diagram saved'),
 })
@@ -408,6 +730,62 @@ const { startRowDrag } = useRowDrag({ schema, isSaved, whisper, snapshot })
 const logAction = (action, details = null) => {
     if (props.isDemo || !diagramId.value) return
     Diagram.addChangelogEntry(diagramId.value, action, details)
+        .then(() => { changelogRefreshKey.value++ })
+}
+
+const changelogName = (item) => item?.apiName || item?.displayName || item?.name || item?.id || 'Unnamed'
+
+const changelogKey = (item) => item?.apiName || item?.id || item?.displayName || JSON.stringify(item)
+
+const normalizeForChangelog = (item) => {
+    if (!item || typeof item !== 'object') return item
+    const stripIds = (value) => {
+        if (Array.isArray(value)) return value.map(stripIds)
+        if (!value || typeof value !== 'object') return value
+        return Object.fromEntries(
+            Object.entries(value)
+                .filter(([key]) => key !== 'id')
+                .map(([key, child]) => [key, stripIds(child)])
+        )
+    }
+    return stripIds(item)
+}
+
+const metadataDiff = (before = [], after = []) => {
+    const previous = new Map((before ?? []).map(item => [changelogKey(item), item]))
+    const next = new Map((after ?? []).map(item => [changelogKey(item), item]))
+    const added = []
+    const removed = []
+    const updated = []
+
+    for (const [key, item] of next) {
+        if (!previous.has(key)) {
+            added.push(changelogName(item))
+            continue
+        }
+        if (JSON.stringify(normalizeForChangelog(previous.get(key))) !== JSON.stringify(normalizeForChangelog(item))) {
+            updated.push(changelogName(item))
+        }
+    }
+    for (const [key, item] of previous) {
+        if (!next.has(key)) removed.push(changelogName(item))
+    }
+
+    return {
+        added,
+        removed,
+        updated,
+        added_count: added.length,
+        removed_count: removed.length,
+        updated_count: updated.length,
+    }
+}
+
+const hasMetadataDiff = (diff) => diff.added_count > 0 || diff.removed_count > 0 || diff.updated_count > 0
+
+const logMetadataChange = (action, before, after) => {
+    const diff = metadataDiff(before, after)
+    if (hasMetadataDiff(diff)) logAction(action, diff)
 }
 
 const defaultTableColor = ref('#3d7a5c')
@@ -415,13 +793,60 @@ const defaultConnectionColor = ref('#4a7a9b')
 
 const {
     isPlacingTable, isConnecting, copyingTableId,
-    selectedEdge, showRelationshipModal, modalPosition,
-    addTable, copyTable, onPaneClick,
+    selectedEdge, showRelationshipModal, modalPosition, selectedRowIds,
+    addTable, addReferenceTable, importReferenceJsonSchemas, copyTable, onPaneClick,
     addRow, addRowAfter, deleteEdge, deleteNode, onConnect, onEdgeUpdate,
-    updateConnectionLineType, onRowChange, updateLabel, updateEdgeColor, updateTableColor, updateNote, updateTableActions,
+    updateConnectionLineType, onRowChange, updateLabel, updateTransformLabel, updateEdgeColor, updateTableColor, updateNote, updateTableActions,
     onTableConstraintsChange, onTableFulltextChange, toggleOptionsModal,
+    toggleRowSelection, clearRowSelection, createTransformFromSelection, createEmptyTransform, attachSelectedRowsToTransform,
     openRelationshipModal, closeRelationshipModal,
 } = useSchemaActions({ schema, isSaved, whisper, diagramDbType, addEdges, updateEdge, findNode, screenToFlowCoordinate, flowToScreenCoordinate, snapshot, logAction, defaultTableColor, defaultConnectionColor })
+
+const onCanvasPaneClick = (event) => {
+    if (!isPlacingTable.value) clearRowSelection()
+    onPaneClick(event)
+}
+
+const onImportReferenceJson = (content) => {
+    try {
+        const imported = importReferenceJsonSchemas(content)
+        $toast.success(`Imported ${imported.length} reference table${imported.length === 1 ? '' : 's'}`)
+    } catch (error) {
+        $toast.error(error?.message || 'Could not import reference JSON')
+    }
+}
+
+const onImportReferenceJsonFromModal = (content) => {
+    onImportReferenceJson(content)
+    showReferenceJsonImportModal.value = false
+}
+
+const onCreateTransform = () => {
+    try {
+        createTransformFromSelection()
+        $toast.success('Created pipeline transform')
+    } catch (error) {
+        $toast.error(error?.message || 'Could not create transform')
+    }
+}
+
+const onAddPipeline = () => {
+    try {
+        createEmptyTransform()
+        $toast.success('Created pipeline transform')
+    } catch (error) {
+        $toast.error(error?.message || 'Could not create pipeline')
+    }
+}
+
+const onAttachSelectedRowsToTransform = (transformId) => {
+    try {
+        const count = attachSelectedRowsToTransform(transformId)
+        $toast.success(`Attached ${count} selected row${count === 1 ? '' : 's'} to pipeline`)
+    } catch (error) {
+        $toast.error(error?.message || 'Could not attach selected rows')
+    }
+}
 
 const tabToRow = (rowId, direction) => {
     const row = schema.value?.find(el => el.id === rowId)
@@ -445,6 +870,12 @@ const tabToRow = (rowId, direction) => {
 }
 
 const isValidConnection = ({ source, target }) => {
+    const sourceElement = schema.value.find(el => el.id === source)
+    const targetElement = schema.value.find(el => el.id === target)
+    if ((sourceElement?.type === 'row' && targetElement?.type === 'pipeline-transform')
+        || (sourceElement?.type === 'pipeline-transform' && targetElement?.type === 'row')) {
+        return true
+    }
     const sourceNode = findNode(source)
     const targetNode = findNode(target)
     return sourceNode?.parentNode !== targetNode?.parentNode
@@ -464,6 +895,33 @@ const openSupportModal = async () => {
         } catch { /* guest */ }
     }
     showSupportModal.value = true
+}
+
+const metadataSelectionKey = (item) => item?.id || item?.apiName || item?.displayName || null
+
+const openValueTypeFromSidebar = (item) => {
+    selectedValueTypeKey.value = metadataSelectionKey(item)
+    showValueTypesModal.value = true
+}
+
+const openSharedPropertyTypeFromSidebar = (item) => {
+    selectedSharedPropertyTypeKey.value = metadataSelectionKey(item)
+    showSharedPropertyTypesModal.value = true
+}
+
+const openInterfaceFromSidebar = (item) => {
+    selectedInterfaceKey.value = `interface:${metadataSelectionKey(item)}`
+    showInterfacesModal.value = true
+}
+
+const openInterfaceLinkConstraintFromSidebar = (item) => {
+    selectedInterfaceKey.value = `constraint:${metadataSelectionKey(item)}`
+    showInterfacesModal.value = true
+}
+
+const openCustomActionFromSidebar = (item) => {
+    selectedCustomActionKey.value = metadataSelectionKey(item)
+    showCustomActionsModal.value = true
 }
 
 const nodeSize = (node, fallbackWidth = 400, fallbackHeight = 40) => {
@@ -558,13 +1016,17 @@ const importSql = async () => {
     }
     if (importFile.value) importUploadPhase.value = 'Processing import'
 
-    const applySchema = async (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null) => {
+    const applySchema = async (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null, importedMetadata = {}) => {
         // Replace Vue Flow's internal graph instead of relying on v-model
         // reconciliation, which can retain runtime state for reused node IDs.
         const restoredSchema = JSON.parse(JSON.stringify(schemaJson))
         setElements(restoredSchema)
         schema.value = restoredSchema
         valueTypes.value = importedValueTypes
+        interfaces.value = importedMetadata.interfaces ?? []
+        interfaceLinkConstraints.value = importedMetadata.interfaceLinkConstraints ?? []
+        customActions.value = importedMetadata.customActions ?? []
+        sharedPropertyTypes.value = importedMetadata.sharedPropertyTypes ?? []
         if (importedDbType) diagramDbType.value = importedDbType
         await nextTick()
         focusLargeDiagram()
@@ -575,14 +1037,19 @@ const importSql = async () => {
         importFile.value = null
         importUploadProgress.value = 0
         importUploadPhase.value = ''
-        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+        whisper('schema-sync', syncPayload())
         for (const warning of warnings) {
             $toast.warning(warning)
         }
     }
 
     if (result.status === 'done' && result.schema) {
-        await applySchema(result.schema, result.value_types ?? [], result.warnings ?? [], result.db_type)
+        await applySchema(result.schema, result.value_types ?? [], result.warnings ?? [], result.db_type, {
+            interfaces: result.interfaces ?? [],
+            interfaceLinkConstraints: result.interface_link_constraints ?? [],
+            customActions: result.custom_actions ?? [],
+            sharedPropertyTypes: result.shared_property_types ?? [],
+        })
         return
     }
 
@@ -621,7 +1088,12 @@ const importSql = async () => {
         }
         if (status.status === 'done') {
             clearInterval(poll)
-            await applySchema(status.schema, status.value_types ?? [], status.warnings ?? [], status.db_type)
+            await applySchema(status.schema, status.value_types ?? [], status.warnings ?? [], status.db_type, {
+                interfaces: status.interfaces ?? [],
+                interfaceLinkConstraints: status.interface_link_constraints ?? [],
+                customActions: status.custom_actions ?? [],
+                sharedPropertyTypes: status.shared_property_types ?? [],
+            })
         } else if (status.status === 'failed') {
             clearInterval(poll)
             importLoading.value = false
@@ -660,10 +1132,42 @@ const captureSvg = async () => {
 
 const updateValueTypes = (nextValueTypes, nextSchema = null) => {
     snapshot()
+    const previousValueTypes = JSON.parse(JSON.stringify(valueTypes.value))
     valueTypes.value = nextValueTypes
     if (nextSchema) schema.value = nextSchema
     isSaved.value = false
-    whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+    whisper('schema-sync', syncPayload())
+    logMetadataChange('value_types_changed', previousValueTypes, nextValueTypes)
+}
+
+const updateSharedPropertyTypes = (nextSharedPropertyTypes) => {
+    snapshot()
+    const previousSharedPropertyTypes = JSON.parse(JSON.stringify(sharedPropertyTypes.value))
+    sharedPropertyTypes.value = nextSharedPropertyTypes
+    isSaved.value = false
+    whisper('schema-sync', syncPayload())
+    logMetadataChange('shared_property_types_changed', previousSharedPropertyTypes, nextSharedPropertyTypes)
+}
+
+const updateInterfaces = ({ interfaces: nextInterfaces, interfaceLinkConstraints: nextConstraints }) => {
+    snapshot()
+    const previousInterfaces = JSON.parse(JSON.stringify(interfaces.value))
+    const previousConstraints = JSON.parse(JSON.stringify(interfaceLinkConstraints.value))
+    interfaces.value = nextInterfaces
+    interfaceLinkConstraints.value = nextConstraints
+    isSaved.value = false
+    whisper('schema-sync', syncPayload())
+    logMetadataChange('interfaces_changed', previousInterfaces, nextInterfaces)
+    logMetadataChange('interface_link_constraints_changed', previousConstraints, nextConstraints)
+}
+
+const updateCustomActions = (nextCustomActions) => {
+    snapshot()
+    const previousCustomActions = JSON.parse(JSON.stringify(customActions.value))
+    customActions.value = nextCustomActions
+    isSaved.value = false
+    whisper('schema-sync', syncPayload())
+    logMetadataChange('custom_actions_changed', previousCustomActions, nextCustomActions)
 }
 
 // --- Save ---
@@ -677,16 +1181,38 @@ const saveDiagram = async (silent = false) => {
         return false
     }
     const saved = await (isOwner.value
-        ? Diagram.save(diagramId.value, schema.value, valueTypes.value)
-        : Diagram.saveByToken(token, schema.value, valueTypes.value))
+        ? Diagram.save(diagramId.value, stripViewOnlySchema(schema.value), valueTypes.value, metadataPayload())
+        : Diagram.saveByToken(token, stripViewOnlySchema(schema.value), valueTypes.value, metadataPayload()))
     if (!saved) return false
     isSaved.value = true
     if (!silent) {
         whisper('diagram-saved', {})
-        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+        whisper('schema-sync', syncPayload())
     }
     return true
 }
+
+const diagramHeaderActions = {
+    isDemo: computed(() => props.isDemo),
+    isSaved,
+    diagramName,
+    sharingStatus: headerSharingStatus,
+    import: {
+        visible: computed(() => canEdit.value || props.isDemo),
+        run: () => { props.isDemo ? router.push({ name: 'login' }) : showImportModal.value = true },
+    },
+    export: {
+        visible: true,
+        run: () => { props.isDemo ? router.push({ name: 'login' }) : openExportModal() },
+    },
+    save: {
+        visible: computed(() => canEdit.value),
+        disabled: computed(() => !props.isDemo && isSaved.value),
+        run: () => saveDiagram(),
+    },
+}
+
+setDiagramHeaderActions(diagramHeaderActions)
 
 // --- Load ---
 
@@ -697,7 +1223,7 @@ const retryAccess = async () => {
 
 const getDiagram = async () => {
     if (props.isDemo) {
-        schema.value = DEMO_SCHEMA
+        schema.value = stripViewOnlySchema(DEMO_SCHEMA)
         return
     }
 
@@ -744,9 +1270,13 @@ const getDiagram = async () => {
     diagramDbType.value = diagramInfo.db_type ?? 'mysql'
     diagramName.value = diagramInfo.name ?? ''
     valueTypes.value = diagramInfo.value_types ?? []
+    interfaces.value = diagramInfo.interfaces ?? []
+    interfaceLinkConstraints.value = diagramInfo.interface_link_constraints ?? []
+    customActions.value = diagramInfo.custom_actions ?? []
+    sharedPropertyTypes.value = diagramInfo.shared_property_types ?? []
 
 
-    schema.value = diagramInfo.schema ?? [{
+    schema.value = stripViewOnlySchema(diagramInfo.schema ?? [{
         id: '1',
         type: 'table',
         label: 'users',
@@ -758,7 +1288,7 @@ const getDiagram = async () => {
         },
         position: { x: 0, y: -100 },
         style: TABLE_STYLE,
-    }]
+    }])
 
     isSaved.value = true
     loading.value = false
@@ -792,8 +1322,12 @@ const onKeyDown = (event) => {
         if (prev !== null) {
             schema.value = prev.schema
             valueTypes.value = prev.valueTypes ?? []
+            interfaces.value = prev.interfaces ?? []
+            interfaceLinkConstraints.value = prev.interfaceLinkConstraints ?? []
+            customActions.value = prev.customActions ?? []
+            sharedPropertyTypes.value = prev.sharedPropertyTypes ?? []
             isSaved.value = false
-            whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+            whisper('schema-sync', syncPayload())
         }
     }
     if ((event.ctrlKey || event.metaKey) && event.key === 'y') {
@@ -803,8 +1337,12 @@ const onKeyDown = (event) => {
         if (next !== null) {
             schema.value = next.schema
             valueTypes.value = next.valueTypes ?? []
+            interfaces.value = next.interfaces ?? []
+            interfaceLinkConstraints.value = next.interfaceLinkConstraints ?? []
+            customActions.value = next.customActions ?? []
+            sharedPropertyTypes.value = next.sharedPropertyTypes ?? []
             isSaved.value = false
-            whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+            whisper('schema-sync', syncPayload())
         }
     }
 }
@@ -830,6 +1368,7 @@ onUnmounted(() => {
     stopGuestAccessPolling()
     if (!isSaved.value && canEdit.value && !props.isDemo) saveDiagram()
     cleanupEcho()
+    clearDiagramHeaderActions(diagramHeaderActions)
     document.removeEventListener('keydown', onKeyDown)
 })
 </script>
@@ -946,8 +1485,36 @@ onUnmounted(() => {
     border-color: var(--border-strong);
 }
 
+.schema-sidebar__section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 2px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.schema-sidebar__section-head button {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.schema-sidebar__section-head button:hover {
+    color: var(--text-primary);
+}
+
 .schema-sidebar__list {
-    min-height: 0;
+    flex: 1 1 50%;
+    min-height: 120px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -957,18 +1524,78 @@ onUnmounted(() => {
     width: 100%;
     flex: 0 0 auto;
     min-height: 32px;
-    padding: 7px 8px;
-    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: 4px;
     background: none;
     color: var(--text-primary);
+}
+
+.schema-sidebar__item--hidden {
+    opacity: 0.48;
+}
+
+.schema-sidebar__item-main {
+    min-width: 0;
+    flex: 1;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 4px 7px 8px;
+    border: none;
+    background: transparent;
+    color: inherit;
     font-size: 13px;
     line-height: 18px;
     cursor: pointer;
     text-align: left;
-    white-space: nowrap;
+}
+
+.schema-sidebar__item-main span:first-child {
+    min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.schema-sidebar__eye {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    margin-right: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.schema-sidebar__eye:hover,
+.schema-sidebar__eye:focus {
+    outline: none;
+    background: var(--hover-bg-alt);
+    color: var(--text-primary);
+}
+
+.schema-sidebar__tag {
+    flex: 0 0 auto;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(139, 92, 246, 0.18);
+    color: #c4b5fd;
+    border: 1px solid rgba(139, 92, 246, 0.38);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
 }
 
 .schema-sidebar__item:hover,
@@ -977,10 +1604,103 @@ onUnmounted(() => {
     background: var(--hover-bg-alt);
 }
 
+.schema-sidebar__item-main:focus {
+    outline: none;
+}
+
 .schema-sidebar__empty {
     padding: 8px;
     font-size: 12px;
     color: var(--text-muted);
+}
+
+.schema-sidebar__filters {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.schema-sidebar__filters-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 2px 2px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.schema-sidebar__filters-head button {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.schema-sidebar__filters-head button:hover {
+    color: var(--text-primary);
+}
+
+.schema-sidebar__filter {
+    width: 100%;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    background: var(--bg-surface-alt);
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.schema-sidebar__filter:hover {
+    border-color: var(--border-strong);
+}
+
+.schema-sidebar__filter--off {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.schema-sidebar__switch {
+    width: 24px;
+    height: 14px;
+    position: relative;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: #22c55e;
+    transition: background 120ms;
+}
+
+.schema-sidebar__switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 120ms;
+}
+
+.schema-sidebar__filter--off .schema-sidebar__switch {
+    background: var(--border-strong);
+}
+
+.schema-sidebar__filter--off .schema-sidebar__switch::after {
+    transform: translateX(-10px);
 }
 
 .diagram-canvas-wrapper {

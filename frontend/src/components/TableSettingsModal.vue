@@ -23,6 +23,20 @@
                 </select>
             </label>
 
+            <template v-if="interfaces.length">
+                <p class="table-settings-modal__section">Interfaces</p>
+                <p class="table-settings-modal__hint">Choose ontology interfaces this object type implements.</p>
+                <label v-for="item in interfaces" :key="item.id ?? item.apiName" class="table-settings-modal__row">
+                    <span>{{ item.displayName || item.apiName }}</span>
+                    <input
+                        type="checkbox"
+                        :checked="implementsInterfaces.includes(item.apiName)"
+                        :disabled="!canEdit"
+                        @change="toggleInterface(item.apiName)"
+                    />
+                </label>
+            </template>
+
             <p class="table-settings-modal__section">Generated Actions</p>
             <p class="table-settings-modal__hint">Generate Maker CRUD action definitions for this object type.</p>
 
@@ -50,6 +64,8 @@ const props = defineProps({
     actions: { type: Object, default: () => ({}) },
     titlePropertyRowId: { type: String, default: '' },
     columns: { type: Array, default: () => [] },
+    interfaces: { type: Array, default: () => [] },
+    implementsInterfaces: { type: Array, default: () => [] },
     canEdit: { type: Boolean, default: true },
     anchor: { type: Object, default: null },
     ignore: { type: Array, default: () => [] },
@@ -83,6 +99,7 @@ const toggle = (key) => {
         modify: !!props.actions.modify,
         delete: !!props.actions.delete,
         titlePropertyRowId: props.titlePropertyRowId || null,
+        implementsInterfaces: props.implementsInterfaces,
         [key]: !props.actions[key],
     })
 }
@@ -93,6 +110,19 @@ const setTitleProperty = (titlePropertyRowId) => {
         modify: !!props.actions.modify,
         delete: !!props.actions.delete,
         titlePropertyRowId: titlePropertyRowId || null,
+        implementsInterfaces: props.implementsInterfaces,
+    })
+}
+
+const toggleInterface = (apiName) => {
+    const current = new Set(props.implementsInterfaces)
+    current.has(apiName) ? current.delete(apiName) : current.add(apiName)
+    emit('change', {
+        create: !!props.actions.create,
+        modify: !!props.actions.modify,
+        delete: !!props.actions.delete,
+        titlePropertyRowId: props.titlePropertyRowId || null,
+        implementsInterfaces: Array.from(current),
     })
 }
 </script>

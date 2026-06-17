@@ -77,6 +77,10 @@ class ImportDiagramSchemaJob implements ShouldQueue
         );
         $this->diagram->schema = $payload['schema'];
         $this->diagram->value_types = $payload['value_types'];
+        $this->diagram->interfaces = $payload['interfaces'];
+        $this->diagram->interface_link_constraints = $payload['interface_link_constraints'];
+        $this->diagram->custom_actions = $payload['custom_actions'];
+        $this->diagram->shared_property_types = $payload['shared_property_types'];
         if ($payload['db_type'] !== null) {
             $this->diagram->db_type = $payload['db_type'];
         }

@@ -228,6 +228,7 @@ const props = defineProps({
     valueTypes: { type: Array, default: () => [] },
     schema: { type: Array, default: () => [] },
     canEdit: { type: Boolean, default: false },
+    initialSelectedKey: { type: String, default: null },
 })
 
 const emit = defineEmits(['update', 'close'])
@@ -242,7 +243,11 @@ const clone = (value) => JSON.parse(JSON.stringify(value))
 const createId = (prefix) => `${prefix}-${crypto.randomUUID?.() ?? Math.random().toString(36).slice(2)}`
 const localValueTypes = ref(clone(props.valueTypes))
 const localSchema = ref(clone(props.schema))
-const selectedId = ref(localValueTypes.value[0]?.id ?? null)
+const selectedId = ref(
+    localValueTypes.value.find(item => [item.id, item.apiName, item.displayName].includes(props.initialSelectedKey))?.id
+    ?? localValueTypes.value[0]?.id
+    ?? null
+)
 const constraintToAdd = ref('')
 const error = ref('')
 

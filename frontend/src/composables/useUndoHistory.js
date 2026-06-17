@@ -1,6 +1,6 @@
 const MAX_HISTORY = 50
 
-export function useUndoHistory(schema, valueTypes = null) {
+export function useUndoHistory(schema, valueTypes = null, metadata = {}) {
     const history = []
     const redoStack = []
     let lastSessionKey = null
@@ -31,6 +31,9 @@ export function useUndoHistory(schema, valueTypes = null) {
     const snapshotState = () => {
         const state = { schema: schema.value }
         if (valueTypes) state.valueTypes = valueTypes.value
+        for (const [key, refValue] of Object.entries(metadata)) {
+            state[key] = refValue.value
+        }
         return JSON.parse(JSON.stringify(state))
     }
 

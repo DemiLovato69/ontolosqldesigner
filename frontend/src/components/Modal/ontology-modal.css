@@ -1,0 +1,249 @@
+.om-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.62);
+    backdrop-filter: blur(4px);
+}
+
+.om-modal {
+    width: min(980px, 100%);
+    max-height: min(820px, calc(100vh - 48px));
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--border-color);
+    border-radius: 14px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+    overflow: hidden;
+}
+
+.om-header,
+.om-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.om-footer {
+    border-top: 1px solid var(--border-color);
+    border-bottom: 0;
+}
+
+.om-header h2 {
+    margin: 0;
+    font-size: 1.08rem;
+}
+
+.om-header p,
+.om-empty,
+.om-no-selection {
+    margin: 4px 0 0;
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+}
+
+.om-body {
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    overflow: hidden;
+}
+
+.om-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 16px;
+    overflow: auto;
+    border-right: 1px solid var(--border-color);
+    background: color-mix(in srgb, var(--bg-page) 45%, transparent);
+}
+
+.om-list-item,
+.om-add-button,
+.om-icon-button,
+.om-link-button,
+.om-delete-button {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-surface);
+    color: var(--text-primary);
+    cursor: pointer;
+}
+
+.om-list-item {
+    text-align: left;
+    padding: 10px 12px;
+}
+
+.om-list-item strong,
+.om-list-item span {
+    display: block;
+}
+
+.om-list-item span {
+    margin-top: 2px;
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+}
+
+.om-list-item.active,
+.om-list-item:hover,
+.om-add-button:hover,
+.om-icon-button:hover,
+.om-link-button:hover {
+    border-color: var(--border-strong);
+    background: var(--bg-surface-alt);
+}
+
+.om-add-button {
+    padding: 9px 11px;
+    font-weight: 650;
+}
+
+.om-add-button.secondary {
+    font-weight: 500;
+}
+
+.om-editor,
+.om-no-selection {
+    min-height: 0;
+    overflow: auto;
+    padding: 18px;
+}
+
+.om-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.om-section,
+.om-card,
+.om-description {
+    margin-top: 16px;
+}
+
+.om-card {
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--bg-page) 28%, transparent);
+}
+
+.om-section-heading,
+.om-inline-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.om-section-heading {
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.om-section-heading h3 {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+.om-inline-row {
+    margin-bottom: 8px;
+}
+
+.om-inline-row input,
+.om-inline-row select {
+    flex: 1;
+}
+
+.om-editor label,
+.om-description {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+}
+
+.om-checkbox {
+    flex-direction: row !important;
+    align-items: center;
+    align-self: end;
+    min-height: 38px;
+}
+
+.om-editor input,
+.om-editor select,
+.om-editor textarea {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    background: var(--input-bg);
+    color: var(--text-primary);
+    padding: 8px 10px;
+}
+
+.om-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+}
+
+.om-link-button {
+    padding: 6px 9px;
+}
+
+.om-delete-button {
+    margin-top: 18px;
+    padding: 8px 12px;
+    color: #fca5a5;
+    border-color: color-mix(in srgb, #ef4444 40%, var(--border-color));
+}
+
+.om-icon-button.danger {
+    color: #fca5a5;
+}
+
+.om-error {
+    margin: 0;
+    color: #fca5a5;
+    font-size: 0.84rem;
+}
+
+.om-footer-actions {
+    display: flex;
+    gap: 10px;
+    margin-left: auto;
+}
+
+@media (max-width: 760px) {
+    .om-overlay {
+        padding: 10px;
+    }
+
+    .om-body {
+        grid-template-columns: 1fr;
+    }
+
+    .om-list {
+        max-height: 220px;
+        border-right: 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .om-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -147,7 +147,7 @@ test("normalizes namespaces and many-to-many links", () => {
   assert.equal(ontology.relations[0].definition.type, "manyToMany");
 });
 
-test("rejects Maker constructs the diagram cannot represent", () => {
+test("preserves interface definitions", () => {
   const result = convert(`
     import { defineInterface } from "@osdk/maker";
     defineInterface({
@@ -157,8 +157,10 @@ test("rejects Maker constructs the diagram cannot represent", () => {
     });
   `);
 
-  assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /Unsupported Maker import "defineInterface"/);
+  assert.equal(result.status, 0, result.stderr);
+  const ontology = JSON.parse(result.stdout);
+  assert.equal(ontology.interfaceTypes.length, 1);
+  assert.equal(ontology.interfaceTypes[0].apiName, "Person");
 });
 
 test("allows erased type-only imports", () => {

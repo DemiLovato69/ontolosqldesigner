@@ -26,6 +26,10 @@ class DiagramRequest extends FormRequest
             'share_access' => ['nullable', 'string', 'in:read,write,per_user'],
             'library' => ['sometimes', 'boolean'],
             'value_types' => ['sometimes', 'array', new ValueTypeDefinitions],
+            'interfaces' => ['sometimes', 'array'],
+            'interface_link_constraints' => ['sometimes', 'array'],
+            'custom_actions' => ['sometimes', 'array'],
+            'shared_property_types' => ['sometimes', 'array'],
         ];
     }
 

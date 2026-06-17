@@ -33,6 +33,35 @@ class DiagramChangelogControllerTest extends TestCase
             ->assertJson(['status' => true]);
     }
 
+    public function test_store_accepts_metadata_diff_details(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create(['user_id' => $user->id]);
+
+        $details = [
+            'added' => ['Customer'],
+            'removed' => [],
+            'updated' => ['Supplier'],
+            'added_count' => 1,
+            'removed_count' => 0,
+            'updated_count' => 1,
+        ];
+
+        $this->actingAs($user, 'sanctum')
+            ->postJson("/api/diagrams/{$diagram->id}/changelog", [
+                'action' => 'interfaces_changed',
+                'details' => $details,
+            ])
+            ->assertStatus(201)
+            ->assertJson(['status' => true]);
+
+        $this->actingAs($user, 'sanctum')
+            ->getJson("/api/diagrams/{$diagram->id}/changelog")
+            ->assertOk()
+            ->assertJsonPath('data.0.action', 'interfaces_changed')
+            ->assertJsonPath('data.0.details', $details);
+    }
+
     public function test_read_only_shared_user_cannot_create_changelog_entry(): void
     {
         $owner = User::factory()->create(['email_verified_at' => now()]);

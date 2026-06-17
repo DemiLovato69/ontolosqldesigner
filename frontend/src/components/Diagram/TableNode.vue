@@ -1,6 +1,6 @@
 <template>
     <input
-        class="input input_designer_table"
+        :class="['input input_designer_table', { 'input_designer_table--reference': isReference }]"
         :value="label"
         @mousedown.stop
         @click="canEdit && (data.editing = true)"
@@ -8,6 +8,8 @@
         @input="$emit('update-label', id, $event.target.value)"
         :readonly="!data.editing || !canEdit"
     />
+
+    <span v-if="isReference" class="reference_table_badge">REF</span>
 
     <label v-if="canEdit" class="table_color_picker" @mousedown.stop>
         <input
@@ -38,7 +40,7 @@
     </button>
 
     <button
-        v-if="dbType === 'ontology' && (canEdit || hasOntologySettings)"
+        v-if="dbType === 'ontology' && !isReference && (canEdit || hasOntologySettings)"
         ref="settingsBtnRef"
         :class="['table_button', 'table_button--settings', { 'table_button--has-actions': hasOntologySettings }]"
         @mousedown.stop
@@ -68,6 +70,8 @@
         :actions="ontologyActions"
         :titlePropertyRowId="titlePropertyRowId"
         :columns="columns"
+        :interfaces="interfaces"
+        :implementsInterfaces="implementsInterfaces"
         :canEdit="canEdit"
         :anchor="settingsBtnRef"
         :ignore="[settingsBtnRef]"
@@ -93,6 +97,7 @@ const props = defineProps({
     label: String,
     dbType: { type: String, default: 'mysql' },
     columns: { type: Array, default: () => [] },
+    interfaces: { type: Array, default: () => [] },
     canEdit: { type: Boolean, default: true },
 })
 
@@ -104,8 +109,10 @@ const noteBtnRef = ref(null)
 const settingsBtnRef = ref(null)
 const ontologyActions = computed(() => props.data?.ontologyActions ?? {})
 const titlePropertyRowId = computed(() => props.data?.titlePropertyRowId ?? '')
+const implementsInterfaces = computed(() => props.data?.implementsInterfaces ?? [])
+const isReference = computed(() => props.data?.reference || props.data?.tableKind === 'reference')
 const hasOntologyActions = computed(() => !!(ontologyActions.value.create || ontologyActions.value.modify || ontologyActions.value.delete))
-const hasOntologySettings = computed(() => hasOntologyActions.value || !!titlePropertyRowId.value)
+const hasOntologySettings = computed(() => hasOntologyActions.value || !!titlePropertyRowId.value || implementsInterfaces.value.length > 0)
 const description = computed(() => props.data?.description ?? props.data?.note ?? '')
 </script>
 
@@ -115,5 +122,23 @@ const description = computed(() => props.data?.description ?? props.data?.note ?
     color: white;
     flex-grow: 0;
     width: 30%;
+}
+
+.input_designer_table--reference {
+    color: #ddd6fe;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+}
+
+.reference_table_badge {
+    align-self: center;
+    padding: 2px 6px;
+    border: 1px solid rgba(221, 214, 254, 0.42);
+    border-radius: 999px;
+    color: #ddd6fe;
+    background: rgba(139, 92, 246, 0.18);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
 }
 </style>

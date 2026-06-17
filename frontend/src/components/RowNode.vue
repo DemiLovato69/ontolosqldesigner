@@ -1,6 +1,6 @@
 <template>
     <template v-if="compact">
-        <span class="row_compact_label" @dblclick.stop="canEdit && (data.editing = true)">{{ label }}</span>
+        <span :class="['row_compact_label', { 'row_compact_label--selected': selected }]" @click="$emit('row-select', id, $event)" @dblclick.stop="canEdit && (data.editing = true)">{{ label }}</span>
         <span v-if="badges.length" class="constraint_badges">
             <span v-for="b in badges" :key="b.label" :class="['constraint_badge', b.cls]">{{ b.label }}</span>
         </span>
@@ -21,9 +21,10 @@
         ><SvgIcon name="drag" :size="14" /></span>
 
         <input
-            class="input input_designer_row ml-5 mr-5"
+            :class="['input input_designer_row ml-5 mr-5', { 'input_designer_row--selected': selected, 'input_designer_row--reference': data.reference }]"
             :value="label"
             @mousedown.stop
+            @click="$emit('row-select', id, $event)"
             @focus="(e) => { if (!canEdit) return; data.editing = true; e.target.select(); }"
             @blur="(e) => { data.editing = false; $emit('update-label', id, label); e.target.scrollLeft = 0; }"
             @input="$emit('update-label', id, $event.target.value)"
@@ -158,9 +159,10 @@ const props = defineProps({
     tableFulltextIndexes: { type: Array, default: () => [] },
     valueTypes: { type: Array, default: () => [] },
     compact: { type: Boolean, default: false },
+    selected: { type: Boolean, default: false },
 })
 
-const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev', 'update-note'])
+const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev', 'update-note', 'row-select'])
 
 const emitChange = () => emit('change', props.id)
 const description = computed(() => props.data.description ?? props.data.comment ?? '')
@@ -284,6 +286,18 @@ const canvasTypeForValueType = (valueType) => {
     height: 5px;
     padding-top: 10px;
     padding-bottom: 10px;
+}
+
+.input_designer_row--reference {
+    color: #ddd6fe;
+}
+
+.input_designer_row--selected,
+.row_compact_label--selected {
+    outline: 2px solid #f59e0b;
+    outline-offset: -2px;
+    border-radius: 5px;
+    background: rgba(245, 158, 11, 0.16);
 }
 
 .ml-5 { margin-left: 5px; }
