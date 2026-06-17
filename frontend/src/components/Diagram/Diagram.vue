@@ -72,20 +72,55 @@
                         placeholder="Search tables"
                         aria-label="Search tables"
                     />
+                    <div class="schema-sidebar__section-head">
+                        <span>Tables</span>
+                        <button v-if="tables.length" type="button" @click="toggleAllTablesVisibility">
+                            {{ allTablesHidden ? 'Show all' : 'Hide all' }}
+                        </button>
+                    </div>
                     <div class="schema-sidebar__list">
-                        <button
+                        <div
                             v-for="t in filteredTables"
                             :key="t.id"
-                            class="schema-sidebar__item"
-                            type="button"
-                            @dblclick.stop="navigateToTable(t.id)"
-                            @keydown.enter.prevent="navigateToTable(t.id)"
+                            :class="['schema-sidebar__item', { 'schema-sidebar__item--hidden': isTableEffectivelyHidden(t) }]"
                         >
-                            <span>{{ t.label }}</span>
-                            <span v-if="t.data?.reference || t.data?.tableKind === 'reference'" class="schema-sidebar__tag">REF</span>
-                        </button>
+                            <button
+                                class="schema-sidebar__item-main"
+                                type="button"
+                                @dblclick.stop="navigateToTable(t.id)"
+                                @keydown.enter.prevent="navigateToTable(t.id)"
+                                :title="isTableEffectivelyHidden(t) ? 'Table is hidden' : 'Double-click to focus table'"
+                            >
+                                <span>{{ t.label }}</span>
+                                <span v-if="t.data?.reference || t.data?.tableKind === 'reference'" class="schema-sidebar__tag">REF</span>
+                            </button>
+                            <button
+                                class="schema-sidebar__eye"
+                                type="button"
+                                :title="isTableEffectivelyHidden(t) ? 'Show table' : 'Hide table'"
+                                :aria-label="isTableEffectivelyHidden(t) ? `Show ${t.label}` : `Hide ${t.label}`"
+                                @click.stop="toggleTableVisibility(t)"
+                            >
+                                <SvgIcon :name="isTableEffectivelyHidden(t) ? 'eye-off' : 'eye'" :size="15" />
+                            </button>
+                        </div>
                         <span v-if="!tables.length" class="schema-sidebar__empty">No tables</span>
                         <span v-else-if="!filteredTables.length" class="schema-sidebar__empty">No matches</span>
+                    </div>
+                    <div class="schema-sidebar__filters" aria-label="View filters">
+                        <div class="schema-sidebar__filters-head">
+                            <span>View</span>
+                        </div>
+                        <button
+                            v-for="option in viewFilterOptions"
+                            :key="option.key"
+                            :class="['schema-sidebar__filter', { 'schema-sidebar__filter--off': !viewFilters[option.key] }]"
+                            type="button"
+                            @click="toggleViewFilter(option.key)"
+                        >
+                            <span>{{ option.label }}</span>
+                            <span class="schema-sidebar__switch" aria-hidden="true"></span>
+                        </button>
                     </div>
                 </template>
             </aside>
@@ -347,7 +382,7 @@
 </template>
 
 <script setup>
-import { computed, onBeforeMount, onMounted, onUnmounted, ref, nextTick } from 'vue'
+import { computed, onBeforeMount, onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
 import { Panel, Position, useVueFlow, VueFlow } from '@vue-flow/core'
 import { TABLE_STYLE } from '@/services/TableActions.js'
 import { Diagram } from '@/services/Diagram.js'
@@ -414,6 +449,29 @@ const isLargeDiagram = computed(() => schema.value.length > LARGE_DIAGRAM_ELEMEN
 const isLargeOverview = computed(() => isLargeDiagram.value && viewport.value.zoom < 0.18)
 const tables = computed(() => schema.value.filter(el => el.type === 'table'))
 const tableSearch = ref('')
+const DEFAULT_VIEW_FILTERS = {
+    referenceTables: true,
+    referenceLinks: true,
+    pipelines: true,
+    pipelineLinks: true,
+}
+const viewFilters = ref({ ...DEFAULT_VIEW_FILTERS })
+const hiddenTableIds = ref([])
+const viewStateLoaded = ref(false)
+const viewStorageKey = computed(() => {
+    if (props.isDemo) return 'ontolosql:view:demo'
+    if (token) return `ontolosql:view:token:${token}`
+    if (diagramId.value) return `ontolosql:view:diagram:${diagramId.value}`
+    return null
+})
+const viewFilterOptions = [
+    { key: 'referenceTables', label: 'Reference Tables' },
+    { key: 'referenceLinks', label: 'Reference Links' },
+    { key: 'pipelines', label: 'Pipelines' },
+    { key: 'pipelineLinks', label: 'Pipeline Links' },
+]
+const hiddenTableIdSet = computed(() => new Set(hiddenTableIds.value))
+const allTablesHidden = computed(() => tables.value.length > 0 && tables.value.every(table => hiddenTableIdSet.value.has(table.id)))
 const filteredTables = computed(() => {
     const q = tableSearch.value.trim().toLowerCase()
     const list = q
@@ -423,6 +481,141 @@ const filteredTables = computed(() => {
     return [...list].sort((a, b) => (a.label ?? '').localeCompare(b.label ?? '', undefined, { sensitivity: 'base' }))
 })
 const tableById = computed(() => new Map(tables.value.map(table => [table.id, table])))
+const isReferenceTable = (table) => !!(table?.data?.reference || table?.data?.tableKind === 'reference')
+const isReferenceLink = (element) => element?.data?.linkKind === 'reference'
+const isPipelineNode = (element) => element?.type === 'pipeline-transform'
+const isPipelineLink = (element) => element?.type === 'transform' || element?.data?.linkKind === 'transform'
+const stripViewOnlyState = (element) => {
+    if (!element || typeof element !== 'object') return element
+    const { hidden, ...rest } = element
+    return rest
+}
+const stripViewOnlySchema = (elements) => Array.isArray(elements) ? elements.map(stripViewOnlyState) : []
+let applyingViewVisibility = false
+const isTableHidden = (tableId) => hiddenTableIdSet.value.has(tableId)
+const isTableEffectivelyHidden = (table) => isTableHidden(table?.id) || (!viewFilters.value.referenceTables && isReferenceTable(table))
+const toggleTableVisibility = (table) => {
+    const tableId = table?.id
+    if (!tableId) return
+    if (!viewFilters.value.referenceTables && isReferenceTable(table)) {
+        viewFilters.value = { ...viewFilters.value, referenceTables: true }
+        hiddenTableIds.value = hiddenTableIds.value.filter(id => id !== tableId)
+        return
+    }
+    hiddenTableIds.value = isTableHidden(tableId)
+        ? hiddenTableIds.value.filter(id => id !== tableId)
+        : [...hiddenTableIds.value, tableId]
+}
+const showAllTables = () => {
+    hiddenTableIds.value = []
+}
+const hideAllTables = () => {
+    hiddenTableIds.value = tables.value.map(table => table.id)
+}
+const toggleAllTablesVisibility = () => {
+    allTablesHidden.value ? showAllTables() : hideAllTables()
+}
+const toggleViewFilter = (key) => {
+    viewFilters.value = { ...viewFilters.value, [key]: !viewFilters.value[key] }
+}
+const viewVisibilitySignature = computed(() => schema.value.map(element => [
+    element.id,
+    element.type,
+    element.parentNode,
+    element.source,
+    element.target,
+    element.data?.linkKind,
+    element.data?.reference ? 'ref' : '',
+    element.data?.tableKind ?? '',
+].join(':')).join('|'))
+const hiddenElementIds = () => {
+    const hiddenIds = new Set()
+    const hiddenRows = new Set()
+
+    for (const element of schema.value) {
+        if (element.type === 'table' && (hiddenTableIdSet.value.has(element.id) || (!viewFilters.value.referenceTables && isReferenceTable(element)))) {
+            hiddenIds.add(element.id)
+        }
+        if (isPipelineNode(element) && !viewFilters.value.pipelines) {
+            hiddenIds.add(element.id)
+        }
+    }
+
+    for (const element of schema.value) {
+        if (element.type === 'row' && hiddenIds.has(element.parentNode)) {
+            hiddenIds.add(element.id)
+            hiddenRows.add(element.id)
+        }
+    }
+
+    for (const element of schema.value) {
+        if (!element.source && !element.target) continue
+        if (hiddenIds.has(element.source)
+            || hiddenIds.has(element.target)
+            || hiddenRows.has(element.source)
+            || hiddenRows.has(element.target)
+            || (!viewFilters.value.referenceLinks && isReferenceLink(element))
+            || (!viewFilters.value.pipelineLinks && isPipelineLink(element))) {
+            hiddenIds.add(element.id)
+        }
+    }
+
+    return hiddenIds
+}
+const applyViewVisibility = () => {
+    if (applyingViewVisibility) return
+    applyingViewVisibility = true
+    const hiddenIds = hiddenElementIds()
+    let changed = false
+    const nextSchema = schema.value.map(element => {
+        const shouldHide = hiddenIds.has(element.id)
+        if (shouldHide && element.hidden !== true) {
+            changed = true
+            return { ...element, hidden: true }
+        }
+        if (!shouldHide && element.hidden !== false) {
+            changed = true
+            return { ...element, hidden: false }
+        }
+        return element
+    })
+    if (changed) {
+        schema.value = nextSchema
+    }
+    applyingViewVisibility = false
+}
+const loadViewState = (key) => {
+    viewStateLoaded.value = false
+    viewFilters.value = { ...DEFAULT_VIEW_FILTERS }
+    hiddenTableIds.value = []
+    if (key) {
+        try {
+            const stored = JSON.parse(localStorage.getItem(key) || 'null')
+            if (stored && typeof stored === 'object') {
+                viewFilters.value = { ...DEFAULT_VIEW_FILTERS, ...(stored.filters ?? {}) }
+                hiddenTableIds.value = Array.isArray(stored.hiddenTableIds) ? stored.hiddenTableIds.filter(Boolean) : []
+            }
+        } catch {
+            localStorage.removeItem(key)
+        }
+    }
+    viewStateLoaded.value = true
+}
+watch(viewStorageKey, loadViewState, { immediate: true })
+watch([viewFilters, hiddenTableIds], () => {
+    if (!viewStateLoaded.value || !viewStorageKey.value) return
+    try {
+        localStorage.setItem(viewStorageKey.value, JSON.stringify({
+            filters: viewFilters.value,
+            hiddenTableIds: hiddenTableIds.value,
+        }))
+    } catch { /* local view state is best-effort */ }
+    applyViewVisibility()
+}, { deep: true })
+watch(tables, (nextTables) => {
+    const tableIds = new Set(nextTables.map(table => table.id))
+    hiddenTableIds.value = hiddenTableIds.value.filter(id => tableIds.has(id))
+}, { deep: true })
 const rowsByTableId = computed(() => {
     const rows = new Map()
     for (const element of schema.value) {
@@ -435,6 +628,7 @@ const rowsByTableId = computed(() => {
     }
     return rows
 })
+watch(viewVisibilitySignature, () => nextTick(applyViewVisibility))
 const tableColumnLabels = computed(() => {
     const labels = new Map()
     for (const [tableId, rows] of rowsByTableId.value) {
@@ -509,7 +703,7 @@ const metadataPayload = () => ({
     customActions: customActions.value,
     sharedPropertyTypes: sharedPropertyTypes.value,
 })
-const syncPayload = () => ({ schema: schema.value, valueTypes: valueTypes.value, metadata: metadataPayload() })
+const syncPayload = () => ({ schema: stripViewOnlySchema(schema.value), valueTypes: valueTypes.value, metadata: metadataPayload() })
 
 const { snapshot, undo, redo } = useUndoHistory(schema, valueTypes, ontologyMetadata)
 
@@ -987,8 +1181,8 @@ const saveDiagram = async (silent = false) => {
         return false
     }
     const saved = await (isOwner.value
-        ? Diagram.save(diagramId.value, schema.value, valueTypes.value, metadataPayload())
-        : Diagram.saveByToken(token, schema.value, valueTypes.value, metadataPayload()))
+        ? Diagram.save(diagramId.value, stripViewOnlySchema(schema.value), valueTypes.value, metadataPayload())
+        : Diagram.saveByToken(token, stripViewOnlySchema(schema.value), valueTypes.value, metadataPayload()))
     if (!saved) return false
     isSaved.value = true
     if (!silent) {
@@ -1029,7 +1223,7 @@ const retryAccess = async () => {
 
 const getDiagram = async () => {
     if (props.isDemo) {
-        schema.value = DEMO_SCHEMA
+        schema.value = stripViewOnlySchema(DEMO_SCHEMA)
         return
     }
 
@@ -1082,7 +1276,7 @@ const getDiagram = async () => {
     sharedPropertyTypes.value = diagramInfo.shared_property_types ?? []
 
 
-    schema.value = diagramInfo.schema ?? [{
+    schema.value = stripViewOnlySchema(diagramInfo.schema ?? [{
         id: '1',
         type: 'table',
         label: 'users',
@@ -1094,7 +1288,7 @@ const getDiagram = async () => {
         },
         position: { x: 0, y: -100 },
         style: TABLE_STYLE,
-    }]
+    }])
 
     isSaved.value = true
     loading.value = false
@@ -1291,8 +1485,36 @@ onUnmounted(() => {
     border-color: var(--border-strong);
 }
 
+.schema-sidebar__section-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 2px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.schema-sidebar__section-head button {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
+.schema-sidebar__section-head button:hover {
+    color: var(--text-primary);
+}
+
 .schema-sidebar__list {
-    min-height: 0;
+    flex: 1 1 50%;
+    min-height: 120px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -1306,22 +1528,62 @@ onUnmounted(() => {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding: 7px 8px;
-    border: none;
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: 4px;
     background: none;
     color: var(--text-primary);
+}
+
+.schema-sidebar__item--hidden {
+    opacity: 0.48;
+}
+
+.schema-sidebar__item-main {
+    min-width: 0;
+    flex: 1;
+    min-height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 7px 4px 7px 8px;
+    border: none;
+    background: transparent;
+    color: inherit;
     font-size: 13px;
     line-height: 18px;
     cursor: pointer;
     text-align: left;
 }
 
-.schema-sidebar__item span:first-child {
+.schema-sidebar__item-main span:first-child {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.schema-sidebar__eye {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    margin-right: 2px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.schema-sidebar__eye:hover,
+.schema-sidebar__eye:focus {
+    outline: none;
+    background: var(--hover-bg-alt);
+    color: var(--text-primary);
 }
 
 .schema-sidebar__tag {
@@ -1342,10 +1604,103 @@ onUnmounted(() => {
     background: var(--hover-bg-alt);
 }
 
+.schema-sidebar__item-main:focus {
+    outline: none;
+}
+
 .schema-sidebar__empty {
     padding: 8px;
     font-size: 12px;
     color: var(--text-muted);
+}
+
+.schema-sidebar__filters {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border-color);
+}
+
+.schema-sidebar__filters-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 0 2px 2px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.schema-sidebar__filters-head button {
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.schema-sidebar__filters-head button:hover {
+    color: var(--text-primary);
+}
+
+.schema-sidebar__filter {
+    width: 100%;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 8px;
+    border: 1px solid var(--border-color);
+    border-radius: 7px;
+    background: var(--bg-surface-alt);
+    color: var(--text-primary);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.schema-sidebar__filter:hover {
+    border-color: var(--border-strong);
+}
+
+.schema-sidebar__filter--off {
+    color: var(--text-muted);
+    background: transparent;
+}
+
+.schema-sidebar__switch {
+    width: 24px;
+    height: 14px;
+    position: relative;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: #22c55e;
+    transition: background 120ms;
+}
+
+.schema-sidebar__switch::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: white;
+    transition: transform 120ms;
+}
+
+.schema-sidebar__filter--off .schema-sidebar__switch {
+    background: var(--border-strong);
+}
+
+.schema-sidebar__filter--off .schema-sidebar__switch::after {
+    transform: translateX(-10px);
 }
 
 .diagram-canvas-wrapper {
