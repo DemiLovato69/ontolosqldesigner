@@ -68,6 +68,8 @@
         :actions="ontologyActions"
         :titlePropertyRowId="titlePropertyRowId"
         :columns="columns"
+        :interfaces="interfaces"
+        :implementsInterfaces="implementsInterfaces"
         :canEdit="canEdit"
         :anchor="settingsBtnRef"
         :ignore="[settingsBtnRef]"
@@ -93,6 +95,7 @@ const props = defineProps({
     label: String,
     dbType: { type: String, default: 'mysql' },
     columns: { type: Array, default: () => [] },
+    interfaces: { type: Array, default: () => [] },
     canEdit: { type: Boolean, default: true },
 })
 
@@ -104,8 +107,9 @@ const noteBtnRef = ref(null)
 const settingsBtnRef = ref(null)
 const ontologyActions = computed(() => props.data?.ontologyActions ?? {})
 const titlePropertyRowId = computed(() => props.data?.titlePropertyRowId ?? '')
+const implementsInterfaces = computed(() => props.data?.implementsInterfaces ?? [])
 const hasOntologyActions = computed(() => !!(ontologyActions.value.create || ontologyActions.value.modify || ontologyActions.value.delete))
-const hasOntologySettings = computed(() => hasOntologyActions.value || !!titlePropertyRowId.value)
+const hasOntologySettings = computed(() => hasOntologyActions.value || !!titlePropertyRowId.value || implementsInterfaces.value.length > 0)
 const description = computed(() => props.data?.description ?? props.data?.note ?? '')
 </script>
 

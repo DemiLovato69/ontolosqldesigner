@@ -66,6 +66,56 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('titlePropertyApiName: "emailAddress"', $module);
     }
 
+    public function test_exports_ontology_metadata_definitions(): void
+    {
+        $schema = json_encode([
+            ['id' => 'customers', 'type' => 'table', 'label' => 'customers', 'data' => [
+                'implementsInterfaces' => ['Customer'],
+            ]],
+            ['id' => 'customer_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'customers', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+        ], JSON_THROW_ON_ERROR);
+
+        $module = $this->service->createModule($schema, [], [
+            'shared_property_types' => [[
+                'id' => 'shared-1',
+                'apiName' => 'externalId',
+                'displayName' => 'External ID',
+                'type' => 'string',
+            ]],
+            'interfaces' => [[
+                'id' => 'interface-1',
+                'apiName' => 'Customer',
+                'displayName' => 'Customer',
+                'properties' => [['id' => 'property-1', 'apiName' => 'externalId', 'type' => 'string']],
+            ]],
+            'interface_link_constraints' => [[
+                'id' => 'constraint-1',
+                'apiName' => 'customerToAccount',
+                'from' => 'Customer',
+                'toMany' => ['interface' => 'Account'],
+            ]],
+            'custom_actions' => [[
+                'id' => 'action-1',
+                'apiName' => 'approveCustomer',
+                'displayName' => 'Approve Customer',
+                'makerParameters' => ['customerId' => ['type' => 'string']],
+                'logic' => ['rules' => []],
+            ]],
+        ]);
+
+        $this->assertStringContainsString('defineSharedPropertyType', $module);
+        $this->assertStringContainsString('export const externalId = defineSharedPropertyType({ "apiName": "externalId"', $module);
+        $this->assertStringContainsString('export const customer = defineInterface({ "apiName": "Customer"', $module);
+        $this->assertStringContainsString('"properties": { "externalId": { "type": "string" } }', $module);
+        $this->assertStringContainsString('implementsInterfaces: [customer]', $module);
+        $this->assertStringContainsString('export const customerToAccount = defineInterfaceLinkConstraint({ "apiName": "customerToAccount", "from": customer, "toMany": { "interface": account } });', $module);
+        $this->assertStringContainsString('export const approveCustomer = defineAction({ "apiName": "approveCustomer"', $module);
+        $this->assertStringContainsString('"parameters": { "customerId": { "type": "string" } }', $module);
+    }
+
     public function test_exports_custom_value_type_constraints_and_property_reference(): void
     {
         $schema = json_encode([

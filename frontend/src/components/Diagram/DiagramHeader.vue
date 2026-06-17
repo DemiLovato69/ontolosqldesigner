@@ -28,9 +28,6 @@
                 </button>
                 <span v-if="!isDemo" class="dh-save-dot" :class="{ 'dh-save-dot--saved': isSaved }"></span>
             </div>
-            <button v-if="canEdit && !isDemo" class="dh-btn" @click="$emit('show-changelog')" title="Changelog">
-                <SvgIcon name="history" :size="17" />
-            </button>
             <button
                 v-if="dbType === 'ontology'"
                 class="dh-btn"
@@ -39,6 +36,33 @@
                 aria-label="Manage value types"
             >
                 <SvgIcon name="value-type" :size="17" />
+            </button>
+            <button
+                v-if="dbType === 'ontology'"
+                class="dh-btn"
+                @click="$emit('show-shared-property-types')"
+                title="Shared Property Types"
+                aria-label="Manage shared property types"
+            >
+                <SvgIcon name="database" :size="17" />
+            </button>
+            <button
+                v-if="dbType === 'ontology'"
+                class="dh-btn"
+                @click="$emit('show-interfaces')"
+                title="Interfaces"
+                aria-label="Manage interfaces"
+            >
+                <SvgIcon name="interface" :size="17" />
+            </button>
+            <button
+                v-if="dbType === 'ontology'"
+                class="dh-btn"
+                @click="$emit('show-custom-actions')"
+                title="Custom Actions"
+                aria-label="Manage custom actions"
+            >
+                <SvgIcon name="bolt" :size="17" />
             </button>
             <div v-if="isOwner" class="dh-share-wrap">
                 <button class="dh-btn" @click="$emit('show-share')" title="Share">
@@ -73,7 +97,7 @@ const props = defineProps({
     inLibrary: { type: Boolean, default: false },
     hasPendingVisitors: { type: Boolean, default: false },
 })
-defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-changelog', 'show-help', 'show-value-types'])
+defineEmits(['add-table', 'import', 'export', 'save', 'show-share', 'show-help', 'show-value-types', 'show-shared-property-types', 'show-interfaces', 'show-custom-actions'])
 
 const sharingStatus = computed(() => {
     if (props.isDemo) return null

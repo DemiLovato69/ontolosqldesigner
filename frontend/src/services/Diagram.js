@@ -135,9 +135,17 @@ export const Diagram = {
         return response.data
     },
 
-    save: (id, schema, valueTypes = []) =>
+    save: (id, schema, valueTypes = [], metadata = {}) =>
         request(async () => {
-            const response = await axios.put(`/api/diagrams/${id}`, { id, schema: schemaForSave(schema), value_types: valueTypes })
+            const response = await axios.put(`/api/diagrams/${id}`, {
+                id,
+                schema: schemaForSave(schema),
+                value_types: valueTypes,
+                interfaces: metadata.interfaces ?? [],
+                interface_link_constraints: metadata.interfaceLinkConstraints ?? [],
+                custom_actions: metadata.customActions ?? [],
+                shared_property_types: metadata.sharedPropertyTypes ?? [],
+            })
             $toast.success(response.data.message)
             return true
         }),
@@ -153,9 +161,16 @@ export const Diagram = {
             await axios.delete(`/api/diagrams/${id}/share`)
         }),
 
-    saveByToken: (token, schema, valueTypes = []) =>
+    saveByToken: (token, schema, valueTypes = [], metadata = {}) =>
         request(async () => {
-            await axios.patch(`/api/diagrams/shared/${token}`, { schema: schemaForSave(schema), value_types: valueTypes })
+            await axios.patch(`/api/diagrams/shared/${token}`, {
+                schema: schemaForSave(schema),
+                value_types: valueTypes,
+                interfaces: metadata.interfaces ?? [],
+                interface_link_constraints: metadata.interfaceLinkConstraints ?? [],
+                custom_actions: metadata.customActions ?? [],
+                shared_property_types: metadata.sharedPropertyTypes ?? [],
+            })
             return true
         }),
 

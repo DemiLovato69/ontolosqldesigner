@@ -35,7 +35,7 @@ class DiagramSqlService
 {
     private const BACKUP_FORMAT = 'ontolosql-designer';
 
-    private const BACKUP_VERSION = 1;
+    private const BACKUP_VERSION = 2;
 
     public const MAX_IMPORT_BYTES = 2147483648;
 
@@ -293,6 +293,10 @@ class DiagramSqlService
         );
         $diagram->schema = $payload['schema'];
         $diagram->value_types = $payload['value_types'];
+        $diagram->interfaces = $payload['interfaces'];
+        $diagram->interface_link_constraints = $payload['interface_link_constraints'];
+        $diagram->custom_actions = $payload['custom_actions'];
+        $diagram->shared_property_types = $payload['shared_property_types'];
         if ($payload['db_type'] !== null) {
             $diagram->db_type = $payload['db_type'];
         }
@@ -306,7 +310,11 @@ class DiagramSqlService
     {
         $dbType = $diagram->db_type ?? DbType::MYSQL;
         $script = $dbType === DbType::ONTOLOGY
-            ? $this->ontologyMakerService->createModule(json_encode($diagram->schema), $diagram->value_types ?? [])
+            ? $this->ontologyMakerService->createModule(
+                json_encode($diagram->schema),
+                $diagram->value_types ?? [],
+                $this->ontologyMetadata($diagram)
+            )
             : $this->createScript(json_encode($diagram->schema), $dbType->value);
         $diagram->script = $script;
         $diagram->save();
@@ -462,6 +470,7 @@ class DiagramSqlService
     // Time: O(N), Memory: O(N) — where N = total schema items (tables + rows + connections)
     /**
      * @param  list<array<string, mixed>>  $valueTypes
+     * @param  array<string, list<array<string, mixed>>>  $metadata
      * @return array{
      *     format: string,
      *     version: int,
@@ -469,7 +478,11 @@ class DiagramSqlService
      *         name: string|null,
      *         dbType: string|null,
      *         schema: list<mixed>,
-     *         valueTypes: list<array<string, mixed>>
+     *         valueTypes: list<array<string, mixed>>,
+     *         interfaces: list<array<string, mixed>>,
+     *         interfaceLinkConstraints: list<array<string, mixed>>,
+     *         customActions: list<array<string, mixed>>,
+     *         sharedPropertyTypes: list<array<string, mixed>>
      *     }
      * }
      */
@@ -477,7 +490,8 @@ class DiagramSqlService
         string $schema,
         array $valueTypes = [],
         ?string $dbType = null,
-        ?string $name = null
+        ?string $name = null,
+        array $metadata = []
     ): array
     {
         $decodedSchema = json_decode($schema, true);
@@ -496,6 +510,10 @@ class DiagramSqlService
                 'dbType' => $dbType,
                 'schema' => $decodedSchema,
                 'valueTypes' => $valueTypes,
+                'interfaces' => $metadata['interfaces'] ?? [],
+                'interfaceLinkConstraints' => $metadata['interface_link_constraints'] ?? [],
+                'customActions' => $metadata['custom_actions'] ?? [],
+                'sharedPropertyTypes' => $metadata['shared_property_types'] ?? [],
             ],
         ];
     }
@@ -585,6 +603,10 @@ class DiagramSqlService
      * @return array{
      *     schema: list<array<string, mixed>>,
      *     value_types: list<array<string, mixed>>,
+     *     interfaces: list<array<string, mixed>>,
+     *     interface_link_constraints: list<array<string, mixed>>,
+     *     custom_actions: list<array<string, mixed>>,
+     *     shared_property_types: list<array<string, mixed>>,
      *     warnings: list<string>,
      *     db_type: DbType|null
      * }
@@ -605,6 +627,10 @@ class DiagramSqlService
             return [
                 'schema' => $this->createSchemaFromOntologyExport($ontology, $parsed['references']),
                 'value_types' => $parsed['definitions'],
+                'interfaces' => $this->parseOntologyMetadataList($ontology, 'interfaceTypes'),
+                'interface_link_constraints' => $this->parseOntologyMetadataList($ontology, 'interfaceLinkConstraints'),
+                'custom_actions' => $this->parseOntologyMetadataList($ontology, 'actionTypes'),
+                'shared_property_types' => $this->parseOntologyMetadataList($ontology, 'sharedProperties'),
                 'warnings' => $warnings,
                 'db_type' => DbType::ONTOLOGY,
             ];
@@ -617,6 +643,10 @@ class DiagramSqlService
             return [
                 'schema' => $this->createSchemaFromOntologyExport($ontology, $parsed['references']),
                 'value_types' => $parsed['definitions'],
+                'interfaces' => $this->parseOntologyMetadataList($ontology, 'interfaceTypes'),
+                'interface_link_constraints' => $this->parseOntologyMetadataList($ontology, 'interfaceLinkConstraints'),
+                'custom_actions' => $this->parseOntologyMetadataList($ontology, 'actionTypes'),
+                'shared_property_types' => $this->parseOntologyMetadataList($ontology, 'sharedProperties'),
                 'warnings' => $parsed['warnings'],
                 'db_type' => DbType::ONTOLOGY,
             ];
@@ -633,6 +663,10 @@ class DiagramSqlService
         return [
             'schema' => $this->createSchemaArray($script, $dbType),
             'value_types' => [],
+            'interfaces' => [],
+            'interface_link_constraints' => [],
+            'custom_actions' => [],
+            'shared_property_types' => [],
             'warnings' => [],
             'db_type' => null,
         ];
@@ -668,6 +702,10 @@ class DiagramSqlService
      * @return array{
      *     schema: list<mixed>,
      *     value_types: list<array<string, mixed>>,
+     *     interfaces: list<array<string, mixed>>,
+     *     interface_link_constraints: list<array<string, mixed>>,
+     *     custom_actions: list<array<string, mixed>>,
+     *     shared_property_types: list<array<string, mixed>>,
      *     warnings: list<string>,
      *     db_type: DbType|null
      * }|null
@@ -678,7 +716,7 @@ class DiagramSqlService
         if (! is_array($decoded) || ($decoded['format'] ?? null) !== self::BACKUP_FORMAT) {
             return null;
         }
-        if (($decoded['version'] ?? null) !== self::BACKUP_VERSION) {
+        if (! in_array($decoded['version'] ?? null, [1, self::BACKUP_VERSION], true)) {
             throw new InvalidSchemaException('Unsupported OntoloSQL Designer backup version.');
         }
 
@@ -691,6 +729,10 @@ class DiagramSqlService
         if (! is_array($valueTypes)) {
             throw new InvalidSchemaException('Backup does not contain valid value type definitions.');
         }
+        $interfaces = $this->validatedBackupMetadata($diagram, 'interfaces', 'interface definitions');
+        $interfaceLinkConstraints = $this->validatedBackupMetadata($diagram, 'interfaceLinkConstraints', 'interface link constraints');
+        $customActions = $this->validatedBackupMetadata($diagram, 'customActions', 'custom action definitions');
+        $sharedPropertyTypes = $this->validatedBackupMetadata($diagram, 'sharedPropertyTypes', 'shared property type definitions');
 
         $backupDbType = is_string($diagram['dbType'] ?? null)
             ? DbType::tryFrom($diagram['dbType'])
@@ -702,8 +744,73 @@ class DiagramSqlService
         return [
             'schema' => array_values($diagram['schema']),
             'value_types' => array_values($valueTypes),
+            'interfaces' => $interfaces,
+            'interface_link_constraints' => $interfaceLinkConstraints,
+            'custom_actions' => $customActions,
+            'shared_property_types' => $sharedPropertyTypes,
             'warnings' => [],
             'db_type' => $backupDbType,
+        ];
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function validatedBackupMetadata(array $diagram, string $key, string $label): array
+    {
+        $metadata = $diagram[$key] ?? [];
+        if (! is_array($metadata)) {
+            throw new InvalidSchemaException("Backup does not contain valid {$label}.");
+        }
+
+        return array_values(array_filter($metadata, fn (mixed $item): bool => is_array($item)));
+    }
+
+    /** @return list<array<string, mixed>> */
+    private function parseOntologyMetadataList(array $ontology, string $key): array
+    {
+        $metadata = $ontology[$key] ?? [];
+        if (! is_array($metadata)) {
+            return [];
+        }
+
+        if (array_is_list($metadata)) {
+            return array_values(array_map(
+                fn (array $item): array => $this->withTopLevelApiName($item),
+                array_filter($metadata, fn (mixed $item): bool => is_array($item))
+            ));
+        }
+
+        $definitions = [];
+        foreach ($metadata as $apiName => $definition) {
+            if (! is_array($definition)) {
+                continue;
+            }
+            if (! isset($definition['apiName']) && is_string($apiName)) {
+                $definition['apiName'] = $apiName;
+            }
+            $definitions[] = $this->withTopLevelApiName($definition);
+        }
+
+        return $definitions;
+    }
+
+    /** @param array<string, mixed> $definition */
+    private function withTopLevelApiName(array $definition): array
+    {
+        if (! isset($definition['apiName']) && is_string($definition['metadata']['apiName'] ?? null)) {
+            $definition['apiName'] = $definition['metadata']['apiName'];
+        }
+
+        return $definition;
+    }
+
+    /** @return array<string, list<array<string, mixed>>> */
+    public function ontologyMetadata(Diagram $diagram): array
+    {
+        return [
+            'interfaces' => $diagram->interfaces ?? [],
+            'interface_link_constraints' => $diagram->interface_link_constraints ?? [],
+            'custom_actions' => $diagram->custom_actions ?? [],
+            'shared_property_types' => $diagram->shared_property_types ?? [],
         ];
     }
 
@@ -901,6 +1008,12 @@ class DiagramSqlService
                     'modify' => (bool) ($objectType['ontologyActions']['modify'] ?? false),
                     'delete' => (bool) ($objectType['ontologyActions']['delete'] ?? false),
                 ];
+            }
+            if (is_array($objectType['implementsInterfaces'] ?? null)) {
+                $table['data']['implementsInterfaces'] = array_values(array_filter(
+                    $objectType['implementsInterfaces'],
+                    fn (mixed $apiName): bool => is_string($apiName) && $apiName !== ''
+                ));
             }
             $table['data']['ontologyMetadata'] = [
                 'id' => $objectType['id'] ?? null,
@@ -1217,10 +1330,6 @@ class DiagramSqlService
     private function ontologyImportWarnings(array $ontology): array
     {
         $warnings = [];
-        $actionCount = count(is_array($ontology['actionTypes'] ?? null) ? $ontology['actionTypes'] : []);
-        if ($actionCount > 0) {
-            $warnings[] = "Skipped {$actionCount} custom action types because action import is not supported.";
-        }
         $intermediaryCount = 0;
         foreach (is_array($ontology['relations'] ?? null) ? $ontology['relations'] : [] as $relation) {
             if (is_array($relation) && ($relation['definition']['type'] ?? null) === 'intermediary') {

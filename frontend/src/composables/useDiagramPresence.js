@@ -17,7 +17,7 @@ export const CURSOR_COLORS = ['#E53935', '#D81B60', '#8E24AA', '#3949AB', '#1E88
  * @param {import('vue').Ref} opts.canvasWrapperRef
  * @param {Function} opts.onDiagramSaved           - called when a remote user saves
  */
-export function useDiagramPresence({ token, ownerIdentity, viewport, schema, valueTypes, canvasWrapperRef, canEdit, onDiagramSaved, onVisitorRequested, onAccessChanged }) {
+export function useDiagramPresence({ token, ownerIdentity, viewport, schema, valueTypes, ontologyMetadata = {}, canvasWrapperRef, canEdit, onDiagramSaved, onVisitorRequested, onAccessChanged }) {
     const FULL_SCHEMA_SYNC_LIMIT = 2000
     const WRITER_EVENTS = new Set(['schema-sync', 'value-types-sync', 'schema-patch'])
     const remoteCursors = reactive({})
@@ -49,14 +49,15 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
             .joining((user) => {
                 if (user.id !== ownerIdentity.value?.id) {
                     setTimeout(() => {
-                        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes?.value ?? [], forUserId: user.id })
+                        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes?.value ?? [], metadata: metadataSnapshot(), forUserId: user.id })
                     }, Math.random() * 200)
                 }
             })
-            .listenForWhisper('schema-sync', ({ schema: incoming, valueTypes: incomingValueTypes, forUserId }) => {
+            .listenForWhisper('schema-sync', ({ schema: incoming, valueTypes: incomingValueTypes, metadata: incomingMetadata, forUserId }) => {
                 if (forUserId && forUserId !== ownerIdentity.value?.id) return
                 if (incoming?.length) schema.value = incoming
                 if (valueTypes && Array.isArray(incomingValueTypes)) valueTypes.value = incomingValueTypes
+                applyMetadata(incomingMetadata)
             })
             .listenForWhisper('value-types-sync', ({ valueTypes: incomingValueTypes }) => {
                 if (valueTypes && Array.isArray(incomingValueTypes)) valueTypes.value = incomingValueTypes
@@ -123,6 +124,7 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
                 const result = await Diagram.getByToken(token)
                 if (result?.schema) schema.value = result.schema
                 if (valueTypes && Array.isArray(result?.value_types)) valueTypes.value = result.value_types
+                applyMetadata(metadataFromDiagram(result))
             })
             .listen('.visitor.requested', () => {
                 if (onVisitorRequested) onVisitorRequested()
@@ -157,6 +159,24 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
     watch(canEdit, (editable) => {
         if (!echo) return
         editable ? joinWriterChannel() : leaveWriterChannel()
+    })
+
+    const metadataSnapshot = () => Object.fromEntries(
+        Object.entries(ontologyMetadata).map(([key, refValue]) => [key, refValue.value ?? []])
+    )
+
+    const applyMetadata = (metadata) => {
+        if (!metadata || typeof metadata !== 'object') return
+        for (const [key, refValue] of Object.entries(ontologyMetadata)) {
+            if (Array.isArray(metadata[key])) refValue.value = metadata[key]
+        }
+    }
+
+    const metadataFromDiagram = (diagram) => ({
+        interfaces: diagram?.interfaces ?? [],
+        interfaceLinkConstraints: diagram?.interface_link_constraints ?? [],
+        customActions: diagram?.custom_actions ?? [],
+        sharedPropertyTypes: diagram?.shared_property_types ?? [],
     })
 
     return { remoteCursors, whisper, initEcho, cleanupEcho, onCanvasMouseMove, broadcastCursor }

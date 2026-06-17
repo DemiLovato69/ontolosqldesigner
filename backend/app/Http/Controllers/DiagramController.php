@@ -120,6 +120,10 @@ class DiagramController extends Controller
             library: $request->has('library') ? (bool) $request->input('library') : null,
             schema: $request->exists('schema') ? $request->diagramSchema() : null,
             valueTypes: $request->has('value_types') ? $request->input('value_types', []) : null,
+            interfaces: $request->has('interfaces') ? $request->input('interfaces', []) : null,
+            interfaceLinkConstraints: $request->has('interface_link_constraints') ? $request->input('interface_link_constraints', []) : null,
+            customActions: $request->has('custom_actions') ? $request->input('custom_actions', []) : null,
+            sharedPropertyTypes: $request->has('shared_property_types') ? $request->input('shared_property_types', []) : null,
         );
 
         return $this->crudService->updateDiagram($diagram, $dto)
@@ -277,6 +281,18 @@ class DiagramController extends Controller
             'value_types' => $diagram->import_status === ImportStatus::DONE
                 ? ($diagram->value_types ?? [])
                 : null,
+            'interfaces' => $diagram->import_status === ImportStatus::DONE
+                ? ($diagram->interfaces ?? [])
+                : null,
+            'interface_link_constraints' => $diagram->import_status === ImportStatus::DONE
+                ? ($diagram->interface_link_constraints ?? [])
+                : null,
+            'custom_actions' => $diagram->import_status === ImportStatus::DONE
+                ? ($diagram->custom_actions ?? [])
+                : null,
+            'shared_property_types' => $diagram->import_status === ImportStatus::DONE
+                ? ($diagram->shared_property_types ?? [])
+                : null,
             'db_type' => $diagram->import_status === ImportStatus::DONE
                 ? ($diagram->db_type?->value ?? DbType::MYSQL->value)
                 : null,
@@ -350,7 +366,8 @@ class DiagramController extends Controller
             json_encode($diagram->schema),
             $diagram->value_types ?? [],
             $diagram->db_type?->value,
-            $diagram->name
+            $diagram->name,
+            $this->ontologyMetadata($diagram)
         ));
     }
 
@@ -365,7 +382,8 @@ class DiagramController extends Controller
 
         $module = $this->ontologyMakerService->createModule(
             json_encode($diagram->schema),
-            $diagram->value_types ?? []
+            $diagram->value_types ?? [],
+            $this->ontologyMetadata($diagram)
         );
         $filename = preg_replace('/[^a-zA-Z0-9_\-]/', '_', $diagram->name).'.mts';
 
@@ -593,5 +611,16 @@ class DiagramController extends Controller
                 'share_token' => $copy->share_token,
             ],
         ]);
+    }
+
+    /** @return array<string, list<array<string, mixed>>> */
+    private function ontologyMetadata(Diagram $diagram): array
+    {
+        return [
+            'interfaces' => $diagram->interfaces ?? [],
+            'interface_link_constraints' => $diagram->interface_link_constraints ?? [],
+            'custom_actions' => $diagram->custom_actions ?? [],
+            'shared_property_types' => $diagram->shared_property_types ?? [],
+        ];
     }
 }

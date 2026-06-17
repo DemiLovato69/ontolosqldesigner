@@ -265,9 +265,12 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         const titlePropertyRowId = typeof actions.titlePropertyRowId === 'string'
             ? actions.titlePropertyRowId
             : null
-        node.data = { ...node.data, ontologyActions, titlePropertyRowId }
+        const implementsInterfaces = Array.isArray(actions.implementsInterfaces)
+            ? actions.implementsInterfaces
+            : []
+        node.data = { ...node.data, ontologyActions, titlePropertyRowId, implementsInterfaces }
         isSaved.value = false
-        whisper('schema-patch', { update: [{ id, data: { ontologyActions, titlePropertyRowId } }] })
+        whisper('schema-patch', { update: [{ id, data: { ontologyActions, titlePropertyRowId, implementsInterfaces } }] })
     }
 
     const updateLabel = (id, newLabel) => {

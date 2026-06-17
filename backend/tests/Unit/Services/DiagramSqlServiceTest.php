@@ -362,9 +362,10 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertSame('emailAddress', $payload['value_types'][0]['apiName']);
         $this->assertSame('regex', $payload['value_types'][0]['constraints'][0]['type']);
         $this->assertSame($payload['value_types'][0]['id'], $email['data']['valueTypeId']);
-        $this->assertCount(2, $payload['warnings']);
-        $this->assertStringContainsString('custom action types', $payload['warnings'][0]);
-        $this->assertStringContainsString('intermediary relations', $payload['warnings'][1]);
+        $this->assertSame('customAction', $payload['custom_actions'][0]['apiName']);
+        $this->assertSame('emailAddress', $payload['shared_property_types'][0]['apiName']);
+        $this->assertCount(1, $payload['warnings']);
+        $this->assertStringContainsString('intermediary relations', $payload['warnings'][0]);
     }
 
     public function test_create_script_my_sql_skips_invalid_connection(): void
@@ -433,10 +434,14 @@ class DiagramSqlServiceTest extends TestCase
         $result = $this->service->createJson($schema, [], 'ontology', 'Users');
 
         $this->assertSame('ontolosql-designer', $result['format']);
-        $this->assertSame(1, $result['version']);
+        $this->assertSame(2, $result['version']);
         $this->assertSame('Users', $result['diagram']['name']);
         $this->assertSame('ontology', $result['diagram']['dbType']);
         $this->assertSame(json_decode($schema, true), $result['diagram']['schema']);
+        $this->assertSame([], $result['diagram']['interfaces']);
+        $this->assertSame([], $result['diagram']['interfaceLinkConstraints']);
+        $this->assertSame([], $result['diagram']['customActions']);
+        $this->assertSame([], $result['diagram']['sharedPropertyTypes']);
     }
 
     public function test_create_json_includes_value_types_and_column_references(): void
@@ -462,6 +467,23 @@ class DiagramSqlServiceTest extends TestCase
 
         $this->assertSame($valueTypes, $result['diagram']['valueTypes']);
         $this->assertSame('email-type', $result['diagram']['schema'][1]['data']['valueTypeId']);
+    }
+
+    public function test_create_json_includes_ontology_metadata(): void
+    {
+        $metadata = [
+            'interfaces' => [['id' => 'iface-1', 'apiName' => 'Customer', 'displayName' => 'Customer']],
+            'interface_link_constraints' => [['id' => 'constraint-1', 'apiName' => 'customerToAccount', 'from' => 'Customer', 'toMany' => ['interface' => 'Account']]],
+            'custom_actions' => [['id' => 'action-1', 'apiName' => 'approveCustomer', 'displayName' => 'Approve Customer']],
+            'shared_property_types' => [['id' => 'shared-1', 'apiName' => 'externalId', 'type' => 'string']],
+        ];
+
+        $result = $this->service->createJson('[]', [], 'ontology', 'Users', $metadata);
+
+        $this->assertSame($metadata['interfaces'], $result['diagram']['interfaces']);
+        $this->assertSame($metadata['interface_link_constraints'], $result['diagram']['interfaceLinkConstraints']);
+        $this->assertSame($metadata['custom_actions'], $result['diagram']['customActions']);
+        $this->assertSame($metadata['shared_property_types'], $result['diagram']['sharedPropertyTypes']);
     }
 
     public function test_import_backup_restores_physical_schema_value_types_and_db_type(): void
@@ -494,7 +516,13 @@ class DiagramSqlServiceTest extends TestCase
             'baseType' => ['type' => 'string'],
             'constraints' => [],
         ]];
-        $backup = $this->service->createJson(json_encode($schema), $valueTypes, 'ontology', 'Users');
+        $metadata = [
+            'interfaces' => [['id' => 'iface-1', 'apiName' => 'Customer', 'displayName' => 'Customer']],
+            'interface_link_constraints' => [['id' => 'constraint-1', 'apiName' => 'customerToAccount', 'from' => 'Customer', 'toMany' => ['interface' => 'Account']]],
+            'custom_actions' => [['id' => 'action-1', 'apiName' => 'approveCustomer', 'displayName' => 'Approve Customer']],
+            'shared_property_types' => [['id' => 'shared-1', 'apiName' => 'externalId', 'type' => 'string']],
+        ];
+        $backup = $this->service->createJson(json_encode($schema), $valueTypes, 'ontology', 'Users', $metadata);
         $diagram = Diagram::factory()->create(['db_type' => 'mysql']);
 
         $this->service->importSchema($diagram, json_encode($backup), 'backup-json');
@@ -502,6 +530,10 @@ class DiagramSqlServiceTest extends TestCase
 
         $this->assertSame($schema, $diagram->schema);
         $this->assertSame($valueTypes, $diagram->value_types);
+        $this->assertSame($metadata['interfaces'], $diagram->interfaces);
+        $this->assertSame($metadata['interface_link_constraints'], $diagram->interface_link_constraints);
+        $this->assertSame($metadata['custom_actions'], $diagram->custom_actions);
+        $this->assertSame($metadata['shared_property_types'], $diagram->shared_property_types);
         $this->assertSame('ontology', $diagram->db_type->value);
     }
 

@@ -813,16 +813,24 @@ class DiagramControllerTest extends TestCase
                 'baseType' => ['type' => 'string'],
                 'constraints' => [],
             ]],
+            'interfaces' => [['id' => 'iface-1', 'apiName' => 'Customer']],
+            'interface_link_constraints' => [['id' => 'constraint-1', 'apiName' => 'customerToAccount']],
+            'custom_actions' => [['id' => 'action-1', 'apiName' => 'approveCustomer']],
+            'shared_property_types' => [['id' => 'shared-1', 'apiName' => 'externalId']],
         ]);
 
         $this->auth()
             ->getJson("/api/diagrams/json/export/{$this->diagram->id}")
             ->assertOk()
             ->assertJsonPath('format', 'ontolosql-designer')
-            ->assertJsonPath('version', 1)
+            ->assertJsonPath('version', 2)
             ->assertJsonPath('diagram.dbType', 'ontology')
             ->assertJsonPath('diagram.valueTypes.0.apiName', 'emailAddress')
-            ->assertJsonPath('diagram.schema.1.data.valueTypeId', 'email-type');
+            ->assertJsonPath('diagram.schema.1.data.valueTypeId', 'email-type')
+            ->assertJsonPath('diagram.interfaces.0.apiName', 'Customer')
+            ->assertJsonPath('diagram.interfaceLinkConstraints.0.apiName', 'customerToAccount')
+            ->assertJsonPath('diagram.customActions.0.apiName', 'approveCustomer')
+            ->assertJsonPath('diagram.sharedPropertyTypes.0.apiName', 'externalId');
     }
 
     public function test_export_ontology_includes_value_types(): void

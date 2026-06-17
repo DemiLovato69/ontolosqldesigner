@@ -12,10 +12,18 @@ const file = ts.createSourceFile(
 
 const allowedCalls = new Set([
   "defineCreateObjectAction",
+  "defineCreateOrModifyObjectAction",
+  "defineAction",
+  "defineCreateInterfaceObjectAction",
   "defineDeleteObjectAction",
+  "defineDeleteInterfaceObjectAction",
+  "defineInterface",
+  "defineInterfaceLinkConstraint",
   "defineLink",
+  "defineModifyInterfaceObjectAction",
   "defineModifyObjectAction",
   "defineObject",
+  "defineSharedPropertyType",
   "defineValueType",
 ]);
 
@@ -211,15 +219,13 @@ async function readStdin() {
 
 function normalizeOntology(ir) {
   const ontology = ir.ontology ?? {};
-  assertEmptyRecord(ontology.sharedPropertyTypes, "Shared property types are not supported");
-  assertEmptyRecord(ontology.interfaceTypes, "Interfaces are not supported");
   assertEmptyRecord(ir.importedOntology?.objectTypes, "Imported ontology entities are not supported");
   assertEmptyRecord(ir.importedOntology?.sharedPropertyTypes, "Imported ontology entities are not supported");
   assertEmptyRecord(ir.importedOntology?.interfaceTypes, "Imported ontology entities are not supported");
   assertEmptyRecord(ir.importedOntology?.linkTypes, "Imported ontology entities are not supported");
   assertEmptyRecord(ir.importedOntology?.actionTypes, "Imported ontology entities are not supported");
 
-  const actionsByObject = normalizeActions(ontology.actionTypes ?? {});
+  const { actionsByObject, customActions } = normalizeActions(ontology.actionTypes ?? {});
   const objectTypes = Object.entries(ontology.objectTypes ?? {}).map(([key, block]) => {
     const object = block.objectType ?? {};
     const objectRid = object.apiName ?? key;
@@ -247,6 +253,7 @@ function normalizeOntology(ir) {
       titlePropertyId: object.titlePropertyTypeRid,
       primaryKeys: object.primaryKeys ?? [],
       properties,
+      implementsInterfaces: normalizeNamedRecords(object.implementsInterfaces ?? object.interfaceTypes ?? []),
       ontologyActions: actionsByObject.get(objectRid) ?? emptyActions(),
     };
   });
@@ -302,18 +309,28 @@ function normalizeOntology(ir) {
     };
   });
 
-  const normalized = { objectTypes, relations, valueTypes };
+  const normalized = {
+    objectTypes,
+    relations,
+    valueTypes,
+    sharedProperties: normalizeNamedRecords(ontology.sharedPropertyTypes ?? {}),
+    interfaceTypes: normalizeNamedRecords(ontology.interfaceTypes ?? {}),
+    interfaceLinkConstraints: normalizeNamedRecords(ontology.interfaceLinkConstraints ?? ontology.interfaceLinkTypes ?? {}),
+    actionTypes: customActions,
+  };
   validateNormalizedOntology(normalized);
   return normalized;
 }
 
 function normalizeActions(actionTypes) {
-  const actions = new Map();
+  const actionsByObject = new Map();
+  const customActions = [];
   for (const [key, block] of Object.entries(actionTypes)) {
     const action = block.actionType ?? {};
     const rules = action.actionTypeLogic?.logic?.rules ?? [];
     if (rules.length !== 1) {
-      throw new Error(`Unsupported Maker action "${key}"`);
+      customActions.push(normalizeNamedRecord(key, action));
+      continue;
     }
     const rule = rules[0];
     let objectRid;
@@ -328,16 +345,38 @@ function normalizeActions(actionTypes) {
       objectRid = affectedObject(action);
       actionName = "delete";
     } else {
-      throw new Error(`Unsupported Maker action "${key}"`);
+      customActions.push(normalizeNamedRecord(key, action));
+      continue;
     }
     if (!objectRid) {
-      throw new Error(`Maker action "${key}" does not reference an object type`);
+      customActions.push(normalizeNamedRecord(key, action));
+      continue;
     }
-    const objectActions = actions.get(objectRid) ?? emptyActions();
+    const objectActions = actionsByObject.get(objectRid) ?? emptyActions();
     objectActions[actionName] = true;
-    actions.set(objectRid, objectActions);
+    actionsByObject.set(objectRid, objectActions);
   }
-  return actions;
+  return { actionsByObject, customActions };
+}
+
+function normalizeNamedRecords(records) {
+  if (!records || typeof records !== "object") return [];
+  if (Array.isArray(records)) {
+    return records
+      .filter((record) => record && typeof record === "object")
+      .map((record, index) => normalizeNamedRecord(String(index), record));
+  }
+  return Object.entries(records)
+    .filter(([, record]) => record && typeof record === "object")
+    .map(([key, record]) => normalizeNamedRecord(key, record));
+}
+
+function normalizeNamedRecord(key, record) {
+  const payload = record.metadata ?? record.interfaceType ?? record.sharedPropertyType ?? record.linkType ?? record;
+  return {
+    apiName: payload.apiName ?? record.apiName ?? key,
+    ...payload,
+  };
 }
 
 function affectedObject(action) {

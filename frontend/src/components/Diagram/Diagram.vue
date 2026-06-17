@@ -44,9 +44,11 @@
             @export="isDemo ? router.push({ name: 'login' }) : openExportModal()"
             @save="saveDiagram"
             @show-share="showShareModal = true"
-            @show-changelog="showChangelogModal = true"
             @show-help="showHotkeysModal = true"
             @show-value-types="showValueTypesModal = true"
+            @show-shared-property-types="showSharedPropertyTypesModal = true"
+            @show-interfaces="showInterfacesModal = true"
+            @show-custom-actions="showCustomActionsModal = true"
         />
 
         <ShareModal
@@ -171,6 +173,7 @@
                         :label="nodeProps.label"
                         :dbType="diagramDbType"
                         :columns="tableColumns.get(nodeProps.id) ?? []"
+                        :interfaces="interfaces"
                         :canEdit="canEdit"
                         @delete-node="deleteNode"
                         @update-label="updateLabel"
@@ -212,6 +215,23 @@
 
                 </VueFlow>
             </div>
+            <DiagramRightSidebar
+                :diagramId="diagramId"
+                :open="rightSidebarOpen"
+                :refreshKey="changelogRefreshKey"
+                :dbType="diagramDbType"
+                :valueTypes="valueTypes"
+                :sharedPropertyTypes="sharedPropertyTypes"
+                :interfaces="interfaces"
+                :interfaceLinkConstraints="interfaceLinkConstraints"
+                :customActions="customActions"
+                @toggle="rightSidebarOpen = !rightSidebarOpen"
+                @open-value-type="openValueTypeFromSidebar"
+                @open-shared-property-type="openSharedPropertyTypeFromSidebar"
+                @open-interface="openInterfaceFromSidebar"
+                @open-interface-link-constraint="openInterfaceLinkConstraintFromSidebar"
+                @open-custom-action="openCustomActionFromSidebar"
+            />
         </div>
 
         <RelationshipModal
@@ -254,12 +274,6 @@
             @close="showSupportModal = false"
         />
 
-        <ChangelogModal
-            v-if="showChangelogModal"
-            :diagramId="diagramId"
-            @close="showChangelogModal = false"
-        />
-
         <HotkeysModal
             v-if="showHotkeysModal"
             @close="showHotkeysModal = false"
@@ -270,8 +284,38 @@
             :valueTypes="valueTypes"
             :schema="schema"
             :canEdit="canEdit"
+            :initialSelectedKey="selectedValueTypeKey"
             @update="updateValueTypes"
             @close="showValueTypesModal = false"
+        />
+
+        <SharedPropertyTypesModal
+            v-if="showSharedPropertyTypesModal"
+            :sharedPropertyTypes="sharedPropertyTypes"
+            :canEdit="canEdit"
+            :initialSelectedKey="selectedSharedPropertyTypeKey"
+            @update="updateSharedPropertyTypes"
+            @close="showSharedPropertyTypesModal = false"
+        />
+
+        <InterfacesModal
+            v-if="showInterfacesModal"
+            :interfaces="interfaces"
+            :interfaceLinkConstraints="interfaceLinkConstraints"
+            :canEdit="canEdit"
+            :initialSelectedKey="selectedInterfaceKey"
+            @update="updateInterfaces"
+            @close="showInterfacesModal = false"
+        />
+
+        <CustomActionsModal
+            v-if="showCustomActionsModal"
+            :customActions="customActions"
+            :tables="tables"
+            :canEdit="canEdit"
+            :initialSelectedKey="selectedCustomActionKey"
+            @update="updateCustomActions"
+            @close="showCustomActionsModal = false"
         />
 
     </template>
@@ -303,9 +347,12 @@ import SqlModal from '../Modal/SqlModal.vue'
 import ExportModal from '../Modal/ExportModal.vue'
 import RemoteCursor from '../RemoteCursor.vue'
 import SupportModal from '../Modal/SupportModal.vue'
-import ChangelogModal from '../Modal/ChangelogModal.vue'
+import DiagramRightSidebar from './DiagramRightSidebar.vue'
 import HotkeysModal from '../Modal/HotkeysModal.vue'
 import ValueTypesModal from '../Modal/ValueTypesModal.vue'
+import SharedPropertyTypesModal from '../Modal/SharedPropertyTypesModal.vue'
+import InterfacesModal from '../Modal/InterfacesModal.vue'
+import CustomActionsModal from '../Modal/CustomActionsModal.vue'
 import { useToast } from 'vue-toast-notification'
 import { useRoute, useRouter } from 'vue-router'
 import axios from '@/axios.js'
@@ -329,6 +376,10 @@ const loading = ref(false)
 const isSaved = ref(true)
 const schema = ref([])
 const valueTypes = ref([])
+const interfaces = ref([])
+const interfaceLinkConstraints = ref([])
+const customActions = ref([])
+const sharedPropertyTypes = ref([])
 const LARGE_DIAGRAM_ELEMENT_COUNT = 2000
 const isLargeDiagram = computed(() => schema.value.length > LARGE_DIAGRAM_ELEMENT_COUNT)
 const isLargeOverview = computed(() => isLargeDiagram.value && viewport.value.zoom < 0.18)
@@ -372,21 +423,38 @@ const tableColumns = computed(() => {
 const diagramName = ref('schema')
 const diagramDbType = ref('mysql')
 const showShareModal = ref(false)
-const showChangelogModal = ref(false)
 const showHotkeysModal = ref(false)
 const showValueTypesModal = ref(false)
+const showSharedPropertyTypesModal = ref(false)
+const showInterfacesModal = ref(false)
+const showCustomActionsModal = ref(false)
 const diagramShareAccess = ref(null)
 const diagramRequireApproval = ref(false)
 const diagramInLibrary = ref(false)
+const rightSidebarOpen = ref(true)
+const changelogRefreshKey = ref(0)
+const selectedValueTypeKey = ref(null)
+const selectedSharedPropertyTypeKey = ref(null)
+const selectedInterfaceKey = ref(null)
+const selectedCustomActionKey = ref(null)
 const ownerIdentity = ref(null)
 const canvasWrapperRef = ref(null)
 
 const canEdit = computed(() => props.isDemo || isOwner.value || diagramShareAccess.value === 'write')
 
-const { snapshot, undo, redo } = useUndoHistory(schema, valueTypes)
+const ontologyMetadata = { interfaces, interfaceLinkConstraints, customActions, sharedPropertyTypes }
+const metadataPayload = () => ({
+    interfaces: interfaces.value,
+    interfaceLinkConstraints: interfaceLinkConstraints.value,
+    customActions: customActions.value,
+    sharedPropertyTypes: sharedPropertyTypes.value,
+})
+const syncPayload = () => ({ schema: schema.value, valueTypes: valueTypes.value, metadata: metadataPayload() })
+
+const { snapshot, undo, redo } = useUndoHistory(schema, valueTypes, ontologyMetadata)
 
 const { remoteCursors, whisper, initEcho, cleanupEcho, onCanvasMouseMove, broadcastCursor } = useDiagramPresence({
-    token, ownerIdentity, viewport, schema, valueTypes, canvasWrapperRef,
+    token, ownerIdentity, viewport, schema, valueTypes, ontologyMetadata, canvasWrapperRef,
     canEdit,
     onDiagramSaved: () => $toast.success('Diagram saved'),
 })
@@ -408,6 +476,62 @@ const { startRowDrag } = useRowDrag({ schema, isSaved, whisper, snapshot })
 const logAction = (action, details = null) => {
     if (props.isDemo || !diagramId.value) return
     Diagram.addChangelogEntry(diagramId.value, action, details)
+        .then(() => { changelogRefreshKey.value++ })
+}
+
+const changelogName = (item) => item?.apiName || item?.displayName || item?.name || item?.id || 'Unnamed'
+
+const changelogKey = (item) => item?.apiName || item?.id || item?.displayName || JSON.stringify(item)
+
+const normalizeForChangelog = (item) => {
+    if (!item || typeof item !== 'object') return item
+    const stripIds = (value) => {
+        if (Array.isArray(value)) return value.map(stripIds)
+        if (!value || typeof value !== 'object') return value
+        return Object.fromEntries(
+            Object.entries(value)
+                .filter(([key]) => key !== 'id')
+                .map(([key, child]) => [key, stripIds(child)])
+        )
+    }
+    return stripIds(item)
+}
+
+const metadataDiff = (before = [], after = []) => {
+    const previous = new Map((before ?? []).map(item => [changelogKey(item), item]))
+    const next = new Map((after ?? []).map(item => [changelogKey(item), item]))
+    const added = []
+    const removed = []
+    const updated = []
+
+    for (const [key, item] of next) {
+        if (!previous.has(key)) {
+            added.push(changelogName(item))
+            continue
+        }
+        if (JSON.stringify(normalizeForChangelog(previous.get(key))) !== JSON.stringify(normalizeForChangelog(item))) {
+            updated.push(changelogName(item))
+        }
+    }
+    for (const [key, item] of previous) {
+        if (!next.has(key)) removed.push(changelogName(item))
+    }
+
+    return {
+        added,
+        removed,
+        updated,
+        added_count: added.length,
+        removed_count: removed.length,
+        updated_count: updated.length,
+    }
+}
+
+const hasMetadataDiff = (diff) => diff.added_count > 0 || diff.removed_count > 0 || diff.updated_count > 0
+
+const logMetadataChange = (action, before, after) => {
+    const diff = metadataDiff(before, after)
+    if (hasMetadataDiff(diff)) logAction(action, diff)
 }
 
 const defaultTableColor = ref('#3d7a5c')
@@ -464,6 +588,33 @@ const openSupportModal = async () => {
         } catch { /* guest */ }
     }
     showSupportModal.value = true
+}
+
+const metadataSelectionKey = (item) => item?.id || item?.apiName || item?.displayName || null
+
+const openValueTypeFromSidebar = (item) => {
+    selectedValueTypeKey.value = metadataSelectionKey(item)
+    showValueTypesModal.value = true
+}
+
+const openSharedPropertyTypeFromSidebar = (item) => {
+    selectedSharedPropertyTypeKey.value = metadataSelectionKey(item)
+    showSharedPropertyTypesModal.value = true
+}
+
+const openInterfaceFromSidebar = (item) => {
+    selectedInterfaceKey.value = `interface:${metadataSelectionKey(item)}`
+    showInterfacesModal.value = true
+}
+
+const openInterfaceLinkConstraintFromSidebar = (item) => {
+    selectedInterfaceKey.value = `constraint:${metadataSelectionKey(item)}`
+    showInterfacesModal.value = true
+}
+
+const openCustomActionFromSidebar = (item) => {
+    selectedCustomActionKey.value = metadataSelectionKey(item)
+    showCustomActionsModal.value = true
 }
 
 const nodeSize = (node, fallbackWidth = 400, fallbackHeight = 40) => {
@@ -558,13 +709,17 @@ const importSql = async () => {
     }
     if (importFile.value) importUploadPhase.value = 'Processing import'
 
-    const applySchema = async (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null) => {
+    const applySchema = async (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null, importedMetadata = {}) => {
         // Replace Vue Flow's internal graph instead of relying on v-model
         // reconciliation, which can retain runtime state for reused node IDs.
         const restoredSchema = JSON.parse(JSON.stringify(schemaJson))
         setElements(restoredSchema)
         schema.value = restoredSchema
         valueTypes.value = importedValueTypes
+        interfaces.value = importedMetadata.interfaces ?? []
+        interfaceLinkConstraints.value = importedMetadata.interfaceLinkConstraints ?? []
+        customActions.value = importedMetadata.customActions ?? []
+        sharedPropertyTypes.value = importedMetadata.sharedPropertyTypes ?? []
         if (importedDbType) diagramDbType.value = importedDbType
         await nextTick()
         focusLargeDiagram()
@@ -575,14 +730,19 @@ const importSql = async () => {
         importFile.value = null
         importUploadProgress.value = 0
         importUploadPhase.value = ''
-        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+        whisper('schema-sync', syncPayload())
         for (const warning of warnings) {
             $toast.warning(warning)
         }
     }
 
     if (result.status === 'done' && result.schema) {
-        await applySchema(result.schema, result.value_types ?? [], result.warnings ?? [], result.db_type)
+        await applySchema(result.schema, result.value_types ?? [], result.warnings ?? [], result.db_type, {
+            interfaces: result.interfaces ?? [],
+            interfaceLinkConstraints: result.interface_link_constraints ?? [],
+            customActions: result.custom_actions ?? [],
+            sharedPropertyTypes: result.shared_property_types ?? [],
+        })
         return
     }
 
@@ -621,7 +781,12 @@ const importSql = async () => {
         }
         if (status.status === 'done') {
             clearInterval(poll)
-            await applySchema(status.schema, status.value_types ?? [], status.warnings ?? [], status.db_type)
+            await applySchema(status.schema, status.value_types ?? [], status.warnings ?? [], status.db_type, {
+                interfaces: status.interfaces ?? [],
+                interfaceLinkConstraints: status.interface_link_constraints ?? [],
+                customActions: status.custom_actions ?? [],
+                sharedPropertyTypes: status.shared_property_types ?? [],
+            })
         } else if (status.status === 'failed') {
             clearInterval(poll)
             importLoading.value = false
@@ -660,10 +825,42 @@ const captureSvg = async () => {
 
 const updateValueTypes = (nextValueTypes, nextSchema = null) => {
     snapshot()
+    const previousValueTypes = JSON.parse(JSON.stringify(valueTypes.value))
     valueTypes.value = nextValueTypes
     if (nextSchema) schema.value = nextSchema
     isSaved.value = false
-    whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+    whisper('schema-sync', syncPayload())
+    logMetadataChange('value_types_changed', previousValueTypes, nextValueTypes)
+}
+
+const updateSharedPropertyTypes = (nextSharedPropertyTypes) => {
+    snapshot()
+    const previousSharedPropertyTypes = JSON.parse(JSON.stringify(sharedPropertyTypes.value))
+    sharedPropertyTypes.value = nextSharedPropertyTypes
+    isSaved.value = false
+    whisper('schema-sync', syncPayload())
+    logMetadataChange('shared_property_types_changed', previousSharedPropertyTypes, nextSharedPropertyTypes)
+}
+
+const updateInterfaces = ({ interfaces: nextInterfaces, interfaceLinkConstraints: nextConstraints }) => {
+    snapshot()
+    const previousInterfaces = JSON.parse(JSON.stringify(interfaces.value))
+    const previousConstraints = JSON.parse(JSON.stringify(interfaceLinkConstraints.value))
+    interfaces.value = nextInterfaces
+    interfaceLinkConstraints.value = nextConstraints
+    isSaved.value = false
+    whisper('schema-sync', syncPayload())
+    logMetadataChange('interfaces_changed', previousInterfaces, nextInterfaces)
+    logMetadataChange('interface_link_constraints_changed', previousConstraints, nextConstraints)
+}
+
+const updateCustomActions = (nextCustomActions) => {
+    snapshot()
+    const previousCustomActions = JSON.parse(JSON.stringify(customActions.value))
+    customActions.value = nextCustomActions
+    isSaved.value = false
+    whisper('schema-sync', syncPayload())
+    logMetadataChange('custom_actions_changed', previousCustomActions, nextCustomActions)
 }
 
 // --- Save ---
@@ -677,13 +874,13 @@ const saveDiagram = async (silent = false) => {
         return false
     }
     const saved = await (isOwner.value
-        ? Diagram.save(diagramId.value, schema.value, valueTypes.value)
-        : Diagram.saveByToken(token, schema.value, valueTypes.value))
+        ? Diagram.save(diagramId.value, schema.value, valueTypes.value, metadataPayload())
+        : Diagram.saveByToken(token, schema.value, valueTypes.value, metadataPayload()))
     if (!saved) return false
     isSaved.value = true
     if (!silent) {
         whisper('diagram-saved', {})
-        whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+        whisper('schema-sync', syncPayload())
     }
     return true
 }
@@ -744,6 +941,10 @@ const getDiagram = async () => {
     diagramDbType.value = diagramInfo.db_type ?? 'mysql'
     diagramName.value = diagramInfo.name ?? ''
     valueTypes.value = diagramInfo.value_types ?? []
+    interfaces.value = diagramInfo.interfaces ?? []
+    interfaceLinkConstraints.value = diagramInfo.interface_link_constraints ?? []
+    customActions.value = diagramInfo.custom_actions ?? []
+    sharedPropertyTypes.value = diagramInfo.shared_property_types ?? []
 
 
     schema.value = diagramInfo.schema ?? [{
@@ -792,8 +993,12 @@ const onKeyDown = (event) => {
         if (prev !== null) {
             schema.value = prev.schema
             valueTypes.value = prev.valueTypes ?? []
+            interfaces.value = prev.interfaces ?? []
+            interfaceLinkConstraints.value = prev.interfaceLinkConstraints ?? []
+            customActions.value = prev.customActions ?? []
+            sharedPropertyTypes.value = prev.sharedPropertyTypes ?? []
             isSaved.value = false
-            whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+            whisper('schema-sync', syncPayload())
         }
     }
     if ((event.ctrlKey || event.metaKey) && event.key === 'y') {
@@ -803,8 +1008,12 @@ const onKeyDown = (event) => {
         if (next !== null) {
             schema.value = next.schema
             valueTypes.value = next.valueTypes ?? []
+            interfaces.value = next.interfaces ?? []
+            interfaceLinkConstraints.value = next.interfaceLinkConstraints ?? []
+            customActions.value = next.customActions ?? []
+            sharedPropertyTypes.value = next.sharedPropertyTypes ?? []
             isSaved.value = false
-            whisper('schema-sync', { schema: schema.value, valueTypes: valueTypes.value })
+            whisper('schema-sync', syncPayload())
         }
     }
 }

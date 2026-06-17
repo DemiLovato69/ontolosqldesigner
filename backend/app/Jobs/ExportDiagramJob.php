@@ -57,7 +57,11 @@ class ExportDiagramJob implements ShouldQueue
         $schemaJson = json_encode($this->diagram->schema);
         $dbType = $this->diagram->db_type ?? DbType::MYSQL;
         $script = $dbType === DbType::ONTOLOGY
-            ? $ontologyMakerService->createModule($schemaJson, $this->diagram->value_types ?? [])
+            ? $ontologyMakerService->createModule(
+                $schemaJson,
+                $this->diagram->value_types ?? [],
+                $service->ontologyMetadata($this->diagram)
+            )
             : $service->createScript($schemaJson, $dbType->value);
 
         $this->diagram->script = $script;
@@ -65,7 +69,8 @@ class ExportDiagramJob implements ShouldQueue
             $schemaJson,
             $this->diagram->value_types ?? [],
             $dbType->value,
-            $this->diagram->name
+            $this->diagram->name,
+            $service->ontologyMetadata($this->diagram)
         );
         $this->diagram->export_status = ExportStatus::DONE;
         $this->diagram->export_error = null;
