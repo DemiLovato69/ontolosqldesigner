@@ -71,7 +71,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         isSaved.value = false
         const importedTables = tableIds.map(id => schema.value.find(item => item.id === id)?.label).filter(Boolean)
         logAction('reference_table_imported', { tables: importedTables, count: tableIds.length })
-        whisper('schema-patch', { add: added, update: updated.map(item => ({ id: item.id, data: item.data, style: item.style, label: item.label })) })
+        whisper('schema-patch', { add: added, update: updated.map(item => ({ id: item.id, data: item.data, style: item.style, label: item.label, position: item.position })) })
         return tableIds
     }
 

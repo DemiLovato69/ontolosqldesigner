@@ -385,6 +385,7 @@
 import { computed, onBeforeMount, onMounted, onUnmounted, ref, nextTick, watch } from 'vue'
 import { Panel, Position, useVueFlow, VueFlow } from '@vue-flow/core'
 import { TABLE_STYLE } from '@/services/TableActions.js'
+import { repairAndNormalizeSchema } from '@/services/SchemaRepair.js'
 import { Diagram } from '@/services/Diagram.js'
 import { exportDiagramPng, exportDiagramSvg } from '@/services/DiagramPngExporter.js'
 import { DEMO_SCHEMA } from '@/services/demoSchema.js'
@@ -491,6 +492,7 @@ const stripViewOnlyState = (element) => {
     return rest
 }
 const stripViewOnlySchema = (elements) => Array.isArray(elements) ? elements.map(stripViewOnlyState) : []
+const repairedSchema = (elements, tableIds = null) => repairAndNormalizeSchema(stripViewOnlySchema(elements), tableIds)
 let applyingViewVisibility = false
 const isTableHidden = (tableId) => hiddenTableIdSet.value.has(tableId)
 const isTableEffectivelyHidden = (table) => isTableHidden(table?.id) || (!viewFilters.value.referenceTables && isReferenceTable(table))
@@ -1019,9 +1021,9 @@ const importSql = async () => {
     const applySchema = async (schemaJson, importedValueTypes = [], warnings = [], importedDbType = null, importedMetadata = {}) => {
         // Replace Vue Flow's internal graph instead of relying on v-model
         // reconciliation, which can retain runtime state for reused node IDs.
-        const restoredSchema = JSON.parse(JSON.stringify(schemaJson))
-        setElements(restoredSchema)
-        schema.value = restoredSchema
+        const repaired = repairedSchema(JSON.parse(JSON.stringify(schemaJson)))
+        setElements(repaired.schema)
+        schema.value = repaired.schema
         valueTypes.value = importedValueTypes
         interfaces.value = importedMetadata.interfaces ?? []
         interfaceLinkConstraints.value = importedMetadata.interfaceLinkConstraints ?? []
@@ -1223,7 +1225,7 @@ const retryAccess = async () => {
 
 const getDiagram = async () => {
     if (props.isDemo) {
-        schema.value = stripViewOnlySchema(DEMO_SCHEMA)
+        schema.value = repairedSchema(DEMO_SCHEMA).schema
         return
     }
 
@@ -1276,7 +1278,7 @@ const getDiagram = async () => {
     sharedPropertyTypes.value = diagramInfo.shared_property_types ?? []
 
 
-    schema.value = stripViewOnlySchema(diagramInfo.schema ?? [{
+    const loadedSchema = repairedSchema(diagramInfo.schema ?? [{
         id: '1',
         type: 'table',
         label: 'users',
@@ -1289,8 +1291,9 @@ const getDiagram = async () => {
         position: { x: 0, y: -100 },
         style: TABLE_STYLE,
     }])
+    schema.value = loadedSchema.schema
 
-    isSaved.value = true
+    isSaved.value = !loadedSchema.changed
     loading.value = false
     focusLargeDiagram()
 

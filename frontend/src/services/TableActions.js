@@ -1,4 +1,5 @@
 import { Position } from '@vue-flow/core'
+import { normalizeRowPositions, uniqueElementId } from '@/services/SchemaRepair.js'
 
 export const TABLE_STYLE = {
     display: 'flex',
@@ -105,27 +106,30 @@ export const TableActions = {
         if (!original) return null
 
         const existingTables = schema.filter(el => el.type === 'table')
-        const newTableId = Math.random().toString()
+        const newTableId = uniqueElementId(schema, 'table')
         const newLabel = uniqueName(original.label, existingTables.map(t => t.label))
         const zIndex = this._nextZIndex(schema)
 
         const children = schema.filter(el => el.parentNode === tableId && el.type === 'row')
-        const newChildren = children.map(child => ({
-            id: Math.random().toString(),
-            type: child.type,
-            label: child.label,
-            parentNode: newTableId,
-            zIndex,
-            position: { x: child.position.x, y: child.position.y },
-            style: { ...child.style },
-            draggable: child.draggable,
-            data: {
-                ...child.data,
-                editing: false,
-                showModal: false,
-                showOptionsModal: false,
-            },
-        }))
+        const newChildren = []
+        for (const child of children) {
+            newChildren.push({
+                id: uniqueElementId([...schema, ...newChildren], 'row'),
+                type: child.type,
+                label: child.label,
+                parentNode: newTableId,
+                zIndex,
+                position: { x: child.position.x, y: child.position.y },
+                style: { ...child.style },
+                draggable: child.draggable,
+                data: {
+                    ...child.data,
+                    editing: false,
+                    showModal: false,
+                    showOptionsModal: false,
+                },
+            })
+        }
 
         schemaRef.value = [...schema,
             {
@@ -140,12 +144,14 @@ export const TableActions = {
             ...newChildren,
         ]
 
+        schemaRef.value = normalizeRowPositions(schemaRef.value, new Set([newTableId])).schema
+
         return newTableId
     },
 
     addTable(schemaRef, name, position, dbType = 'mysql', color = '#3d7a5c', options = {}) {
         const schema = schemaRef.value
-        const tableId = Math.random().toString()
+        const tableId = uniqueElementId(schema, 'table')
         const existingTables = schema.filter(el => el.type === 'table')
         const zIndex = this._nextZIndex(schema)
 
@@ -213,7 +219,7 @@ export const TableActions = {
                 const existingTables = schema.filter(el => el.type === 'table')
                 const x = 80 + (existingTables.length % 4) * 440
                 const y = 80 + Math.floor(existingTables.length / 4) * 360
-                const tableId = Math.random().toString()
+                const tableId = uniqueElementId(schema, 'table')
                 table = {
                     id: tableId,
                     type: 'table',
@@ -271,7 +277,7 @@ export const TableActions = {
                 }
 
                 schemaRef.value = [...schemaRef.value, {
-                    id: Math.floor(Math.random() * 100000).toString(),
+                    id: uniqueElementId(schemaRef.value, 'row'),
                     type: 'row',
                     label: propertyName,
                     zIndex: table.zIndex ?? 1,
@@ -284,6 +290,8 @@ export const TableActions = {
             }
         }
 
+        schemaRef.value = normalizeRowPositions(schemaRef.value, new Set(changedTableIds)).schema
+
         return changedTableIds
     },
 
@@ -292,7 +300,7 @@ export const TableActions = {
         const existingRows = schema.filter(el => el.parentNode === tableId && el.type === 'row')
         const tableNode = schema.find(el => el.id === tableId)
         const rowName = uniqueName(rowProps.rowName, existingRows.map(r => r.label))
-        const id = Math.floor(Math.random() * 100000).toString()
+        const id = uniqueElementId(schema, 'row')
         const rowBaseStyle = tableNode?.data?.reference ? REFERENCE_ROW_STYLE : ROW_STYLE
         const rowStyle = tableNode?.style?.width ? { ...rowBaseStyle, width: tableNode.style.width } : rowBaseStyle
         const newY = afterY + 40
@@ -328,6 +336,7 @@ export const TableActions = {
 
         const button = schemaRef.value.find(el => el.type === 'add-row-button' && el.parentNode === tableId)
         if (button) button.position = { x: 0, y: 40 + 40 * schemaRef.value.filter(el => el.parentNode === tableId && el.type === 'row').length }
+        schemaRef.value = normalizeRowPositions(schemaRef.value, new Set([tableId])).schema
 
         return id
     },
@@ -335,22 +344,21 @@ export const TableActions = {
     addRow(schemaRef, nodeProps, rowProps) {
         const schema = schemaRef.value
         const existingRows = schema.filter(el => el.parentNode === nodeProps.id && el.type === 'row')
-        const position = nodeProps.data.position || { x: 0, y: 0 }
         const rowName = uniqueName(rowProps.rowName, existingRows.map(r => r.label))
-        const id = Math.floor(Math.random() * 100000).toString()
+        const id = uniqueElementId(schema, 'row')
 
         const tableNode = schema.find(el => el.id === nodeProps.id)
         const rowStyle = tableNode?.style?.width
             ? { ...(tableNode?.data?.reference ? REFERENCE_ROW_STYLE : ROW_STYLE), width: tableNode.style.width }
             : (tableNode?.data?.reference ? REFERENCE_ROW_STYLE : ROW_STYLE)
 
-        const newRowY = position.y + 40 + 40 * existingRows.length
+        const newRowY = 40 + 40 * existingRows.length
         schemaRef.value = [...schema, {
             id,
             type: 'row',
             label: rowName,
             zIndex: tableNode?.zIndex ?? 1,
-            position: { x: position.x, y: newRowY },
+            position: { x: 0, y: newRowY },
             style: rowStyle,
             draggable: false,
             parentNode: nodeProps.id,
@@ -370,7 +378,8 @@ export const TableActions = {
         }]
 
         const button = schemaRef.value.find(el => el.type === 'add-row-button' && el.parentNode === nodeProps.id)
-        if (button) button.position = { x: position.x, y: newRowY + 40 }
+        if (button) button.position = { x: 0, y: newRowY + 40 }
+        schemaRef.value = normalizeRowPositions(schemaRef.value, new Set([nodeProps.id])).schema
 
         return id
     },
@@ -416,8 +425,8 @@ export const TableActions = {
         schemaRef.value = schemaRef.value.filter(el => el.id !== edge.id)
 
         // Add two one-to-many edges: FK row (many) → original PK row (one)
-        const edge1Id = Math.random().toString()
-        const edge2Id = Math.random().toString()
+        const edge1Id = uniqueElementId(schemaRef.value, 'edge')
+        const edge2Id = uniqueElementId([...schemaRef.value, { id: edge1Id }], 'edge')
         schemaRef.value = [...schemaRef.value,
             {
                 id: edge1Id,
