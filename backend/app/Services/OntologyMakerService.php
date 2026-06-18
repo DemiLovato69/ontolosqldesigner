@@ -74,6 +74,7 @@ class OntologyMakerService
                     'description' => $row['note'],
                     'nullable' => $row['nullable'],
                     'key_mod' => $row['key_mod'],
+                    'user_edits' => $row['user_edits'] && $row['key_mod'] !== 'PRIMARY KEY',
                     'indexed' => $row['indexed'] || in_array($row['name'], $indexedColumns, true),
                 ];
 
@@ -136,6 +137,7 @@ class OntologyMakerService
                 'primary_key' => $primaryKey,
                 'title_property' => $titleProperty,
                 'properties' => $properties,
+                'edits_enabled' => $this->hasUserEditsProperty($properties),
                 'implements_interfaces' => is_array($table['data']['implementsInterfaces'] ?? null)
                     ? array_values($table['data']['implementsInterfaces'])
                     : [],
@@ -269,6 +271,7 @@ class OntologyMakerService
                     'note' => trim((string) ($item['data']['description'] ?? $item['data']['note'] ?? $item['data']['comment'] ?? '')),
                     'nullable' => (bool) ($item['data']['nullable'] ?? false),
                     'indexed' => (bool) ($item['data']['indexed'] ?? true),
+                    'user_edits' => (bool) ($item['data']['userEdits'] ?? false),
                     'ontology_base_type' => is_array($item['data']['ontologyBaseType'] ?? null)
                         ? $item['data']['ontologyBaseType']
                         : null,
@@ -648,6 +651,18 @@ class OntologyMakerService
         return null;
     }
 
+    /** @param list<array<string, mixed>> $properties */
+    private function hasUserEditsProperty(array $properties): bool
+    {
+        foreach ($properties as $property) {
+            if (($property['user_edits'] ?? false) === true) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /** @return array{object: string, singular: string, plural: string, display: string, plural_display: string} */
     private function entityNames(string $tableName): array
     {
@@ -911,8 +926,11 @@ MTS;
                 $indexedForSearch = ($property['indexed'] ?? false) || in_array($property['key_mod'] ?? null, ['PRIMARY KEY', 'UNIQUE', 'INDEX'], true)
                     ? ', indexedForSearch: true'
                     : '';
+                $editOnly = ($property['user_edits'] ?? false) === true && ($property['key_mod'] ?? null) !== 'PRIMARY KEY'
+                    ? ', editOnly: true'
+                    : '';
                 $array = ($property['array'] ?? false) ? ', array: true' : '';
-                $propertyLines[] = '    "'.$property['api_name'].'": { type: '.$property['type'].$array.', displayName: "'.$this->escape($property['display_name']).'"'.$description.$nullability.$indexedForSearch.$valueType.' },';
+                $propertyLines[] = '    "'.$property['api_name'].'": { type: '.$property['type'].$array.', displayName: "'.$this->escape($property['display_name']).'"'.$description.$nullability.$indexedForSearch.$editOnly.$valueType.' },';
             }
             $properties = implode("\n", $propertyLines);
             $description = $object['description'] !== ''
@@ -928,6 +946,9 @@ MTS;
                     $implementsInterfaces = "\n  implementsInterfaces: [{$interfaces}],";
                 }
             }
+            $editsEnabled = ($object['edits_enabled'] ?? false) === true
+                ? "\n  editsEnabled: true,"
+                : '';
             $constraintComments = '';
             if ($object['constraints'] !== []) {
                 $constraintComments = "\n  // SQL constraints captured from the diagram:";
@@ -941,7 +962,7 @@ export const {$object['const_name']} = defineObject({
   displayName: "{$this->escape($object['display_name'])}",
   pluralDisplayName: "{$this->escape($object['plural_display_name'])}",{$description}
   titlePropertyApiName: "{$object['title_property']}",
-  primaryKeyPropertyApiName: "{$object['primary_key']}",{$implementsInterfaces}{$constraintComments}
+  primaryKeyPropertyApiName: "{$object['primary_key']}",{$editsEnabled}{$implementsInterfaces}{$constraintComments}
   properties: {
 {$properties}
   },

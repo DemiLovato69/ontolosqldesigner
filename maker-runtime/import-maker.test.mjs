@@ -147,6 +147,33 @@ test("normalizes namespaces and many-to-many links", () => {
   assert.equal(ontology.relations[0].definition.type, "manyToMany");
 });
 
+test("preserves edit-only properties as user edits", () => {
+  const result = convert(`
+    import { defineObject } from "@osdk/maker";
+
+    defineObject({
+      apiName: "customers",
+      displayName: "Customers",
+      pluralDisplayName: "Customers",
+      titlePropertyApiName: "name",
+      primaryKeyPropertyApiName: "id",
+      editsEnabled: true,
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+        reviewerNotes: { type: "string", editOnly: true },
+      },
+    });
+  `);
+
+  assert.equal(result.status, 0, result.stderr);
+  const ontology = JSON.parse(result.stdout);
+  const notes = ontology.objectTypes[0].properties.find((property) => property.apiName === "reviewerNotes");
+  const id = ontology.objectTypes[0].properties.find((property) => property.apiName === "id");
+  assert.equal(notes.userEdits, true);
+  assert.equal(id.userEdits, false);
+});
+
 test("preserves interface definitions", () => {
   const result = convert(`
     import { defineInterface } from "@osdk/maker";
