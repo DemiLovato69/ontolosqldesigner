@@ -46,7 +46,13 @@ return [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
         'redirect' => env('APP_URL').'/auth/google/callback',
+        'desktop_redirect' => env('GOOGLE_DESKTOP_REDIRECT_URI', env('APP_URL').'/api/v1/auth/oauth/google/callback'),
         'allowed_domain' => env('GOOGLE_ALLOWED_DOMAIN'),
+    ],
+
+    'desktop_oauth' => [
+        'redirect_uri' => env('DESKTOP_OAUTH_REDIRECT_URI', 'ontolosql://oauth/callback'),
+        'grant_ttl_seconds' => (int) env('DESKTOP_OAUTH_GRANT_TTL_SECONDS', 300),
     ],
 
     'github' => [

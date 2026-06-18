@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Diagram;
 use App\Services\DiagramSharingService;
 use Illuminate\Support\Facades\Broadcast;
+use Laravel\Sanctum\PersonalAccessToken;
 
 Broadcast::routes(['middleware' => ['web', 'auth']]);
 
@@ -19,20 +20,26 @@ $diagramPresenceUser = function ($user): array {
     ];
 };
 
-Broadcast::channel('diagram.{shareToken}', function ($user, string $shareToken) use ($diagramPresenceUser) {
+$bearerTokenCan = function ($user, string $ability): bool {
+    $token = method_exists($user, 'currentAccessToken') ? $user->currentAccessToken() : null;
+
+    return ! $token instanceof PersonalAccessToken || $user->tokenCan($ability);
+};
+
+Broadcast::channel('diagram.{shareToken}', function ($user, string $shareToken) use ($diagramPresenceUser, $bearerTokenCan) {
     $diagram = Diagram::where('share_token', $shareToken)->first();
 
-    if (! $diagram || ! app(DiagramSharingService::class)->canRead($diagram, $user)) {
+    if (! $bearerTokenCan($user, 'presence:read') || ! $diagram || ! app(DiagramSharingService::class)->canRead($diagram, $user)) {
         return false;
     }
 
     return $diagramPresenceUser($user);
 });
 
-Broadcast::channel('diagram.{shareToken}.writers', function ($user, string $shareToken) use ($diagramPresenceUser) {
+Broadcast::channel('diagram.{shareToken}.writers', function ($user, string $shareToken) use ($diagramPresenceUser, $bearerTokenCan) {
     $diagram = Diagram::where('share_token', $shareToken)->first();
 
-    if (! $diagram || ! app(DiagramSharingService::class)->canWrite($diagram, $user)) {
+    if (! $bearerTokenCan($user, 'presence:write') || ! $diagram || ! app(DiagramSharingService::class)->canWrite($diagram, $user)) {
         return false;
     }
 

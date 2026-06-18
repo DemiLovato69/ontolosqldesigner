@@ -10,6 +10,7 @@ The original project was a GUI SQL designer. This fork extends it into an ontolo
 - Export SQL diagrams as SQL, JSON, Laravel migrations, PNG, or ontology `.mts`.
 - Add notes to tables and rows; ontology export maps them to Maker descriptions and SQL export emits them as comments.
 - Manually verify users from the admin dashboard for local development without a mail server.
+- Use the versioned `/api/v1` backend API from native desktop clients with Google OAuth, PKCE, expiring Sanctum bearer tokens, and Reverb presence authorization.
 
 ## Stack
 
@@ -56,6 +57,16 @@ APP_URL=http://localhost:8080
 
 Set the Google OAuth redirect URI to `${APP_URL}/auth/google/callback`. Use an Internal consent screen for Google Workspace projects.
 
+The desktop companion API also uses Google OAuth. Configure a backend Google redirect URI and the native app callback URI:
+
+```dotenv
+GOOGLE_DESKTOP_REDIRECT_URI=${APP_URL}/api/v1/auth/oauth/google/callback
+DESKTOP_OAUTH_REDIRECT_URI=ontolosql://oauth/callback
+DESKTOP_OAUTH_GRANT_TTL_SECONDS=300
+```
+
+Set the additional Google OAuth redirect URI to `${APP_URL}/api/v1/auth/oauth/google/callback`.
+
 Useful commands:
 
 ```bash
@@ -72,6 +83,38 @@ http://localhost:8080/admin
 ```
 
 Use the admin user configured in the local database/env. The dashboard includes manual account verification so local development does not require SMTP setup.
+
+## Desktop API
+
+The web app keeps using Sanctum SPA cookie/session authentication. Native desktop clients should use the versioned API under `/api/v1` with `Authorization: Bearer <token>`.
+
+The desktop OAuth flow is:
+
+1. Generate a PKCE verifier/challenge and state in the native app.
+2. Open `GET /api/v1/auth/oauth/google/authorize` in the system browser with `state`, `code_challenge`, `code_challenge_method=S256`, `device_name`, and `redirect_uri`.
+3. Google redirects back to `/api/v1/auth/oauth/google/callback`.
+4. The backend validates the Google Workspace domain and redirects to `DESKTOP_OAUTH_REDIRECT_URI` with a one-time `code` and original `state`.
+5. Exchange the one-time code with `POST /api/v1/auth/oauth/google/token` and the PKCE `code_verifier`.
+6. Store the returned expiring bearer token in native secure storage, not browser `localStorage`.
+
+Desktop token abilities currently include:
+
+- `desktop`
+- `diagrams:read`
+- `diagrams:write`
+- `diagrams:delete`
+- `imports:write`
+- `exports:read`
+- `sharing:write`
+- `changelog:read`
+- `changelog:write`
+- `presence:read`
+- `presence:write`
+- `tokens:manage`
+
+The v1 API exposes owned, shared, and public/library diagrams; diagram CRUD; share/invite/visitor management; raw and chunked imports; export jobs and direct backup/migration/ontology exports; changelog entries; token management; and Reverb auth/config endpoints.
+
+The OpenAPI 3.1 spec is available in [`openapi.json`](./openapi.json). It documents the `/api/v1` desktop API surface and bearer-token security model.
 
 ## Ontology Workflow
 
@@ -109,6 +152,12 @@ Run the backend test suite in Docker:
 make test
 ```
 
+Run the focused desktop API tests:
+
+```bash
+docker exec php php artisan test tests/Feature/Api/V1
+```
+
 Run the frontend build locally:
 
 ```bash
@@ -116,7 +165,7 @@ cd frontend
 npm run build
 ```
 
-The test suite covers ontology exports, SQL import/export, type mapping, manual admin verification, and diagram CRUD/sharing behavior.
+The test suite covers ontology exports, SQL import/export, type mapping, manual admin verification, diagram CRUD/sharing behavior, desktop OAuth/token handling, v1 bearer-token diagram access, and Reverb auth.
 
 ## Notes On The Fork
 

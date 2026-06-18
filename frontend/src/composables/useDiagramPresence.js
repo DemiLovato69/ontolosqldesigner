@@ -2,6 +2,7 @@ import { reactive, watch } from 'vue'
 import { useThrottleFn } from '@vueuse/core'
 import { createEcho } from '@/echo.js'
 import { Diagram } from '@/services/Diagram.js'
+import { repairAndNormalizeSchema } from '@/services/SchemaRepair.js'
 
 export const CURSOR_COLORS = ['#E53935', '#D81B60', '#8E24AA', '#3949AB', '#1E88E5', '#00ACC1', '#43A047', '#FB8C00']
 
@@ -55,7 +56,7 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
             })
             .listenForWhisper('schema-sync', ({ schema: incoming, valueTypes: incomingValueTypes, metadata: incomingMetadata, forUserId }) => {
                 if (forUserId && forUserId !== ownerIdentity.value?.id) return
-                if (incoming?.length) schema.value = incoming
+                if (incoming?.length) schema.value = repairAndNormalizeSchema(incoming).schema
                 if (valueTypes && Array.isArray(incomingValueTypes)) valueTypes.value = incomingValueTypes
                 applyMetadata(incomingMetadata)
             })
@@ -81,6 +82,7 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
                         }
                     }
                 }
+                schema.value = repairAndNormalizeSchema(schema.value).schema
             })
     }
 
@@ -122,7 +124,7 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
             .listen('.schema.imported', async ({ imported_by }) => {
                 if (String(imported_by) === ownerIdentity.value?.id) return
                 const result = await Diagram.getByToken(token)
-                if (result?.schema) schema.value = result.schema
+                if (result?.schema) schema.value = repairAndNormalizeSchema(result.schema).schema
                 if (valueTypes && Array.isArray(result?.value_types)) valueTypes.value = result.value_types
                 applyMetadata(metadataFromDiagram(result))
             })

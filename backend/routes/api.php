@@ -69,3 +69,5 @@ Route::middleware(['auth:sanctum', 'track.seen'])->group(function () {
         Route::post('/{diagram}/changelog', [DiagramChangelogController::class, 'store']);
     });
 });
+
+require __DIR__.'/api_v1.php';
