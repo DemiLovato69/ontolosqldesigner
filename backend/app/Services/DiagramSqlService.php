@@ -1114,6 +1114,7 @@ class DiagramSqlService
                     'defaultValue' => '',
                     'description' => trim((string) ($propertyDisplay['description'] ?? '')),
                     'indexed' => (bool) ($property['indexedForSearch'] ?? false),
+                    'userEdits' => ! $isPrimary && (bool) ($property['userEdits'] ?? $property['editOnly'] ?? false),
                     'ontologyBaseType' => $baseType,
                     'ontologyImportedSqlType' => $canvasType,
                     'ontologyMetadata' => [

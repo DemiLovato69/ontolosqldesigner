@@ -233,6 +233,7 @@ class DiagramSqlServiceTest extends TestCase
                         'id' => 'email',
                         'baseType' => ['type' => 'STRING'],
                         'valueTypeRid' => 'ri.value-type.email',
+                        'userEdits' => true,
                     ],
                 ],
             ]],
@@ -246,6 +247,7 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertSame('Invalid email', $payload['value_types'][0]['constraints'][0]['failureMessage']);
         $emailRow = collect($payload['schema'])->first(fn ($item) => ($item['type'] ?? null) === 'row' && ($item['label'] ?? null) === 'email');
         $this->assertSame($payload['value_types'][0]['id'], $emailRow['data']['valueTypeId']);
+        $this->assertTrue($emailRow['data']['userEdits']);
         $this->assertSame([], $payload['warnings']);
     }
 
@@ -696,6 +698,7 @@ class DiagramSqlServiceTest extends TestCase
                             'apiName' => 'email',
                             'baseType' => ['type' => 'string'],
                             'valueType' => ['apiName' => 'emailAddress'],
+                            'userEdits' => true,
                         ],
                     ],
                 ]],
@@ -714,6 +717,7 @@ class DiagramSqlServiceTest extends TestCase
         $email = collect($payload['schema'])
             ->first(fn ($item) => ($item['type'] ?? null) === 'row' && ($item['label'] ?? null) === 'email');
         $this->assertSame($payload['value_types'][0]['id'], $email['data']['valueTypeId']);
+        $this->assertTrue($email['data']['userEdits']);
     }
 
     public function test_exported_maker_module_round_trips_with_unique_node_ids(): void

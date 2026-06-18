@@ -6,7 +6,7 @@
          ref="modalRef">
         <div class="options_modal_row">
             <p class="modal_text">Key</p>
-            <select v-model="data.keyMod" @change="$emit('change')">
+            <select v-model="data.keyMod" @change="onKeyModChange">
                 <option selected="selected" value="None">None</option>
                 <option value="PRIMARY KEY">Primary</option>
                 <option value="UNIQUE">Unique</option>
@@ -24,6 +24,10 @@
         <label class="options_modal_row" @mousedown.stop>
             <p class="modal_text">Indexed</p>
             <input type="checkbox" :checked="data.indexed ?? true" @change="toggleIndexed">
+        </label>
+        <label v-if="dbType === 'ontology'" class="options_modal_row" :class="{ 'options_modal_row--disabled': isPrimaryKey }" @mousedown.stop title="Back this property with Foundry user edits instead of the backing dataset">
+            <p class="modal_text">User Edits</p>
+            <input type="checkbox" :checked="data.userEdits" :disabled="isPrimaryKey" @change="toggleUserEdits">
         </label>
         <div class="options_modal_row">
             <p class="modal_text">Default</p>
@@ -110,9 +114,21 @@ const emit = defineEmits(['change', 'close', 'update-table-constraints', 'update
 const modalRef = ref(null)
 onClickOutside(modalRef, () => emit('close'), { ignore: props.ignore })
 
+const isPrimaryKey = computed(() => props.data.keyMod === 'PRIMARY KEY')
+
+const onKeyModChange = () => {
+    if (isPrimaryKey.value && props.data.userEdits) props.data.userEdits = false
+    emit('change')
+}
+
 const toggleNullable = () => { props.data.nullable = !props.data.nullable; emit('change') }
 const toggleIndexed = () => { props.data.indexed = !(props.data.indexed ?? true); emit('change') }
 const toggleUnsigned = () => { props.data.unsigned = !props.data.unsigned; emit('change') }
+const toggleUserEdits = () => {
+    if (isPrimaryKey.value) return
+    props.data.userEdits = !props.data.userEdits
+    emit('change')
+}
 
 // --- Unique Together ---
 
@@ -172,6 +188,11 @@ const addFulltextIndex = () => {
 
 label.options_modal_row {
     cursor: pointer;
+}
+
+.options_modal_row--disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
 }
 
 .modal_text {

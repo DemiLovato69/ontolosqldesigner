@@ -229,8 +229,10 @@ function normalizeOntology(ir) {
   const objectTypes = Object.entries(ontology.objectTypes ?? {}).map(([key, block]) => {
     const object = block.objectType ?? {};
     const objectRid = object.apiName ?? key;
+    const editOnlyProperties = editOnlyPropertiesForObject(block);
     const properties = Object.entries(object.propertyTypes ?? {}).map(([propertyKey, property]) => {
       const apiName = property.apiName ?? propertyKey;
+      const userEdits = editOnlyProperties.has(apiName);
       return {
         id: apiName,
         rid: propertyRid(objectRid, apiName),
@@ -242,6 +244,7 @@ function normalizeOntology(ir) {
         dataConstraints: property.nullability
           ? { nullability: property.nullability.noNulls ? "NO_NULLS" : "NULLABLE" }
           : {},
+        userEdits,
       };
     });
 
@@ -320,6 +323,24 @@ function normalizeOntology(ir) {
   };
   validateNormalizedOntology(normalized);
   return normalized;
+}
+
+function editOnlyPropertiesForObject(block) {
+  const editOnlyProperties = new Set();
+  for (const datasourceBlock of block.datasources ?? []) {
+    const datasource = datasourceBlock?.datasource ?? datasourceBlock;
+    if (!datasource || typeof datasource !== "object") continue;
+    const definition = datasource[datasource.type];
+    const propertyMapping = definition?.propertyMapping;
+    if (!propertyMapping || typeof propertyMapping !== "object") continue;
+    for (const [propertyApiName, mapping] of Object.entries(propertyMapping)) {
+      if (mapping?.type === "editOnly") {
+        editOnlyProperties.add(propertyApiName);
+      }
+    }
+  }
+
+  return editOnlyProperties;
 }
 
 function normalizeActions(actionTypes) {

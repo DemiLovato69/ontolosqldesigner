@@ -404,7 +404,7 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
                 node.data.ontologyImportedSqlType = null
             }
             whisper('schema-patch', {
-                update: [{ id, data: { sqlType: node.data.sqlType, valueTypeId: node.data.valueTypeId ?? null, keyMod: node.data.keyMod, nullable: node.data.nullable, indexed: node.data.indexed ?? true, unsigned: node.data.unsigned, defaultValue: node.data.defaultValue, description: node.data.description ?? node.data.comment ?? '', ontologyBaseType: node.data.ontologyBaseType ?? null, ontologyImportedSqlType: node.data.ontologyImportedSqlType ?? null } }]
+                update: [{ id, data: { sqlType: node.data.sqlType, valueTypeId: node.data.valueTypeId ?? null, keyMod: node.data.keyMod, nullable: node.data.nullable, indexed: node.data.indexed ?? true, unsigned: node.data.unsigned, defaultValue: node.data.defaultValue, description: node.data.description ?? node.data.comment ?? '', userEdits: !!node.data.userEdits, ontologyBaseType: node.data.ontologyBaseType ?? null, ontologyImportedSqlType: node.data.ontologyImportedSqlType ?? null } }]
             })
         }
     }

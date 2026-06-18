@@ -190,6 +190,9 @@ const badges = computed(() => {
     if (props.data.valueTypeId) {
         result.push({ label: 'VT', cls: 'badge--vt' })
     }
+    if (props.data.userEdits) {
+        result.push({ label: 'UE', cls: 'badge--user-edits' })
+    }
     return result
 })
 
@@ -372,6 +375,7 @@ const canvasTypeForValueType = (valueType) => {
 .badge--vt          { background: #7c3aed; color: #fff; }
 .badge--ft          { background: #f97316; color: #fff; }
 .badge--null        { background: #7c3aed; color: #fff; }
+.badge--user-edits  { background: #0f766e; color: #fff; }
 
 .type_cell {
     display: flex;

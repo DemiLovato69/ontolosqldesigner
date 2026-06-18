@@ -94,6 +94,32 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('titlePropertyApiName: "emailAddress"', $module);
     }
 
+    public function test_exports_user_edits_properties_as_edit_only_and_enables_edits(): void
+    {
+        $schema = json_encode([
+            ['id' => 'customers', 'type' => 'table', 'label' => 'customers'],
+            ['id' => 'customer_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'customers', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+                'userEdits' => true,
+            ]],
+            ['id' => 'customer_name', 'type' => 'row', 'label' => 'name', 'parentNode' => 'customers', 'data' => [
+                'sqlType' => 'STRING',
+            ]],
+            ['id' => 'customer_notes', 'type' => 'row', 'label' => 'reviewer_notes', 'parentNode' => 'customers', 'data' => [
+                'sqlType' => 'STRING',
+                'userEdits' => true,
+            ]],
+        ], JSON_THROW_ON_ERROR);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('editsEnabled: true', $module);
+        $this->assertStringContainsString('"reviewerNotes": { type: "string", displayName: "Reviewer Notes", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true, editOnly: true }', $module);
+        $this->assertStringContainsString('"id": { type: "string", displayName: "Id", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true }', $module);
+        $this->assertStringNotContainsString('"id": { type: "string", displayName: "Id", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true, editOnly: true }', $module);
+    }
+
     public function test_exports_ontology_metadata_definitions(): void
     {
         $schema = json_encode([
