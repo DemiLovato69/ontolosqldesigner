@@ -95,6 +95,8 @@ export function useDiagramPresence({ token, ownerIdentity, viewport, schema, val
     const initEcho = () => {
         if (!ownerIdentity.value) return
         echo = createEcho()
+        if (!echo) return
+
         presenceChannel = echo.join(`diagram.${token}`)
             .here((users) => {
                 for (const u of users) {

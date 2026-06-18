@@ -105,16 +105,16 @@ envs:
 
   - key: VITE_REVERB_APP_KEY
     scope: RUN_AND_BUILD_TIME
-    value: ${REVERB_APP_KEY}
+    value: snydiagram-key
   - key: VITE_REVERB_HOST
     scope: RUN_AND_BUILD_TIME
-    value: ${REVERB_HOST}
+    value: ontolosql-designer-kripb.ondigitalocean.app
   - key: VITE_REVERB_PORT
     scope: RUN_AND_BUILD_TIME
     value: "443"
   - key: VITE_REVERB_SCHEME
     scope: RUN_AND_BUILD_TIME
-    value: ${REVERB_SCHEME}
+    value: https
 
   - key: SESSION_DRIVER
     scope: RUN_AND_BUILD_TIME

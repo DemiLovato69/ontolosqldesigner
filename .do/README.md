@@ -70,3 +70,5 @@ Configure the `AWS_*` values for a DigitalOcean Spaces bucket. Local development
 ## Reverb Routing
 
 The `reverb` service is routed at `/app` with `preserve_path_prefix: true`, matching Laravel Reverb/Pusher client URLs such as `/app/{key}`.
+
+Frontend Reverb values are Vite build-time variables. Set `VITE_REVERB_APP_KEY`, `VITE_REVERB_HOST`, `VITE_REVERB_PORT`, and `VITE_REVERB_SCHEME` to concrete literal values in App Platform specs. Do not use `${REVERB_APP_KEY}`, `${REVERB_HOST}`, or similar placeholders for `VITE_*` values because unresolved placeholders are embedded into the built JavaScript bundle.

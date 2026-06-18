@@ -4,14 +4,33 @@ import axios from '@/axios.js'
 
 window.Pusher = Pusher
 
+const isUnresolvedPlaceholder = (value) => /\$\{[^}]+\}/.test(String(value ?? ''))
+
 export function createEcho() {
+    const config = {
+        key: import.meta.env.VITE_REVERB_APP_KEY,
+        host: import.meta.env.VITE_REVERB_HOST,
+        port: import.meta.env.VITE_REVERB_PORT,
+        scheme: import.meta.env.VITE_REVERB_SCHEME ?? 'https',
+    }
+
+    if (isUnresolvedPlaceholder(config.key) || isUnresolvedPlaceholder(config.host) || isUnresolvedPlaceholder(config.scheme)) {
+        console.error('Reverb Vite env vars were not resolved at build time.', {
+            VITE_REVERB_APP_KEY: config.key,
+            VITE_REVERB_HOST: config.host,
+            VITE_REVERB_SCHEME: config.scheme,
+        })
+
+        return null
+    }
+
     return new Echo({
         broadcaster: 'reverb',
-        key: import.meta.env.VITE_REVERB_APP_KEY,
-        wsHost: import.meta.env.VITE_REVERB_HOST,
-        wsPort: import.meta.env.VITE_REVERB_PORT ?? 80,
-        wssPort: import.meta.env.VITE_REVERB_PORT ?? 443,
-        forceTLS: (import.meta.env.VITE_REVERB_SCHEME ?? 'https') === 'https',
+        key: config.key,
+        wsHost: config.host,
+        wsPort: config.port ?? 80,
+        wssPort: config.port ?? 443,
+        forceTLS: config.scheme === 'https',
         enabledTransports: ['ws', 'wss'],
         authorizer: (channel) => ({
             authorize: async (socketId, callback) => {
