@@ -5,7 +5,7 @@ const table = (id, label, x, y, color) => ({
     id,
     type: 'table',
     label,
-    data: { toolbarPosition: Position.Top, toolbarVisible: true, color, description: '', ontologyActions: { create: false, modify: false, delete: false } },
+    data: { toolbarPosition: Position.Top, toolbarVisible: true, color, description: '', ontologyActions: { create: false, modify: false, delete: false }, editsHistory: { enabled: false, storeAllPreviousProperties: false } },
     position: { x, y },
     style: { ...TABLE_STYLE, background: color, border: `1px solid ${color}`, borderColor: color },
 })

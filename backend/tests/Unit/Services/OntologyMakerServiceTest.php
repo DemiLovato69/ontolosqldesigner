@@ -120,6 +120,37 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringNotContainsString('"id": { type: "string", displayName: "Id", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true, editOnly: true }', $module);
     }
 
+    public function test_exports_edit_history_config_and_enables_edits(): void
+    {
+        $schema = json_encode([
+            ['id' => 'customers', 'type' => 'table', 'label' => 'customers', 'data' => [
+                'editsHistory' => ['enabled' => true, 'storeAllPreviousProperties' => true],
+            ]],
+            ['id' => 'customer_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'customers', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+            ['id' => 'customer_name', 'type' => 'row', 'label' => 'name', 'parentNode' => 'customers', 'data' => [
+                'sqlType' => 'STRING',
+            ]],
+            ['id' => 'orders', 'type' => 'table', 'label' => 'orders', 'data' => [
+                'editsHistory' => ['enabled' => false, 'storeAllPreviousProperties' => true],
+            ]],
+            ['id' => 'order_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'orders', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+        ], JSON_THROW_ON_ERROR);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('export const customers = defineObject({', $module);
+        $this->assertStringContainsString('editsEnabled: true', $module);
+        $this->assertStringContainsString('editsHistoryConfig: {', $module);
+        $this->assertStringContainsString('storeAllPreviousProperties: true', $module);
+        $this->assertSame(1, substr_count($module, 'editsHistoryConfig: {'));
+    }
+
     public function test_exports_ontology_metadata_definitions(): void
     {
         $schema = json_encode([

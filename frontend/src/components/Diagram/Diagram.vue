@@ -1287,6 +1287,7 @@ const getDiagram = async () => {
             toolbarVisible: true,
             description: '',
             ontologyActions: { create: false, modify: false, delete: false },
+            editsHistory: { enabled: false, storeAllPreviousProperties: false },
         },
         position: { x: 0, y: -100 },
         style: TABLE_STYLE,

@@ -1062,6 +1062,7 @@ class DiagramSqlService
                     'delete' => (bool) ($objectType['ontologyActions']['delete'] ?? false),
                 ];
             }
+            $table['data']['editsHistory'] = $this->ontologyEditsHistory($objectType);
             if (is_array($objectType['implementsInterfaces'] ?? null)) {
                 $table['data']['implementsInterfaces'] = array_values(array_filter(
                     $objectType['implementsInterfaces'],
@@ -1365,6 +1366,32 @@ class DiagramSqlService
         }
 
         return compact('definitions', 'references', 'warnings');
+    }
+
+    /**
+     * @param array<string, mixed> $objectType
+     * @return array{enabled: bool, storeAllPreviousProperties: bool}
+     */
+    private function ontologyEditsHistory(array $objectType): array
+    {
+        $config = is_array($objectType['editsHistory'] ?? null) ? $objectType['editsHistory'] : null;
+        $raw = is_array($objectType['entityMetadata']['editsHistory'] ?? null)
+            ? $objectType['entityMetadata']['editsHistory']
+            : null;
+
+        if ($config === null && $raw !== null) {
+            $config = ($raw['type'] ?? null) === 'config'
+                ? [
+                    'enabled' => true,
+                    'storeAllPreviousProperties' => (bool) ($raw['config']['storeAllPreviousProperties'] ?? false),
+                ]
+                : ['enabled' => false, 'storeAllPreviousProperties' => false];
+        }
+
+        return [
+            'enabled' => (bool) ($config['enabled'] ?? false),
+            'storeAllPreviousProperties' => (bool) ($config['storeAllPreviousProperties'] ?? false),
+        ];
     }
 
     /** @return list<array<string, mixed>> */

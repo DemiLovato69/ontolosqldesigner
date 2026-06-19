@@ -174,6 +174,36 @@ test("preserves edit-only properties as user edits", () => {
   assert.equal(id.userEdits, false);
 });
 
+test("preserves edits history config", () => {
+  const result = convert(`
+    import { defineObject } from "@osdk/maker";
+
+    defineObject({
+      apiName: "customers",
+      displayName: "Customers",
+      pluralDisplayName: "Customers",
+      titlePropertyApiName: "name",
+      primaryKeyPropertyApiName: "id",
+      editsEnabled: true,
+      editsHistoryConfig: {
+        enabled: true,
+        storeAllPreviousProperties: true,
+      },
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+      },
+    });
+  `);
+
+  assert.equal(result.status, 0, result.stderr);
+  const ontology = JSON.parse(result.stdout);
+  assert.deepEqual(ontology.objectTypes[0].editsHistory, {
+    enabled: true,
+    storeAllPreviousProperties: true,
+  });
+});
+
 test("preserves interface definitions", () => {
   const result = convert(`
     import { defineInterface } from "@osdk/maker";

@@ -258,6 +258,7 @@ function normalizeOntology(ir) {
       properties,
       implementsInterfaces: normalizeNamedRecords(object.implementsInterfaces ?? object.interfaceTypes ?? []),
       ontologyActions: actionsByObject.get(objectRid) ?? emptyActions(),
+      editsHistory: normalizeEditsHistory(block.entityMetadata?.editsHistory),
     };
   });
 
@@ -323,6 +324,17 @@ function normalizeOntology(ir) {
   };
   validateNormalizedOntology(normalized);
   return normalized;
+}
+
+function normalizeEditsHistory(editsHistory) {
+  if (editsHistory?.type !== "config") {
+    return { enabled: false, storeAllPreviousProperties: false };
+  }
+
+  return {
+    enabled: true,
+    storeAllPreviousProperties: !!editsHistory.config?.storeAllPreviousProperties,
+  };
 }
 
 function editOnlyPropertiesForObject(block) {
