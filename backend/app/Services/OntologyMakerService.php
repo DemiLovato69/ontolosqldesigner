@@ -128,6 +128,7 @@ class OntologyMakerService
 
             $titleProperty = $this->selectedTitleProperty($table, $tableRows)
                 ?? $this->chooseTitleProperty($properties, $primaryKey);
+            $editsHistory = $this->editsHistoryConfig($table);
             $objects[] = [
                 'const_name' => $names['object'],
                 'api_name' => $names['object'],
@@ -137,7 +138,8 @@ class OntologyMakerService
                 'primary_key' => $primaryKey,
                 'title_property' => $titleProperty,
                 'properties' => $properties,
-                'edits_enabled' => $this->hasUserEditsProperty($properties),
+                'edits_enabled' => $this->hasUserEditsProperty($properties) || $editsHistory['enabled'],
+                'edits_history' => $editsHistory,
                 'implements_interfaces' => is_array($table['data']['implementsInterfaces'] ?? null)
                     ? array_values($table['data']['implementsInterfaces'])
                     : [],
@@ -421,6 +423,23 @@ class OntologyMakerService
             'create' => (bool) ($actions['create'] ?? false),
             'modify' => (bool) ($actions['modify'] ?? false),
             'delete' => (bool) ($actions['delete'] ?? false),
+        ];
+    }
+
+    /**
+     * @param array<string, mixed> $table
+     * @return array{enabled: bool, store_all_previous_properties: bool}
+     */
+    private function editsHistoryConfig(array $table): array
+    {
+        $config = $table['data']['editsHistory'] ?? [];
+        if (! is_array($config)) {
+            $config = [];
+        }
+
+        return [
+            'enabled' => (bool) ($config['enabled'] ?? false),
+            'store_all_previous_properties' => (bool) ($config['storeAllPreviousProperties'] ?? false),
         ];
     }
 
@@ -949,6 +968,9 @@ MTS;
             $editsEnabled = ($object['edits_enabled'] ?? false) === true
                 ? "\n  editsEnabled: true,"
                 : '';
+            $editsHistory = ($object['edits_history']['enabled'] ?? false) === true
+                ? "\n  editsHistoryConfig: {\n    enabled: true,\n    storeAllPreviousProperties: ".(($object['edits_history']['store_all_previous_properties'] ?? false) ? 'true' : 'false').",\n  },"
+                : '';
             $constraintComments = '';
             if ($object['constraints'] !== []) {
                 $constraintComments = "\n  // SQL constraints captured from the diagram:";
@@ -962,7 +984,7 @@ export const {$object['const_name']} = defineObject({
   displayName: "{$this->escape($object['display_name'])}",
   pluralDisplayName: "{$this->escape($object['plural_display_name'])}",{$description}
   titlePropertyApiName: "{$object['title_property']}",
-  primaryKeyPropertyApiName: "{$object['primary_key']}",{$editsEnabled}{$implementsInterfaces}{$constraintComments}
+  primaryKeyPropertyApiName: "{$object['primary_key']}",{$editsEnabled}{$editsHistory}{$implementsInterfaces}{$constraintComments}
   properties: {
 {$properties}
   },

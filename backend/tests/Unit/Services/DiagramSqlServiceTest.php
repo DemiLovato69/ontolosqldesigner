@@ -227,6 +227,7 @@ class DiagramSqlServiceTest extends TestCase
                 'rid' => 'ri.object.user',
                 'apiName' => 'User',
                 'primaryKeys' => ['id'],
+                'editsHistory' => ['enabled' => true, 'storeAllPreviousProperties' => true],
                 'properties' => [
                     ['id' => 'id', 'baseType' => ['type' => 'STRING']],
                     [
@@ -248,6 +249,8 @@ class DiagramSqlServiceTest extends TestCase
         $emailRow = collect($payload['schema'])->first(fn ($item) => ($item['type'] ?? null) === 'row' && ($item['label'] ?? null) === 'email');
         $this->assertSame($payload['value_types'][0]['id'], $emailRow['data']['valueTypeId']);
         $this->assertTrue($emailRow['data']['userEdits']);
+        $userTable = collect($payload['schema'])->first(fn ($item) => ($item['type'] ?? null) === 'table' && ($item['label'] ?? null) === 'User');
+        $this->assertSame(['enabled' => true, 'storeAllPreviousProperties' => true], $userTable['data']['editsHistory']);
         $this->assertSame([], $payload['warnings']);
     }
 
@@ -691,6 +694,7 @@ class DiagramSqlServiceTest extends TestCase
                     'displayMetadata' => ['displayName' => 'Users'],
                     'titlePropertyId' => 'email',
                     'primaryKeys' => ['id'],
+                    'editsHistory' => ['enabled' => true, 'storeAllPreviousProperties' => true],
                     'properties' => [
                         ['id' => 'id', 'apiName' => 'id', 'baseType' => ['type' => 'string']],
                         [
@@ -718,6 +722,9 @@ class DiagramSqlServiceTest extends TestCase
             ->first(fn ($item) => ($item['type'] ?? null) === 'row' && ($item['label'] ?? null) === 'email');
         $this->assertSame($payload['value_types'][0]['id'], $email['data']['valueTypeId']);
         $this->assertTrue($email['data']['userEdits']);
+        $users = collect($payload['schema'])
+            ->first(fn ($item) => ($item['type'] ?? null) === 'table' && ($item['label'] ?? null) === 'Users');
+        $this->assertSame(['enabled' => true, 'storeAllPreviousProperties' => true], $users['data']['editsHistory']);
     }
 
     public function test_exported_maker_module_round_trips_with_unique_node_ids(): void

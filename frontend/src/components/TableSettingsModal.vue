@@ -52,6 +52,17 @@
                 <span>Delete action</span>
                 <input type="checkbox" :checked="actions.delete" :disabled="!canEdit" @change="toggle('delete')" />
             </label>
+
+            <p class="table-settings-modal__section">Edit History</p>
+            <p class="table-settings-modal__hint">Create Foundry edit history records when actions change this object type.</p>
+            <label class="table-settings-modal__row">
+                <span>Enable edit history</span>
+                <input type="checkbox" :checked="normalizedEditsHistory.enabled" :disabled="!canEdit" @change="toggleEditHistory" />
+            </label>
+            <label class="table-settings-modal__row" :class="{ 'table-settings-modal__row--disabled': !normalizedEditsHistory.enabled }">
+                <span>Store all previous property values</span>
+                <input type="checkbox" :checked="normalizedEditsHistory.storeAllPreviousProperties" :disabled="!canEdit || !normalizedEditsHistory.enabled" @change="toggleStorePreviousProperties" />
+            </label>
         </div>
     </Teleport>
 </template>
@@ -66,6 +77,7 @@ const props = defineProps({
     columns: { type: Array, default: () => [] },
     interfaces: { type: Array, default: () => [] },
     implementsInterfaces: { type: Array, default: () => [] },
+    editsHistory: { type: Object, default: () => ({}) },
     canEdit: { type: Boolean, default: true },
     anchor: { type: Object, default: null },
     ignore: { type: Array, default: () => [] },
@@ -93,24 +105,31 @@ onMounted(() => {
     }
 })
 
+const normalizedEditsHistory = computed(() => ({
+    enabled: !!props.editsHistory?.enabled,
+    storeAllPreviousProperties: !!props.editsHistory?.storeAllPreviousProperties,
+}))
+
+const baseSettings = () => ({
+    create: !!props.actions.create,
+    modify: !!props.actions.modify,
+    delete: !!props.actions.delete,
+    titlePropertyRowId: props.titlePropertyRowId || null,
+    implementsInterfaces: props.implementsInterfaces,
+    editsHistory: normalizedEditsHistory.value,
+})
+
 const toggle = (key) => {
     emit('change', {
-        create: !!props.actions.create,
-        modify: !!props.actions.modify,
-        delete: !!props.actions.delete,
-        titlePropertyRowId: props.titlePropertyRowId || null,
-        implementsInterfaces: props.implementsInterfaces,
+        ...baseSettings(),
         [key]: !props.actions[key],
     })
 }
 
 const setTitleProperty = (titlePropertyRowId) => {
     emit('change', {
-        create: !!props.actions.create,
-        modify: !!props.actions.modify,
-        delete: !!props.actions.delete,
+        ...baseSettings(),
         titlePropertyRowId: titlePropertyRowId || null,
-        implementsInterfaces: props.implementsInterfaces,
     })
 }
 
@@ -118,11 +137,30 @@ const toggleInterface = (apiName) => {
     const current = new Set(props.implementsInterfaces)
     current.has(apiName) ? current.delete(apiName) : current.add(apiName)
     emit('change', {
-        create: !!props.actions.create,
-        modify: !!props.actions.modify,
-        delete: !!props.actions.delete,
-        titlePropertyRowId: props.titlePropertyRowId || null,
+        ...baseSettings(),
         implementsInterfaces: Array.from(current),
+    })
+}
+
+const toggleEditHistory = () => {
+    const enabled = !normalizedEditsHistory.value.enabled
+    emit('change', {
+        ...baseSettings(),
+        editsHistory: {
+            enabled,
+            storeAllPreviousProperties: enabled ? normalizedEditsHistory.value.storeAllPreviousProperties : false,
+        },
+    })
+}
+
+const toggleStorePreviousProperties = () => {
+    if (!normalizedEditsHistory.value.enabled) return
+    emit('change', {
+        ...baseSettings(),
+        editsHistory: {
+            enabled: true,
+            storeAllPreviousProperties: !normalizedEditsHistory.value.storeAllPreviousProperties,
+        },
     })
 }
 </script>
@@ -185,5 +223,9 @@ const toggleInterface = (apiName) => {
     padding: 6px 0;
     color: var(--text-primary);
     font-size: 13px;
+}
+
+.table-settings-modal__row--disabled {
+    opacity: 0.55;
 }
 </style>
