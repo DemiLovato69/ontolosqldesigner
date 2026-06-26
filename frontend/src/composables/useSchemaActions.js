@@ -61,11 +61,11 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         whisper('schema-patch', { add: nodes })
     }
 
-    const importReferenceJsonSchemas = (content) => {
+    const importReferenceJsonSchemas = (content, options = {}) => {
         snapshot()
         const beforeIds = new Set(schema.value.map(item => item.id))
         const beforeItems = new Map(schema.value.map(item => [item.id, JSON.stringify(item)]))
-        const tableIds = TableActions.importReferenceJsonSchemas(schema, content)
+        const tableIds = TableActions.importReferenceJsonSchemas(schema, content, options)
         const added = schema.value.filter(item => !beforeIds.has(item.id))
         const updated = schema.value.filter(item => beforeIds.has(item.id) && beforeItems.get(item.id) !== JSON.stringify(item))
         isSaved.value = false

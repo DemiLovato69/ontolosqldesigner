@@ -93,6 +93,286 @@ function sqlTypeFromJsonSchema(property) {
     return 'STRING'
 }
 
+function parseJsonReferenceSchemas(content, options = {}) {
+    const decoded = typeof content === 'string' ? JSON.parse(content) : content
+    const schemas = Array.isArray(decoded) ? decoded : [decoded]
+
+    return schemas.map((jsonSchema, schemaIndex) => {
+        if (!jsonSchema || typeof jsonSchema !== 'object' || jsonSchema.type !== 'object' || !jsonSchema.properties || typeof jsonSchema.properties !== 'object') {
+            throw new Error('Reference JSON must be a JSON Schema object with properties.')
+        }
+
+        const fallbackTitle = jsonSchema.title || `ReferenceSchema${schemaIndex + 1}`
+        const overrideTitle = typeof options.title === 'string' ? options.title.trim() : ''
+        const title = (overrideTitle && schemas.length === 1) ? overrideTitle : fallbackTitle
+
+        const properties = Object.entries(jsonSchema.properties).map(([propertyName, property]) => ({
+            name: propertyName,
+            jsonSchemaType: property?.type ?? 'string',
+            jsonSchema: property,
+            sqlType: sqlTypeFromJsonSchema(property),
+            nullable: nullableFromJsonSchema(property),
+            unsigned: false,
+            description: property?.description ?? '',
+        }))
+
+        return {
+            title,
+            description: jsonSchema.description ?? null,
+            referenceSource: { importedFrom: 'json-schema', schemaTitle: title, schema: jsonSchema.$schema ?? null },
+            properties,
+        }
+    })
+}
+
+const POLARS_SCHEMA_RE = /(?:\bpl|\bpolars)\s*\.\s*Schema\s*\(/
+
+function looksLikePolarsSchema(content) {
+    return typeof content === 'string' && POLARS_SCHEMA_RE.test(content)
+}
+
+function skipPolarsWs(ctx) {
+    while (ctx.pos < ctx.str.length) {
+        const ch = ctx.str[ctx.pos]
+        if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') { ctx.pos++; continue }
+        if (ch === '#') { while (ctx.pos < ctx.str.length && ctx.str[ctx.pos] !== '\n') ctx.pos++; continue }
+        break
+    }
+}
+
+function expectPolarsChar(ctx, char) {
+    if (ctx.str[ctx.pos] !== char) {
+        throw new Error(`Could not parse Polars schema: expected "${char}".`)
+    }
+    ctx.pos++
+}
+
+function parsePolarsString(ctx) {
+    const quote = ctx.str[ctx.pos]
+    if (quote !== '"' && quote !== "'") {
+        throw new Error('Could not parse Polars schema: expected a quoted field name.')
+    }
+    ctx.pos++
+    let result = ''
+    while (ctx.pos < ctx.str.length) {
+        const ch = ctx.str[ctx.pos]
+        if (ch === '\\') { result += ctx.str[ctx.pos + 1] ?? ''; ctx.pos += 2; continue }
+        if (ch === quote) { ctx.pos++; return result }
+        result += ch
+        ctx.pos++
+    }
+    throw new Error('Could not parse Polars schema: unterminated string.')
+}
+
+// Consumes characters until the parenthesis/bracket/brace opened by the caller
+// is balanced and closed. Assumes the matching opener was already consumed.
+function skipPolarsToClose(ctx, depth = 1) {
+    while (ctx.pos < ctx.str.length) {
+        const ch = ctx.str[ctx.pos]
+        if (ch === '"' || ch === "'") { parsePolarsString(ctx); continue }
+        if (ch === '(' || ch === '[' || ch === '{') { depth++; ctx.pos++; continue }
+        if (ch === ')' || ch === ']' || ch === '}') { depth--; ctx.pos++; if (depth === 0) return; continue }
+        ctx.pos++
+    }
+    throw new Error('Could not parse Polars schema: unbalanced parentheses.')
+}
+
+function parsePolarsType(ctx) {
+    skipPolarsWs(ctx)
+    const nameMatch = /^(?:pl|polars)\s*\.\s*([A-Za-z_][A-Za-z0-9_]*)/.exec(ctx.str.slice(ctx.pos))
+    if (!nameMatch) {
+        throw new Error('Could not parse Polars schema: expected a pl.<Type> value.')
+    }
+    ctx.pos += nameMatch[0].length
+    const typeName = nameMatch[1]
+    skipPolarsWs(ctx)
+    let args = null
+    if (ctx.str[ctx.pos] === '(') {
+        ctx.pos++
+        args = parsePolarsTypeArgs(ctx, typeName)
+    }
+    return { typeName, args }
+}
+
+function parsePolarsTypeArgs(ctx, typeName) {
+    skipPolarsWs(ctx)
+    if (ctx.str[ctx.pos] === ')') { ctx.pos++; return null }
+
+    if (typeName === 'Struct') {
+        const fields = parsePolarsContainer(ctx)
+        skipPolarsToClose(ctx)
+        return { fields }
+    }
+
+    if (typeName === 'List' || typeName === 'Array') {
+        const inner = parsePolarsType(ctx)
+        skipPolarsToClose(ctx)
+        return { inner }
+    }
+
+    // Parametric scalar types (Datetime, Decimal, Duration, ...) — ignore their args.
+    skipPolarsToClose(ctx)
+    return null
+}
+
+function parsePolarsEntry(ctx) {
+    skipPolarsWs(ctx)
+    if (ctx.str[ctx.pos] === '(') {
+        ctx.pos++
+        skipPolarsWs(ctx)
+        const name = parsePolarsString(ctx)
+        skipPolarsWs(ctx)
+        expectPolarsChar(ctx, ',')
+        const type = parsePolarsType(ctx)
+        skipPolarsWs(ctx)
+        expectPolarsChar(ctx, ')')
+        return { name, type }
+    }
+    const name = parsePolarsString(ctx)
+    skipPolarsWs(ctx)
+    expectPolarsChar(ctx, ':')
+    const type = parsePolarsType(ctx)
+    return { name, type }
+}
+
+function parsePolarsContainer(ctx) {
+    skipPolarsWs(ctx)
+    const open = ctx.str[ctx.pos]
+    const close = open === '{' ? '}' : open === '[' ? ']' : null
+    if (!close) {
+        throw new Error('Could not parse Polars schema: expected "{" for schema fields.')
+    }
+    ctx.pos++
+    const entries = []
+    skipPolarsWs(ctx)
+    if (ctx.str[ctx.pos] === close) { ctx.pos++; return entries }
+
+    while (true) {
+        entries.push(parsePolarsEntry(ctx))
+        skipPolarsWs(ctx)
+        const ch = ctx.str[ctx.pos]
+        if (ch === ',') {
+            ctx.pos++
+            skipPolarsWs(ctx)
+            if (ctx.str[ctx.pos] === close) { ctx.pos++; break }
+            continue
+        }
+        if (ch === close) { ctx.pos++; break }
+        throw new Error(`Could not parse Polars schema: expected "," or "${close}".`)
+    }
+    return entries
+}
+
+function polarsTypeToProperty(type) {
+    const name = type?.typeName
+    switch (name) {
+        case 'String':
+        case 'Utf8':
+        case 'Categorical':
+        case 'Enum':
+            return { jsonSchemaType: 'string', jsonSchema: { type: 'string' }, sqlType: 'STRING', unsigned: false }
+        case 'Boolean':
+            return { jsonSchemaType: 'boolean', jsonSchema: { type: 'boolean' }, sqlType: 'BOOLEAN', unsigned: false }
+        case 'Int8':
+        case 'Int16':
+        case 'Int32':
+            return { jsonSchemaType: 'integer', jsonSchema: { type: 'integer' }, sqlType: 'INTEGER', unsigned: false }
+        case 'Int64':
+            return { jsonSchemaType: 'integer', jsonSchema: { type: 'integer', format: 'int64' }, sqlType: 'BIGINT', unsigned: false }
+        case 'UInt8':
+        case 'UInt16':
+        case 'UInt32':
+            return { jsonSchemaType: 'integer', jsonSchema: { type: 'integer' }, sqlType: 'INTEGER', unsigned: true }
+        case 'UInt64':
+            return { jsonSchemaType: 'integer', jsonSchema: { type: 'integer', format: 'uint64' }, sqlType: 'BIGINT', unsigned: true }
+        case 'Float32':
+            return { jsonSchemaType: 'number', jsonSchema: { type: 'number', format: 'float' }, sqlType: 'FLOAT', unsigned: false }
+        case 'Float64':
+            return { jsonSchemaType: 'number', jsonSchema: { type: 'number', format: 'double' }, sqlType: 'DOUBLE', unsigned: false }
+        case 'Decimal':
+            return { jsonSchemaType: 'number', jsonSchema: { type: 'number' }, sqlType: 'DECIMAL', unsigned: false }
+        case 'Date':
+            return { jsonSchemaType: 'string', jsonSchema: { type: 'string', format: 'date' }, sqlType: 'DATE', unsigned: false }
+        case 'Datetime':
+            return { jsonSchemaType: 'string', jsonSchema: { type: 'string', format: 'date-time' }, sqlType: 'DATETIME', unsigned: false }
+        case 'Time':
+            return { jsonSchemaType: 'string', jsonSchema: { type: 'string', format: 'time' }, sqlType: 'TIME', unsigned: false }
+        case 'Duration':
+            return { jsonSchemaType: 'string', jsonSchema: { type: 'string' }, sqlType: 'STRING', unsigned: false }
+        case 'Binary':
+            return { jsonSchemaType: 'string', jsonSchema: { type: 'string', contentEncoding: 'base64' }, sqlType: 'BLOB', unsigned: false }
+        case 'List':
+        case 'Array': {
+            const inner = type.args?.inner
+                ? polarsTypeToProperty(type.args.inner)
+                : { jsonSchemaType: 'string', jsonSchema: { type: 'string' }, sqlType: 'STRING' }
+            return {
+                jsonSchemaType: 'array',
+                jsonSchema: { type: 'array', items: inner.jsonSchema },
+                sqlType: `ARRAY<${inner.sqlType}>`,
+                unsigned: false,
+            }
+        }
+        case 'Struct': {
+            const properties = {}
+            for (const field of (type.args?.fields ?? [])) {
+                properties[field.name] = polarsTypeToProperty(field.type).jsonSchema
+            }
+            return {
+                jsonSchemaType: 'object',
+                jsonSchema: { type: 'object', properties },
+                sqlType: 'STRUCT',
+                unsigned: false,
+            }
+        }
+        default:
+            return { jsonSchemaType: 'string', jsonSchema: { type: 'string' }, sqlType: 'STRING', unsigned: false }
+    }
+}
+
+function parsePolarsSchema(content, options = {}) {
+    const match = POLARS_SCHEMA_RE.exec(content)
+    if (!match) {
+        throw new Error('Could not parse Polars schema: expected pl.Schema({...}).')
+    }
+
+    const ctx = { str: content, pos: match.index + match[0].length }
+    const entries = parsePolarsContainer(ctx)
+    if (!entries.length) {
+        throw new Error('Polars schema must contain at least one field.')
+    }
+
+    const overrideTitle = typeof options.title === 'string' ? options.title.trim() : ''
+    const title = overrideTitle || 'PolarsSchema1'
+
+    const properties = entries.map(entry => {
+        const prop = polarsTypeToProperty(entry.type)
+        return {
+            name: entry.name,
+            jsonSchemaType: prop.jsonSchemaType,
+            jsonSchema: prop.jsonSchema,
+            sqlType: prop.sqlType,
+            nullable: false,
+            unsigned: prop.unsigned ?? false,
+            description: '',
+        }
+    })
+
+    return [{
+        title,
+        description: null,
+        referenceSource: { importedFrom: 'polars-schema', schemaTitle: title, schema: null },
+        properties,
+    }]
+}
+
+function parseReferenceSchemas(content, options = {}) {
+    if (looksLikePolarsSchema(content)) {
+        return parsePolarsSchema(content, options)
+    }
+    return parseJsonReferenceSchemas(content, options)
+}
+
 export const TableActions = {
 
     _nextZIndex(schema) {
@@ -200,17 +480,12 @@ export const TableActions = {
         })
     },
 
-    importReferenceJsonSchemas(schemaRef, content) {
-        const decoded = typeof content === 'string' ? JSON.parse(content) : content
-        const schemas = Array.isArray(decoded) ? decoded : [decoded]
+    importReferenceJsonSchemas(schemaRef, content, options = {}) {
+        const referenceSchemas = parseReferenceSchemas(content, options)
         const changedTableIds = []
 
-        for (const [schemaIndex, jsonSchema] of schemas.entries()) {
-            if (!jsonSchema || typeof jsonSchema !== 'object' || jsonSchema.type !== 'object' || !jsonSchema.properties || typeof jsonSchema.properties !== 'object') {
-                throw new Error('Reference JSON must be a JSON Schema object with properties.')
-            }
-
-            const title = jsonSchema.title || `ReferenceSchema${schemaIndex + 1}`
+        for (const refSchema of referenceSchemas) {
+            const title = refSchema.title
             let schema = schemaRef.value
             let table = schema.find(item => item.type === 'table'
                 && (item.data?.tableKind === 'reference' || item.data?.reference)
@@ -230,10 +505,10 @@ export const TableActions = {
                         toolbarPosition: Position.Top,
                         toolbarVisible: true,
                         color: '#4c3f78',
-                        description: jsonSchema.description ?? '',
+                        description: refSchema.description ?? '',
                         tableKind: 'reference',
                         reference: true,
-                        referenceSource: { importedFrom: 'json-schema', schemaTitle: title, schema: jsonSchema.$schema ?? null },
+                        referenceSource: { ...refSchema.referenceSource },
                         ontologyActions: { create: false, modify: false, delete: false },
                         editsHistory: { enabled: false, storeAllPreviousProperties: false },
                     },
@@ -247,8 +522,8 @@ export const TableActions = {
                     ...table.data,
                     tableKind: 'reference',
                     reference: true,
-                    description: jsonSchema.description ?? table.data?.description ?? '',
-                    referenceSource: { ...(table.data?.referenceSource ?? {}), importedFrom: 'json-schema', schemaTitle: title, schema: jsonSchema.$schema ?? null },
+                    description: refSchema.description ?? table.data?.description ?? '',
+                    referenceSource: { ...(table.data?.referenceSource ?? {}), ...refSchema.referenceSource },
                 }
                 table.style = { ...REFERENCE_TABLE_STYLE, width: table.style?.width ?? REFERENCE_TABLE_STYLE.width }
             }
@@ -258,19 +533,19 @@ export const TableActions = {
             const existingByName = new Map(existingRows.map(row => [row.label, row]))
             let rowIndex = existingRows.length
 
-            for (const [propertyName, property] of Object.entries(jsonSchema.properties)) {
-                const row = existingByName.get(propertyName)
+            for (const property of refSchema.properties) {
+                const row = existingByName.get(property.name)
                 const rowData = {
                     reference: true,
-                    jsonSchemaType: property?.type ?? 'string',
-                    jsonSchema: property,
+                    jsonSchemaType: property.jsonSchemaType,
+                    jsonSchema: property.jsonSchema,
                     keyMod: 'None',
-                    sqlType: sqlTypeFromJsonSchema(property),
-                    nullable: nullableFromJsonSchema(property),
+                    sqlType: property.sqlType,
+                    nullable: property.nullable,
                     indexed: true,
-                    unsigned: false,
+                    unsigned: property.unsigned ?? false,
                     defaultValue: '',
-                    description: property?.description ?? '',
+                    description: property.description ?? '',
                 }
                 if (row) {
                     row.data = { ...row.data, ...rowData }
@@ -281,7 +556,7 @@ export const TableActions = {
                 schemaRef.value = [...schemaRef.value, {
                     id: uniqueElementId(schemaRef.value, 'row'),
                     type: 'row',
-                    label: propertyName,
+                    label: property.name,
                     zIndex: table.zIndex ?? 1,
                     position: { x: 0, y: 40 + 40 * rowIndex++ },
                     style: { ...REFERENCE_ROW_STYLE, width: table.style?.width ?? REFERENCE_ROW_STYLE.width },
