@@ -809,17 +809,17 @@ const onCanvasPaneClick = (event) => {
     onPaneClick(event)
 }
 
-const onImportReferenceJson = (content) => {
+const onImportReferenceJson = ({ content, title } = {}) => {
     try {
-        const imported = importReferenceJsonSchemas(content)
+        const imported = importReferenceJsonSchemas(content, { title })
         $toast.success(`Imported ${imported.length} reference table${imported.length === 1 ? '' : 's'}`)
     } catch (error) {
-        $toast.error(error?.message || 'Could not import reference JSON')
+        $toast.error(error?.message || 'Could not import reference schema')
     }
 }
 
-const onImportReferenceJsonFromModal = (content) => {
-    onImportReferenceJson(content)
+const onImportReferenceJsonFromModal = (payload) => {
+    onImportReferenceJson(payload)
     showReferenceJsonImportModal.value = false
 }
 

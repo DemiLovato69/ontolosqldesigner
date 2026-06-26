@@ -16,7 +16,7 @@
                     <button type="button" @click="emitPipelineCreate" title="Add Pipeline" aria-label="Add Pipeline">
                         <SvgIcon name="pipe-plus" :size="17" />
                     </button>
-                    <button type="button" @click="emitReferenceJsonImport" title="Import Reference JSON" aria-label="Import Reference JSON">
+                    <button type="button" @click="emitReferenceJsonImport" title="Import Reference Schema" aria-label="Import Reference Schema">
                         <SvgIcon name="pipe-json" :size="17" />
                     </button>
                 </div>
