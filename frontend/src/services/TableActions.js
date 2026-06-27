@@ -116,10 +116,14 @@ function parseJsonReferenceSchemas(content, options = {}) {
             description: property?.description ?? '',
         }))
 
+        const referenceSource = options.source
+            ? { ...options.source, schemaTitle: title }
+            : { importedFrom: 'json-schema', schemaTitle: title, schema: jsonSchema.$schema ?? null }
+
         return {
             title,
             description: jsonSchema.description ?? null,
-            referenceSource: { importedFrom: 'json-schema', schemaTitle: title, schema: jsonSchema.$schema ?? null },
+            referenceSource,
             properties,
         }
     })
@@ -450,6 +454,7 @@ export const TableActions = {
                 description: '',
                 titlePropertyRowId: null,
                 ontologyActions: { create: false, modify: false, delete: false },
+                editsEnabled: false,
                 editsHistory: { enabled: false, storeAllPreviousProperties: false },
                 tableKind: isReference ? 'reference' : 'object',
                 reference: isReference,
@@ -486,10 +491,15 @@ export const TableActions = {
 
         for (const refSchema of referenceSchemas) {
             const title = refSchema.title
+            const datasetRid = refSchema.referenceSource?.datasetRid
             let schema = schemaRef.value
             let table = schema.find(item => item.type === 'table'
                 && (item.data?.tableKind === 'reference' || item.data?.reference)
-                && (item.data?.referenceSource?.schemaTitle === title || item.label === title))
+                && (
+                    (datasetRid && item.data?.referenceSource?.datasetRid === datasetRid)
+                    || item.data?.referenceSource?.schemaTitle === title
+                    || item.label === title
+                ))
 
             if (!table) {
                 const existingTables = schema.filter(el => el.type === 'table')

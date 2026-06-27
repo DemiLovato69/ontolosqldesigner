@@ -258,6 +258,7 @@ function normalizeOntology(ir) {
       properties,
       implementsInterfaces: normalizeNamedRecords(object.implementsInterfaces ?? object.interfaceTypes ?? []),
       ontologyActions: actionsByObject.get(objectRid) ?? emptyActions(),
+      editsEnabled: !!block.entityMetadata?.arePatchesEnabled,
       editsHistory: normalizeEditsHistory(block.entityMetadata?.editsHistory),
     };
   });

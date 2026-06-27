@@ -51,6 +51,12 @@ class User extends Authenticatable implements MustVerifyEmail
         return $this->hasMany(Diagram::class);
     }
 
+    /** @return HasMany<FoundryConnection, $this> */
+    public function foundryConnections(): HasMany
+    {
+        return $this->hasMany(FoundryConnection::class);
+    }
+
     public function isAdmin(): bool
     {
         return $this->role === 'admin';

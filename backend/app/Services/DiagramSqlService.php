@@ -1062,6 +1062,7 @@ class DiagramSqlService
                     'delete' => (bool) ($objectType['ontologyActions']['delete'] ?? false),
                 ];
             }
+            $table['data']['editsEnabled'] = $this->ontologyEditsEnabled($objectType);
             $table['data']['editsHistory'] = $this->ontologyEditsHistory($objectType);
             if (is_array($objectType['implementsInterfaces'] ?? null)) {
                 $table['data']['implementsInterfaces'] = array_values(array_filter(
@@ -1368,6 +1369,16 @@ class DiagramSqlService
         return compact('definitions', 'references', 'warnings');
     }
 
+    /** @param array<string, mixed> $objectType */
+    private function ontologyEditsEnabled(array $objectType): bool
+    {
+        if (array_key_exists('editsEnabled', $objectType)) {
+            return (bool) $objectType['editsEnabled'];
+        }
+
+        return (bool) ($objectType['entityMetadata']['arePatchesEnabled'] ?? false);
+    }
+
     /**
      * @param array<string, mixed> $objectType
      * @return array{enabled: bool, storeAllPreviousProperties: bool}
@@ -1558,6 +1569,18 @@ class DiagramSqlService
 
         $id = 'ontology-constraint-'.substr(hash('sha256', json_encode($rawConstraint)), 0, 16);
         $type = $constraint['type'] ?? null;
+        if ($type === 'oneOf' || isset($constraint['oneOf'])) {
+            $oneOf = is_array($constraint['oneOf'] ?? null) ? $constraint['oneOf'] : $constraint;
+            $values = $this->normalizeEnumValues($oneOf['values'] ?? []);
+
+            return $values === [] ? null : [
+                'id' => $id,
+                'type' => 'oneOf',
+                'values' => $values,
+                'useIgnoreCase' => (bool) ($oneOf['useIgnoreCase'] ?? false),
+                'failureMessage' => $failureMessage,
+            ];
+        }
         if ($type === 'regex' || isset($constraint['regex'])) {
             $regex = is_array($constraint['regex'] ?? null) ? $constraint['regex'] : $constraint;
 
@@ -1589,6 +1612,30 @@ class DiagramSqlService
         }
 
         return null;
+    }
+
+    /**
+     * @param  mixed  $rawValues
+     * @return list<string>
+     */
+    private function normalizeEnumValues(mixed $rawValues): array
+    {
+        if (! is_array($rawValues)) {
+            return [];
+        }
+
+        $values = [];
+        foreach ($rawValues as $value) {
+            if (! is_scalar($value)) {
+                continue;
+            }
+            $stringValue = is_bool($value) ? ($value ? 'true' : 'false') : (string) $value;
+            if ($stringValue !== '' && ! in_array($stringValue, $values, true)) {
+                $values[] = $stringValue;
+            }
+        }
+
+        return $values;
     }
 
     /**

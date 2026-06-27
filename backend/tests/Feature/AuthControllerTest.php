@@ -142,6 +142,44 @@ class AuthControllerTest extends TestCase
         $this->get('/auth/gitlab')->assertNotFound();
     }
 
+    public function test_admin_google_entry_flags_intent_and_redirects_to_google(): void
+    {
+        $provider = Mockery::mock();
+        $provider->shouldReceive('redirect')->once()->andReturn(redirect('https://accounts.google.com/o/oauth2/auth'));
+        Socialite::shouldReceive('driver')->once()->with('google')->andReturn($provider);
+
+        $this->get('/admin/auth/google')
+            ->assertRedirect('https://accounts.google.com/o/oauth2/auth')
+            ->assertSessionHas('admin_oauth_intended', true);
+    }
+
+    public function test_google_callback_with_admin_intent_redirects_admin_to_dashboard(): void
+    {
+        config()->set('services.google.allowed_domain', 'company.com');
+        $admin = User::factory()->create(['email' => 'boss@company.com', 'google_id' => 'google-admin', 'role' => 'admin']);
+        $this->mockGoogleUser('google-admin', 'boss@company.com', 'company.com');
+
+        $this->withSession(['admin_oauth_intended' => true])
+            ->get('/auth/google/callback')
+            ->assertRedirect('/admin');
+
+        $this->assertAuthenticatedAs($admin);
+    }
+
+    public function test_google_callback_with_admin_intent_rejects_non_admin(): void
+    {
+        config()->set('services.google.allowed_domain', 'company.com');
+        User::factory()->create(['email' => 'user@company.com', 'google_id' => 'google-plain', 'role' => 'user']);
+        $this->mockGoogleUser('google-plain', 'user@company.com', 'company.com');
+
+        $this->withSession(['admin_oauth_intended' => true])
+            ->get('/auth/google/callback')
+            ->assertRedirect('/admin/login')
+            ->assertSessionHasErrors(['credentials']);
+
+        $this->assertGuest();
+    }
+
     private function mockGoogleUser(string $id, string $email, ?string $hostedDomain): void
     {
         $provider = Mockery::mock();

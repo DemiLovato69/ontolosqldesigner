@@ -55,8 +55,11 @@
   - `docker exec php php artisan test tests/Feature/Api/V1`
   - `docker exec php php artisan test tests/Feature/DiagramControllerTest.php tests/Feature/DiagramChangelogControllerTest.php`
   - `docker exec php php artisan test tests/Feature/AuthControllerTest.php tests/Feature/BroadcastChannelAuthTest.php`
+  - `docker exec php php artisan test tests/Feature/AdminFoundryControllerTest.php tests/Feature/Api/V1/Foundry/FoundryApiTest.php tests/Unit/Services/Foundry/FoundryHostConfigServiceTest.php`
 - Maker runtime tests:
   - `npm test -- --runInBand` in `maker-runtime`
+- Foundry runtime tests (Node bridge; install deps first, deps are gitignored):
+  - `docker run --rm -v "$PWD/foundry-runtime":/app -w /app node:18-alpine sh -c "npm ci --omit=dev && npm test"`
 - Remove generated frontend build output after local builds:
   - `rm -rf "frontend/public/build"`
 
@@ -75,7 +78,9 @@
 - Desktop API auth uses Google OAuth + PKCE + one-time grant + expiring Sanctum bearer tokens under `/api/v1`.
 - Do not store bearer tokens in browser `localStorage` or convert the web SPA to bearer-token auth.
 - Native desktop clients should store bearer tokens in OS/native secure storage.
-- Desktop token abilities currently include `desktop`, `diagrams:read`, `diagrams:write`, `diagrams:delete`, `imports:write`, `exports:read`, `sharing:write`, `changelog:read`, `changelog:write`, `presence:read`, `presence:write`, and `tokens:manage`.
+- Desktop token abilities currently include `desktop`, `diagrams:read`, `diagrams:write`, `diagrams:delete`, `imports:write`, `exports:read`, `sharing:write`, `changelog:read`, `changelog:write`, `presence:read`, `presence:write`, `foundry:connect`, `foundry:read`, and `tokens:manage`.
+- Foundry abilities: `foundry:read` for status/browse/read endpoints, `foundry:connect` for OAuth/token connect and disconnect. SPA cookie sessions pass ability checks via Sanctum `TransientToken`, so `/api/v1/foundry/*` serves both web SPA and desktop clients.
+- Foundry access tokens and OAuth client secrets are stored encrypted (Eloquent `encrypted` casts) and never returned to clients or logged. The Node bridge receives access tokens over stdin only.
 - Import permission requires write access.
 - Export permission requires read access.
 - Frontend should show Import for writable viewers and Export for viewers with read access.
@@ -206,6 +211,20 @@
 - Do not persist `hidden` flags to the backend.
 - Avoid forcing Vue Flow remounts for visibility changes, because that resets camera position/zoom.
 
+### Foundry Platform Integration
+- Read-only Palantir Foundry access for ontology diagrams via the `@osdk/foundry` Platform SDK.
+- The SDK runs in the `foundry-runtime` Node bridge (`foundry-runtime/foundry.mjs` dispatcher + `sdk.mjs` adapter), invoked by Laravel `FoundryRuntimeClient` over stdin; tokens are never in argv/logs.
+- Resolution rule: `authenticated user + ontology diagram + diagram host -> that user's Foundry connection for that host`. Collaborators never reuse the owner's token.
+- Per-diagram host is owner-only (`DiagramPolicy::manageFoundry`); connecting and reads require diagram read access (`DiagramPolicy::viewFoundry`).
+- Hybrid hosts: owners may enter any HTTPS host, but connecting requires an admin-configured host (DB table `foundry_host_configs`, managed at `/admin/foundry`, or env `FOUNDRY_HOSTS_JSON`) or `FOUNDRY_ALLOW_CUSTOM_HOSTS=true` with a custom-host OAuth client. Enabled DB hosts take precedence over the env map.
+- Two auth methods: delegated OAuth (Authorization Code + PKCE) and pasted Foundry token (`FOUNDRY_ALLOW_TOKEN_AUTH`, default true). Token auth works for hosts without an OAuth client.
+- Persisted tables: `foundry_connections` (per user+host, encrypted access/refresh tokens, `auth_type` oauth|token) and `diagram_foundry_configs` (host + default project/folder/ontology RIDs).
+- Foundry config lives in `backend/config/foundry.php` (env-driven); migrations `2026_06_27_000000..000003`.
+- Imported datasets become Foundry-linked reference tables: row `data.referenceSource.importedFrom = 'foundry-dataset'` with `datasetRid`, `datasetName`, `host`, `syncedAt`. Reference import upserts by `datasetRid`, so re-import/sync refreshes the same table (non-destructive; missing columns are preserved).
+- Frontend: connection settings in `frontend/src/components/Diagram/FoundryPanel.vue` (right sidebar); browsing in `frontend/src/components/Modal/FoundryBrowserModal.vue` (opened from the top toolbar globe) with `FoundryTreeNode.vue`; schema→JSON Schema conversion in `frontend/src/services/foundryImport.js`; API calls in `frontend/src/services/Foundry.js`.
+- Foundry `Resource.type` values are uppercase namespaced constants (e.g. `COMPASS_FOLDER`, `FOUNDRY_DATASET`); spaces are `ri.compass.main.folder.*` and `Folders.children` accepts a space RID.
+- Local dev: `foundry-runtime` is bind-mounted into the `php` service in `docker-compose.yml`; production bakes it at `/opt/ontolosql-foundry` via `docker/app/Dockerfile`. `config('foundry.runtime.script')` prefers the mounted path and falls back to `/opt`.
+
 ## Export Rules
 - SQL export and Maker export must exclude visual-only/reference/pipeline elements:
   - reference tables
@@ -232,8 +251,15 @@
 - `backend/app/Http/Controllers/Api/V1/Auth/TokenController.php`: desktop bearer token me/list/revoke endpoints.
 - `backend/app/Http/Controllers/Api/V1/RealtimeConfigController.php`: desktop Reverb client config endpoint.
 - `backend/routes/api_v1.php`: versioned desktop API route definitions and ability middleware.
-- `openapi.json`: OpenAPI 3.1 spec for `/api/v1`.
+- `openapi.json`: OpenAPI 3.1 spec for `/api/v1` (includes the Foundry endpoints and `foundry_*` error contract).
 - `maker-runtime/import-maker.mjs`: Maker `.mts` importer.
+- `backend/config/foundry.php`: Foundry hybrid-host/OAuth/token/runtime config (env-driven).
+- `backend/app/Services/Foundry/`: `FoundryHostConfigService` (host normalize + DB/env host resolution), `FoundryOAuthStateService` (PKCE state), `FoundryOAuthClient` (Foundry OAuth HTTP), `FoundryConnectionService` (per-user tokens, refresh, status), `FoundryRuntimeClient` (Node bridge), `FoundryPlatformService` (read ops scoped by diagram).
+- `backend/app/Http/Controllers/Api/V1/Foundry/`: `DiagramFoundryConfigController`, `FoundryConnectionController` (hosts/connections/oauth/token/status), `FoundryResourceController` (spaces/folders/ontologies/datasets/files/search).
+- `backend/app/Http/Controllers/AdminFoundryController.php` + `backend/resources/views/admin/foundry.blade.php`: admin host management at `/admin/foundry`.
+- `foundry-runtime/foundry.mjs` + `sdk.mjs`: Node dispatcher + `@osdk/foundry` adapter (commit `package-lock.json`; deps are gitignored).
+- `frontend/src/services/Foundry.js`, `frontend/src/services/foundryImport.js`: Foundry API client and dataset-schema→JSON Schema converter.
+- `frontend/src/components/Diagram/FoundryPanel.vue`, `frontend/src/components/Modal/FoundryBrowserModal.vue`, `frontend/src/components/Modal/FoundryTreeNode.vue`: connection panel, browser modal, recursive tree.
 - `frontend/src/components/Diagram/Diagram.vue`: main editor, Vue Flow wiring, view filters, sidebar, modals.
 - `frontend/src/components/Diagram/DiagramHeader.vue`: diagram toolbar actions.
 - `frontend/src/components/Diagram/DiagramRightSidebar.vue`: OAC metadata lists and changelog.

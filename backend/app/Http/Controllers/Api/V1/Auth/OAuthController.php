@@ -31,6 +31,8 @@ class OAuthController extends Controller
         'changelog:write',
         'presence:read',
         'presence:write',
+        'foundry:connect',
+        'foundry:read',
         'tokens:manage',
     ];
 

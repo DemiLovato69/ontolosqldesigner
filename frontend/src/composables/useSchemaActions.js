@@ -433,13 +433,14 @@ export function useSchemaActions({ schema, isSaved, whisper, diagramDbType, addE
         const implementsInterfaces = Array.isArray(actions.implementsInterfaces)
             ? actions.implementsInterfaces
             : []
+        const editsEnabled = !!actions.editsEnabled
         const editsHistory = {
             enabled: !!actions.editsHistory?.enabled,
             storeAllPreviousProperties: !!actions.editsHistory?.storeAllPreviousProperties,
         }
-        node.data = { ...node.data, ontologyActions, titlePropertyRowId, implementsInterfaces, editsHistory }
+        node.data = { ...node.data, ontologyActions, titlePropertyRowId, implementsInterfaces, editsEnabled, editsHistory }
         isSaved.value = false
-        whisper('schema-patch', { update: [{ id, data: { ontologyActions, titlePropertyRowId, implementsInterfaces, editsHistory } }] })
+        whisper('schema-patch', { update: [{ id, data: { ontologyActions, titlePropertyRowId, implementsInterfaces, editsEnabled, editsHistory } }] })
     }
 
     const updateLabel = (id, newLabel) => {

@@ -92,25 +92,26 @@ final class ValueTypeDefinitions implements ValidationRule
             }
 
             if (! $this->validBaseType($baseType)) {
-                $fail("Value type at index {$index} has an invalid base type.");
+                $fail("Value type \"{$displayName}\" (index {$index}) has an invalid base type.");
 
                 return;
             }
 
             if (! is_array($constraints) || ! array_is_list($constraints)) {
-                $fail("Value type at index {$index} has invalid constraints.");
+                $fail("Value type \"{$displayName}\" (index {$index}) constraints must be a list.");
 
                 return;
             }
 
             if (($baseType['type'] ?? null) !== 'string' && $constraints !== []) {
-                $fail("Only string value types may define constraints.");
+                $fail("Value type \"{$displayName}\" (index {$index}) may only define constraints on a string base type.");
 
                 return;
             }
 
-            if (! $this->validConstraints($constraints)) {
-                $fail("Value type at index {$index} has invalid constraints.");
+            $constraintError = $this->constraintError($constraints);
+            if ($constraintError !== null) {
+                $fail("Value type \"{$displayName}\" (index {$index}) has an invalid constraint: {$constraintError}");
 
                 return;
             }
@@ -163,55 +164,127 @@ final class ValueTypeDefinitions implements ValidationRule
         return true;
     }
 
-    /** @param list<mixed> $constraints */
-    private function validConstraints(array $constraints): bool
+    /**
+     * @param list<mixed> $constraints
+     * @return string|null Human-readable reason the constraints are invalid, or null when valid.
+     */
+    private function constraintError(array $constraints): ?string
     {
-        $singleUse = [];
+        $allowed = ['oneOf', 'regex', 'isRid', 'isUuid', 'length'];
+        $seen = [];
 
-        foreach ($constraints as $constraint) {
-            $id = is_array($constraint) ? ($constraint['id'] ?? null) : null;
-            $constraintType = is_array($constraint) ? ($constraint['type'] ?? null) : null;
-            if (! is_array($constraint)
-                || ! is_string($id)
-                || $id === ''
-                || ! in_array($constraintType, ['regex', 'isRid', 'isUuid', 'length'], true)) {
-                return false;
+        foreach ($constraints as $position => $constraint) {
+            $number = (int) $position + 1;
+
+            if (! is_array($constraint)) {
+                return "constraint #{$number} must be an object.";
             }
 
-            $type = $constraintType;
-            if (isset($singleUse[$type])) {
-                return false;
+            $id = $constraint['id'] ?? null;
+            if (! is_string($id) || $id === '') {
+                return "constraint #{$number} is missing an id.";
             }
-            $singleUse[$type] = true;
+
+            $type = $constraint['type'] ?? null;
+            if (! in_array($type, $allowed, true)) {
+                $shown = is_string($type) && $type !== '' ? "\"{$type}\"" : 'an empty type';
+                return "constraint #{$number} has an unsupported type {$shown} (allowed: ".implode(', ', $allowed).').';
+            }
+
+            if (isset($seen[$type])) {
+                return "the {$type} constraint is defined more than once.";
+            }
+            $seen[$type] = true;
 
             if (isset($constraint['failureMessage'])
                 && (! is_string($constraint['failureMessage']) || strlen($constraint['failureMessage']) > 500)) {
-                return false;
+                return "the {$type} constraint failure message must be text of at most 500 characters.";
             }
 
-            if ($type === 'regex') {
-                $regexPattern = $constraint['regexPattern'] ?? null;
-                if (! is_string($regexPattern)
-                    || $regexPattern === ''
-                    || ! is_bool($constraint['usePartialMatch'] ?? null)
-                    || @preg_match('/'.$this->escapeDelimiter($regexPattern).'/u', '') === false) {
-                    return false;
-                }
-            }
-
-            if ($type === 'length') {
-                $min = $constraint['minSize'] ?? null;
-                $max = $constraint['maxSize'] ?? null;
-                if (($min === null && $max === null)
-                    || ($min !== null && (! is_int($min) || $min < 0))
-                    || ($max !== null && (! is_int($max) || $max < 0))
-                    || ($min !== null && $max !== null && $min > $max)) {
-                    return false;
-                }
+            $error = match ($type) {
+                'oneOf' => $this->oneOfError($constraint),
+                'regex' => $this->regexError($constraint),
+                'length' => $this->lengthError($constraint),
+                default => null,
+            };
+            if ($error !== null) {
+                return $error;
             }
         }
 
-        return true;
+        return null;
+    }
+
+    /** @param array<string, mixed> $constraint */
+    private function oneOfError(array $constraint): ?string
+    {
+        $values = $constraint['values'] ?? null;
+        if (! is_array($values) || ! array_is_list($values) || $values === []) {
+            return 'the allowed values (enum) constraint needs at least one value.';
+        }
+        if (array_key_exists('useIgnoreCase', $constraint) && ! is_bool($constraint['useIgnoreCase'])) {
+            return 'the allowed values (enum) constraint "useIgnoreCase" must be true or false.';
+        }
+
+        $ignoreCase = (bool) ($constraint['useIgnoreCase'] ?? false);
+        $seen = [];
+        foreach ($values as $value) {
+            if (! is_string($value) && ! is_int($value) && ! is_float($value)) {
+                return 'the allowed values (enum) constraint values must be text.';
+            }
+            $stringValue = (string) $value;
+            if (trim($stringValue) === '') {
+                return 'the allowed values (enum) constraint cannot contain empty values.';
+            }
+            if (strlen($stringValue) > 255) {
+                return 'the allowed values (enum) constraint values must be 255 characters or fewer.';
+            }
+            $key = $ignoreCase ? strtolower($stringValue) : $stringValue;
+            if (isset($seen[$key])) {
+                return 'the allowed values (enum) constraint has duplicate values.';
+            }
+            $seen[$key] = true;
+        }
+
+        return null;
+    }
+
+    /** @param array<string, mixed> $constraint */
+    private function regexError(array $constraint): ?string
+    {
+        $regexPattern = $constraint['regexPattern'] ?? null;
+        if (! is_string($regexPattern) || $regexPattern === '') {
+            return 'the regex constraint needs a pattern.';
+        }
+        if (! is_bool($constraint['usePartialMatch'] ?? null)) {
+            return 'the regex constraint "usePartialMatch" must be true or false.';
+        }
+        if (@preg_match('/'.$this->escapeDelimiter($regexPattern).'/u', '') === false) {
+            return 'the regex constraint pattern is not a valid expression.';
+        }
+
+        return null;
+    }
+
+    /** @param array<string, mixed> $constraint */
+    private function lengthError(array $constraint): ?string
+    {
+        $min = $constraint['minSize'] ?? null;
+        $max = $constraint['maxSize'] ?? null;
+        if ($min === null && $max === null) {
+            return 'the length constraint needs a minimum or maximum size.';
+        }
+        if ($min !== null && (! is_int($min) || $min < 0)) {
+            return 'the length constraint minimum must be a whole number of at least 0.';
+        }
+        if ($max !== null && (! is_int($max) || $max < 0)) {
+            return 'the length constraint maximum must be a whole number of at least 0.';
+        }
+        if ($min !== null && $max !== null && $min > $max) {
+            return 'the length constraint minimum cannot be greater than the maximum.';
+        }
+
+        return null;
     }
 
     private function escapeDelimiter(string $pattern): string

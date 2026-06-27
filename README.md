@@ -11,6 +11,7 @@ The original project was a GUI SQL designer. This fork extends it into an ontolo
 - Add notes to tables and rows; ontology export maps them to Maker descriptions and SQL export emits them as comments.
 - Manually verify users from the admin dashboard for local development without a mail server.
 - Use the versioned `/api/v1` backend API from native desktop clients with Google OAuth, PKCE, expiring Sanctum bearer tokens, and Reverb presence authorization.
+- Connect ontology diagrams to a Palantir Foundry stack (delegated per-user OAuth or a pasted Foundry token), browse spaces/folders/datasets and ontologies, and import dataset schemas as reference tables that can be re-synced from Foundry.
 
 ## Stack
 
@@ -21,6 +22,7 @@ The original project was a GUI SQL designer. This fork extends it into an ontolo
 | Database | PostgreSQL |
 | Queue/cache | Redis |
 | Ontology export | `@osdk/maker` and local ontology generator service |
+| Foundry Platform | `@osdk/foundry` + `@osdk/client` via a Node bridge (`foundry-runtime`) |
 | Dev runtime | Docker Compose, Nginx, PHP-FPM, Node |
 
 ## Local Development
@@ -67,6 +69,18 @@ DESKTOP_OAUTH_GRANT_TTL_SECONDS=300
 
 Set the additional Google OAuth redirect URI to `${APP_URL}/api/v1/auth/oauth/google/callback`.
 
+Foundry Platform integration is optional and only applies to ontology diagrams. It is configured per host:
+
+```dotenv
+FOUNDRY_ALLOW_CUSTOM_HOSTS=false
+FOUNDRY_ALLOW_TOKEN_AUTH=true
+FOUNDRY_DEFAULT_SCOPES="api:read-data offline_access"
+FOUNDRY_REDIRECT_URI=${APP_URL}/api/v1/foundry/oauth/callback
+FOUNDRY_HOSTS_JSON={}
+```
+
+Admins manage approved Foundry hosts and OAuth clients at `http://localhost:8080/admin/foundry` (stored in the database) or via the `FOUNDRY_HOSTS_JSON` env map. Register `${APP_URL}/api/v1/foundry/oauth/callback` as an allowed redirect URI on each Foundry OAuth client. The Foundry SDK runs in the `foundry-runtime` Node bridge, which is baked into the production image and mounted into the local `php` container.
+
 Useful commands:
 
 ```bash
@@ -110,11 +124,32 @@ Desktop token abilities currently include:
 - `changelog:write`
 - `presence:read`
 - `presence:write`
+- `foundry:connect`
+- `foundry:read`
 - `tokens:manage`
 
-The v1 API exposes owned, shared, and public/library diagrams; diagram CRUD; share/invite/visitor management; raw and chunked imports; export jobs and direct backup/migration/ontology exports; changelog entries; token management; and Reverb auth/config endpoints.
+The v1 API exposes owned, shared, and public/library diagrams; diagram CRUD; share/invite/visitor management; raw and chunked imports; export jobs and direct backup/migration/ontology exports; changelog entries; token management; Reverb auth/config endpoints; and the Foundry integration (host/connection management, OAuth and token connections, and read-only spaces/folders/datasets/files/ontologies scoped per ontology diagram).
 
-The OpenAPI 3.1 spec is available in [`openapi.json`](./openapi.json). It documents the `/api/v1` desktop API surface and bearer-token security model.
+The OpenAPI 3.1 spec is available in [`openapi.json`](./openapi.json). It documents the `/api/v1` desktop API surface and bearer-token security model, including the Foundry endpoints and the `foundry_*` error contract.
+
+## Foundry Platform Integration
+
+Ontology diagrams can connect to a Palantir Foundry stack to browse and import data. All Foundry access is read-only and runs server-side; Foundry tokens never reach the browser or desktop client.
+
+Model:
+
+- **Per-diagram host (owner only):** the diagram owner sets the Foundry host in the right-sidebar Foundry panel.
+- **Per-user connection:** each user connects their own Foundry account, so collaborators never reuse the owner's access. Resolution is `authenticated user + ontology diagram + diagram host -> that user's connection for that host`.
+- **Hybrid hosts:** owners may enter any HTTPS host, but connecting requires an admin-configured host (managed at `/admin/foundry` or via `FOUNDRY_HOSTS_JSON`) or an explicitly enabled custom-host OAuth client.
+- **Two auth methods:** delegated OAuth (Authorization Code + PKCE) or a pasted Foundry personal/service token (`FOUNDRY_ALLOW_TOKEN_AUTH`). Token auth works even for hosts without an OAuth client.
+
+Usage:
+
+- Connect in the right sidebar (host + Connect/Token), then open the **Foundry Browser** from the top toolbar (globe icon).
+- The browser has an ontology dropdown (default first), a path bar, an OS-style tree on the left, and a searchable contents list on the right.
+- Import a dataset to create a Foundry-linked reference table. Linked tables show a refresh button in their title bar and can be re-synced individually, or all at once via **Sync linked**.
+
+The Foundry SDK (`@osdk/foundry`) runs in the `foundry-runtime` Node bridge invoked by Laravel; access tokens are passed over stdin and never logged.
 
 ## Ontology Workflow
 
@@ -158,6 +193,13 @@ Run the focused desktop API tests:
 docker exec php php artisan test tests/Feature/Api/V1
 ```
 
+Run the Foundry Node bridge tests:
+
+```bash
+docker run --rm -v "$PWD/foundry-runtime":/app -w /app node:18-alpine npm ci --omit=dev && \
+docker run --rm -v "$PWD/foundry-runtime":/app -w /app node:18-alpine npm test
+```
+
 Run the frontend build locally:
 
 ```bash
@@ -165,7 +207,7 @@ cd frontend
 npm run build
 ```
 
-The test suite covers ontology exports, SQL import/export, type mapping, manual admin verification, diagram CRUD/sharing behavior, desktop OAuth/token handling, v1 bearer-token diagram access, and Reverb auth.
+The test suite covers ontology exports, SQL import/export, type mapping, manual admin verification, diagram CRUD/sharing behavior, desktop OAuth/token handling, v1 bearer-token diagram access, Reverb auth, and the Foundry integration (host config, per-user connections, OAuth/token auth, and read-only browsing via a mocked runtime).
 
 ## Notes On The Fork
 

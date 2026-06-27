@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\FoundryException;
 use App\Http\Middleware\AdminMiddleware;
 use App\Http\Middleware\TrackLastSeen;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Request;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -32,5 +34,11 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (FoundryException $exception, Request $request) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return $exception->toResponse();
+            }
+
+            return null;
+        });
     })->create();

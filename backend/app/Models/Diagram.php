@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Str;
 
 /** @property string|null $script */
@@ -120,5 +121,16 @@ class Diagram extends Model
     public function invites(): HasMany
     {
         return $this->hasMany(DiagramInvite::class);
+    }
+
+    /** @return HasOne<DiagramFoundryConfig, $this> */
+    public function foundryConfig(): HasOne
+    {
+        return $this->hasOne(DiagramFoundryConfig::class);
+    }
+
+    public function isOntology(): bool
+    {
+        return $this->db_type === DbType::ONTOLOGY;
     }
 }

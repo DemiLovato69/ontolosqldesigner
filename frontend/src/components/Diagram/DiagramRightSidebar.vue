@@ -16,57 +16,86 @@
             </div>
 
             <div class="right-sidebar__body">
-                <template v-if="isOntology">
-                    <input
-                        v-model="search"
-                        class="right-sidebar__search"
-                        type="search"
-                        placeholder="Search ontology metadata"
-                        aria-label="Search ontology metadata"
+                <div class="right-sidebar__top">
+                    <template v-if="isOntology">
+                        <input
+                            v-model="search"
+                            class="right-sidebar__search"
+                            type="search"
+                            placeholder="Search ontology metadata"
+                            aria-label="Search ontology metadata"
+                        />
+
+                        <section v-for="section in metadataSections" :key="section.key" class="metadata-section">
+                            <h3>{{ section.label }} <span>{{ section.items.length }}</span></h3>
+                            <div v-if="section.items.length" class="metadata-list">
+                                <button
+                                    v-for="item in section.items"
+                                    :key="item.key"
+                                    type="button"
+                                    class="metadata-item"
+                                    @dblclick.stop="openMetadataItem(section.key, item.raw)"
+                                    @keydown.enter.prevent="openMetadataItem(section.key, item.raw)"
+                                >
+                                    <strong>{{ item.title }}</strong>
+                                    <span>{{ item.subtitle }}</span>
+                                </button>
+                            </div>
+                            <p v-else class="metadata-empty">No matches</p>
+                        </section>
+                    </template>
+
+                    <FoundryPanel
+                        v-if="isOntology && !isDemo"
+                        :diagram-id="diagramId"
+                        :can-manage-host="isOwner"
                     />
 
-                    <section v-for="section in metadataSections" :key="section.key" class="metadata-section">
-                        <h3>{{ section.label }} <span>{{ section.items.length }}</span></h3>
-                        <div v-if="section.items.length" class="metadata-list">
+                    <section v-if="isOntology" class="problems-section">
+                        <div class="problems-section__heading">
+                            <h3>Problems <span>{{ problems.length }}</span></h3>
+                        </div>
+                        <div v-if="problems.length" class="metadata-list">
                             <button
-                                v-for="item in section.items"
-                                :key="item.key"
+                                v-for="problem in problems"
+                                :key="problem.rowId"
                                 type="button"
-                                class="metadata-item"
-                                @dblclick.stop="openMetadataItem(section.key, item.raw)"
-                                @keydown.enter.prevent="openMetadataItem(section.key, item.raw)"
+                                class="metadata-item problem-item"
+                                :title="problem.detail"
+                                @click="$emit('focus-problem', problem.rowId)"
                             >
-                                <strong>{{ item.title }}</strong>
-                                <span>{{ item.subtitle }}</span>
+                                <strong>{{ problem.title }}</strong>
+                                <span>{{ problem.detail }}</span>
                             </button>
                         </div>
-                        <p v-else class="metadata-empty">No matches</p>
+                        <p v-else class="metadata-empty">No problems detected.</p>
                     </section>
-                </template>
+                </div>
 
                 <section class="changelog-section">
                     <div class="changelog-section__heading">
                         <h3>Changelog</h3>
                     </div>
+                    <div class="changelog-section__scroll">
+                        <div v-if="loading" class="right-sidebar__status">Loading...</div>
+                        <div v-else-if="!entries.length" class="right-sidebar__status">No actions recorded yet.</div>
+                        <ul v-else class="right-sidebar__list">
+                            <li v-for="entry in entries" :key="entry.id" class="changelog-entry">
+                                <span class="changelog-entry__avatar" :style="{ background: colorFor(entry.user_id) }">
+                                    {{ initials(entry.user_name) }}
+                                </span>
+                                <div class="changelog-entry__body">
+                                    <span class="changelog-entry__user">{{ entry.user_name }}</span>
+                                    <span class="changelog-entry__action">
+                                        <span class="changelog-entry__dot" :style="{ background: actionColor(entry.action) }"></span>
+                                        <span :style="{ color: actionColor(entry.action) }">{{ labelFor(entry.action, entry.details) }}</span>
+                                    </span>
+                                </div>
+                                <span class="changelog-entry__time" :title="fullDate(entry.created_at)">{{ relativeTime(entry.created_at) }}</span>
+                            </li>
+                        </ul>
+                    </div>
                 </section>
-
-                <div v-if="loading" class="right-sidebar__status">Loading...</div>
-                <div v-else-if="!entries.length" class="right-sidebar__status">No actions recorded yet.</div>
-                <ul v-else class="right-sidebar__list">
-                    <li v-for="entry in entries" :key="entry.id" class="changelog-entry">
-                        <span class="changelog-entry__avatar" :style="{ background: colorFor(entry.user_id) }">
-                            {{ initials(entry.user_name) }}
-                        </span>
-                        <div class="changelog-entry__body">
-                            <span class="changelog-entry__user">{{ entry.user_name }}</span>
-                            <span class="changelog-entry__action">
-                                <span class="changelog-entry__dot" :style="{ background: actionColor(entry.action) }"></span>
-                                <span :style="{ color: actionColor(entry.action) }">{{ labelFor(entry.action, entry.details) }}</span>
-                            </span>
-                        </div>
-                        <span class="changelog-entry__time" :title="fullDate(entry.created_at)">{{ relativeTime(entry.created_at) }}</span>
-                    </li>
-                </ul>
             </div>
         </template>
     </aside>
@@ -76,6 +105,8 @@
 import { computed, ref, watch } from 'vue'
 import { Diagram } from '@/services/Diagram.js'
 import { CURSOR_COLORS } from '@/composables/useDiagramPresence.js'
+import { valueTypeBaseLabel } from '@/services/valueTypes.js'
+import FoundryPanel from './FoundryPanel.vue'
 import SvgIcon from '../SvgIcon.vue'
 
 const props = defineProps({
@@ -83,13 +114,16 @@ const props = defineProps({
     open: { type: Boolean, default: false },
     refreshKey: { type: Number, default: 0 },
     dbType: { type: String, default: 'mysql' },
+    isOwner: { type: Boolean, default: false },
+    isDemo: { type: Boolean, default: false },
     valueTypes: { type: Array, default: () => [] },
     sharedPropertyTypes: { type: Array, default: () => [] },
     interfaces: { type: Array, default: () => [] },
     interfaceLinkConstraints: { type: Array, default: () => [] },
     customActions: { type: Array, default: () => [] },
+    problems: { type: Array, default: () => [] },
 })
-const emit = defineEmits(['toggle', 'open-value-type', 'open-shared-property-type', 'open-interface', 'open-interface-link-constraint', 'open-custom-action'])
+const emit = defineEmits(['toggle', 'open-value-type', 'open-shared-property-type', 'open-interface', 'open-interface-link-constraint', 'open-custom-action', 'focus-problem'])
 
 const entries = ref([])
 const loading = ref(false)
@@ -119,7 +153,7 @@ const metadataSections = computed(() => {
         {
             key: 'valueTypes',
             label: 'Value Types',
-            items: normalizeItems(props.valueTypes, item => item?.baseType?.type || 'value type', query),
+            items: normalizeItems(props.valueTypes, item => valueTypeBaseLabel(item), query),
         },
         {
             key: 'sharedPropertyTypes',
@@ -357,8 +391,19 @@ const fullDate = (dateStr) => new Date(dateStr).toLocaleString()
 
 .right-sidebar__body {
     min-height: 0;
-    overflow-y: auto;
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Finite lists (metadata + problems): fully visible, scroll only if they would
+   exceed the available space on their own. */
+.right-sidebar__top {
+    flex: 2 1 0;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .right-sidebar__search {
@@ -379,12 +424,14 @@ const fullDate = (dateStr) => new Date(dateStr).toLocaleString()
 }
 
 .metadata-section,
-.changelog-section {
+.changelog-section,
+.problems-section {
     margin-bottom: 14px;
 }
 
 .metadata-section h3,
-.changelog-section h3 {
+.changelog-section h3,
+.problems-section h3 {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -396,7 +443,8 @@ const fullDate = (dateStr) => new Date(dateStr).toLocaleString()
     letter-spacing: 0.04em;
 }
 
-.metadata-section h3 span {
+.metadata-section h3 span,
+.problems-section h3 span {
     color: var(--text-muted);
     font-weight: 600;
 }
@@ -449,9 +497,52 @@ const fullDate = (dateStr) => new Date(dateStr).toLocaleString()
     padding: 5px 8px;
 }
 
+/* Changelog takes the bottom third of the sidebar (top region gets the other
+   two thirds) and scrolls internally, so it never adds a scrollbar to the
+   sidebar as a whole and leaves no gap at the bottom. */
 .changelog-section {
+    flex: 1 1 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0;
     padding-top: 4px;
     border-top: 1px solid var(--border-color);
+}
+
+.changelog-section__heading {
+    flex: 0 0 auto;
+}
+
+.changelog-section__scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Hide the native scrollbar so it doesn't overlap the entry timestamps;
+       scrolling still works via wheel/trackpad. */
+    scrollbar-width: none;
+}
+
+.changelog-section__scroll::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
+}
+
+.problems-section {
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px solid var(--border-color);
+}
+
+.problem-item strong {
+    color: #ef4444;
+}
+
+.problem-item:hover,
+.problem-item:focus {
+    border-color: rgba(239, 68, 68, 0.45);
 }
 
 .right-sidebar__status {

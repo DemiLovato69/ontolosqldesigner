@@ -53,6 +53,13 @@
                 <input type="checkbox" :checked="actions.delete" :disabled="!canEdit" @change="toggle('delete')" />
             </label>
 
+            <p class="table-settings-modal__section">Edits</p>
+            <p class="table-settings-modal__hint">Allow this object type to be edited (sets editsEnabled in the Maker export).</p>
+            <label class="table-settings-modal__row">
+                <span>Enable edits</span>
+                <input type="checkbox" :checked="editsEnabled" :disabled="!canEdit" @change="toggleEdits" />
+            </label>
+
             <p class="table-settings-modal__section">Edit History</p>
             <p class="table-settings-modal__hint">Create Foundry edit history records when actions change this object type.</p>
             <label class="table-settings-modal__row">
@@ -60,7 +67,7 @@
                 <input type="checkbox" :checked="normalizedEditsHistory.enabled" :disabled="!canEdit" @change="toggleEditHistory" />
             </label>
             <label class="table-settings-modal__row" :class="{ 'table-settings-modal__row--disabled': !normalizedEditsHistory.enabled }">
-                <span>Store all previous property values</span>
+                <span>Store all properties</span>
                 <input type="checkbox" :checked="normalizedEditsHistory.storeAllPreviousProperties" :disabled="!canEdit || !normalizedEditsHistory.enabled" @change="toggleStorePreviousProperties" />
             </label>
         </div>
@@ -77,6 +84,7 @@ const props = defineProps({
     columns: { type: Array, default: () => [] },
     interfaces: { type: Array, default: () => [] },
     implementsInterfaces: { type: Array, default: () => [] },
+    editsEnabled: { type: Boolean, default: false },
     editsHistory: { type: Object, default: () => ({}) },
     canEdit: { type: Boolean, default: true },
     anchor: { type: Object, default: null },
@@ -116,6 +124,7 @@ const baseSettings = () => ({
     delete: !!props.actions.delete,
     titlePropertyRowId: props.titlePropertyRowId || null,
     implementsInterfaces: props.implementsInterfaces,
+    editsEnabled: !!props.editsEnabled,
     editsHistory: normalizedEditsHistory.value,
 })
 
@@ -139,6 +148,13 @@ const toggleInterface = (apiName) => {
     emit('change', {
         ...baseSettings(),
         implementsInterfaces: Array.from(current),
+    })
+}
+
+const toggleEdits = () => {
+    emit('change', {
+        ...baseSettings(),
+        editsEnabled: !props.editsEnabled,
     })
 }
 

@@ -49,6 +49,10 @@ COPY maker-runtime/package.json maker-runtime/package-lock.json /opt/ontolosql-m
 RUN cd /opt/ontolosql-maker && npm ci --omit=dev
 COPY maker-runtime/import-maker.mjs /opt/ontolosql-maker/import-maker.mjs
 
+COPY foundry-runtime/package.json foundry-runtime/package-lock.json /opt/ontolosql-foundry/
+RUN cd /opt/ontolosql-foundry && npm ci --omit=dev
+COPY foundry-runtime/foundry.mjs foundry-runtime/sdk.mjs /opt/ontolosql-foundry/
+
 WORKDIR /var/www/html/frontend
 COPY frontend/package*.json ./
 RUN npm ci

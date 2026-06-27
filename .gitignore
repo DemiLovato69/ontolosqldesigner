@@ -3,6 +3,8 @@
 /.claude
 /.phpunit.cache
 /node_modules
+/foundry-runtime/node_modules
+/maker-runtime/node_modules
 .env
 .env.backup
 .env.production

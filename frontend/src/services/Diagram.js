@@ -7,10 +7,14 @@ async function request(fn) {
     try {
         return await fn()
     } catch (error) {
+        if (error.__authExpired) {
+            // Session expired: the global handler is redirecting to login.
+            return undefined
+        }
         if (error.response?.status === 413) {
             $toast.error('Upload chunk is too large for the server. Please try again or contact support.')
         } else {
-            $toast.error(error.response?.data.message ?? 'Something went wrong!')
+            $toast.error(error.response?.data?.message ?? 'Something went wrong!')
         }
     }
 }
@@ -61,6 +65,7 @@ export const Diagram = {
             const response = await axios.get(`/api/diagrams/shared/${token}`)
             return response.data.data
         } catch (error) {
+            if (error.__authExpired) return null
             if (error.response?.status === 403 && error.response?.data?.pending_approval) {
                 return { pending_approval: true }
             }

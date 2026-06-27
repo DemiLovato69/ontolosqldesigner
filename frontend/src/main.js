@@ -8,24 +8,17 @@ import axios from '@/axios';
 import store from '@/store/index.js'
 import router from '@/router/index.js';
 import App from '@/App.vue';
+import { installAuthExpiryHandler, installSessionActivityTouch } from '@/services/sessionExpiry.js';
 
 if (import.meta.env.PROD) {
     Clarity.init('wndxp2jbej');
 }
 
-store.dispatch('initializeAuth');
+// Handle CSRF mismatch (419) / session expiry (401) and refresh session on activity.
+installAuthExpiryHandler({ axios, store, router });
+installSessionActivityTouch({ axios, store });
 
-// Redirect to verify-email page when diagrams API returns 403 email not verified
-axios.interceptors.response.use(
-    response => response,
-    error => {
-        if (error.response?.status === 403 &&
-            error.response?.data?.message === 'Your email address is not verified.') {
-            router.push({ name: 'verify-email' });
-        }
-        return Promise.reject(error);
-    }
-);
+store.dispatch('initializeAuth');
 
 // Show success toast when returning from email verification link
 router.afterEach((to) => {

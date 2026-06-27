@@ -41,10 +41,11 @@
             @add-reference-table="addReferenceTable"
             @add-pipeline="onAddPipeline"
             @open-reference-json-import="showReferenceJsonImportModal = true"
-            @show-value-types="showValueTypesModal = true"
+            @show-value-types="openValueTypesModal"
             @show-shared-property-types="showSharedPropertyTypesModal = true"
             @show-interfaces="showInterfacesModal = true"
             @show-custom-actions="showCustomActionsModal = true"
+            @show-foundry="showFoundryBrowserModal = true"
         />
 
         <ShareModal
@@ -221,6 +222,7 @@
                         @update-color="updateTableColor"
                         @update-note="updateNote"
                         @update-actions="updateTableActions"
+                        @sync-foundry="syncFoundryTable"
                     />
                 </template>
 
@@ -250,6 +252,7 @@
                         :valueTypes="valueTypes"
                         :compact="isLargeDiagram && !nodeProps.data.editing && !nodeProps.data.showOptionsModal"
                         :selected="selectedRowIds.includes(nodeProps.id)"
+                        :hasTypeError="valueTypeMismatchRowIds.has(nodeProps.id)"
                         @update-label="updateLabel"
                         @toggle-options-modal="toggleOptionsModal"
                         @delete-node="deleteNode"
@@ -272,12 +275,16 @@
                 :open="rightSidebarOpen"
                 :refreshKey="changelogRefreshKey"
                 :dbType="diagramDbType"
+                :isOwner="isOwner"
+                :isDemo="props.isDemo"
                 :valueTypes="valueTypes"
                 :sharedPropertyTypes="sharedPropertyTypes"
                 :interfaces="interfaces"
                 :interfaceLinkConstraints="interfaceLinkConstraints"
                 :customActions="customActions"
+                :problems="valueTypeProblems"
                 @toggle="rightSidebarOpen = !rightSidebarOpen"
+                @focus-problem="focusProblemRow"
                 @open-value-type="openValueTypeFromSidebar"
                 @open-shared-property-type="openSharedPropertyTypeFromSidebar"
                 @open-interface="openInterfaceFromSidebar"
@@ -339,6 +346,16 @@
             @close="showHotkeysModal = false"
         />
 
+        <FoundryBrowserModal
+            v-if="showFoundryBrowserModal"
+            :diagramId="diagramId"
+            :canManageHost="isOwner"
+            :canEdit="canEdit"
+            @import-reference="onImportReferenceJson"
+            @sync="syncFoundryDatasets"
+            @close="showFoundryBrowserModal = false"
+        />
+
         <ValueTypesModal
             v-if="showValueTypesModal"
             :valueTypes="valueTypes"
@@ -389,6 +406,7 @@ import { repairAndNormalizeSchema } from '@/services/SchemaRepair.js'
 import { Diagram } from '@/services/Diagram.js'
 import { exportDiagramPng, exportDiagramSvg } from '@/services/DiagramPngExporter.js'
 import { DEMO_SCHEMA } from '@/services/demoSchema.js'
+import { materializeInlineEnumValueTypes, effectiveBaseTypeToken } from '@/services/valueTypes.js'
 import { useDiagramPresence, CURSOR_COLORS } from '@/composables/useDiagramPresence.js'
 import { useDiagramPolling } from '@/composables/useDiagramPolling.js'
 import { useOffScreenCursors } from '@/composables/useOffScreenCursors.js'
@@ -415,6 +433,9 @@ import SupportModal from '../Modal/SupportModal.vue'
 import DiagramRightSidebar from './DiagramRightSidebar.vue'
 import HotkeysModal from '../Modal/HotkeysModal.vue'
 import ValueTypesModal from '../Modal/ValueTypesModal.vue'
+import FoundryBrowserModal from '../Modal/FoundryBrowserModal.vue'
+import { Foundry, foundryErrorMessage } from '@/services/Foundry.js'
+import { datasetSchemaToJsonSchema } from '@/services/foundryImport.js'
 import SharedPropertyTypesModal from '../Modal/SharedPropertyTypesModal.vue'
 import InterfacesModal from '../Modal/InterfacesModal.vue'
 import CustomActionsModal from '../Modal/CustomActionsModal.vue'
@@ -638,6 +659,48 @@ const tableColumnLabels = computed(() => {
     }
     return labels
 })
+// When a value-typed row is linked by a real relationship to another row, the
+// other row must have a compatible base type (e.g. a string-backed PK and FK are
+// fine even with different value types). Surface incompatibilities as problems.
+const valueTypeProblems = computed(() => {
+    const problems = new Map()
+    const rowById = new Map()
+    for (const element of schema.value) {
+        if (element.type === 'row') rowById.set(element.id, element)
+    }
+    const valueTypeById = new Map(valueTypes.value.map(valueType => [valueType.id, valueType]))
+    const labelFor = (row) => `${tableById.value.get(row.parentNode)?.label ?? 'table'}.${row.label}`
+    const flag = (row, counterpart, rowType, counterpartType) => {
+        if (problems.has(row.id)) return
+        problems.set(row.id, {
+            rowId: row.id,
+            tableId: row.parentNode,
+            title: labelFor(row),
+            detail: `Type ${rowType || 'unknown'} is incompatible with linked ${labelFor(counterpart)} (${counterpartType || 'unknown'})`,
+        })
+    }
+    for (const element of schema.value) {
+        if (!element.source || !element.target) continue
+        if (element.type === 'transform') continue
+        const linkKind = element.data?.linkKind
+        if (linkKind === 'reference' || linkKind === 'transform') continue
+        if (element.data?.exportable === false) continue
+        const source = rowById.get(element.source)
+        const target = rowById.get(element.target)
+        if (!source || !target) continue
+        const sourceHasValueType = !!source.data?.valueTypeId
+        const targetHasValueType = !!target.data?.valueTypeId
+        if (!sourceHasValueType && !targetHasValueType) continue
+        const sourceType = effectiveBaseTypeToken(source.data, valueTypeById)
+        const targetType = effectiveBaseTypeToken(target.data, valueTypeById)
+        if (!sourceType || !targetType || sourceType === targetType) continue
+        // Base types are incompatible: flag the counterpart of each value-typed row.
+        if (sourceHasValueType) flag(target, source, targetType, sourceType)
+        if (targetHasValueType) flag(source, target, sourceType, targetType)
+    }
+    return Array.from(problems.values())
+})
+const valueTypeMismatchRowIds = computed(() => new Set(valueTypeProblems.value.map(problem => problem.rowId)))
 const tableColumns = computed(() => {
     const columns = new Map()
     for (const [tableId, rows] of rowsByTableId.value) {
@@ -657,6 +720,7 @@ const diagramDbType = ref('mysql')
 const showShareModal = ref(false)
 const showHotkeysModal = ref(false)
 const showValueTypesModal = ref(false)
+const showFoundryBrowserModal = ref(false)
 const showSharedPropertyTypesModal = ref(false)
 const showInterfacesModal = ref(false)
 const showCustomActionsModal = ref(false)
@@ -809,12 +873,71 @@ const onCanvasPaneClick = (event) => {
     onPaneClick(event)
 }
 
-const onImportReferenceJson = ({ content, title } = {}) => {
+const onImportReferenceJson = ({ content, title, source } = {}) => {
     try {
-        const imported = importReferenceJsonSchemas(content, { title })
+        const imported = importReferenceJsonSchemas(content, { title, source })
         $toast.success(`Imported ${imported.length} reference table${imported.length === 1 ? '' : 's'}`)
     } catch (error) {
         $toast.error(error?.message || 'Could not import reference schema')
+    }
+}
+
+// Re-fetch a single Foundry-linked reference table's schema and upsert it.
+// Returns true on success. Throws are left to the caller for messaging.
+const applyFoundrySync = async (table) => {
+    const source = table.data.referenceSource
+    const result = await Foundry.getDatasetSchema(diagramId.value, source.datasetRid)
+    const fields = result?.schema?.fieldSchemaList
+    if (!Array.isArray(fields) || fields.length === 0) return false
+    const jsonSchema = datasetSchemaToJsonSchema(source.datasetName || table.label, fields)
+    importReferenceJsonSchemas(JSON.stringify(jsonSchema), {
+        title: table.label,
+        source: { ...source, syncedAt: new Date().toISOString() },
+    })
+    return true
+}
+
+const isFoundryLinked = (el) => el?.type === 'table'
+    && el.data?.referenceSource?.importedFrom === 'foundry-dataset'
+    && !!el.data?.referenceSource?.datasetRid
+
+const syncFoundryTable = async (tableId) => {
+    const table = schema.value.find(el => el.id === tableId && isFoundryLinked(el))
+    if (!table) {
+        $toast.error('This table is not linked to a Foundry dataset.')
+        return
+    }
+    try {
+        const ok = await applyFoundrySync(table)
+        if (ok) $toast.success(`Synced “${table.label}” from Foundry`)
+        else $toast.error('That dataset has no applied schema to sync.')
+    } catch (error) {
+        $toast.error(foundryErrorMessage(error, 'Could not sync from Foundry.'))
+    }
+}
+
+const syncFoundryDatasets = async () => {
+    const tables = schema.value.filter(isFoundryLinked)
+    if (!tables.length) {
+        $toast.error('No Foundry-linked reference tables to sync.')
+        return
+    }
+
+    let ok = 0
+    let failed = 0
+    for (const table of tables) {
+        try {
+            if (await applyFoundrySync(table)) ok++
+            else failed++
+        } catch {
+            failed++
+        }
+    }
+
+    if (ok) {
+        $toast.success(`Synced ${ok} Foundry table${ok === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''}`)
+    } else {
+        $toast.error('Could not sync Foundry tables.')
     }
 }
 
@@ -903,7 +1026,7 @@ const metadataSelectionKey = (item) => item?.id || item?.apiName || item?.displa
 
 const openValueTypeFromSidebar = (item) => {
     selectedValueTypeKey.value = metadataSelectionKey(item)
-    showValueTypesModal.value = true
+    openValueTypesModal()
 }
 
 const openSharedPropertyTypeFromSidebar = (item) => {
@@ -924,6 +1047,13 @@ const openInterfaceLinkConstraintFromSidebar = (item) => {
 const openCustomActionFromSidebar = (item) => {
     selectedCustomActionKey.value = metadataSelectionKey(item)
     showCustomActionsModal.value = true
+}
+
+const focusProblemRow = (rowId) => {
+    const row = schema.value.find(el => el.id === rowId && el.type === 'row')
+    if (!row) return
+    navigateToTable(row.parentNode)
+    selectedRowIds.value = [rowId]
 }
 
 const nodeSize = (node, fallbackWidth = 400, fallbackHeight = 40) => {
@@ -1030,6 +1160,8 @@ const importSql = async () => {
         customActions.value = importedMetadata.customActions ?? []
         sharedPropertyTypes.value = importedMetadata.sharedPropertyTypes ?? []
         if (importedDbType) diagramDbType.value = importedDbType
+        // Promote inline ontology enums; the schema-sync whisper below carries the result.
+        materializeEnumValueTypes({ markDirty: false, sync: false })
         await nextTick()
         focusLargeDiagram()
         importLoading.value = false
@@ -1132,6 +1264,25 @@ const captureSvg = async () => {
     }
 }
 
+// Promote inline ontology row enums into reusable enum value types so they show
+// up in the Value Types modal. Stable per-row ids keep this idempotent.
+const materializeEnumValueTypes = ({ markDirty = true, sync = true } = {}) => {
+    if (diagramDbType.value !== 'ontology') return false
+    const result = materializeInlineEnumValueTypes(schema.value, valueTypes.value)
+    if (!result.changed) return false
+    schema.value = result.schema
+    valueTypes.value = result.valueTypes
+    setElements(result.schema)
+    if (canEdit.value && markDirty) isSaved.value = false
+    if (canEdit.value && sync) whisper('schema-sync', syncPayload())
+    return true
+}
+
+const openValueTypesModal = () => {
+    materializeEnumValueTypes()
+    showValueTypesModal.value = true
+}
+
 const updateValueTypes = (nextValueTypes, nextSchema = null) => {
     snapshot()
     const previousValueTypes = JSON.parse(JSON.stringify(valueTypes.value))
@@ -1182,6 +1333,8 @@ const saveDiagram = async (silent = false) => {
     if (importLoading.value) {
         return false
     }
+    // Ensure inline ontology enums are promoted to reusable value types before persisting.
+    materializeEnumValueTypes({ markDirty: false, sync: false })
     const saved = await (isOwner.value
         ? Diagram.save(diagramId.value, stripViewOnlySchema(schema.value), valueTypes.value, metadataPayload())
         : Diagram.saveByToken(token, stripViewOnlySchema(schema.value), valueTypes.value, metadataPayload()))
@@ -1287,6 +1440,7 @@ const getDiagram = async () => {
             toolbarVisible: true,
             description: '',
             ontologyActions: { create: false, modify: false, delete: false },
+            editsEnabled: false,
             editsHistory: { enabled: false, storeAllPreviousProperties: false },
         },
         position: { x: 0, y: -100 },
@@ -1295,6 +1449,9 @@ const getDiagram = async () => {
     schema.value = loadedSchema.schema
 
     isSaved.value = !loadedSchema.changed
+    // Promote inline ontology enums to reusable value types before first paint.
+    // Echo is not connected yet, so don't sync; collaborators materialize on load too.
+    materializeEnumValueTypes({ markDirty: true, sync: false })
     loading.value = false
     focusLargeDiagram()
 
@@ -1364,7 +1521,23 @@ onMounted(() => {
         nextTick(() => fitView({ padding: 0.15, duration: 0 }))
     }
     document.addEventListener('keydown', onKeyDown)
+    notifyFoundryReturn()
 })
+
+function notifyFoundryReturn() {
+    const query = router.currentRoute.value.query
+    if (!query.foundry) return
+    if (query.foundry === 'connected') {
+        $toast.success('Foundry account connected.')
+    } else {
+        $toast.error(typeof query.message === 'string' && query.message ? query.message : 'Foundry connection failed.')
+    }
+    const next = { ...query }
+    delete next.foundry
+    delete next.host
+    delete next.message
+    router.replace({ query: next })
+}
 
 onUnmounted(() => {
     clearInterval(autoSaveTimer)

@@ -419,6 +419,7 @@
         <div style="display:flex;align-items:center;gap:12px;">
             <a href="{{ route('admin.library') }}" class="logout-btn" style="text-decoration:none;">Library</a>
             <a href="{{ route('admin.reviews') }}" class="logout-btn" style="text-decoration:none;">Reviews</a>
+            <a href="{{ route('admin.foundry') }}" class="logout-btn" style="text-decoration:none;">Foundry</a>
             <form method="POST" action="{{ route('admin.logout') }}">
                 @csrf
                 <button type="submit" class="logout-btn">Sign Out</button>

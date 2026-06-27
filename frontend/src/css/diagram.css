@@ -176,6 +176,16 @@ select:focus {
     right: 82px;
 }
 
+.vue-flow__node-table > .table_button--sync {
+    right: 82px;
+    color: #5db583;
+}
+
+.vue-flow__node-table > .table_button--sync:hover {
+    color: #7fe0a6;
+    background: rgba(255, 255, 255, 0.1);
+}
+
 .vue-flow__node-table > .table_button--add-row {
     right: auto;
     left: 10px;

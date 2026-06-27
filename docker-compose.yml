@@ -7,6 +7,7 @@ services:
         working_dir: /var/www/html/backend
         volumes:
             - ./backend:/var/www/html/backend
+            - ./foundry-runtime:/var/www/html/foundry-runtime
         networks:
             - snydiagram_network
         depends_on:
