@@ -152,7 +152,10 @@ Usage:
 
 The Foundry SDK (`@osdk/foundry`) runs in the `foundry-runtime` Node bridge invoked by Laravel; access tokens are passed over stdin and never logged.
 
-**Troubleshooting browsing:** if listing spaces/folders/ontologies or reading datasets fails, the cause is logged server-side at `error` level (so it appears in the platform's runtime logs even with `LOG_LEVEL=error`), including the operation, exit code, and the Node bridge's stderr. A `foundry_access_denied` result almost always means the connected account/token is missing the required Platform read scopes — set `FOUNDRY_DEFAULT_SCOPES` to include the filesystem/ontologies/datasets read scopes your stack uses, ensure the OAuth client grants them, and reconnect.
+**Troubleshooting browsing:** if listing spaces/folders/ontologies or reading datasets fails, the cause is logged server-side at `error` level (so it appears in the platform's runtime logs even with `LOG_LEVEL=error`), including the operation, exit code, and the Node bridge's stderr.
+
+- **HTTP 406 ("Unknown Error") on every call:** the Foundry gateway is rejecting the request's `User-Agent`. Node's default UA is `node`; the runtime now sends a real product `User-Agent`. If a gateway needs a specific one, set `FOUNDRY_HTTP_USER_AGENT`.
+- **`foundry_access_denied`:** the connected account/token is missing the required Platform read scopes — set `FOUNDRY_DEFAULT_SCOPES` to include the filesystem/ontologies/datasets read scopes your stack uses, ensure the OAuth client grants them, and reconnect.
 
 ### Diagram Agent (Foundry AIP)
 

@@ -17,8 +17,31 @@
 import { createPlatformClient } from "@osdk/client";
 import { Admin, Datasets, Filesystem, Ontologies } from "@osdk/foundry";
 
+// The SDK only sets a custom "Fetch-User-Agent" header; Node's fetch otherwise
+// sends "User-Agent: node", which some Foundry gateways/WAFs reject with HTTP
+// 406 before the request reaches the API. Inject a real User-Agent (overridable
+// via FOUNDRY_HTTP_USER_AGENT) on every request.
+const DEFAULT_USER_AGENT = "OntoloSQL-Designer/1.0 (+https://ontolosql-designer.ondigitalocean.app)";
+
+function platformFetch() {
+  const ua = process.env.FOUNDRY_HTTP_USER_AGENT && process.env.FOUNDRY_HTTP_USER_AGENT.length > 0
+    ? process.env.FOUNDRY_HTTP_USER_AGENT
+    : DEFAULT_USER_AGENT;
+
+  return (input, init = {}) => {
+    const headers = new Headers(init.headers ?? undefined);
+    if (typeof Request !== "undefined" && input instanceof Request) {
+      for (const [key, value] of input.headers) {
+        if (!headers.has(key)) headers.set(key, value);
+      }
+    }
+    if (!headers.has("user-agent")) headers.set("User-Agent", ua);
+    return fetch(input, { ...init, headers });
+  };
+}
+
 export async function run({ operation, hostUrl, accessToken, params }) {
-  const client = createPlatformClient(hostUrl, async () => accessToken);
+  const client = createPlatformClient(hostUrl, async () => accessToken, undefined, platformFetch());
 
   try {
     switch (operation) {
