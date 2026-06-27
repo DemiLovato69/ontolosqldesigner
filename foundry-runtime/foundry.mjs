@@ -49,6 +49,7 @@ async function main() {
   try {
     adapter = await loadAdapter();
   } catch (error) {
+    writeStderr(`SDK failed to load: ${messageOf(error)}`);
     return emitError("foundry_upstream_unavailable", `Foundry SDK failed to load: ${messageOf(error)}`);
   }
 
@@ -57,6 +58,14 @@ async function main() {
     emit({ ok: true, data: data ?? {} });
   } catch (error) {
     emitError(codeOf(error), messageOf(error));
+  }
+}
+
+function writeStderr(text) {
+  try {
+    process.stderr.write(`[foundry-runtime] ${text}\n`);
+  } catch {
+    // ignore
   }
 }
 
