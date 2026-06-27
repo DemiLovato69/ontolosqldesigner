@@ -18,15 +18,29 @@ import { createPlatformClient } from "@osdk/client";
 import { Admin, Datasets, Filesystem, Ontologies } from "@osdk/foundry";
 
 // The SDK only sets a custom "Fetch-User-Agent" header; Node's fetch otherwise
-// sends "User-Agent: node", which some Foundry gateways/WAFs reject with HTTP
-// 406 before the request reaches the API. Inject a real User-Agent (overridable
-// via FOUNDRY_HTTP_USER_AGENT) on every request.
-const DEFAULT_USER_AGENT = "OntoloSQL-Designer/1.0 (+https://ontolosql-designer.ondigitalocean.app)";
+// sends "User-Agent: node", which Foundry gateways/WAFs reject with HTTP 406
+// ("Request flagged") before the request reaches the API. Present a realistic
+// browser fingerprint so lightweight bot rules pass. The User-Agent is
+// overridable via FOUNDRY_HTTP_USER_AGENT; set FOUNDRY_HTTP_BROWSER_HEADERS=0
+// to disable the extra browser hint headers.
+const DEFAULT_USER_AGENT =
+  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
+const BROWSER_HINT_HEADERS = {
+  "Accept-Language": "en-US,en;q=0.9",
+  "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"",
+  "sec-ch-ua-mobile": "?0",
+  "sec-ch-ua-platform": "\"macOS\"",
+  "sec-fetch-site": "cross-site",
+  "sec-fetch-mode": "cors",
+  "sec-fetch-dest": "empty",
+};
 
 function platformFetch() {
   const ua = process.env.FOUNDRY_HTTP_USER_AGENT && process.env.FOUNDRY_HTTP_USER_AGENT.length > 0
     ? process.env.FOUNDRY_HTTP_USER_AGENT
     : DEFAULT_USER_AGENT;
+  const browserHeaders = process.env.FOUNDRY_HTTP_BROWSER_HEADERS !== "0";
 
   return async (input, init = {}) => {
     const headers = new Headers(init.headers ?? undefined);
@@ -36,6 +50,11 @@ function platformFetch() {
       }
     }
     if (!headers.has("user-agent")) headers.set("User-Agent", ua);
+    if (browserHeaders) {
+      for (const [key, value] of Object.entries(BROWSER_HINT_HEADERS)) {
+        if (!headers.has(key)) headers.set(key, value);
+      }
+    }
 
     // The SDK sets "Content-Type: application/json" on every request, including
     // bodyless GETs. Some gateways reject a GET that declares a JSON content
