@@ -3,7 +3,7 @@
         <div class="foundry-section__heading">
             <h3>Foundry <span v-if="status">{{ stateBadge }}</span></h3>
             <button class="foundry-refresh" type="button" title="Refresh Foundry status" @click="reload">
-                <SvgIcon name="history" :size="13" />
+                <SvgIcon name="refresh" :size="13" />
             </button>
         </div>
 

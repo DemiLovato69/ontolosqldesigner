@@ -29,6 +29,16 @@
     </button>
 
     <button
+        v-if="isFoundryReference && canEdit"
+        class="table_button table_button--sync"
+        @mousedown.stop
+        @click.stop.prevent="$emit('sync-foundry', id)"
+        :title="syncTitle"
+    >
+        <SvgIcon name="refresh" :size="13" />
+    </button>
+
+    <button
         v-if="canEdit || description"
         ref="noteBtnRef"
         :class="['table_button', 'table_button--note', { 'table_button--has-note': description }]"
@@ -103,7 +113,7 @@ const props = defineProps({
     canEdit: { type: Boolean, default: true },
 })
 
-defineEmits(['delete-node', 'update-label', 'copy-table', 'add-row', 'resize-start', 'update-color', 'update-note', 'update-actions'])
+defineEmits(['delete-node', 'update-label', 'copy-table', 'add-row', 'resize-start', 'update-color', 'update-note', 'update-actions', 'sync-foundry'])
 
 const showNote = ref(false)
 const showSettings = ref(false)
@@ -115,6 +125,13 @@ const implementsInterfaces = computed(() => props.data?.implementsInterfaces ?? 
 const editsEnabled = computed(() => !!props.data?.editsEnabled)
 const editsHistory = computed(() => props.data?.editsHistory ?? {})
 const isReference = computed(() => props.data?.reference || props.data?.tableKind === 'reference')
+const isFoundryReference = computed(() => props.data?.referenceSource?.importedFrom === 'foundry-dataset' && !!props.data?.referenceSource?.datasetRid)
+const syncTitle = computed(() => {
+    const at = props.data?.referenceSource?.syncedAt
+    if (!at) return 'Refresh from Foundry'
+    const when = new Date(at)
+    return Number.isNaN(when.getTime()) ? 'Refresh from Foundry' : `Refresh from Foundry (last synced ${when.toLocaleString()})`
+})
 const hasOntologyActions = computed(() => !!(ontologyActions.value.create || ontologyActions.value.modify || ontologyActions.value.delete))
 const hasOntologySettings = computed(() => hasOntologyActions.value || !!titlePropertyRowId.value || implementsInterfaces.value.length > 0 || editsEnabled.value || !!editsHistory.value.enabled)
 const description = computed(() => props.data?.description ?? props.data?.note ?? '')

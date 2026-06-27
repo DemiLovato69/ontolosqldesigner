@@ -222,6 +222,7 @@
                         @update-color="updateTableColor"
                         @update-note="updateNote"
                         @update-actions="updateTableActions"
+                        @sync-foundry="syncFoundryTable"
                     />
                 </template>
 
@@ -433,7 +434,7 @@ import DiagramRightSidebar from './DiagramRightSidebar.vue'
 import HotkeysModal from '../Modal/HotkeysModal.vue'
 import ValueTypesModal from '../Modal/ValueTypesModal.vue'
 import FoundryBrowserModal from '../Modal/FoundryBrowserModal.vue'
-import { Foundry } from '@/services/Foundry.js'
+import { Foundry, foundryErrorMessage } from '@/services/Foundry.js'
 import { datasetSchemaToJsonSchema } from '@/services/foundryImport.js'
 import SharedPropertyTypesModal from '../Modal/SharedPropertyTypesModal.vue'
 import InterfacesModal from '../Modal/InterfacesModal.vue'
@@ -881,10 +882,42 @@ const onImportReferenceJson = ({ content, title, source } = {}) => {
     }
 }
 
+// Re-fetch a single Foundry-linked reference table's schema and upsert it.
+// Returns true on success. Throws are left to the caller for messaging.
+const applyFoundrySync = async (table) => {
+    const source = table.data.referenceSource
+    const result = await Foundry.getDatasetSchema(diagramId.value, source.datasetRid)
+    const fields = result?.schema?.fieldSchemaList
+    if (!Array.isArray(fields) || fields.length === 0) return false
+    const jsonSchema = datasetSchemaToJsonSchema(source.datasetName || table.label, fields)
+    importReferenceJsonSchemas(JSON.stringify(jsonSchema), {
+        title: table.label,
+        source: { ...source, syncedAt: new Date().toISOString() },
+    })
+    return true
+}
+
+const isFoundryLinked = (el) => el?.type === 'table'
+    && el.data?.referenceSource?.importedFrom === 'foundry-dataset'
+    && !!el.data?.referenceSource?.datasetRid
+
+const syncFoundryTable = async (tableId) => {
+    const table = schema.value.find(el => el.id === tableId && isFoundryLinked(el))
+    if (!table) {
+        $toast.error('This table is not linked to a Foundry dataset.')
+        return
+    }
+    try {
+        const ok = await applyFoundrySync(table)
+        if (ok) $toast.success(`Synced “${table.label}” from Foundry`)
+        else $toast.error('That dataset has no applied schema to sync.')
+    } catch (error) {
+        $toast.error(foundryErrorMessage(error, 'Could not sync from Foundry.'))
+    }
+}
+
 const syncFoundryDatasets = async () => {
-    const tables = schema.value.filter(el => el.type === 'table'
-        && el.data?.referenceSource?.importedFrom === 'foundry-dataset'
-        && el.data?.referenceSource?.datasetRid)
+    const tables = schema.value.filter(isFoundryLinked)
     if (!tables.length) {
         $toast.error('No Foundry-linked reference tables to sync.')
         return
@@ -893,20 +926,9 @@ const syncFoundryDatasets = async () => {
     let ok = 0
     let failed = 0
     for (const table of tables) {
-        const source = table.data.referenceSource
         try {
-            const result = await Foundry.getDatasetSchema(diagramId.value, source.datasetRid)
-            const fields = result?.schema?.fieldSchemaList
-            if (!Array.isArray(fields) || fields.length === 0) {
-                failed++
-                continue
-            }
-            const jsonSchema = datasetSchemaToJsonSchema(source.datasetName || table.label, fields)
-            importReferenceJsonSchemas(JSON.stringify(jsonSchema), {
-                title: table.label,
-                source: { ...source, syncedAt: new Date().toISOString() },
-            })
-            ok++
+            if (await applyFoundrySync(table)) ok++
+            else failed++
         } catch {
             failed++
         }
