@@ -1,6 +1,6 @@
 <template>
     <template v-if="compact">
-        <span :class="['row_compact_label', { 'row_compact_label--selected': selected }]" @click="$emit('row-select', id, $event)" @dblclick.stop="canEdit && (data.editing = true)">{{ label }}</span>
+        <span :class="['row_compact_label', { 'row_compact_label--selected': selected, 'row_compact_label--error': hasTypeError }]" :title="hasTypeError ? typeErrorTitle : null" @click="$emit('row-select', id, $event)" @dblclick.stop="canEdit && (data.editing = true)">{{ label }}</span>
         <span v-if="badges.length" class="constraint_badges">
             <span v-for="b in badges" :key="b.label" :class="['constraint_badge', b.cls]">{{ b.label }}</span>
         </span>
@@ -21,8 +21,9 @@
         ><SvgIcon name="drag" :size="14" /></span>
 
         <input
-            :class="['input input_designer_row ml-5 mr-5', { 'input_designer_row--selected': selected, 'input_designer_row--reference': data.reference }]"
+            :class="['input input_designer_row ml-5 mr-5', { 'input_designer_row--selected': selected, 'input_designer_row--reference': data.reference, 'input_designer_row--error': hasTypeError }]"
             :value="label"
+            :title="hasTypeError ? typeErrorTitle : null"
             @mousedown.stop
             @click="$emit('row-select', id, $event)"
             @focus="(e) => { if (!canEdit) return; data.editing = true; e.target.select(); }"
@@ -147,6 +148,7 @@ import RowOptionsModal from './RowOptionsModal.vue'
 import EnumValuesModal from './EnumValuesModal.vue'
 import NodeNoteModal from './NodeNoteModal.vue'
 import { typeGroupsFor } from '@/services/rowTypes.js'
+import { canvasTypeForValueType } from '@/services/valueTypes.js'
 
 const props = defineProps({
     id: String,
@@ -160,12 +162,14 @@ const props = defineProps({
     valueTypes: { type: Array, default: () => [] },
     compact: { type: Boolean, default: false },
     selected: { type: Boolean, default: false },
+    hasTypeError: { type: Boolean, default: false },
 })
 
 const emit = defineEmits(['update-label', 'toggle-options-modal', 'delete-node', 'change', 'row-drag-start', 'update-table-constraints', 'update-table-fulltext', 'add-row-after', 'tab-next', 'tab-prev', 'update-note', 'row-select'])
 
 const emitChange = () => emit('change', props.id)
 const description = computed(() => props.data.description ?? props.data.comment ?? '')
+const typeErrorTitle = 'Linked to a row with a different value type'
 
 // --- Constraint badges ---
 
@@ -272,14 +276,6 @@ const sqlTypeForSelect = computed({
         props.data.sqlType = val
     }
 })
-
-const canvasTypeForValueType = (valueType) => {
-    const baseType = valueType.baseType ?? { type: 'string' }
-    if (baseType.type === 'array') return `ARRAY<${String(baseType.elementType ?? 'string').toUpperCase()}>`
-    if (baseType.type === 'struct') return 'STRUCT'
-    if (baseType.type === 'decimal') return 'DECIMAL(10,2)'
-    return String(baseType.type ?? 'string').toUpperCase()
-}
 </script>
 
 <style scoped>
@@ -301,6 +297,14 @@ const canvasTypeForValueType = (valueType) => {
     outline-offset: -2px;
     border-radius: 5px;
     background: rgba(245, 158, 11, 0.16);
+}
+
+.input_designer_row--error,
+.row_compact_label--error {
+    outline: 2px solid #ef4444;
+    outline-offset: -2px;
+    border-radius: 5px;
+    background: rgba(239, 68, 68, 0.16);
 }
 
 .ml-5 { margin-left: 5px; }

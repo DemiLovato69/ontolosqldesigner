@@ -72,6 +72,7 @@
         :columns="columns"
         :interfaces="interfaces"
         :implementsInterfaces="implementsInterfaces"
+        :editsEnabled="editsEnabled"
         :editsHistory="editsHistory"
         :canEdit="canEdit"
         :anchor="settingsBtnRef"
@@ -111,10 +112,11 @@ const settingsBtnRef = ref(null)
 const ontologyActions = computed(() => props.data?.ontologyActions ?? {})
 const titlePropertyRowId = computed(() => props.data?.titlePropertyRowId ?? '')
 const implementsInterfaces = computed(() => props.data?.implementsInterfaces ?? [])
+const editsEnabled = computed(() => !!props.data?.editsEnabled)
 const editsHistory = computed(() => props.data?.editsHistory ?? {})
 const isReference = computed(() => props.data?.reference || props.data?.tableKind === 'reference')
 const hasOntologyActions = computed(() => !!(ontologyActions.value.create || ontologyActions.value.modify || ontologyActions.value.delete))
-const hasOntologySettings = computed(() => hasOntologyActions.value || !!titlePropertyRowId.value || implementsInterfaces.value.length > 0 || !!editsHistory.value.enabled)
+const hasOntologySettings = computed(() => hasOntologyActions.value || !!titlePropertyRowId.value || implementsInterfaces.value.length > 0 || editsEnabled.value || !!editsHistory.value.enabled)
 const description = computed(() => props.data?.description ?? props.data?.note ?? '')
 </script>
 

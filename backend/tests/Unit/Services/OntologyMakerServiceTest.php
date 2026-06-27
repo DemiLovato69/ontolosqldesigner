@@ -120,6 +120,28 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringNotContainsString('"id": { type: "string", displayName: "Id", nullability: { noNulls: true, noEmptyCollections: false }, indexedForSearch: true, editOnly: true }', $module);
     }
 
+    public function test_table_level_edits_enabled_exports_edits_enabled_without_user_edits_or_history(): void
+    {
+        $schema = json_encode([
+            ['id' => 'customers', 'type' => 'table', 'label' => 'customers', 'data' => [
+                'editsEnabled' => true,
+            ]],
+            ['id' => 'customer_id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'customers', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+            ['id' => 'customer_name', 'type' => 'row', 'label' => 'name', 'parentNode' => 'customers', 'data' => [
+                'sqlType' => 'STRING',
+            ]],
+        ], JSON_THROW_ON_ERROR);
+
+        $module = $this->service->createModule($schema);
+
+        $this->assertStringContainsString('editsEnabled: true', $module);
+        $this->assertStringNotContainsString('editsHistoryConfig: {', $module);
+        $this->assertStringNotContainsString('editOnly: true', $module);
+    }
+
     public function test_exports_edit_history_config_and_enables_edits(): void
     {
         $schema = json_encode([
@@ -288,6 +310,70 @@ class OntologyMakerServiceTest extends TestCase
         $this->assertStringContainsString('type: { type: "array", elementType: "string" }', $module);
         $this->assertStringContainsString('{ identifier: "city", baseType: "string" }', $module);
         $this->assertStringContainsString('{ identifier: "zipCode", baseType: "integer" }', $module);
+    }
+
+    public function test_exports_enum_value_type_and_property_reference(): void
+    {
+        $schema = json_encode([
+            ['id' => 'orders', 'type' => 'table', 'label' => 'orders'],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'orders', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+            ['id' => 'status', 'type' => 'row', 'label' => 'status', 'parentNode' => 'orders', 'data' => [
+                'sqlType' => 'STRING',
+                'valueTypeId' => 'order-status',
+            ]],
+        ]);
+        $valueTypes = [[
+            'id' => 'order-status',
+            'apiName' => 'orderStatus',
+            'displayName' => 'Order Status',
+            'description' => 'Lifecycle of an order',
+            'version' => '1.0.0',
+            'baseType' => ['type' => 'string'],
+            'constraints' => [[
+                'id' => 'one-of',
+                'type' => 'oneOf',
+                'values' => ['pending', 'active', 'done'],
+                'useIgnoreCase' => false,
+            ]],
+        ]];
+
+        $module = $this->service->createModule($schema, $valueTypes);
+
+        $this->assertStringContainsString('export const orderStatus = defineValueType({', $module);
+        $this->assertStringContainsString('oneOf: { values: ["pending", "active", "done"], useIgnoreCase: false }', $module);
+        $this->assertStringContainsString('"status": { type: "string"', $module);
+        $this->assertStringContainsString('valueType: orderStatus', $module);
+    }
+
+    public function test_exports_enum_value_type_with_ignore_case(): void
+    {
+        $schema = json_encode([
+            ['id' => 'orders', 'type' => 'table', 'label' => 'orders'],
+            ['id' => 'id', 'type' => 'row', 'label' => 'id', 'parentNode' => 'orders', 'data' => [
+                'keyMod' => 'PRIMARY KEY',
+                'sqlType' => 'STRING',
+            ]],
+        ]);
+        $valueTypes = [[
+            'id' => 'priority',
+            'apiName' => 'priority',
+            'displayName' => 'Priority',
+            'version' => '1.0.0',
+            'baseType' => ['type' => 'string'],
+            'constraints' => [[
+                'id' => 'one-of',
+                'type' => 'oneOf',
+                'values' => ['low', 'high'],
+                'useIgnoreCase' => true,
+            ]],
+        ]];
+
+        $module = $this->service->createModule($schema, $valueTypes);
+
+        $this->assertStringContainsString('oneOf: { values: ["low", "high"], useIgnoreCase: true }', $module);
     }
 
     public function test_respects_one_to_one_relationship_type(): void

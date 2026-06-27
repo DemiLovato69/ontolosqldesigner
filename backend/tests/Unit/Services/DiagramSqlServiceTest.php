@@ -254,6 +254,118 @@ class DiagramSqlServiceTest extends TestCase
         $this->assertSame([], $payload['warnings']);
     }
 
+    public function test_imports_string_one_of_value_type_as_constraint(): void
+    {
+        $ontology = json_encode([
+            'valueTypes' => [[
+                'rid' => 'ri.value-type.status',
+                'apiName' => 'orderStatus',
+                'version' => '1.0.0',
+                'displayMetadata' => ['displayName' => 'Order Status'],
+                'baseType' => ['type' => 'string'],
+                'constraints' => [[
+                    'constraint' => [
+                        'constraint' => [
+                            'type' => 'string',
+                            'string' => [
+                                'type' => 'oneOf',
+                                'oneOf' => ['values' => ['pending', 'active', 'done'], 'useIgnoreCase' => false],
+                            ],
+                        ],
+                    ],
+                ]],
+            ]],
+            'objectTypes' => [[
+                'rid' => 'ri.object.order',
+                'apiName' => 'Order',
+                'primaryKeys' => ['id'],
+                'properties' => [
+                    ['id' => 'id', 'baseType' => ['type' => 'STRING']],
+                    ['id' => 'status', 'baseType' => ['type' => 'STRING'], 'valueTypeRid' => 'ri.value-type.status'],
+                ],
+            ]],
+        ]);
+
+        $payload = $this->service->createImportPayload($ontology, 'ontology', 'ontology-json');
+
+        $this->assertCount(1, $payload['value_types']);
+        $this->assertSame(['type' => 'string'], $payload['value_types'][0]['baseType']);
+        $constraint = $payload['value_types'][0]['constraints'][0];
+        $this->assertSame('oneOf', $constraint['type']);
+        $this->assertSame(['pending', 'active', 'done'], $constraint['values']);
+        $this->assertFalse($constraint['useIgnoreCase']);
+        $statusRow = collect($payload['schema'])
+            ->first(fn ($item) => ($item['type'] ?? null) === 'row' && ($item['label'] ?? null) === 'status');
+        $this->assertSame($payload['value_types'][0]['id'], $statusRow['data']['valueTypeId']);
+        $this->assertSame([], $payload['warnings']);
+    }
+
+    public function test_imports_flat_one_of_value_type_constraint(): void
+    {
+        $ontology = json_encode([
+            'valueTypes' => [[
+                'apiName' => 'priority',
+                'displayMetadata' => ['displayName' => 'Priority'],
+                'baseType' => ['type' => 'string'],
+                'constraints' => [[
+                    'type' => 'oneOf',
+                    'oneOf' => ['values' => ['low', 'high'], 'useIgnoreCase' => true],
+                ]],
+            ]],
+            'objectTypes' => [],
+        ]);
+
+        $payload = $this->service->createImportPayload($ontology, 'ontology', 'ontology-json');
+
+        $constraint = $payload['value_types'][0]['constraints'][0];
+        $this->assertSame('oneOf', $constraint['type']);
+        $this->assertSame(['low', 'high'], $constraint['values']);
+        $this->assertTrue($constraint['useIgnoreCase']);
+    }
+
+    public function test_imports_edits_enabled_from_normalized_and_raw_object_types(): void
+    {
+        $ontology = json_encode([
+            'objectTypes' => [
+                [
+                    'rid' => 'ri.object.normalized',
+                    'apiName' => 'Normalized',
+                    'primaryKeys' => ['id'],
+                    'editsEnabled' => true,
+                    'properties' => [
+                        ['id' => 'id', 'baseType' => ['type' => 'STRING']],
+                    ],
+                ],
+                [
+                    'rid' => 'ri.object.raw',
+                    'apiName' => 'Raw',
+                    'primaryKeys' => ['id'],
+                    'entityMetadata' => ['arePatchesEnabled' => true],
+                    'properties' => [
+                        ['id' => 'id', 'baseType' => ['type' => 'STRING']],
+                    ],
+                ],
+                [
+                    'rid' => 'ri.object.plain',
+                    'apiName' => 'Plain',
+                    'primaryKeys' => ['id'],
+                    'properties' => [
+                        ['id' => 'id', 'baseType' => ['type' => 'STRING']],
+                    ],
+                ],
+            ],
+        ]);
+
+        $payload = $this->service->createImportPayload($ontology, 'ontology', 'ontology-json');
+
+        $tableByLabel = fn (string $label) => collect($payload['schema'])
+            ->first(fn ($item) => ($item['type'] ?? null) === 'table' && ($item['label'] ?? null) === $label);
+
+        $this->assertTrue($tableByLabel('Normalized')['data']['editsEnabled']);
+        $this->assertTrue($tableByLabel('Raw')['data']['editsEnabled']);
+        $this->assertFalse($tableByLabel('Plain')['data']['editsEnabled']);
+    }
+
     public function test_skips_unsupported_ontology_value_type_constraints_with_warning(): void
     {
         $ontology = json_encode([
@@ -493,6 +605,40 @@ class DiagramSqlServiceTest extends TestCase
 
         $this->assertSame($valueTypes, $result['diagram']['valueTypes']);
         $this->assertSame('email-type', $result['diagram']['schema'][1]['data']['valueTypeId']);
+    }
+
+    public function test_backup_preserves_enum_value_types(): void
+    {
+        $schema = json_encode([
+            ['id' => 't1', 'type' => 'table', 'label' => 'orders'],
+            ['id' => 'r1', 'type' => 'row', 'label' => 'status', 'parentNode' => 't1', 'data' => [
+                'sqlType' => 'STRING',
+                'valueTypeId' => 'order-status',
+            ]],
+        ]);
+        $valueTypes = [[
+            'id' => 'order-status',
+            'apiName' => 'orderStatus',
+            'displayName' => 'Order Status',
+            'description' => '',
+            'version' => '1.0.0',
+            'baseType' => ['type' => 'string'],
+            'constraints' => [[
+                'id' => 'one-of',
+                'type' => 'oneOf',
+                'values' => ['pending', 'active', 'done'],
+                'useIgnoreCase' => false,
+                'failureMessage' => '',
+            ]],
+        ]];
+
+        $backup = $this->service->createJson($schema, $valueTypes, 'ontology');
+        $diagram = Diagram::factory()->create(['db_type' => 'mysql']);
+        $this->service->importSchema($diagram, json_encode($backup), 'backup-json');
+        $diagram->refresh();
+
+        $this->assertSame($valueTypes, $backup['diagram']['valueTypes']);
+        $this->assertSame($valueTypes, $diagram->value_types);
     }
 
     public function test_create_json_includes_ontology_metadata(): void

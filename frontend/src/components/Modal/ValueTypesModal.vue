@@ -21,7 +21,7 @@
                         @click="selectedId = valueType.id"
                     >
                         <strong>{{ valueType.displayName }}</strong>
-                        <span>{{ valueType.apiName }} · {{ baseTypeLabel(valueType.baseType) }}</span>
+                        <span>{{ valueType.apiName }} · {{ valueTypeBaseLabel(valueType) }}</span>
                     </button>
                     <p v-if="!localValueTypes.length" class="vt-empty">No value types defined.</p>
                     <button v-if="canEdit" class="vt-add-button" type="button" @click="createValueType">
@@ -129,6 +129,35 @@
                                 </button>
                             </div>
 
+                            <template v-if="constraint.type === 'oneOf'">
+                                <div class="vt-enum-tags" @click="focusEnumInput">
+                                    <span v-for="(value, index) in (constraint.values || [])" :key="index" class="vt-enum-tag">
+                                        {{ value }}
+                                        <button
+                                            v-if="canEdit"
+                                            type="button"
+                                            class="vt-enum-remove"
+                                            aria-label="Remove value"
+                                            tabindex="-1"
+                                            @click.stop="removeEnumValue(constraint, index)"
+                                        >×</button>
+                                    </span>
+                                    <input
+                                        v-if="canEdit"
+                                        ref="enumInputRef"
+                                        v-model="newEnumValue"
+                                        class="vt-enum-input"
+                                        placeholder="Add value, press Enter"
+                                        @keydown.enter.prevent="addEnumValue(constraint)"
+                                        @keydown.tab.prevent="addEnumValue(constraint)"
+                                    />
+                                </div>
+                                <label class="vt-checkbox vt-enum-ignorecase">
+                                    <input v-model="constraint.useIgnoreCase" type="checkbox" :disabled="!canEdit" />
+                                    <span>Ignore case when validating</span>
+                                </label>
+                            </template>
+
                             <template v-if="constraint.type === 'regex'">
                                 <label>
                                     <span>Pattern</span>
@@ -220,9 +249,10 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 import SvgIcon from '../SvgIcon.vue'
 import { typeGroupsFor } from '@/services/rowTypes.js'
+import { canvasTypeForValueType, valueTypeBaseLabel } from '@/services/valueTypes.js'
 
 const props = defineProps({
     valueTypes: { type: Array, default: () => [] },
@@ -235,7 +265,7 @@ const emit = defineEmits(['update', 'close'])
 
 const BASE_TYPES = ['array', 'boolean', 'date', 'decimal', 'double', 'float', 'integer', 'long', 'short', 'string', 'struct', 'timestamp']
 const SIMPLE_TYPES = ['boolean', 'date', 'decimal', 'double', 'float', 'integer', 'long', 'short', 'string', 'timestamp']
-const CONSTRAINT_TYPES = ['regex', 'isRid', 'isUuid', 'length']
+const CONSTRAINT_TYPES = ['oneOf', 'regex', 'isRid', 'isUuid', 'length']
 const SEMVER_RE = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/
 const API_NAME_RE = /^[A-Za-z][A-Za-z0-9_]{0,99}$/
 
@@ -249,6 +279,8 @@ const selectedId = ref(
     ?? null
 )
 const constraintToAdd = ref('')
+const newEnumValue = ref('')
+const enumInputRef = ref(null)
 const error = ref('')
 
 const selectedValueType = computed(() => localValueTypes.value.find(item => item.id === selectedId.value) ?? null)
@@ -271,16 +303,12 @@ const availableConstraintTypes = computed(() => {
 
 const typeLabel = (type) => type.charAt(0).toUpperCase() + type.slice(1)
 const constraintLabel = (type) => ({
+    oneOf: 'Allowed values (enum)',
     regex: 'Regular expression',
     isRid: 'RID',
     isUuid: 'UUID',
     length: 'Length',
 }[type] ?? type)
-const baseTypeLabel = (baseType) => {
-    if (baseType?.type === 'array') return `Array<${typeLabel(baseType.elementType ?? 'string')}>`
-    return typeLabel(baseType?.type ?? 'string')
-}
-
 const createValueType = () => {
     const id = createId('value-type')
     localValueTypes.value.push({
@@ -311,6 +339,25 @@ const onBaseTypeChange = () => {
     }
 }
 
+const focusEnumInput = () => nextTick(() => enumInputRef.value?.focus())
+
+const addEnumValue = (constraint) => {
+    if (!constraint || constraint.type !== 'oneOf') return
+    const value = newEnumValue.value.trim().replace(/^['"]|['"]$/g, '')
+    newEnumValue.value = ''
+    if (!value) return
+    constraint.values = constraint.values ?? []
+    const matches = (existing) => constraint.useIgnoreCase
+        ? String(existing).toLowerCase() === value.toLowerCase()
+        : existing === value
+    if (constraint.values.some(matches)) return
+    constraint.values.push(value)
+}
+
+const removeEnumValue = (constraint, index) => {
+    if (constraint?.type === 'oneOf') constraint.values.splice(index, 1)
+}
+
 const addStructField = () => {
     selectedValueType.value.baseType.fields.push({
         id: createId('struct-field'),
@@ -326,6 +373,7 @@ const addConstraint = () => {
     const type = constraintToAdd.value
     if (!type || !selectedValueType.value) return
     const constraint = { id: createId('constraint'), type, failureMessage: '' }
+    if (type === 'oneOf') Object.assign(constraint, { values: [], useIgnoreCase: false })
     if (type === 'regex') Object.assign(constraint, { regexPattern: '', usePartialMatch: false })
     if (type === 'length') Object.assign(constraint, { minSize: 0, maxSize: null })
     selectedValueType.value.constraints.push(constraint)
@@ -362,14 +410,6 @@ const reassignReference = (rowId, replacement) => {
     }
 }
 
-const canvasTypeForValueType = (valueType) => {
-    const baseType = valueType.baseType ?? { type: 'string' }
-    if (baseType.type === 'array') return `ARRAY<${String(baseType.elementType ?? 'string').toUpperCase()}>`
-    if (baseType.type === 'struct') return 'STRUCT'
-    if (baseType.type === 'decimal') return 'DECIMAL(10,2)'
-    return String(baseType.type ?? 'string').toUpperCase()
-}
-
 const deleteSelected = () => {
     if (references.value.length) return
     const index = localValueTypes.value.findIndex(item => item.id === selectedId.value)
@@ -395,6 +435,17 @@ const validate = () => {
             }
         }
         for (const constraint of valueType.constraints) {
+            if (constraint.type === 'oneOf') {
+                const values = constraint.values ?? []
+                if (!values.length) return `${valueType.displayName} needs at least one allowed value.`
+                if (values.some(value => String(value).trim() === '')) return `${valueType.displayName} has an empty allowed value.`
+                const seen = new Set()
+                for (const value of values) {
+                    const key = constraint.useIgnoreCase ? String(value).toLowerCase() : String(value)
+                    if (seen.has(key)) return `${valueType.displayName} has duplicate allowed values.`
+                    seen.add(key)
+                }
+            }
             if (constraint.type === 'regex') {
                 if (!constraint.regexPattern) return `${valueType.displayName} has an empty regex.`
                 try {
@@ -604,6 +655,59 @@ const applyChanges = () => {
 .vt-checkbox {
     align-items: center;
     flex-direction: row !important;
+}
+
+.vt-enum-ignorecase {
+    margin-top: 12px;
+}
+
+.vt-enum-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 10px;
+    padding: 8px 9px;
+    background: var(--input-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    min-height: 40px;
+    cursor: text;
+}
+
+.vt-enum-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px 3px 9px;
+    color: #fff;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 12px;
+    background: var(--color-primary);
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+.vt-enum-remove {
+    padding: 0 2px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 15px;
+    line-height: 1;
+    background: none;
+    border: 0;
+    cursor: pointer;
+}
+
+.vt-enum-remove:hover {
+    color: #fff;
+}
+
+.vt-enum-input {
+    flex: 1;
+    min-width: 120px;
+    padding: 2px 4px !important;
+    background: transparent !important;
+    border: 0 !important;
 }
 
 .vt-checkbox input {

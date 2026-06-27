@@ -103,6 +103,44 @@ test("creates globally unique property IDs and preserves supported actions", () 
   );
 });
 
+test("preserves string oneOf value type constraints", () => {
+  const result = convert(`
+    import { defineObject, defineValueType } from "@osdk/maker";
+
+    const orderStatus = defineValueType({
+      apiName: "orderStatus",
+      displayName: "Order Status",
+      type: {
+        type: "string",
+        constraints: [{
+          constraint: { type: "oneOf", oneOf: { values: ["pending", "active", "done"], useIgnoreCase: false } },
+        }],
+      },
+      version: "1.0.0",
+    });
+
+    defineObject({
+      apiName: "orders",
+      displayName: "Orders",
+      pluralDisplayName: "Orders",
+      titlePropertyApiName: "id",
+      primaryKeyPropertyApiName: "id",
+      properties: {
+        id: { type: "string" },
+        status: { type: "string", valueType: orderStatus },
+      },
+    });
+  `);
+
+  assert.equal(result.status, 0, result.stderr);
+  const ontology = JSON.parse(result.stdout);
+  assert.equal(ontology.valueTypes[0].baseType.type, "string");
+  const serializedConstraints = JSON.stringify(ontology.valueTypes[0].constraints);
+  assert.ok(serializedConstraints.includes('"oneOf"'));
+  assert.ok(serializedConstraints.includes('"pending"'));
+  assert.equal(ontology.objectTypes[0].properties[1].valueType.apiName, "orderStatus");
+});
+
 test("normalizes namespaces and many-to-many links", () => {
   const result = convert(`
     import { defineLink, defineObject, defineOntology } from "@osdk/maker";
@@ -172,6 +210,43 @@ test("preserves edit-only properties as user edits", () => {
   const id = ontology.objectTypes[0].properties.find((property) => property.apiName === "id");
   assert.equal(notes.userEdits, true);
   assert.equal(id.userEdits, false);
+});
+
+test("preserves table-level editsEnabled", () => {
+  const result = convert(`
+    import { defineObject } from "@osdk/maker";
+
+    defineObject({
+      apiName: "customers",
+      displayName: "Customers",
+      pluralDisplayName: "Customers",
+      titlePropertyApiName: "name",
+      primaryKeyPropertyApiName: "id",
+      editsEnabled: true,
+      properties: {
+        id: { type: "string" },
+        name: { type: "string" },
+      },
+    });
+
+    defineObject({
+      apiName: "orders",
+      displayName: "Orders",
+      pluralDisplayName: "Orders",
+      titlePropertyApiName: "id",
+      primaryKeyPropertyApiName: "id",
+      properties: {
+        id: { type: "string" },
+      },
+    });
+  `);
+
+  assert.equal(result.status, 0, result.stderr);
+  const ontology = JSON.parse(result.stdout);
+  const customers = ontology.objectTypes.find((object) => object.apiName === "customers");
+  const orders = ontology.objectTypes.find((object) => object.apiName === "orders");
+  assert.equal(customers.editsEnabled, true);
+  assert.equal(orders.editsEnabled, false);
 });
 
 test("preserves edits history config", () => {

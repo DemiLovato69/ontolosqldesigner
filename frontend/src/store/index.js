@@ -26,7 +26,9 @@ export default createStore({
     },
     actions: {
         async fetchUser({ commit }) {
-            const response = await axios.get('/api/user');
+            // Auth probe: a 401 here just means "not logged in". The global expiry
+            // handler must not redirect for this; route guards handle that.
+            const response = await axios.get('/api/user', { __skipAuthExpiry: true });
             commit('setUser', response.data);
             return response.data;
         },

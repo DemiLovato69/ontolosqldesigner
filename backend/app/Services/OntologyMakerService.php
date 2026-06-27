@@ -138,7 +138,9 @@ class OntologyMakerService
                 'primary_key' => $primaryKey,
                 'title_property' => $titleProperty,
                 'properties' => $properties,
-                'edits_enabled' => $this->hasUserEditsProperty($properties) || $editsHistory['enabled'],
+                'edits_enabled' => (bool) ($table['data']['editsEnabled'] ?? false)
+                    || $this->hasUserEditsProperty($properties)
+                    || $editsHistory['enabled'],
                 'edits_history' => $editsHistory,
                 'implements_interfaces' => is_array($table['data']['implementsInterfaces'] ?? null)
                     ? array_values($table['data']['implementsInterfaces'])
@@ -824,6 +826,10 @@ class OntologyMakerService
     private function renderValueTypeConstraint(array $constraint): string
     {
         $payload = match ($constraint['type'] ?? null) {
+            'oneOf' => 'type: "oneOf", oneOf: { values: ['.implode(', ', array_map(
+                fn (mixed $value): string => '"'.$this->escape((string) $value).'"',
+                is_array($constraint['values'] ?? null) ? $constraint['values'] : []
+            )).'], useIgnoreCase: '.(($constraint['useIgnoreCase'] ?? false) ? 'true' : 'false').' }',
             'regex' => 'type: "regex", regex: { regexPattern: "'.$this->escape((string) ($constraint['regexPattern'] ?? ''))
                 .'", usePartialMatch: '.(($constraint['usePartialMatch'] ?? false) ? 'true' : 'false').' }',
             'isRid' => 'type: "isRid", isRid: {}',

@@ -2,8 +2,8 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OntoloSQL Designer Desktop API",
-    "version": "1.0.0",
-    "description": "Versioned API for native desktop clients. Web SPA authentication remains Sanctum cookie/session based; this API uses Google OAuth with PKCE and expiring Sanctum bearer tokens."
+    "version": "1.1.0",
+    "description": "Versioned API for native desktop clients. Web SPA authentication remains Sanctum cookie/session based; this API uses Google OAuth with PKCE and expiring Sanctum bearer tokens.\n\nVersion 1.1.0 documents ontology value types in detail, including enum value types (a string base type with a `oneOf` constraint), and the visual-only schema markers used for reference tables, reference links, pipeline transforms, and table-level Foundry edit settings (`editsEnabled` / `editsHistory`)."
   },
   "servers": [
     {
@@ -1501,8 +1501,7 @@
                 "value_types": {
                   "type": "array",
                   "items": {
-                    "type": "object",
-                    "additionalProperties": true
+                    "$ref": "#/components/schemas/ValueType"
                   }
                 }
               }
@@ -1671,8 +1670,7 @@
               "valueTypes": {
                 "type": "array",
                 "items": {
-                  "type": "object",
-                  "additionalProperties": true
+                  "$ref": "#/components/schemas/ValueType"
                 }
               },
               "interfaces": {
@@ -1813,8 +1811,7 @@
           "value_types": {
             "type": "array",
             "items": {
-              "type": "object",
-              "additionalProperties": true
+              "$ref": "#/components/schemas/ValueType"
             }
           },
           "interfaces": {
@@ -1881,10 +1878,133 @@
       },
       "DiagramSchema": {
         "type": "array",
-        "description": "Vue Flow schema elements. Runtime-only keys such as hidden, selected, dimensions, and editing are not persisted and are stripped from save/load paths.",
+        "description": "Vue Flow schema elements (a flat list of nodes and edges). Nodes have a `type` of `table`, `row`, or `pipeline-transform`; edges have `source`/`target` referencing node ids.\n\nNotable `data` fields: table nodes may carry `ontologyActions`, `editsEnabled` (boolean; Foundry object patches enabled) and `editsHistory` (`{ enabled, storeAllPreviousProperties }`), `titlePropertyRowId`, and `implementsInterfaces`. Row nodes carry `sqlType`, `keyMod`, `nullable`, `indexed`, `userEdits`, and `valueTypeId` (references a ValueType `id`).\n\nVisual-only / reference elements are marked and excluded from SQL and Maker exports but preserved in backup JSON: reference tables (`data.tableKind = 'reference'`, `data.reference = true`), reference links (`data.linkKind = 'reference'`), pipeline transform nodes (`type = 'pipeline-transform'`), and transform edges (`type = 'transform'`, `data.linkKind = 'transform'`). Any element with `data.exportable = false` is visual-only.\n\nRuntime-only keys such as hidden, selected, dimensions, and editing are not persisted and are stripped from save/load paths.",
         "items": {
           "type": "object",
           "additionalProperties": true
+        }
+      },
+      "ValueType": {
+        "type": "object",
+        "description": "Reusable ontology value type. Only available on `ontology` diagrams. Enum value types are modeled as a `string` base type carrying a single `oneOf` constraint.",
+        "required": ["apiName", "baseType"],
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable client identifier. Row schema items reference it via `data.valueTypeId`.",
+            "maxLength": 100
+          },
+          "apiName": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9_]{0,99}$"
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "version": {
+            "type": "string",
+            "description": "Semantic version string.",
+            "examples": ["1.0.0"]
+          },
+          "baseType": {
+            "$ref": "#/components/schemas/ValueTypeBaseType"
+          },
+          "constraints": {
+            "type": "array",
+            "description": "Validation constraints. Only string base types may define constraints.",
+            "items": {
+              "$ref": "#/components/schemas/ValueTypeConstraint"
+            }
+          }
+        }
+      },
+      "ValueTypeBaseType": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["array", "boolean", "date", "decimal", "double", "float", "integer", "long", "short", "string", "struct", "timestamp"]
+          },
+          "elementType": {
+            "type": "string",
+            "description": "Element type when `type` is `array`.",
+            "enum": ["boolean", "date", "decimal", "double", "float", "integer", "long", "short", "string", "timestamp"]
+          },
+          "fields": {
+            "type": "array",
+            "description": "Field definitions when `type` is `struct`.",
+            "items": {
+              "type": "object",
+              "required": ["apiName", "type"],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "apiName": {
+                  "type": "string",
+                  "pattern": "^[A-Za-z][A-Za-z0-9_]{0,99}$"
+                },
+                "type": {
+                  "type": "string",
+                  "enum": ["boolean", "date", "decimal", "double", "float", "integer", "long", "short", "string", "timestamp"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "ValueTypeConstraint": {
+        "type": "object",
+        "description": "A value type validation constraint. Each constraint type may appear at most once per value type. `oneOf` represents an enum (a fixed set of allowed string values).",
+        "required": ["id", "type"],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["oneOf", "regex", "isRid", "isUuid", "length"]
+          },
+          "failureMessage": {
+            "type": "string",
+            "maxLength": 500
+          },
+          "values": {
+            "type": "array",
+            "description": "Allowed values for the `oneOf` (enum) constraint. Must contain at least one non-empty value.",
+            "items": {
+              "type": "string",
+              "maxLength": 255
+            }
+          },
+          "useIgnoreCase": {
+            "type": "boolean",
+            "description": "`oneOf`: compare allowed values case-insensitively."
+          },
+          "regexPattern": {
+            "type": "string",
+            "description": "`regex`: the pattern to validate against."
+          },
+          "usePartialMatch": {
+            "type": "boolean",
+            "description": "`regex`: allow a partial match instead of a full-string match."
+          },
+          "minSize": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "`length`: minimum length."
+          },
+          "maxSize": {
+            "type": "integer",
+            "minimum": 0,
+            "description": "`length`: maximum length."
+          }
         }
       },
       "DiagramSummary": {
@@ -2001,8 +2121,7 @@
           "value_types": {
             "type": ["array", "null"],
             "items": {
-              "type": "object",
-              "additionalProperties": true
+              "$ref": "#/components/schemas/ValueType"
             }
           },
           "interfaces": {
@@ -2347,8 +2466,7 @@
           "value_types": {
             "type": "array",
             "items": {
-              "type": "object",
-              "additionalProperties": true
+              "$ref": "#/components/schemas/ValueType"
             }
           },
           "interfaces": {

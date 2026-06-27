@@ -450,6 +450,7 @@ export const TableActions = {
                 description: '',
                 titlePropertyRowId: null,
                 ontologyActions: { create: false, modify: false, delete: false },
+                editsEnabled: false,
                 editsHistory: { enabled: false, storeAllPreviousProperties: false },
                 tableKind: isReference ? 'reference' : 'object',
                 reference: isReference,

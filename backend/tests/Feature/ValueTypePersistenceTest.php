@@ -35,6 +35,46 @@ class ValueTypePersistenceTest extends TestCase
             ->assertJsonPath('data.value_types.0.apiName', 'emailAddress');
     }
 
+    public function test_owner_can_save_enum_value_type(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $user->id,
+            'db_type' => 'ontology',
+        ]);
+        Sanctum::actingAs($user);
+
+        $this->putJson("/api/diagrams/{$diagram->id}", [
+            'schema' => [],
+            'value_types' => [$this->enumValueType()],
+        ])->assertOk();
+
+        $saved = $diagram->fresh()->value_types[0];
+        $this->assertSame('oneOf', $saved['constraints'][0]['type']);
+        $this->assertSame(['pending', 'active', 'done'], $saved['constraints'][0]['values']);
+    }
+
+    public function test_enum_value_type_without_values_is_rejected_with_meaningful_message(): void
+    {
+        $user = User::factory()->create(['email_verified_at' => now()]);
+        $diagram = Diagram::factory()->create([
+            'user_id' => $user->id,
+            'db_type' => 'ontology',
+        ]);
+        Sanctum::actingAs($user);
+        $invalid = $this->enumValueType();
+        $invalid['constraints'][0]['values'] = [];
+
+        $this->putJson("/api/diagrams/{$diagram->id}", [
+            'schema' => [],
+            'value_types' => [$invalid],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors([
+                'value_types' => 'the allowed values (enum) constraint needs at least one value.',
+            ]);
+    }
+
     public function test_invalid_value_type_is_rejected(): void
     {
         $user = User::factory()->create(['email_verified_at' => now()]);
@@ -88,6 +128,26 @@ class ValueTypePersistenceTest extends TestCase
         ])->assertOk();
 
         $this->assertSame('emailAddress', $diagram->fresh()->value_types[0]['apiName']);
+    }
+
+    /** @return array<string, mixed> */
+    private function enumValueType(): array
+    {
+        return [
+            'id' => 'order-status',
+            'apiName' => 'orderStatus',
+            'displayName' => 'Order Status',
+            'description' => '',
+            'version' => '1.0.0',
+            'baseType' => ['type' => 'string'],
+            'constraints' => [[
+                'id' => 'one-of',
+                'type' => 'oneOf',
+                'values' => ['pending', 'active', 'done'],
+                'useIgnoreCase' => false,
+                'failureMessage' => '',
+            ]],
+        ];
     }
 
     /** @return array<string, mixed> */
