@@ -28,7 +28,7 @@ function platformFetch() {
     ? process.env.FOUNDRY_HTTP_USER_AGENT
     : DEFAULT_USER_AGENT;
 
-  return (input, init = {}) => {
+  return async (input, init = {}) => {
     const headers = new Headers(init.headers ?? undefined);
     if (typeof Request !== "undefined" && input instanceof Request) {
       for (const [key, value] of input.headers) {
@@ -36,7 +36,32 @@ function platformFetch() {
       }
     }
     if (!headers.has("user-agent")) headers.set("User-Agent", ua);
-    return fetch(input, { ...init, headers });
+
+    // The SDK sets "Content-Type: application/json" on every request, including
+    // bodyless GETs. Some gateways reject a GET that declares a JSON content
+    // type with a non-standard 406, so drop it when there is no body.
+    const method = String(init.method ?? (input instanceof Request ? input.method : "GET")).toUpperCase();
+    const hasBody = init.body != null || (input instanceof Request && input.body != null);
+    if (!hasBody && (method === "GET" || method === "DELETE")) {
+      headers.delete("content-type");
+    }
+
+    const response = await fetch(input, { ...init, headers });
+
+    if (!response.ok && (response.status === 406 || response.status === 415 || response.status >= 500)) {
+      try {
+        const bodyText = (await response.clone().text()).slice(0, 400).replace(/\s+/g, " ");
+        const respHeaders = ["content-type", "server", "via", "www-authenticate", "x-akamai-request-id"]
+          .map((k) => `${k}=${response.headers.get(k) ?? ""}`)
+          .join(" ");
+        const sentHeaders = [...headers.keys()].filter((k) => k.toLowerCase() !== "authorization").join(",");
+        process.stderr.write(
+          `[foundry-runtime] HTTP ${response.status} "${response.statusText}" sent{${sentHeaders}} resp{${respHeaders}} body=${bodyText}\n`,
+        );
+      } catch { /* ignore diagnostic failures */ }
+    }
+
+    return response;
   };
 }
 
