@@ -45,6 +45,23 @@ class DiagramPolicy
         return app(DiagramSharingService::class)->canWrite($diagram, $user);
     }
 
+    /**
+     * View Foundry config/status and query Foundry resources, and connect the
+     * user's own Foundry account. Requires read access to the diagram.
+     */
+    public function viewFoundry(User $user, Diagram $diagram): bool
+    {
+        return app(DiagramSharingService::class)->canRead($diagram, $user);
+    }
+
+    /**
+     * Change the diagram's Foundry host/defaults. Owner only.
+     */
+    public function manageFoundry(User $user, Diagram $diagram): bool
+    {
+        return $this->ownsDiagram($user, $diagram);
+    }
+
     private function ownsDiagram(User $user, Diagram $diagram): bool
     {
         return $user->id === $diagram->user_id;

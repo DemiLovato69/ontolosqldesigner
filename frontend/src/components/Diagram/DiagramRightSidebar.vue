@@ -45,6 +45,12 @@
                         </section>
                     </template>
 
+                    <FoundryPanel
+                        v-if="isOntology && !isDemo"
+                        :diagram-id="diagramId"
+                        :can-manage-host="isOwner"
+                    />
+
                     <section v-if="isOntology" class="problems-section">
                         <div class="problems-section__heading">
                             <h3>Problems <span>{{ problems.length }}</span></h3>
@@ -100,6 +106,7 @@ import { computed, ref, watch } from 'vue'
 import { Diagram } from '@/services/Diagram.js'
 import { CURSOR_COLORS } from '@/composables/useDiagramPresence.js'
 import { valueTypeBaseLabel } from '@/services/valueTypes.js'
+import FoundryPanel from './FoundryPanel.vue'
 import SvgIcon from '../SvgIcon.vue'
 
 const props = defineProps({
@@ -107,6 +114,8 @@ const props = defineProps({
     open: { type: Boolean, default: false },
     refreshKey: { type: Number, default: 0 },
     dbType: { type: String, default: 'mysql' },
+    isOwner: { type: Boolean, default: false },
+    isDemo: { type: Boolean, default: false },
     valueTypes: { type: Array, default: () => [] },
     sharedPropertyTypes: { type: Array, default: () => [] },
     interfaces: { type: Array, default: () => [] },

@@ -46,26 +46,48 @@ class AuthController extends Controller
 
     public function handleGoogleCallback(Request $request): RedirectResponse
     {
+        $adminIntended = (bool) $request->session()->pull('admin_oauth_intended', false);
+
         try {
             $googleUser = Socialite::driver('google')->stateless()->user();
         } catch (Throwable) {
-            return $this->oauthError();
+            return $this->oauthError($adminIntended);
         }
 
         try {
             $user = $this->googleOAuthService->findOrCreateAllowedUser($googleUser);
         } catch (AuthenticationException) {
-            return $this->oauthError();
+            return $this->oauthError($adminIntended);
         }
 
         Auth::login($user);
         $request->session()->regenerate();
 
+        if ($adminIntended) {
+            if ($user->isAdmin()) {
+                return redirect('/admin');
+            }
+
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect()->route('admin.login')->withErrors([
+                'credentials' => 'That Google account is not an admin.',
+            ]);
+        }
+
         return redirect('/oauth/callback');
     }
 
-    private function oauthError(): RedirectResponse
+    private function oauthError(bool $adminIntended = false): RedirectResponse
     {
+        if ($adminIntended) {
+            return redirect()->route('admin.login')->withErrors([
+                'credentials' => 'Google sign-in failed or that account is not allowed.',
+            ]);
+        }
+
         return redirect('/login?oauth_error=company_domain');
     }
 

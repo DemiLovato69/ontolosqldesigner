@@ -59,6 +59,15 @@
             >
                 <SvgIcon name="bolt" :size="17" />
             </button>
+            <button
+                v-if="dbType === 'ontology' && !isDemo"
+                class="dh-btn"
+                @click="$emit('show-foundry')"
+                title="Foundry Browser"
+                aria-label="Open Foundry browser"
+            >
+                <SvgIcon name="globe" :size="17" />
+            </button>
             <div v-if="isOwner" class="dh-share-wrap">
                 <button class="dh-btn" @click="$emit('show-share')" title="Share">
                     <SvgIcon name="share" :size="17" />
@@ -89,7 +98,7 @@ const props = defineProps({
     dbType: { type: String, default: 'mysql' },
     hasPendingVisitors: { type: Boolean, default: false },
 })
-const emit = defineEmits(['add-table', 'add-reference-table', 'add-pipeline', 'open-reference-json-import', 'show-share', 'show-help', 'show-value-types', 'show-shared-property-types', 'show-interfaces', 'show-custom-actions'])
+const emit = defineEmits(['add-table', 'add-reference-table', 'add-pipeline', 'open-reference-json-import', 'show-share', 'show-help', 'show-value-types', 'show-shared-property-types', 'show-interfaces', 'show-custom-actions', 'show-foundry'])
 
 const pipelineMenuOpen = ref(false)
 const pipelineMenuRef = ref(null)

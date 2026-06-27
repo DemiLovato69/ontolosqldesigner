@@ -1,0 +1,12 @@
+{
+  "name": "ontolosql-foundry-runtime",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@osdk/client": "^2.40.0",
+    "@osdk/foundry": "^2.40.0"
+  }
+}

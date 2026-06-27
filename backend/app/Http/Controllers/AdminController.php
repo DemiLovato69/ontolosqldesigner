@@ -18,11 +18,14 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use Laravel\Socialite\Facades\Socialite;
 use Knuckles\Scribe\Attributes\Group;
+use Symfony\Component\HttpFoundation\RedirectResponse as SymfonyRedirectResponse;
 
 #[Group('Admin')]
 class AdminController extends Controller
@@ -52,7 +55,14 @@ class AdminController extends Controller
             $request->session()->regenerateToken();
         }
 
-        return back()->withErrors(['credentials' => 'Неверный логин или пароль.']);
+        return back()->withErrors(['credentials' => 'Invalid Credentials.']);
+    }
+
+    public function redirectToGoogle(Request $request): RedirectResponse|SymfonyRedirectResponse
+    {
+        $request->session()->put('admin_oauth_intended', true);
+
+        return Socialite::driver('google')->redirect();
     }
 
     public function showDashboard(): Factory|View

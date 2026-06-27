@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OntoloSQL Designer Desktop API",
-    "version": "1.1.0",
+    "version": "1.4.0",
     "description": "Versioned API for native desktop clients. Web SPA authentication remains Sanctum cookie/session based; this API uses Google OAuth with PKCE and expiring Sanctum bearer tokens.\n\nVersion 1.1.0 documents ontology value types in detail, including enum value types (a string base type with a `oneOf` constraint), and the visual-only schema markers used for reference tables, reference links, pipeline transforms, and table-level Foundry edit settings (`editsEnabled` / `editsHistory`)."
   },
   "servers": [
@@ -56,12 +56,18 @@
     {
       "name": "Review",
       "description": "Review prompt/status endpoints reused by the app"
+    },
+    {
+      "name": "Foundry",
+      "description": "Read-only Foundry Platform access scoped per ontology diagram, using delegated per-user OAuth. Diagram owners may set any host; connecting/querying requires an admin-configured host (hybrid model)."
     }
   ],
   "paths": {
     "/api/v1/auth/oauth/google/authorize": {
       "get": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "authorizeGoogleDesktopOAuth",
         "summary": "Start desktop Google OAuth",
         "description": "Stores the PKCE request and redirects the system browser to Google OAuth.",
@@ -105,7 +111,9 @@
             "schema": {
               "type": "string",
               "maxLength": 255,
-              "examples": ["ontolosql://oauth/callback"]
+              "examples": [
+                "ontolosql://oauth/callback"
+              ]
             }
           }
         ],
@@ -121,7 +129,9 @@
     },
     "/api/v1/auth/oauth/google/callback": {
       "get": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "handleGoogleDesktopOAuthCallback",
         "summary": "Handle Google OAuth callback",
         "description": "Validates the Google account domain, creates a one-time desktop grant, and redirects to the configured native callback URI with code and state.",
@@ -154,7 +164,9 @@
     },
     "/api/v1/auth/oauth/google/token": {
       "post": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "exchangeDesktopOAuthGrant",
         "summary": "Exchange one-time OAuth grant for bearer token",
         "security": [],
@@ -187,7 +199,9 @@
     },
     "/api/v1/auth/me": {
       "get": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "getCurrentDesktopUser",
         "summary": "Get current user",
         "description": "Requires abilities: desktop.",
@@ -198,7 +212,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["data"],
+                  "required": [
+                    "data"
+                  ],
                   "properties": {
                     "data": {
                       "$ref": "#/components/schemas/User"
@@ -219,7 +235,9 @@
     },
     "/api/v1/auth/tokens": {
       "get": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "listDesktopTokens",
         "summary": "List current user's tokens",
         "description": "Requires abilities: desktop, tokens:manage. Plaintext tokens are never returned.",
@@ -230,7 +248,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["data"],
+                  "required": [
+                    "data"
+                  ],
                   "properties": {
                     "data": {
                       "type": "array",
@@ -254,7 +274,9 @@
     },
     "/api/v1/auth/token/current": {
       "delete": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "revokeCurrentDesktopToken",
         "summary": "Revoke current bearer token",
         "description": "Requires abilities: desktop.",
@@ -273,7 +295,9 @@
     },
     "/api/v1/auth/tokens/{token}": {
       "delete": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "revokeDesktopTokenById",
         "summary": "Revoke one of the current user's tokens",
         "description": "Requires abilities: desktop, tokens:manage.",
@@ -300,7 +324,9 @@
     },
     "/api/v1/auth/email/resend": {
       "post": {
-        "tags": ["Auth"],
+        "tags": [
+          "Auth"
+        ],
         "operationId": "resendVerificationEmailV1",
         "summary": "Resend verification email",
         "responses": {
@@ -322,7 +348,9 @@
     },
     "/api/v1/broadcasting/auth": {
       "post": {
-        "tags": ["Realtime"],
+        "tags": [
+          "Realtime"
+        ],
         "operationId": "authorizeBroadcastChannelV1",
         "summary": "Authorize Reverb channel subscription",
         "description": "Requires abilities: desktop, presence:read. Writer channels also require presence:write in channel authorization.",
@@ -351,7 +379,9 @@
     },
     "/api/v1/realtime/config": {
       "get": {
-        "tags": ["Realtime"],
+        "tags": [
+          "Realtime"
+        ],
         "operationId": "getRealtimeConfigV1",
         "summary": "Get Reverb client config",
         "description": "Requires abilities: desktop, presence:read.",
@@ -377,7 +407,9 @@
     },
     "/api/v1/diagrams": {
       "get": {
-        "tags": ["Diagrams"],
+        "tags": [
+          "Diagrams"
+        ],
         "operationId": "listOwnedDiagramsV1",
         "summary": "List current user's diagrams",
         "description": "Requires abilities: desktop, diagrams:read.",
@@ -388,7 +420,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["data"],
+                  "required": [
+                    "data"
+                  ],
                   "properties": {
                     "data": {
                       "type": "array",
@@ -410,7 +444,9 @@
         }
       },
       "post": {
-        "tags": ["Diagrams"],
+        "tags": [
+          "Diagrams"
+        ],
         "operationId": "createDiagramV1",
         "summary": "Create diagram",
         "description": "Requires abilities: desktop, diagrams:write.",
@@ -442,7 +478,9 @@
     },
     "/api/v1/diagrams/dashboard": {
       "get": {
-        "tags": ["Diagrams"],
+        "tags": [
+          "Diagrams"
+        ],
         "operationId": "getDiagramDashboardV1",
         "summary": "Get owned, shared, and public diagrams",
         "description": "Requires abilities: desktop, diagrams:read.",
@@ -468,7 +506,9 @@
     },
     "/api/v1/diagrams/share-users/search": {
       "get": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "searchShareUsersV1",
         "summary": "Search users by email for sharing",
         "description": "Requires abilities: desktop, sharing:write. Query must be at least two characters to return matches.",
@@ -514,7 +554,9 @@
         }
       ],
       "get": {
-        "tags": ["Diagrams"],
+        "tags": [
+          "Diagrams"
+        ],
         "operationId": "getDiagramV1",
         "summary": "Get diagram",
         "description": "Requires abilities: desktop, diagrams:read plus diagram read permission.",
@@ -534,7 +576,9 @@
         }
       },
       "put": {
-        "tags": ["Diagrams"],
+        "tags": [
+          "Diagrams"
+        ],
         "operationId": "replaceDiagramV1",
         "summary": "Update diagram",
         "description": "Requires abilities: desktop, diagrams:write plus diagram write permission.",
@@ -557,7 +601,9 @@
         }
       },
       "patch": {
-        "tags": ["Diagrams"],
+        "tags": [
+          "Diagrams"
+        ],
         "operationId": "patchDiagramV1",
         "summary": "Partially update diagram",
         "description": "Requires abilities: desktop, diagrams:write plus diagram write permission.",
@@ -580,7 +626,9 @@
         }
       },
       "delete": {
-        "tags": ["Diagrams"],
+        "tags": [
+          "Diagrams"
+        ],
         "operationId": "deleteDiagramV1",
         "summary": "Delete diagram",
         "description": "Requires abilities: desktop, diagrams:delete plus ownership/delete permission.",
@@ -607,7 +655,9 @@
         }
       ],
       "get": {
-        "tags": ["Shared Diagrams"],
+        "tags": [
+          "Shared Diagrams"
+        ],
         "operationId": "getSharedDiagramV1",
         "summary": "Get diagram by share token",
         "description": "Requires abilities: desktop, diagrams:read plus effective shared read permission.",
@@ -627,7 +677,9 @@
         }
       },
       "patch": {
-        "tags": ["Shared Diagrams"],
+        "tags": [
+          "Shared Diagrams"
+        ],
         "operationId": "saveSharedDiagramV1",
         "summary": "Save shared diagram schema",
         "description": "Requires abilities: desktop, diagrams:write plus effective shared write permission.",
@@ -652,7 +704,9 @@
     },
     "/api/v1/shared/diagrams/{token}/duplicate": {
       "post": {
-        "tags": ["Shared Diagrams"],
+        "tags": [
+          "Shared Diagrams"
+        ],
         "operationId": "duplicateSharedDiagramV1",
         "summary": "Duplicate shared diagram into current user's account",
         "description": "Requires abilities: desktop, diagrams:write plus effective shared read permission.",
@@ -684,7 +738,9 @@
         }
       ],
       "post": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "enableDiagramSharingV1",
         "summary": "Ensure diagram is shared",
         "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
@@ -710,7 +766,9 @@
         }
       },
       "patch": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "updateDiagramShareSettingsV1",
         "summary": "Update diagram share settings",
         "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
@@ -744,7 +802,9 @@
         }
       },
       "delete": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "disableDiagramSharingV1",
         "summary": "Disable sharing and library visibility",
         "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
@@ -765,7 +825,9 @@
         }
       ],
       "get": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "listDiagramInvitesV1",
         "summary": "List diagram email invites",
         "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
@@ -789,7 +851,9 @@
         }
       },
       "put": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "replaceDiagramInvitesV1",
         "summary": "Replace diagram email invites",
         "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
@@ -799,13 +863,18 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["invites"],
+                "required": [
+                  "invites"
+                ],
                 "properties": {
                   "invites": {
                     "type": "array",
                     "items": {
                       "type": "object",
-                      "required": ["email", "access"],
+                      "required": [
+                        "email",
+                        "access"
+                      ],
                       "properties": {
                         "email": {
                           "type": "string",
@@ -847,7 +916,9 @@
     },
     "/api/v1/diagrams/{diagram}/visitors": {
       "get": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "listDiagramVisitorsV1",
         "summary": "List diagram visitors",
         "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
@@ -863,7 +934,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["data"],
+                  "required": [
+                    "data"
+                  ],
                   "properties": {
                     "data": {
                       "type": "array",
@@ -884,7 +957,9 @@
     },
     "/api/v1/diagrams/{diagram}/visitors/{visitor}/approve": {
       "post": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "approveDiagramVisitorV1",
         "summary": "Approve visitor access",
         "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
@@ -911,7 +986,9 @@
     },
     "/api/v1/diagrams/{diagram}/visitors/{visitor}": {
       "patch": {
-        "tags": ["Sharing"],
+        "tags": [
+          "Sharing"
+        ],
         "operationId": "updateDiagramVisitorAccessV1",
         "summary": "Update or revoke visitor access",
         "description": "Requires abilities: desktop, sharing:write plus diagram update permission.",
@@ -929,11 +1006,17 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["access"],
+                "required": [
+                  "access"
+                ],
                 "properties": {
                   "access": {
                     "type": "string",
-                    "enum": ["read", "write", "revoked"]
+                    "enum": [
+                      "read",
+                      "write",
+                      "revoked"
+                    ]
                   }
                 }
               }
@@ -958,7 +1041,9 @@
     },
     "/api/v1/diagrams/{diagram}/imports/{format}": {
       "post": {
-        "tags": ["Imports"],
+        "tags": [
+          "Imports"
+        ],
         "operationId": "startRawDiagramImportV1",
         "summary": "Start raw import",
         "description": "Requires abilities: desktop, imports:write plus diagram write permission. Accepts JSON `{script}` or raw text body.",
@@ -981,7 +1066,9 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["script"],
+                "required": [
+                  "script"
+                ],
                 "properties": {
                   "script": {
                     "type": "string"
@@ -1011,7 +1098,9 @@
     },
     "/api/v1/diagrams/{diagram}/imports": {
       "post": {
-        "tags": ["Imports"],
+        "tags": [
+          "Imports"
+        ],
         "operationId": "createChunkedDiagramImportV1",
         "summary": "Create chunked import upload",
         "description": "Requires abilities: desktop, imports:write plus diagram write permission.",
@@ -1052,7 +1141,9 @@
     },
     "/api/v1/diagrams/{diagram}/imports/{import}/chunks/{index}": {
       "put": {
-        "tags": ["Imports"],
+        "tags": [
+          "Imports"
+        ],
         "operationId": "uploadDiagramImportChunkV1",
         "summary": "Upload one import chunk",
         "description": "Requires abilities: desktop, imports:write plus diagram write permission.",
@@ -1117,7 +1208,9 @@
     },
     "/api/v1/diagrams/{diagram}/imports/{import}/complete": {
       "post": {
-        "tags": ["Imports"],
+        "tags": [
+          "Imports"
+        ],
         "operationId": "completeChunkedDiagramImportV1",
         "summary": "Complete chunked import upload",
         "description": "Requires abilities: desktop, imports:write plus diagram write permission.",
@@ -1147,7 +1240,9 @@
     },
     "/api/v1/diagrams/{diagram}/imports/status": {
       "get": {
-        "tags": ["Imports"],
+        "tags": [
+          "Imports"
+        ],
         "operationId": "getDiagramImportStatusV1",
         "summary": "Get latest import status",
         "description": "Requires abilities: desktop, imports:write plus diagram write permission.",
@@ -1175,7 +1270,9 @@
     },
     "/api/v1/diagrams/{diagram}/exports": {
       "post": {
-        "tags": ["Exports"],
+        "tags": [
+          "Exports"
+        ],
         "operationId": "startDiagramExportV1",
         "summary": "Start SQL export job",
         "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
@@ -1196,7 +1293,9 @@
     },
     "/api/v1/diagrams/{diagram}/exports/status": {
       "get": {
-        "tags": ["Exports"],
+        "tags": [
+          "Exports"
+        ],
         "operationId": "getDiagramExportStatusV1",
         "summary": "Get SQL export job status",
         "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
@@ -1224,7 +1323,9 @@
     },
     "/api/v1/diagrams/{diagram}/exports/backup-json": {
       "get": {
-        "tags": ["Exports"],
+        "tags": [
+          "Exports"
+        ],
         "operationId": "exportDiagramBackupJsonV1",
         "summary": "Export lossless backup JSON",
         "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
@@ -1252,7 +1353,9 @@
     },
     "/api/v1/diagrams/{diagram}/exports/migration": {
       "get": {
-        "tags": ["Exports"],
+        "tags": [
+          "Exports"
+        ],
         "operationId": "exportDiagramMigrationZipV1",
         "summary": "Export Laravel migration zip",
         "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
@@ -1281,7 +1384,9 @@
     },
     "/api/v1/diagrams/{diagram}/exports/ontology": {
       "get": {
-        "tags": ["Exports"],
+        "tags": [
+          "Exports"
+        ],
         "operationId": "exportDiagramOntologyMakerV1",
         "summary": "Export Maker .mts module",
         "description": "Requires abilities: desktop, exports:read plus diagram read permission.",
@@ -1314,7 +1419,9 @@
         }
       ],
       "get": {
-        "tags": ["Changelog"],
+        "tags": [
+          "Changelog"
+        ],
         "operationId": "listDiagramChangelogV1",
         "summary": "List diagram changelog entries",
         "description": "Requires abilities: desktop, changelog:read plus diagram read permission.",
@@ -1325,7 +1432,9 @@
               "application/json": {
                 "schema": {
                   "type": "object",
-                  "required": ["data"],
+                  "required": [
+                    "data"
+                  ],
                   "properties": {
                     "data": {
                       "type": "array",
@@ -1344,7 +1453,9 @@
         }
       },
       "post": {
-        "tags": ["Changelog"],
+        "tags": [
+          "Changelog"
+        ],
         "operationId": "createDiagramChangelogEntryV1",
         "summary": "Create changelog entry",
         "description": "Requires abilities: desktop, changelog:write plus diagram write permission.",
@@ -1354,14 +1465,20 @@
             "application/json": {
               "schema": {
                 "type": "object",
-                "required": ["action"],
+                "required": [
+                  "action"
+                ],
                 "properties": {
                   "action": {
                     "type": "string",
                     "maxLength": 100
                   },
                   "details": {
-                    "type": ["object", "array", "null"]
+                    "type": [
+                      "object",
+                      "array",
+                      "null"
+                    ]
                   }
                 }
               }
@@ -1383,7 +1500,9 @@
     },
     "/api/v1/review": {
       "get": {
-        "tags": ["Review"],
+        "tags": [
+          "Review"
+        ],
         "operationId": "checkReviewPromptV1",
         "summary": "Check review prompt state",
         "responses": {
@@ -1396,7 +1515,9 @@
         }
       },
       "post": {
-        "tags": ["Review"],
+        "tags": [
+          "Review"
+        ],
         "operationId": "storeReviewV1",
         "summary": "Submit review response",
         "responses": {
@@ -1408,6 +1529,1046 @@
           },
           "422": {
             "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/foundry/hosts": {
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listFoundryHosts",
+        "summary": "List configured Foundry hosts",
+        "description": "Requires abilities: desktop, foundry:read. Returns admin-configured hosts and whether custom hosts are allowed.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FoundryHost"
+                      }
+                    },
+                    "allow_custom_hosts": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/foundry/connections": {
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listFoundryConnections",
+        "summary": "List my Foundry connections",
+        "description": "Requires abilities: desktop, foundry:connect.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FoundryConnection"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/foundry/connections/{connection}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/FoundryConnectionId"
+        }
+      ],
+      "delete": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "deleteFoundryConnection",
+        "summary": "Disconnect a Foundry connection",
+        "description": "Requires abilities: desktop, foundry:connect. Only the owning user may disconnect.",
+        "responses": {
+          "204": {
+            "description": "Disconnected"
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/foundry/oauth/callback": {
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "foundryOAuthCallback",
+        "summary": "Foundry OAuth callback",
+        "description": "Public endpoint hit by the browser following Foundry's redirect. Identified by the one-time server-side state. Redirects back to the diagram (web) or the desktop redirect URI.",
+        "security": [],
+        "parameters": [
+          {
+            "name": "state",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "code",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "error",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect back to the app or desktop client with a foundry status query parameter."
+          },
+          "422": {
+            "description": "Invalid or expired state.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoundryError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/config": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "getDiagramFoundryConfig",
+        "summary": "Get diagram Foundry config",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission. Ontology diagrams only.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramFoundryConfig"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "updateDiagramFoundryConfig",
+        "summary": "Set diagram Foundry host/defaults (owner only)",
+        "description": "Requires abilities: desktop, diagrams:write and diagram ownership. Ontology diagrams only. Owners may enter any valid HTTPS host.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "host_url": {
+                    "type": "string",
+                    "nullable": true,
+                    "example": "acme.palantirfoundry.com"
+                  },
+                  "default_project_rid": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "default_folder_rid": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "default_ontology_rid": {
+                    "type": "string",
+                    "nullable": true
+                  },
+                  "settings": {
+                    "type": "object",
+                    "additionalProperties": true,
+                    "nullable": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramFoundryConfig"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/connection-status": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "getDiagramFoundryConnectionStatus",
+        "summary": "Get my Foundry connection status for this diagram",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FoundryConnectionStatus"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/oauth/authorize": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "startDiagramFoundryAuthorization",
+        "summary": "Begin Foundry OAuth for this diagram's host",
+        "description": "Requires abilities: desktop, foundry:connect plus diagram read permission. Each user connects their own account. Desktop clients may pass a loopback redirect_uri.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "redirect_uri": {
+                    "type": "string",
+                    "description": "Optional native/desktop loopback redirect URI."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FoundryAuthorizeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/datasets": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listFoundryDatasets",
+        "summary": "List datasets/resources in a folder",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission. Uses the caller's own Foundry connection.",
+        "parameters": [
+          {
+            "name": "folderRid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Folder/project RID; falls back to the diagram default."
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/datasets/{datasetRid}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "$ref": "#/components/parameters/DatasetRid"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "getFoundryDataset",
+        "summary": "Get dataset metadata",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/datasets/{datasetRid}/schema": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "$ref": "#/components/parameters/DatasetRid"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "getFoundryDatasetSchema",
+        "summary": "Get dataset schema",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission.",
+        "parameters": [
+          {
+            "name": "branch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/datasets/{datasetRid}/files": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "$ref": "#/components/parameters/DatasetRid"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listFoundryDatasetFiles",
+        "summary": "List files in a dataset",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission.",
+        "parameters": [
+          {
+            "name": "branch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pathPrefix",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/datasets/{datasetRid}/file": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "$ref": "#/components/parameters/DatasetRid"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "getFoundryDatasetFile",
+        "summary": "Get file metadata in a dataset",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission.",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "File path within the dataset."
+          },
+          {
+            "name": "branch",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/search": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "searchFoundryResources",
+        "summary": "Resolve a Foundry resource by path",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission.",
+        "parameters": [
+          {
+            "name": "path",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Resource path to resolve."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/token": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "post": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "connectDiagramFoundryToken",
+        "summary": "Connect this diagram's host with a Foundry token",
+        "description": "Requires abilities: desktop, foundry:connect plus diagram read permission. Stores a per-user token connection for the diagram's host. Works even when the host has no OAuth client configured. The token is verified against the host before being stored.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "token"
+                ],
+                "properties": {
+                  "token": {
+                    "type": "string",
+                    "description": "A Foundry personal or service token."
+                  },
+                  "expires_at": {
+                    "type": "string",
+                    "format": "date-time",
+                    "nullable": true,
+                    "description": "Optional expiry; omit for non-expiring tokens."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/FoundryConnectionStatus"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/spaces": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listFoundrySpaces",
+        "summary": "List Foundry spaces",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission. Top-level filesystem spaces.",
+        "parameters": [
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FoundrySpace"
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/folders": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listFoundryFolderChildren",
+        "summary": "List children of a space, project, or folder",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission. Pass the parent rid; falls back to the diagram's default project/folder.",
+        "parameters": [
+          {
+            "name": "rid",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Parent space/project/folder RID. Falls back to the diagram default."
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pageToken",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FoundryResource"
+                      }
+                    },
+                    "nextPageToken": {
+                      "type": "string",
+                      "nullable": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/ontologies": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listFoundryOntologies",
+        "summary": "List Foundry ontologies",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FoundryOntology"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
           }
         }
       }
@@ -1475,6 +2636,26 @@
           "type": "integer",
           "minimum": 1
         }
+      },
+      "FoundryConnectionId": {
+        "name": "connection",
+        "in": "path",
+        "required": true,
+        "description": "Foundry connection id owned by the authenticated user.",
+        "schema": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "DatasetRid": {
+        "name": "datasetRid",
+        "in": "path",
+        "required": true,
+        "description": "Foundry dataset resource identifier (RID).",
+        "schema": {
+          "type": "string",
+          "example": "ri.foundry.main.dataset.0000-0000"
+        }
       }
     },
     "requestBodies": {
@@ -1517,7 +2698,10 @@
           "application/json": {
             "schema": {
               "type": "object",
-              "required": ["status", "diagram"],
+              "required": [
+                "status",
+                "diagram"
+              ],
               "properties": {
                 "status": {
                   "type": "boolean"
@@ -1527,7 +2711,10 @@
                 },
                 "diagram": {
                   "type": "object",
-                  "required": ["id", "share_token"],
+                  "required": [
+                    "id",
+                    "share_token"
+                  ],
                   "properties": {
                     "id": {
                       "type": "integer"
@@ -1548,7 +2735,9 @@
           "application/json": {
             "schema": {
               "type": "object",
-              "required": ["data"],
+              "required": [
+                "data"
+              ],
               "properties": {
                 "data": {
                   "$ref": "#/components/schemas/Diagram"
@@ -1584,7 +2773,9 @@
           "application/json": {
             "schema": {
               "type": "object",
-              "required": ["status"],
+              "required": [
+                "status"
+              ],
               "properties": {
                 "status": {
                   "type": "string",
@@ -1639,12 +2830,36 @@
             }
           }
         }
+      },
+      "FoundryConflict": {
+        "description": "Foundry connection or host setup is required (e.g. foundry_connection_required, foundry_connection_expired, foundry_host_not_configured, foundry_host_not_set).",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FoundryError"
+            }
+          }
+        }
+      },
+      "FoundryUpstream": {
+        "description": "Foundry upstream failure or rate limit.",
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/FoundryError"
+            }
+          }
+        }
       }
     },
     "schemas": {
       "BackupExport": {
         "type": "object",
-        "required": ["format", "version", "diagram"],
+        "required": [
+          "format",
+          "version",
+          "diagram"
+        ],
         "properties": {
           "format": {
             "type": "string",
@@ -1707,15 +2922,23 @@
       },
       "BroadcastAuthRequest": {
         "type": "object",
-        "required": ["socket_id", "channel_name"],
+        "required": [
+          "socket_id",
+          "channel_name"
+        ],
         "properties": {
           "socket_id": {
             "type": "string",
-            "examples": ["1234.5678"]
+            "examples": [
+              "1234.5678"
+            ]
           },
           "channel_name": {
             "type": "string",
-            "examples": ["presence-diagram.shareToken", "presence-diagram.shareToken.writers"]
+            "examples": [
+              "presence-diagram.shareToken",
+              "presence-diagram.shareToken.writers"
+            ]
           }
         }
       },
@@ -1730,17 +2953,26 @@
             "type": "string"
           },
           "details": {
-            "type": ["object", "array", "null"]
+            "type": [
+              "object",
+              "array",
+              "null"
+            ]
           },
           "created_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         }
       },
       "CreateDiagramRequest": {
         "type": "object",
-        "required": ["name"],
+        "required": [
+          "name"
+        ],
         "properties": {
           "name": {
             "type": "string",
@@ -1766,7 +2998,11 @@
       },
       "DashboardResponse": {
         "type": "object",
-        "required": ["owned", "shared", "public"],
+        "required": [
+          "owned",
+          "shared",
+          "public"
+        ],
         "properties": {
           "owned": {
             "type": "array",
@@ -1790,11 +3026,28 @@
       },
       "DbType": {
         "type": "string",
-        "enum": ["mysql", "postgresql", "sqlite", "oracle", "sqlserver", "msaccess", "ontology"]
+        "enum": [
+          "mysql",
+          "postgresql",
+          "sqlite",
+          "oracle",
+          "sqlserver",
+          "msaccess",
+          "ontology"
+        ]
       },
       "Diagram": {
         "type": "object",
-        "required": ["id", "name", "db_type", "schema", "share_token", "require_approval", "library", "is_owner"],
+        "required": [
+          "id",
+          "name",
+          "db_type",
+          "schema",
+          "share_token",
+          "require_approval",
+          "library",
+          "is_owner"
+        ],
         "properties": {
           "id": {
             "type": "integer"
@@ -1874,7 +3127,11 @@
       },
       "DiagramAccess": {
         "type": "string",
-        "enum": ["read", "write", "per_user"]
+        "enum": [
+          "read",
+          "write",
+          "per_user"
+        ]
       },
       "DiagramSchema": {
         "type": "array",
@@ -1887,7 +3144,10 @@
       "ValueType": {
         "type": "object",
         "description": "Reusable ontology value type. Only available on `ontology` diagrams. Enum value types are modeled as a `string` base type carrying a single `oneOf` constraint.",
-        "required": ["apiName", "baseType"],
+        "required": [
+          "apiName",
+          "baseType"
+        ],
         "properties": {
           "id": {
             "type": "string",
@@ -1909,7 +3169,9 @@
           "version": {
             "type": "string",
             "description": "Semantic version string.",
-            "examples": ["1.0.0"]
+            "examples": [
+              "1.0.0"
+            ]
           },
           "baseType": {
             "$ref": "#/components/schemas/ValueTypeBaseType"
@@ -1925,23 +3187,52 @@
       },
       "ValueTypeBaseType": {
         "type": "object",
-        "required": ["type"],
+        "required": [
+          "type"
+        ],
         "properties": {
           "type": {
             "type": "string",
-            "enum": ["array", "boolean", "date", "decimal", "double", "float", "integer", "long", "short", "string", "struct", "timestamp"]
+            "enum": [
+              "array",
+              "boolean",
+              "date",
+              "decimal",
+              "double",
+              "float",
+              "integer",
+              "long",
+              "short",
+              "string",
+              "struct",
+              "timestamp"
+            ]
           },
           "elementType": {
             "type": "string",
             "description": "Element type when `type` is `array`.",
-            "enum": ["boolean", "date", "decimal", "double", "float", "integer", "long", "short", "string", "timestamp"]
+            "enum": [
+              "boolean",
+              "date",
+              "decimal",
+              "double",
+              "float",
+              "integer",
+              "long",
+              "short",
+              "string",
+              "timestamp"
+            ]
           },
           "fields": {
             "type": "array",
             "description": "Field definitions when `type` is `struct`.",
             "items": {
               "type": "object",
-              "required": ["apiName", "type"],
+              "required": [
+                "apiName",
+                "type"
+              ],
               "properties": {
                 "id": {
                   "type": "string"
@@ -1952,7 +3243,18 @@
                 },
                 "type": {
                   "type": "string",
-                  "enum": ["boolean", "date", "decimal", "double", "float", "integer", "long", "short", "string", "timestamp"]
+                  "enum": [
+                    "boolean",
+                    "date",
+                    "decimal",
+                    "double",
+                    "float",
+                    "integer",
+                    "long",
+                    "short",
+                    "string",
+                    "timestamp"
+                  ]
                 }
               }
             }
@@ -1962,14 +3264,23 @@
       "ValueTypeConstraint": {
         "type": "object",
         "description": "A value type validation constraint. Each constraint type may appear at most once per value type. `oneOf` represents an enum (a fixed set of allowed string values).",
-        "required": ["id", "type"],
+        "required": [
+          "id",
+          "type"
+        ],
         "properties": {
           "id": {
             "type": "string"
           },
           "type": {
             "type": "string",
-            "enum": ["oneOf", "regex", "isRid", "isUuid", "length"]
+            "enum": [
+              "oneOf",
+              "regex",
+              "isRid",
+              "isUuid",
+              "length"
+            ]
           },
           "failureMessage": {
             "type": "string",
@@ -2009,7 +3320,16 @@
       },
       "DiagramSummary": {
         "type": "object",
-        "required": ["id", "name", "db_type", "schema", "share_token", "require_approval", "library", "is_owner"],
+        "required": [
+          "id",
+          "name",
+          "db_type",
+          "schema",
+          "share_token",
+          "require_approval",
+          "library",
+          "is_owner"
+        ],
         "properties": {
           "id": {
             "type": "integer"
@@ -2056,7 +3376,10 @@
             "type": "boolean"
           },
           "owner_email": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "email"
           }
         }
@@ -2073,30 +3396,64 @@
         "type": "object",
         "properties": {
           "status": {
-            "type": ["string", "null"],
-            "enum": ["pending", "processing", "done", "failed", null]
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "pending",
+              "processing",
+              "done",
+              "failed",
+              null
+            ]
           },
           "script": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "json": {
-            "type": ["object", "array", "string", "null"]
+            "type": [
+              "object",
+              "array",
+              "string",
+              "null"
+            ]
           },
           "error": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "ImportFormat": {
         "type": "string",
-        "enum": ["sql", "ontology-json", "backup-json", "maker-mts"]
+        "enum": [
+          "sql",
+          "ontology-json",
+          "backup-json",
+          "maker-mts"
+        ]
       },
       "ImportStatusResponse": {
         "type": "object",
         "properties": {
           "status": {
-            "type": ["string", "null"],
-            "enum": ["pending", "processing", "done", "failed", null]
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "pending",
+              "processing",
+              "done",
+              "failed",
+              null
+            ]
           },
           "upload": {
             "anyOf": [
@@ -2119,34 +3476,49 @@
             ]
           },
           "value_types": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "$ref": "#/components/schemas/ValueType"
             }
           },
           "interfaces": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "object",
               "additionalProperties": true
             }
           },
           "interface_link_constraints": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "object",
               "additionalProperties": true
             }
           },
           "custom_actions": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "object",
               "additionalProperties": true
             }
           },
           "shared_property_types": {
-            "type": ["array", "null"],
+            "type": [
+              "array",
+              "null"
+            ],
             "items": {
               "type": "object",
               "additionalProperties": true
@@ -2169,13 +3541,21 @@
             }
           },
           "error": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           }
         }
       },
       "ImportUploadRequest": {
         "type": "object",
-        "required": ["format", "size", "chunk_size", "chunks_total"],
+        "required": [
+          "format",
+          "size",
+          "chunk_size",
+          "chunks_total"
+        ],
         "properties": {
           "format": {
             "$ref": "#/components/schemas/ImportFormat"
@@ -2194,14 +3574,22 @@
             "minimum": 1
           },
           "original_name": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "maxLength": 255
           }
         }
       },
       "ImportUploadResponse": {
         "type": "object",
-        "required": ["id", "status", "chunk_size", "chunks_total"],
+        "required": [
+          "id",
+          "status",
+          "chunk_size",
+          "chunks_total"
+        ],
         "properties": {
           "id": {
             "type": "integer"
@@ -2230,20 +3618,33 @@
             "$ref": "#/components/schemas/ImportFormat"
           },
           "error": {
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "updated_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "age_seconds": {
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           }
         }
       },
       "Invite": {
         "type": "object",
-        "required": ["id", "email", "access"],
+        "required": [
+          "id",
+          "email",
+          "access"
+        ],
         "properties": {
           "id": {
             "type": "integer"
@@ -2259,7 +3660,9 @@
       },
       "MessageResponse": {
         "type": "object",
-        "required": ["message"],
+        "required": [
+          "message"
+        ],
         "properties": {
           "message": {
             "type": "string"
@@ -2268,7 +3671,10 @@
       },
       "OAuthTokenRequest": {
         "type": "object",
-        "required": ["code", "code_verifier"],
+        "required": [
+          "code",
+          "code_verifier"
+        ],
         "properties": {
           "code": {
             "type": "string"
@@ -2286,7 +3692,12 @@
       },
       "OAuthTokenResponse": {
         "type": "object",
-        "required": ["token_type", "access_token", "expires_at", "user"],
+        "required": [
+          "token_type",
+          "access_token",
+          "expires_at",
+          "user"
+        ],
         "properties": {
           "token_type": {
             "type": "string",
@@ -2296,7 +3707,10 @@
             "type": "string"
           },
           "expires_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "user": {
@@ -2306,28 +3720,52 @@
       },
       "RealtimeConfigResponse": {
         "type": "object",
-        "required": ["data"],
+        "required": [
+          "data"
+        ],
         "properties": {
           "data": {
             "type": "object",
-            "required": ["driver", "app_key", "host", "port", "scheme", "auth_endpoint", "channels", "events"],
+            "required": [
+              "driver",
+              "app_key",
+              "host",
+              "port",
+              "scheme",
+              "auth_endpoint",
+              "channels",
+              "events"
+            ],
             "properties": {
               "driver": {
                 "type": "string",
                 "const": "reverb"
               },
               "app_key": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "host": {
-                "type": ["string", "null"]
+                "type": [
+                  "string",
+                  "null"
+                ]
               },
               "port": {
                 "type": "integer"
               },
               "scheme": {
-                "type": ["string", "null"],
-                "enum": ["http", "https", null]
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "enum": [
+                  "http",
+                  "https",
+                  null
+                ]
               },
               "auth_endpoint": {
                 "type": "string",
@@ -2354,7 +3792,11 @@
       },
       "ShareSettings": {
         "type": "object",
-        "required": ["share_access", "require_approval", "library"],
+        "required": [
+          "share_access",
+          "require_approval",
+          "library"
+        ],
         "properties": {
           "share_access": {
             "anyOf": [
@@ -2397,7 +3839,9 @@
       },
       "StatusMessageResponse": {
         "type": "object",
-        "required": ["status"],
+        "required": [
+          "status"
+        ],
         "properties": {
           "status": {
             "type": "boolean"
@@ -2409,7 +3853,12 @@
       },
       "Token": {
         "type": "object",
-        "required": ["id", "name", "abilities", "created_at"],
+        "required": [
+          "id",
+          "name",
+          "abilities",
+          "created_at"
+        ],
         "properties": {
           "id": {
             "type": "integer"
@@ -2424,15 +3873,24 @@
             }
           },
           "last_used_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "expires_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           },
           "created_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         }
@@ -2501,7 +3959,10 @@
       },
       "User": {
         "type": "object",
-        "required": ["id", "email"],
+        "required": [
+          "id",
+          "email"
+        ],
         "properties": {
           "id": {
             "type": "integer"
@@ -2511,7 +3972,10 @@
             "format": "email"
           },
           "email_verified_at": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "date-time"
           }
         }
@@ -2541,17 +4005,312 @@
             "type": "integer"
           },
           "email": {
-            "type": ["string", "null"],
+            "type": [
+              "string",
+              "null"
+            ],
             "format": "email"
           },
           "status": {
             "type": "string"
           },
           "access": {
-            "type": ["string", "null"],
-            "enum": ["read", "write", null]
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "read",
+              "write",
+              null
+            ]
           }
         }
+      },
+      "FoundryError": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Stable machine error code.",
+                "enum": [
+                  "foundry_host_not_configured",
+                  "foundry_host_not_allowed",
+                  "foundry_host_not_set",
+                  "foundry_diagram_not_ontology",
+                  "foundry_parameter_required",
+                  "foundry_connection_required",
+                  "foundry_connection_expired",
+                  "foundry_access_denied",
+                  "foundry_resource_not_found",
+                  "foundry_rate_limited",
+                  "foundry_upstream_unavailable",
+                  "foundry_token_auth_disabled"
+                ]
+              },
+              "message": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "code",
+              "message"
+            ]
+          }
+        },
+        "required": [
+          "error"
+        ]
+      },
+      "FoundryHost": {
+        "type": "object",
+        "properties": {
+          "host_url": {
+            "type": "string",
+            "format": "uri",
+            "example": "https://example.palantirfoundry.com"
+          },
+          "display_name": {
+            "type": "string",
+            "example": "Example Foundry"
+          }
+        },
+        "required": [
+          "host_url",
+          "display_name"
+        ]
+      },
+      "FoundryConnection": {
+        "type": "object",
+        "description": "A user's delegated OAuth connection to a Foundry host. Tokens are never exposed.",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "host_url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "scopes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "revoked": {
+            "type": "boolean"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "last_used_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "auth_type": {
+            "type": "string",
+            "enum": [
+              "oauth",
+              "token"
+            ],
+            "description": "How the connection was established."
+          }
+        },
+        "required": [
+          "id",
+          "host_url",
+          "active"
+        ]
+      },
+      "DiagramFoundryConfig": {
+        "type": "object",
+        "description": "Per-diagram Foundry target. Only available on ontology diagrams; host changes are owner-only.",
+        "properties": {
+          "diagram_id": {
+            "type": "integer"
+          },
+          "host_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "default_project_rid": {
+            "type": "string",
+            "nullable": true
+          },
+          "default_folder_rid": {
+            "type": "string",
+            "nullable": true
+          },
+          "default_ontology_rid": {
+            "type": "string",
+            "nullable": true
+          },
+          "settings": {
+            "type": "object",
+            "additionalProperties": true,
+            "nullable": true
+          }
+        },
+        "required": [
+          "diagram_id"
+        ]
+      },
+      "FoundryConnectionStatus": {
+        "type": "object",
+        "properties": {
+          "host_url": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "enum": [
+              "host_not_set",
+              "host_not_configured",
+              "disconnected",
+              "expired",
+              "connected"
+            ]
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "configured": {
+            "type": "boolean"
+          },
+          "connectable": {
+            "type": "boolean"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "auth_type": {
+            "type": "string",
+            "nullable": true,
+            "enum": [
+              "oauth",
+              "token",
+              null
+            ]
+          },
+          "allow_token_auth": {
+            "type": "boolean",
+            "description": "Whether token-based connections are permitted."
+          }
+        },
+        "required": [
+          "state",
+          "connected"
+        ]
+      },
+      "FoundryAuthorizeResponse": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "properties": {
+              "authorize_url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Open this URL to authorize with Foundry."
+              },
+              "state": {
+                "type": "string"
+              },
+              "host_url": {
+                "type": "string",
+                "format": "uri"
+              }
+            },
+            "required": [
+              "authorize_url",
+              "state",
+              "host_url"
+            ]
+          }
+        },
+        "required": [
+          "data"
+        ]
+      },
+      "FoundrySpace": {
+        "type": "object",
+        "properties": {
+          "rid": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "FoundryResource": {
+        "type": "object",
+        "description": "A filesystem resource (project, folder, or dataset).",
+        "properties": {
+          "rid": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "path": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "description": "Resource type, e.g. dataset, folder, project."
+          }
+        },
+        "additionalProperties": true
+      },
+      "FoundryOntology": {
+        "type": "object",
+        "properties": {
+          "apiName": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "rid": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
       }
     }
   }

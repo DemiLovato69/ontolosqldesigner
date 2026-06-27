@@ -45,6 +45,7 @@
             @show-shared-property-types="showSharedPropertyTypesModal = true"
             @show-interfaces="showInterfacesModal = true"
             @show-custom-actions="showCustomActionsModal = true"
+            @show-foundry="showFoundryBrowserModal = true"
         />
 
         <ShareModal
@@ -273,6 +274,8 @@
                 :open="rightSidebarOpen"
                 :refreshKey="changelogRefreshKey"
                 :dbType="diagramDbType"
+                :isOwner="isOwner"
+                :isDemo="props.isDemo"
                 :valueTypes="valueTypes"
                 :sharedPropertyTypes="sharedPropertyTypes"
                 :interfaces="interfaces"
@@ -340,6 +343,16 @@
         <HotkeysModal
             v-if="showHotkeysModal"
             @close="showHotkeysModal = false"
+        />
+
+        <FoundryBrowserModal
+            v-if="showFoundryBrowserModal"
+            :diagramId="diagramId"
+            :canManageHost="isOwner"
+            :canEdit="canEdit"
+            @import-reference="onImportReferenceJson"
+            @sync="syncFoundryDatasets"
+            @close="showFoundryBrowserModal = false"
         />
 
         <ValueTypesModal
@@ -419,6 +432,9 @@ import SupportModal from '../Modal/SupportModal.vue'
 import DiagramRightSidebar from './DiagramRightSidebar.vue'
 import HotkeysModal from '../Modal/HotkeysModal.vue'
 import ValueTypesModal from '../Modal/ValueTypesModal.vue'
+import FoundryBrowserModal from '../Modal/FoundryBrowserModal.vue'
+import { Foundry } from '@/services/Foundry.js'
+import { datasetSchemaToJsonSchema } from '@/services/foundryImport.js'
 import SharedPropertyTypesModal from '../Modal/SharedPropertyTypesModal.vue'
 import InterfacesModal from '../Modal/InterfacesModal.vue'
 import CustomActionsModal from '../Modal/CustomActionsModal.vue'
@@ -703,6 +719,7 @@ const diagramDbType = ref('mysql')
 const showShareModal = ref(false)
 const showHotkeysModal = ref(false)
 const showValueTypesModal = ref(false)
+const showFoundryBrowserModal = ref(false)
 const showSharedPropertyTypesModal = ref(false)
 const showInterfacesModal = ref(false)
 const showCustomActionsModal = ref(false)
@@ -855,12 +872,50 @@ const onCanvasPaneClick = (event) => {
     onPaneClick(event)
 }
 
-const onImportReferenceJson = ({ content, title } = {}) => {
+const onImportReferenceJson = ({ content, title, source } = {}) => {
     try {
-        const imported = importReferenceJsonSchemas(content, { title })
+        const imported = importReferenceJsonSchemas(content, { title, source })
         $toast.success(`Imported ${imported.length} reference table${imported.length === 1 ? '' : 's'}`)
     } catch (error) {
         $toast.error(error?.message || 'Could not import reference schema')
+    }
+}
+
+const syncFoundryDatasets = async () => {
+    const tables = schema.value.filter(el => el.type === 'table'
+        && el.data?.referenceSource?.importedFrom === 'foundry-dataset'
+        && el.data?.referenceSource?.datasetRid)
+    if (!tables.length) {
+        $toast.error('No Foundry-linked reference tables to sync.')
+        return
+    }
+
+    let ok = 0
+    let failed = 0
+    for (const table of tables) {
+        const source = table.data.referenceSource
+        try {
+            const result = await Foundry.getDatasetSchema(diagramId.value, source.datasetRid)
+            const fields = result?.schema?.fieldSchemaList
+            if (!Array.isArray(fields) || fields.length === 0) {
+                failed++
+                continue
+            }
+            const jsonSchema = datasetSchemaToJsonSchema(source.datasetName || table.label, fields)
+            importReferenceJsonSchemas(JSON.stringify(jsonSchema), {
+                title: table.label,
+                source: { ...source, syncedAt: new Date().toISOString() },
+            })
+            ok++
+        } catch {
+            failed++
+        }
+    }
+
+    if (ok) {
+        $toast.success(`Synced ${ok} Foundry table${ok === 1 ? '' : 's'}${failed ? `, ${failed} failed` : ''}`)
+    } else {
+        $toast.error('Could not sync Foundry tables.')
     }
 }
 
@@ -1444,7 +1499,23 @@ onMounted(() => {
         nextTick(() => fitView({ padding: 0.15, duration: 0 }))
     }
     document.addEventListener('keydown', onKeyDown)
+    notifyFoundryReturn()
 })
+
+function notifyFoundryReturn() {
+    const query = router.currentRoute.value.query
+    if (!query.foundry) return
+    if (query.foundry === 'connected') {
+        $toast.success('Foundry account connected.')
+    } else {
+        $toast.error(typeof query.message === 'string' && query.message ? query.message : 'Foundry connection failed.')
+    }
+    const next = { ...query }
+    delete next.foundry
+    delete next.host
+    delete next.message
+    router.replace({ query: next })
+}
 
 onUnmounted(() => {
     clearInterval(autoSaveTimer)

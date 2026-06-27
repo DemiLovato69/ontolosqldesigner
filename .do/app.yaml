@@ -144,6 +144,44 @@ envs:
     scope: RUN_AND_BUILD_TIME
     value: cavtera.com
 
+  # Foundry Platform integration (read-only, delegated per-user OAuth).
+  # Hybrid host model: diagram owners may enter any host, but connecting/querying
+  # requires either an admin-configured host (FOUNDRY_HOSTS_JSON) or custom hosts
+  # explicitly enabled with a custom-host OAuth client.
+  - key: FOUNDRY_ALLOW_CUSTOM_HOSTS
+    scope: RUN_AND_BUILD_TIME
+    value: "false"
+  - key: FOUNDRY_ALLOW_INSECURE_HOSTS
+    scope: RUN_AND_BUILD_TIME
+    value: "false"
+  - key: FOUNDRY_ALLOW_TOKEN_AUTH
+    scope: RUN_AND_BUILD_TIME
+    value: "true"
+  - key: FOUNDRY_DEFAULT_SCOPES
+    scope: RUN_AND_BUILD_TIME
+    value: "api:read-data offline_access"
+  - key: FOUNDRY_REDIRECT_URI
+    scope: RUN_AND_BUILD_TIME
+    value: ${APP_URL}/api/v1/foundry/oauth/callback
+  - key: FOUNDRY_OAUTH_STATE_TTL_SECONDS
+    scope: RUN_AND_BUILD_TIME
+    value: "600"
+  # Per-host admin OAuth client map keyed by normalized host url, e.g.
+  # {"https://example.palantirfoundry.com":{"client_id":"...","client_secret":null,"display_name":"Example"}}
+  - key: FOUNDRY_HOSTS_JSON
+    scope: RUN_TIME
+    value: CHANGE_ME_FOUNDRY_HOSTS_JSON
+    type: SECRET
+  # Used only when FOUNDRY_ALLOW_CUSTOM_HOSTS is true for owner-entered hosts.
+  - key: FOUNDRY_CUSTOM_HOST_CLIENT_ID
+    scope: RUN_TIME
+    value: CHANGE_ME
+    type: SECRET
+  - key: FOUNDRY_CUSTOM_HOST_CLIENT_SECRET
+    scope: RUN_TIME
+    value: CHANGE_ME
+    type: SECRET
+
   - key: AWS_ACCESS_KEY_ID
     scope: RUN_AND_BUILD_TIME
     value: CHANGE_ME_SPACES_KEY

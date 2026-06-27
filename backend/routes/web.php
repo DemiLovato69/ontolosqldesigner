@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\AdminFoundryController;
 use App\Http\Controllers\AuthController;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +43,7 @@ Route::get('/email/verify/{id}/{hash}', [AuthController::class, 'verifyEmail'])
 Route::prefix('/admin')->group(function () {
     Route::get('/login', [AdminController::class, 'showLogin'])->name('admin.login');
     Route::post('/login', [AdminController::class, 'login'])->name('admin.login.post')->middleware('throttle:5,1');
+    Route::get('/auth/google', [AdminController::class, 'redirectToGoogle'])->name('admin.login.google')->middleware('throttle:10,1');
 
     Route::middleware('admin')->group(function () {
         Route::get('/', [AdminController::class, 'showDashboard'])->name('admin.dashboard');
@@ -57,6 +59,12 @@ Route::prefix('/admin')->group(function () {
         Route::post('/users/{user}/email', [AdminController::class, 'sendEmail'])->name('admin.users.email');
         Route::get('/users/{user}/activity', [AdminController::class, 'userActivity'])->name('admin.users.activity');
         Route::post('/email-all', [AdminController::class, 'sendEmailToAll'])->name('admin.email-all');
+
+        Route::get('/foundry', [AdminFoundryController::class, 'index'])->name('admin.foundry');
+        Route::post('/foundry', [AdminFoundryController::class, 'store'])->name('admin.foundry.store');
+        Route::patch('/foundry/{hostConfig}', [AdminFoundryController::class, 'update'])->name('admin.foundry.update');
+        Route::delete('/foundry/{hostConfig}', [AdminFoundryController::class, 'destroy'])->name('admin.foundry.destroy');
+
         Route::post('/logout', [AdminController::class, 'logout'])->name('admin.logout');
     });
 });

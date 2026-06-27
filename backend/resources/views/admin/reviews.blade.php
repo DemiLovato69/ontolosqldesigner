@@ -101,6 +101,8 @@
         <span>SQL Designer — Reviews</span>
         <div class="header-nav">
             <a href="{{ route('admin.dashboard') }}" class="nav-btn">Dashboard</a>
+            <a href="{{ route('admin.library') }}" class="nav-btn">Library</a>
+            <a href="{{ route('admin.foundry') }}" class="nav-btn">Foundry</a>
             <form method="POST" action="{{ route('admin.logout') }}">
                 @csrf
                 <button type="submit" class="nav-btn">Sign Out</button>
