@@ -46,6 +46,7 @@
             @show-interfaces="showInterfacesModal = true"
             @show-custom-actions="showCustomActionsModal = true"
             @show-foundry="showFoundryBrowserModal = true"
+            @show-agent="showAgentPanel = true"
         />
 
         <ShareModal
@@ -356,6 +357,16 @@
             @close="showFoundryBrowserModal = false"
         />
 
+        <DiagramAgentPanel
+            v-if="showAgentPanel"
+            :diagramId="diagramId"
+            :isOntology="isOntologyDiagram"
+            :canEdit="canEdit"
+            :apply="applyAgentOperations"
+            :undo="undoAgentApply"
+            @close="showAgentPanel = false"
+        />
+
         <ValueTypesModal
             v-if="showValueTypesModal"
             :valueTypes="valueTypes"
@@ -434,8 +445,10 @@ import DiagramRightSidebar from './DiagramRightSidebar.vue'
 import HotkeysModal from '../Modal/HotkeysModal.vue'
 import ValueTypesModal from '../Modal/ValueTypesModal.vue'
 import FoundryBrowserModal from '../Modal/FoundryBrowserModal.vue'
+import DiagramAgentPanel from './DiagramAgentPanel.vue'
 import { Foundry, foundryErrorMessage } from '@/services/Foundry.js'
 import { datasetSchemaToJsonSchema } from '@/services/foundryImport.js'
+import { applyAgentPatch } from '@/services/diagramAgentPatch.js'
 import SharedPropertyTypesModal from '../Modal/SharedPropertyTypesModal.vue'
 import InterfacesModal from '../Modal/InterfacesModal.vue'
 import CustomActionsModal from '../Modal/CustomActionsModal.vue'
@@ -721,6 +734,7 @@ const showShareModal = ref(false)
 const showHotkeysModal = ref(false)
 const showValueTypesModal = ref(false)
 const showFoundryBrowserModal = ref(false)
+const showAgentPanel = ref(false)
 const showSharedPropertyTypesModal = ref(false)
 const showInterfacesModal = ref(false)
 const showCustomActionsModal = ref(false)
@@ -944,6 +958,57 @@ const syncFoundryDatasets = async () => {
 const onImportReferenceJsonFromModal = (payload) => {
     onImportReferenceJson(payload)
     showReferenceJsonImportModal.value = false
+}
+
+const isOntologyDiagram = computed(() => diagramDbType.value === 'ontology')
+
+// Apply a validated agent patch through the same local mutation path as manual
+// edits (snapshot for undo, broadcast to collaborators, mark dirty), then persist
+// so the change survives a page refresh and stays consistent with the message's
+// applied flag. Returns a summary for the agent panel; throws if saving fails.
+const applyAgentOperations = async (operations, { allowDestructive = false } = {}) => {
+    if (!canEdit.value) throw new Error('You do not have edit access to this diagram.')
+    if (!Array.isArray(operations) || operations.length === 0) {
+        return { applied: [], failed: [], warnings: [] }
+    }
+
+    snapshot()
+    const result = applyAgentPatch(operations, {
+        schema,
+        valueTypes,
+        interfaces,
+        interfaceLinkConstraints,
+        customActions,
+        sharedPropertyTypes,
+        diagramDbType,
+        defaultTableColor,
+    })
+    void allowDestructive
+    isSaved.value = false
+    whisper('schema-sync', syncPayload())
+    logAction('diagram_agent_applied', { applied: result.applied.length, failed: result.failed.length })
+    const saved = await saveDiagram(true)
+    if (saved === false) throw new Error('The changes were applied but could not be saved. Try saving manually.')
+    return result
+}
+
+// Revert the diagram's most recent change (an agent apply) using the shared undo
+// history, then persist the revert. Returns false when there is nothing to undo.
+const undoAgentApply = async () => {
+    if (!canEdit.value) return false
+    const prev = undo()
+    if (prev === null) return false
+    schema.value = prev.schema
+    valueTypes.value = prev.valueTypes ?? []
+    interfaces.value = prev.interfaces ?? []
+    interfaceLinkConstraints.value = prev.interfaceLinkConstraints ?? []
+    customActions.value = prev.customActions ?? []
+    sharedPropertyTypes.value = prev.sharedPropertyTypes ?? []
+    isSaved.value = false
+    whisper('schema-sync', syncPayload())
+    logAction('diagram_agent_reverted')
+    await saveDiagram(true)
+    return true
 }
 
 const onCreateTransform = () => {

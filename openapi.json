@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "OntoloSQL Designer Desktop API",
-    "version": "1.4.0",
+    "version": "1.5.0",
     "description": "Versioned API for native desktop clients. Web SPA authentication remains Sanctum cookie/session based; this API uses Google OAuth with PKCE and expiring Sanctum bearer tokens.\n\nVersion 1.1.0 documents ontology value types in detail, including enum value types (a string base type with a `oneOf` constraint), and the visual-only schema markers used for reference tables, reference links, pipeline transforms, and table-level Foundry edit settings (`editsEnabled` / `editsHistory`)."
   },
   "servers": [
@@ -2295,6 +2295,523 @@
         }
       }
     },
+    "/api/v1/diagrams/{diagram}/foundry/llm/models": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listDiagramAgentModels",
+        "summary": "List diagram agent models",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission. Enabled Foundry AIP models available for the diagram's host (host-specific plus global).",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/FoundryLlmModel"
+                      }
+                    },
+                    "default_model": {
+                      "type": "string",
+                      "nullable": true
+                    },
+                    "enabled": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/agent/sessions": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "listDiagramAgentSessions",
+        "summary": "List diagram agent sessions",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission. Sessions are shared across diagram collaborators.",
+        "parameters": [
+          {
+            "name": "include_archived",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            },
+            "description": "Include archived sessions (default false)."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/DiagramAgentSession"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "createDiagramAgentSession",
+        "summary": "Create a diagram agent session",
+        "description": "Requires abilities: desktop, foundry:llm plus diagram write permission. Ontology diagrams only; the agent must be enabled.",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "model": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramAgentSession"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/agent/sessions/{session}": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "name": "session",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "get": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "showDiagramAgentSession",
+        "summary": "Get a diagram agent session with messages",
+        "description": "Requires abilities: desktop, foundry:read plus diagram read permission.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramAgentSession"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "renameDiagramAgentSession",
+        "summary": "Rename a diagram agent session",
+        "description": "Requires abilities: desktop, foundry:llm plus diagram write permission.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "title"
+                ],
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramAgentSession"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/agent/sessions/{session}/archive": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "name": "session",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "archiveDiagramAgentSession",
+        "summary": "Archive a diagram agent session",
+        "description": "Requires abilities: desktop, foundry:llm plus diagram write permission. Sessions are archived, never deleted.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramAgentSession"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/agent/sessions/{session}/unarchive": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "name": "session",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "unarchiveDiagramAgentSession",
+        "summary": "Unarchive a diagram agent session",
+        "description": "Requires abilities: desktop, foundry:llm plus diagram write permission.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramAgentSession"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/agent/sessions/{session}/messages": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "name": "session",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "sendDiagramAgentMessage",
+        "summary": "Send a diagram agent prompt",
+        "description": "Requires abilities: desktop, foundry:llm plus diagram write permission. Sends the full diagram context and the prompt to the Foundry AIP LLM proxy using the caller's own Foundry token, and returns the assistant message with a proposed patch. The patch is reviewed and applied client-side; it is not auto-applied.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "message"
+                ],
+                "properties": {
+                  "message": {
+                    "type": "string",
+                    "maxLength": 8000
+                  },
+                  "model": {
+                    "type": "string"
+                  },
+                  "allow_destructive": {
+                    "type": "boolean",
+                    "description": "Permit delete/rename operations in the proposed patch."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramAgentMessage"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthorized"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/FoundryConflict"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          },
+          "502": {
+            "$ref": "#/components/responses/FoundryUpstream"
+          }
+        }
+      }
+    },
+    "/api/v1/diagrams/{diagram}/foundry/agent/sessions/{session}/messages/{message}/applied": {
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/DiagramId"
+        },
+        {
+          "name": "session",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        },
+        {
+          "name": "message",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "type": "integer"
+          }
+        }
+      ],
+      "post": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "markDiagramAgentMessageApplied",
+        "summary": "Mark an assistant patch as applied",
+        "description": "Requires abilities: desktop, foundry:llm plus diagram write permission. Persists that the patch was applied so reopening the agent panel won't offer to apply it again.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramAgentMessage"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Foundry"
+        ],
+        "operationId": "unmarkDiagramAgentMessageApplied",
+        "summary": "Clear the applied flag (undo)",
+        "description": "Requires abilities: desktop, foundry:llm plus diagram write permission. Clears the applied flag after the change is undone so it can be applied again.",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DiagramAgentMessage"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          }
+        }
+      }
+    },
     "/api/v1/diagrams/{diagram}/foundry/token": {
       "parameters": [
         {
@@ -4048,7 +4565,14 @@
                   "foundry_resource_not_found",
                   "foundry_rate_limited",
                   "foundry_upstream_unavailable",
-                  "foundry_token_auth_disabled"
+                  "foundry_token_auth_disabled",
+                  "foundry_llm_disabled",
+                  "foundry_llm_model_required",
+                  "foundry_llm_model_not_allowed",
+                  "foundry_llm_context_too_large",
+                  "foundry_llm_rate_limited",
+                  "foundry_llm_invalid_response",
+                  "foundry_llm_session_archived"
                 ]
               },
               "message": {
@@ -4063,6 +4587,223 @@
         },
         "required": [
           "error"
+        ]
+      },
+      "FoundryLlmModel": {
+        "type": "object",
+        "description": "An admin-allowlisted Foundry AIP model the diagram agent may call.",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "model": {
+            "type": "string",
+            "example": "gpt-4o"
+          },
+          "provider": {
+            "type": "string",
+            "example": "openai"
+          },
+          "display_name": {
+            "type": "string",
+            "example": "GPT-4o"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true
+          },
+          "is_default": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "id",
+          "model",
+          "display_name"
+        ]
+      },
+      "DiagramAgentPatch": {
+        "type": "object",
+        "description": "Allowlisted, additive-by-default operations the agent proposes. Applied client-side after review.",
+        "properties": {
+          "operations": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "op": {
+                  "type": "string",
+                  "enum": [
+                    "add_table",
+                    "update_table",
+                    "add_column",
+                    "update_column",
+                    "add_relationship",
+                    "add_reference_table",
+                    "add_value_type",
+                    "update_value_type",
+                    "add_shared_property_type",
+                    "add_interface",
+                    "update_interface",
+                    "add_interface_link_constraint",
+                    "add_custom_action",
+                    "delete_table",
+                    "delete_column",
+                    "delete_relationship",
+                    "rename_table",
+                    "rename_column"
+                  ]
+                }
+              },
+              "required": [
+                "op"
+              ]
+            }
+          }
+        },
+        "required": [
+          "operations"
+        ]
+      },
+      "DiagramAgentMessage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "session_id": {
+            "type": "integer"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant",
+              "system"
+            ]
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "prompt": {
+            "type": "string",
+            "nullable": true,
+            "description": "Present on user turns when prompt storage is enabled."
+          },
+          "message": {
+            "type": "string",
+            "nullable": true,
+            "description": "Assistant summary text."
+          },
+          "patch": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/DiagramAgentPatch"
+              }
+            ],
+            "nullable": true
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "usage": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "context_summary": {
+            "type": "object",
+            "nullable": true,
+            "additionalProperties": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "completed",
+              "failed"
+            ]
+          },
+          "applied": {
+            "type": "boolean",
+            "description": "Whether this assistant patch has been applied to the diagram."
+          },
+          "applied_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "error_code": {
+            "type": "string",
+            "nullable": true
+          },
+          "error_message": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "role",
+          "status"
+        ]
+      },
+      "DiagramAgentSession": {
+        "type": "object",
+        "description": "A diagram agent conversation, visible to all diagram collaborators. Archived rather than deleted.",
+        "properties": {
+          "id": {
+            "type": "integer"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "model": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "archived"
+            ]
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "last_message_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "messages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DiagramAgentMessage"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "archived"
         ]
       },
       "FoundryHost": {

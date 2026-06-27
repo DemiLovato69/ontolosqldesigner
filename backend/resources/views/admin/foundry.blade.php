@@ -216,6 +216,127 @@
             <p class="empty">No database-configured hosts yet.</p>
         @endforelse
 
+        <h2>Diagram Agent Models</h2>
+        <div class="card ref">
+            <p>Allowlist of Foundry AIP models the diagram agent may call via the OpenAI-compatible proxy <code>{{ $llmEndpoint }}</code>.</p>
+            <p style="margin-top:.5rem;">Agent status: <strong>{{ $llmEnabled ? 'enabled' : 'disabled' }}</strong> (set via <code>FOUNDRY_LLM_ENABLED</code>). AIP must be enabled on the Foundry stack.</p>
+            <p style="margin-top:.5rem;">Leave host blank to make a model available on every host. One default per host scope.</p>
+        </div>
+
+        <div class="card">
+            <form method="POST" action="{{ route('admin.foundry.models.store') }}">
+                @csrf
+                <div class="grid">
+                    <div class="field">
+                        <label for="m_model">Model ID</label>
+                        <input type="text" id="m_model" name="model" value="{{ old('model') }}" placeholder="gpt-4o">
+                    </div>
+                    <div class="field">
+                        <label for="m_display_name">Display name</label>
+                        <input type="text" id="m_display_name" name="display_name" value="{{ old('display_name') }}" placeholder="GPT-4o">
+                    </div>
+                    <div class="field">
+                        <label for="m_host_url">Host (blank = all)</label>
+                        <input type="text" id="m_host_url" name="host_url" value="{{ old('host_url') }}" placeholder="https://yourstack.palantirfoundry.com">
+                    </div>
+                    <div class="field">
+                        <label for="m_provider">Provider</label>
+                        <input type="text" id="m_provider" name="provider" value="{{ old('provider', 'openai') }}" placeholder="openai">
+                    </div>
+                    <div class="field">
+                        <label for="m_max">Max output tokens</label>
+                        <input type="text" id="m_max" name="max_output_tokens" value="{{ old('max_output_tokens') }}" placeholder="(default)">
+                    </div>
+                    <div class="field">
+                        <label for="m_temp">Temperature</label>
+                        <input type="text" id="m_temp" name="temperature" value="{{ old('temperature') }}" placeholder="(default)">
+                    </div>
+                    <div class="field full">
+                        <label for="m_desc">Description</label>
+                        <input type="text" id="m_desc" name="description" value="{{ old('description') }}">
+                    </div>
+                    <div class="field">
+                        <label>Options</label>
+                        <span class="check"><input type="checkbox" name="enabled" value="1" checked> Enabled</span>
+                        <span class="check"><input type="checkbox" name="is_default" value="1"> Default for host</span>
+                    </div>
+                    <div class="field">
+                        <label for="m_sort">Sort order</label>
+                        <input type="text" id="m_sort" name="sort_order" value="{{ old('sort_order', '0') }}">
+                    </div>
+                </div>
+                <div class="row-actions">
+                    <button type="submit" class="btn">Add Model</button>
+                </div>
+            </form>
+        </div>
+
+        @forelse ($models as $model)
+            <div class="card">
+                <div class="host-head">
+                    <span class="host-url">{{ $model->display_name ?: $model->model }} <span class="ref">({{ $model->model }})</span></span>
+                    <span>
+                        @if ($model->is_default)<span class="badge badge--secret">Default</span>@endif
+                        <span class="badge {{ $model->enabled ? 'badge--on' : 'badge--off' }}">{{ $model->enabled ? 'Enabled' : 'Disabled' }}</span>
+                    </span>
+                </div>
+                <p class="ref" style="margin-bottom:.6rem;">Host: <code>{{ $model->host_url ?: 'all hosts' }}</code></p>
+                <form method="POST" action="{{ route('admin.foundry.models.update', $model) }}">
+                    @csrf
+                    @method('PATCH')
+                    <div class="grid">
+                        <div class="field">
+                            <label>Model ID</label>
+                            <input type="text" name="model" value="{{ $model->model }}">
+                        </div>
+                        <div class="field">
+                            <label>Display name</label>
+                            <input type="text" name="display_name" value="{{ $model->display_name }}">
+                        </div>
+                        <div class="field">
+                            <label>Host (blank = all)</label>
+                            <input type="text" name="host_url" value="{{ $model->host_url }}">
+                        </div>
+                        <div class="field">
+                            <label>Provider</label>
+                            <input type="text" name="provider" value="{{ $model->provider }}">
+                        </div>
+                        <div class="field">
+                            <label>Max output tokens</label>
+                            <input type="text" name="max_output_tokens" value="{{ $model->max_output_tokens }}">
+                        </div>
+                        <div class="field">
+                            <label>Temperature</label>
+                            <input type="text" name="temperature" value="{{ $model->temperature }}">
+                        </div>
+                        <div class="field full">
+                            <label>Description</label>
+                            <input type="text" name="description" value="{{ $model->description }}">
+                        </div>
+                        <div class="field">
+                            <label>Options</label>
+                            <span class="check"><input type="checkbox" name="enabled" value="1" @checked($model->enabled)> Enabled</span>
+                            <span class="check"><input type="checkbox" name="is_default" value="1" @checked($model->is_default)> Default for host</span>
+                        </div>
+                        <div class="field">
+                            <label>Sort order</label>
+                            <input type="text" name="sort_order" value="{{ $model->sort_order }}">
+                        </div>
+                    </div>
+                    <div class="row-actions">
+                        <button type="submit" class="btn">Save</button>
+                    </div>
+                </form>
+                <form method="POST" action="{{ route('admin.foundry.models.destroy', $model) }}" onsubmit="return confirm('Remove this model?');" style="margin-top:.6rem;">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn--ghost">Remove</button>
+                </form>
+            </div>
+        @empty
+            <p class="empty">No agent models configured yet.</p>
+        @endforelse
+
         @if (count($envHosts))
             <h2>From Environment (read-only)</h2>
             <div class="card">

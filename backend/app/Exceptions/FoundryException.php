@@ -101,6 +101,44 @@ class FoundryException extends RuntimeException
         return new self('foundry_rate_limited', 429, 'Foundry rate limit reached. Try again shortly.');
     }
 
+    public static function llmDisabled(): self
+    {
+        return new self(
+            'foundry_llm_disabled',
+            422,
+            'The Foundry diagram agent is not enabled.',
+        );
+    }
+
+    public static function llmModelRequired(): self
+    {
+        return new self('foundry_llm_model_required', 422, 'A model is required.');
+    }
+
+    public static function llmModelNotAllowed(string $detail = 'That model is not available for this Foundry host.'): self
+    {
+        return new self('foundry_llm_model_not_allowed', 422, $detail);
+    }
+
+    public static function llmContextTooLarge(): self
+    {
+        return new self(
+            'foundry_llm_context_too_large',
+            422,
+            'This diagram is too large to send to the agent. Reduce its size and try again.',
+        );
+    }
+
+    public static function llmRateLimited(): self
+    {
+        return new self('foundry_llm_rate_limited', 429, 'The Foundry model rate limit was reached. Try again shortly.');
+    }
+
+    public static function llmInvalidResponse(string $detail = 'The model returned an unexpected response.'): self
+    {
+        return new self('foundry_llm_invalid_response', 502, $detail);
+    }
+
     public static function upstreamUnavailable(string $detail = 'Foundry is currently unavailable.'): self
     {
         return new self('foundry_upstream_unavailable', 502, $detail);
@@ -120,6 +158,12 @@ class FoundryException extends RuntimeException
             'foundry_access_denied' => self::accessDenied($message ?: 'Foundry denied access to this resource.'),
             'foundry_resource_not_found' => self::resourceNotFound($message ?: 'The requested Foundry resource was not found.'),
             'foundry_rate_limited' => self::rateLimited(),
+            'foundry_llm_disabled' => self::llmDisabled(),
+            'foundry_llm_model_required' => self::llmModelRequired(),
+            'foundry_llm_model_not_allowed' => self::llmModelNotAllowed($message ?: 'That model is not available for this Foundry host.'),
+            'foundry_llm_context_too_large' => self::llmContextTooLarge(),
+            'foundry_llm_rate_limited' => self::llmRateLimited(),
+            'foundry_llm_invalid_response' => self::llmInvalidResponse($message ?: 'The model returned an unexpected response.'),
             default => self::upstreamUnavailable($message ?: 'Foundry is currently unavailable.'),
         };
     }

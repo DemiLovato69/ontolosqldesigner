@@ -62,6 +62,7 @@ const ICONS = {
     'chevron-down':  '<polyline points="6 9 12 15 18 9"/>',
     search:     '<circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>',
     refresh:    '<polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>',
+    sparkles:   '<path d="M12 3l1.6 4.4L18 9l-4.4 1.6L12 15l-1.6-4.4L6 9z"/><path d="M19 14l.7 2L22 16.5l-2.3.5L19 19l-.7-2L16 16.5l2.3-.5z"/>',
 }
 
 const path = computed(() => ICONS[props.name] ?? '')

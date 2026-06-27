@@ -126,6 +126,7 @@ Desktop token abilities currently include:
 - `presence:write`
 - `foundry:connect`
 - `foundry:read`
+- `foundry:llm`
 - `tokens:manage`
 
 The v1 API exposes owned, shared, and public/library diagrams; diagram CRUD; share/invite/visitor management; raw and chunked imports; export jobs and direct backup/migration/ontology exports; changelog entries; token management; Reverb auth/config endpoints; and the Foundry integration (host/connection management, OAuth and token connections, and read-only spaces/folders/datasets/files/ontologies scoped per ontology diagram).
@@ -150,6 +151,18 @@ Usage:
 - Import a dataset to create a Foundry-linked reference table. Linked tables show a refresh button in their title bar and can be re-synced individually, or all at once via **Sync linked**.
 
 The Foundry SDK (`@osdk/foundry`) runs in the `foundry-runtime` Node bridge invoked by Laravel; access tokens are passed over stdin and never logged.
+
+### Diagram Agent (Foundry AIP)
+
+Ontology diagrams have an AI assistant powered by Foundry's OpenAI-compatible LLM proxy (AIP). It reasons over the full diagram and proposes structured edits you review before applying.
+
+- **Open it** from the sparkles icon in the top toolbar (next to the Foundry globe).
+- **Selectable models:** admins allowlist Foundry AIP models at `/admin/foundry`; users pick one per session.
+- **Full-diagram context:** the agent receives all tables, columns, relationships, pipeline transforms, and ontology metadata (Vue Flow runtime/view-only state is stripped).
+- **Review then apply:** the model returns an allowlisted patch (add/update tables, columns, relationships, and ontology metadata; delete/rename only when you opt in). Nothing is applied or saved automatically — you apply the patch and then Save as usual.
+- **Shared, archivable sessions:** prompts and responses are stored (encrypted) and visible to diagram collaborators; sessions are archived, not deleted.
+
+Server-side only: calls use the requesting user's own Foundry token (`foundry:llm` ability), so collaborators never reuse the owner's access. Enabled by default (`FOUNDRY_LLM_ENABLED=true`); it still needs AIP enabled on the stack and at least one model configured in `/admin/foundry`. Set `FOUNDRY_LLM_ENABLED=false` to turn it off.
 
 ## Ontology Workflow
 
