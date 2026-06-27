@@ -91,8 +91,25 @@ export async function run({ operation, hostUrl, accessToken, params }) {
         throw coded("foundry_upstream_unavailable", `Unsupported Foundry operation: ${operation}`);
     }
   } catch (error) {
+    // Surface the underlying SDK error on stderr (no token is ever included) so
+    // the PHP layer can log it for diagnosis. stdout stays the JSON envelope.
+    try {
+      process.stderr.write(`[foundry-runtime] ${operation} failed: ${describeError(error)}\n`);
+    } catch { /* ignore */ }
     throw mapError(error);
   }
+}
+
+function describeError(error) {
+  const parts = [];
+  const status = error?.statusCode ?? error?.status ?? error?.response?.status;
+  if (status) parts.push(`status=${status}`);
+  if (error?.errorCode) parts.push(`errorCode=${error.errorCode}`);
+  if (error?.errorName) parts.push(`errorName=${error.errorName}`);
+  if (error?.errorInstanceId) parts.push(`errorInstanceId=${error.errorInstanceId}`);
+  if (error?.message) parts.push(`message=${error.message}`);
+  if (!parts.length) parts.push(String(error));
+  return parts.join(" ");
 }
 
 function requireParam(value, name) {
@@ -124,10 +141,15 @@ function mapError(error) {
   }
 
   const status = error?.statusCode ?? error?.status ?? error?.response?.status;
-  const detail = error?.errorName ?? error?.message ?? "Foundry request failed.";
+  const name = error?.errorName ?? error?.errorCode;
+  const message = error?.message ?? "Foundry request failed.";
+  const detail = name && !String(message).includes(name) ? `${name}: ${message}` : message;
 
   if (status === 401 || status === 403) {
-    return coded("foundry_access_denied", "Foundry denied access to this resource.");
+    return coded(
+      "foundry_access_denied",
+      `Foundry denied access${name ? ` (${name})` : ""}. The connection may be missing the required scopes/permissions.`,
+    );
   }
   if (status === 404) {
     return coded("foundry_resource_not_found", "The requested Foundry resource was not found.");
