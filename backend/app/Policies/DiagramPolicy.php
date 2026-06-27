@@ -62,6 +62,24 @@ class DiagramPolicy
         return $this->ownsDiagram($user, $diagram);
     }
 
+    /**
+     * View diagram agent sessions/messages and the model list. Agent history is
+     * shared across collaborators, so read access is sufficient.
+     */
+    public function viewAgent(User $user, Diagram $diagram): bool
+    {
+        return app(DiagramSharingService::class)->canRead($diagram, $user);
+    }
+
+    /**
+     * Start a session, send a prompt, or archive a session. Sending the full
+     * diagram to the model and producing edit patches requires write access.
+     */
+    public function useAgent(User $user, Diagram $diagram): bool
+    {
+        return app(DiagramSharingService::class)->canWrite($diagram, $user);
+    }
+
     private function ownsDiagram(User $user, Diagram $diagram): bool
     {
         return $user->id === $diagram->user_id;

@@ -135,4 +135,30 @@ return [
         'timeout' => max(5, (int) env('FOUNDRY_RUNTIME_TIMEOUT', 30)),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Diagram Agent (Foundry AIP LLM)
+    |--------------------------------------------------------------------------
+    |
+    | The diagram agent calls Foundry's OpenAI-compatible LLM proxy directly
+    | from Laravel using the requesting user's own Foundry access token. Models
+    | are admin-managed in the `foundry_llm_models` table (see /admin/foundry).
+    |
+    | The endpoint path is appended to the diagram's normalized Foundry host.
+    | Prompts and responses are persisted (encrypted) so agent sessions stay
+    | auditable for diagram collaborators. Set "store_prompts" to false to keep
+    | only metadata (model, usage, status) without prompt/response bodies.
+    |
+    */
+
+    'llm' => [
+        'enabled' => (bool) env('FOUNDRY_LLM_ENABLED', true),
+        'endpoint' => env('FOUNDRY_LLM_ENDPOINT', '/api/v2/llm/proxy/openai/v1/chat/completions'),
+        'timeout' => max(5, (int) env('FOUNDRY_LLM_TIMEOUT_SECONDS', 60)),
+        'max_context_bytes' => max(10000, (int) env('FOUNDRY_LLM_MAX_CONTEXT_BYTES', 250000)),
+        'max_output_tokens' => max(256, (int) env('FOUNDRY_LLM_MAX_OUTPUT_TOKENS', 4000)),
+        'temperature' => (float) env('FOUNDRY_LLM_TEMPERATURE', 0.1),
+        'store_prompts' => (bool) env('FOUNDRY_LLM_STORE_PROMPTS', true),
+    ],
+
 ];

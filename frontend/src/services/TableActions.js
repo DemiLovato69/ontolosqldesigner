@@ -742,6 +742,39 @@ export const TableActions = {
         return { pivotTableId, removedEdgeId: edge.id, addedEdgeIds: [edge1Id, edge2Id] }
     },
 
+    // Build a real (exportable) relationship edge between two existing rows.
+    // Handles are chosen from the rows' parent-table x positions. Returns the
+    // new edge id, or null if either row is missing.
+    addRelationshipEdge(schemaRef, sourceRowId, targetRowId, options = {}) {
+        const schema = schemaRef.value
+        const source = schema.find(el => el.id === sourceRowId && el.type === 'row')
+        const target = schema.find(el => el.id === targetRowId && el.type === 'row')
+        if (!source || !target) return null
+
+        const relationshipType = MARKER[options.cardinality] ? options.cardinality : 'many-to-one'
+        const color = options.color
+        const sourceTable = schema.find(el => el.id === source.parentNode)
+        const targetTable = schema.find(el => el.id === target.parentNode)
+        const sourceX = sourceTable?.position?.x ?? 0
+        const targetX = targetTable?.position?.x ?? 0
+        const rightward = targetX >= sourceX
+        const id = uniqueElementId(schema, 'edge')
+
+        schemaRef.value = [...schema, {
+            id,
+            source: sourceRowId,
+            target: targetRowId,
+            sourceHandle: rightward ? 'source-right' : 'source-left',
+            targetHandle: rightward ? 'target-left' : 'target-right',
+            type: 'chickenFoot',
+            updatable: true,
+            style: color ? { stroke: color } : undefined,
+            data: { relationshipType, color, linkKind: 'relationship', exportable: true, ...MARKER[relationshipType] },
+        }]
+
+        return id
+    },
+
     updateConnectionLineType(schemaRef, selectedEdgeRef, relationshipType) {
         const schema = schemaRef.value
         const edgeIndex = schema.findIndex(el => el.id === selectedEdgeRef.value.id)

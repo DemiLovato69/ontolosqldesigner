@@ -182,6 +182,30 @@ envs:
     value: CHANGE_ME
     type: SECRET
 
+  # Diagram agent (Foundry AIP OpenAI-compatible LLM proxy). Enabled by default;
+  # AIP must be enabled on the stack and at least one model added at /admin/foundry.
+  - key: FOUNDRY_LLM_ENABLED
+    scope: RUN_AND_BUILD_TIME
+    value: "true"
+  - key: FOUNDRY_LLM_ENDPOINT
+    scope: RUN_AND_BUILD_TIME
+    value: /api/v2/llm/proxy/openai/v1/chat/completions
+  - key: FOUNDRY_LLM_TIMEOUT_SECONDS
+    scope: RUN_AND_BUILD_TIME
+    value: "60"
+  - key: FOUNDRY_LLM_MAX_CONTEXT_BYTES
+    scope: RUN_AND_BUILD_TIME
+    value: "250000"
+  - key: FOUNDRY_LLM_MAX_OUTPUT_TOKENS
+    scope: RUN_AND_BUILD_TIME
+    value: "4000"
+  - key: FOUNDRY_LLM_TEMPERATURE
+    scope: RUN_AND_BUILD_TIME
+    value: "0.1"
+  - key: FOUNDRY_LLM_STORE_PROMPTS
+    scope: RUN_AND_BUILD_TIME
+    value: "true"
+
   - key: AWS_ACCESS_KEY_ID
     scope: RUN_AND_BUILD_TIME
     value: CHANGE_ME_SPACES_KEY

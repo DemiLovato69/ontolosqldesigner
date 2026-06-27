@@ -64,6 +64,9 @@ Route::prefix('/admin')->group(function () {
         Route::post('/foundry', [AdminFoundryController::class, 'store'])->name('admin.foundry.store');
         Route::patch('/foundry/{hostConfig}', [AdminFoundryController::class, 'update'])->name('admin.foundry.update');
         Route::delete('/foundry/{hostConfig}', [AdminFoundryController::class, 'destroy'])->name('admin.foundry.destroy');
+        Route::post('/foundry/models', [AdminFoundryController::class, 'storeModel'])->name('admin.foundry.models.store');
+        Route::patch('/foundry/models/{model}', [AdminFoundryController::class, 'updateModel'])->name('admin.foundry.models.update');
+        Route::delete('/foundry/models/{model}', [AdminFoundryController::class, 'destroyModel'])->name('admin.foundry.models.destroy');
 
         Route::post('/logout', [AdminController::class, 'logout'])->name('admin.logout');
     });

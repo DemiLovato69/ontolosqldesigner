@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Api\V1\Auth\OAuthController;
 use App\Http\Controllers\Api\V1\Auth\TokenController;
+use App\Http\Controllers\Api\V1\Foundry\DiagramAgentController;
 use App\Http\Controllers\Api\V1\Foundry\DiagramFoundryConfigController;
 use App\Http\Controllers\Api\V1\Foundry\FoundryConnectionController;
+use App\Http\Controllers\Api\V1\Foundry\FoundryLlmModelController;
 use App\Http\Controllers\Api\V1\Foundry\FoundryResourceController;
 use App\Http\Controllers\Api\V1\RealtimeConfigController;
 use App\Http\Controllers\DiagramChangelogController;
@@ -108,6 +110,20 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/{diagram}/foundry/datasets/{datasetRid}/files', [FoundryResourceController::class, 'files'])->middleware('abilities:desktop,foundry:read');
             Route::get('/{diagram}/foundry/datasets/{datasetRid}/file', [FoundryResourceController::class, 'file'])->middleware('abilities:desktop,foundry:read');
             Route::get('/{diagram}/foundry/search', [FoundryResourceController::class, 'search'])->middleware('abilities:desktop,foundry:read');
+
+            // Diagram agent (Foundry AIP LLM). Sessions are shared with diagram
+            // collaborators: read access views history; write access (foundry:llm)
+            // sends prompts and archives sessions.
+            Route::get('/{diagram}/foundry/llm/models', [FoundryLlmModelController::class, 'index'])->middleware('abilities:desktop,foundry:read');
+            Route::get('/{diagram}/foundry/agent/sessions', [DiagramAgentController::class, 'index'])->middleware('abilities:desktop,foundry:read');
+            Route::post('/{diagram}/foundry/agent/sessions', [DiagramAgentController::class, 'store'])->middleware('abilities:desktop,foundry:llm');
+            Route::get('/{diagram}/foundry/agent/sessions/{session}', [DiagramAgentController::class, 'show'])->middleware('abilities:desktop,foundry:read');
+            Route::patch('/{diagram}/foundry/agent/sessions/{session}', [DiagramAgentController::class, 'update'])->middleware('abilities:desktop,foundry:llm');
+            Route::post('/{diagram}/foundry/agent/sessions/{session}/archive', [DiagramAgentController::class, 'archive'])->middleware('abilities:desktop,foundry:llm');
+            Route::post('/{diagram}/foundry/agent/sessions/{session}/unarchive', [DiagramAgentController::class, 'unarchive'])->middleware('abilities:desktop,foundry:llm');
+            Route::post('/{diagram}/foundry/agent/sessions/{session}/messages', [DiagramAgentController::class, 'message'])->middleware(['abilities:desktop,foundry:llm', 'throttle:20,1']);
+            Route::post('/{diagram}/foundry/agent/sessions/{session}/messages/{message}/applied', [DiagramAgentController::class, 'markApplied'])->middleware('abilities:desktop,foundry:llm');
+            Route::delete('/{diagram}/foundry/agent/sessions/{session}/messages/{message}/applied', [DiagramAgentController::class, 'unmarkApplied'])->middleware('abilities:desktop,foundry:llm');
         });
     });
 });

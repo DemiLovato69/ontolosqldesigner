@@ -56,6 +56,7 @@
   - `docker exec php php artisan test tests/Feature/DiagramControllerTest.php tests/Feature/DiagramChangelogControllerTest.php`
   - `docker exec php php artisan test tests/Feature/AuthControllerTest.php tests/Feature/BroadcastChannelAuthTest.php`
   - `docker exec php php artisan test tests/Feature/AdminFoundryControllerTest.php tests/Feature/Api/V1/Foundry/FoundryApiTest.php tests/Unit/Services/Foundry/FoundryHostConfigServiceTest.php`
+  - `docker exec php php artisan test tests/Feature/Api/V1/Foundry/DiagramAgentApiTest.php tests/Unit/Services/Foundry/DiagramAgentPatchValidatorTest.php`
 - Maker runtime tests:
   - `npm test -- --runInBand` in `maker-runtime`
 - Foundry runtime tests (Node bridge; install deps first, deps are gitignored):
@@ -78,8 +79,8 @@
 - Desktop API auth uses Google OAuth + PKCE + one-time grant + expiring Sanctum bearer tokens under `/api/v1`.
 - Do not store bearer tokens in browser `localStorage` or convert the web SPA to bearer-token auth.
 - Native desktop clients should store bearer tokens in OS/native secure storage.
-- Desktop token abilities currently include `desktop`, `diagrams:read`, `diagrams:write`, `diagrams:delete`, `imports:write`, `exports:read`, `sharing:write`, `changelog:read`, `changelog:write`, `presence:read`, `presence:write`, `foundry:connect`, `foundry:read`, and `tokens:manage`.
-- Foundry abilities: `foundry:read` for status/browse/read endpoints, `foundry:connect` for OAuth/token connect and disconnect. SPA cookie sessions pass ability checks via Sanctum `TransientToken`, so `/api/v1/foundry/*` serves both web SPA and desktop clients.
+- Desktop token abilities currently include `desktop`, `diagrams:read`, `diagrams:write`, `diagrams:delete`, `imports:write`, `exports:read`, `sharing:write`, `changelog:read`, `changelog:write`, `presence:read`, `presence:write`, `foundry:connect`, `foundry:read`, `foundry:llm`, and `tokens:manage`.
+- Foundry abilities: `foundry:read` for status/browse/read endpoints, `foundry:connect` for OAuth/token connect and disconnect, `foundry:llm` for the diagram agent (create session, send prompt, archive). SPA cookie sessions pass ability checks via Sanctum `TransientToken`, so `/api/v1/foundry/*` serves both web SPA and desktop clients.
 - Foundry access tokens and OAuth client secrets are stored encrypted (Eloquent `encrypted` casts) and never returned to clients or logged. The Node bridge receives access tokens over stdin only.
 - Import permission requires write access.
 - Export permission requires read access.
@@ -225,6 +226,19 @@
 - Foundry `Resource.type` values are uppercase namespaced constants (e.g. `COMPASS_FOLDER`, `FOUNDRY_DATASET`); spaces are `ri.compass.main.folder.*` and `Folders.children` accepts a space RID.
 - Local dev: `foundry-runtime` is bind-mounted into the `php` service in `docker-compose.yml`; production bakes it at `/opt/ontolosql-foundry` via `docker/app/Dockerfile`. `config('foundry.runtime.script')` prefers the mounted path and falls back to `/opt`.
 
+### Diagram Agent (Foundry AIP LLM)
+- AI assistant for ontology diagrams using Foundry's OpenAI-compatible LLM proxy (`config('foundry.llm.endpoint')`, default `/api/v2/llm/proxy/openai/v1/chat/completions`), called directly by Laravel via the `Http` facade (not the Node bridge).
+- Calls use the requesting user's own Foundry token (`FoundryConnectionService::freshAccessToken`) resolved through the diagram host; collaborators never reuse the owner's token. Token is a bearer header, never logged.
+- Enabled by default (`FOUNDRY_LLM_ENABLED`, default true); still requires AIP on the stack and at least one allowlisted model. Models are an admin-managed allowlist in `foundry_llm_models` (managed at `/admin/foundry`); a null `host_url` means global. One default per host scope.
+- Abilities/policy: `foundry:read` + `DiagramPolicy::viewAgent` (canRead) to list/view sessions and models; `foundry:llm` + `DiagramPolicy::useAgent` (canWrite) to create sessions, send prompts, and archive.
+- Sessions are shared across diagram collaborators and archived (not deleted): `diagram_agent_sessions` (`status` active|archived) + `diagram_agent_messages` (encrypted `prompt`/`response`/`patch` casts; `usage`/`warnings`/`context_summary` JSON; `FOUNDRY_LLM_STORE_PROMPTS` toggles body storage).
+- Flow (`DiagramAgentService`): require ontology + host, resolve allowlisted model, build full-diagram context (`DiagramAgentContextBuilder`, strips Vue Flow runtime/view-only state), fetch user token, build prompt (`DiagramAgentPromptBuilder`), call `FoundryLlmClient`, validate the reply (`DiagramAgentPatchValidator`), persist the turn. Pre-flight failures (no connection, context too large, bad model) don't persist rows; LLM/parse failures persist a `failed` assistant message and rethrow.
+- Patch is allowlisted/additive by default; delete/rename require `allow_destructive`. The patch is applied client-side via `frontend/src/services/diagramAgentPatch.js` through the existing `snapshot`/`whisper('schema-sync')`/`isSaved`/`logAction('diagram_agent_applied')` path. Nothing is auto-saved.
+- Value types: rows link via `data.valueTypeId` (the value type's `id`) + a derived `data.sqlType` (`canvasTypeForValueType`); the adapter auto-creates a canonical value type (with `version`) when the model references one that doesn't exist yet.
+- Applied tracking: `diagram_agent_messages.applied_at`/`applied_by_user_id` persist that a patch was applied, so reopening the panel can't re-apply (duplicate). Endpoints `POST/DELETE .../messages/{message}/applied` set/clear it (`foundry:llm` + write). The panel offers a single-step Undo right after applying that reuses the diagram undo history (`useUndoHistory`) and clears the applied flag.
+- Config: `backend/config/foundry.php` `llm` block (`enabled` default true, `endpoint`, `timeout`, `max_context_bytes`, `max_output_tokens`, `temperature`, `store_prompts`); migrations `2026_06_27_000004..000007`.
+- Frontend: `frontend/src/components/Diagram/DiagramAgentPanel.vue` (right drawer opened from the toolbar sparkles button in `DiagramHeader.vue`); API client `frontend/src/services/DiagramAgent.js`.
+
 ## Export Rules
 - SQL export and Maker export must exclude visual-only/reference/pipeline elements:
   - reference tables
@@ -255,7 +269,9 @@
 - `maker-runtime/import-maker.mjs`: Maker `.mts` importer.
 - `backend/config/foundry.php`: Foundry hybrid-host/OAuth/token/runtime config (env-driven).
 - `backend/app/Services/Foundry/`: `FoundryHostConfigService` (host normalize + DB/env host resolution), `FoundryOAuthStateService` (PKCE state), `FoundryOAuthClient` (Foundry OAuth HTTP), `FoundryConnectionService` (per-user tokens, refresh, status), `FoundryRuntimeClient` (Node bridge), `FoundryPlatformService` (read ops scoped by diagram).
-- `backend/app/Http/Controllers/Api/V1/Foundry/`: `DiagramFoundryConfigController`, `FoundryConnectionController` (hosts/connections/oauth/token/status), `FoundryResourceController` (spaces/folders/ontologies/datasets/files/search).
+- `backend/app/Http/Controllers/Api/V1/Foundry/`: `DiagramFoundryConfigController`, `FoundryConnectionController` (hosts/connections/oauth/token/status), `FoundryResourceController` (spaces/folders/ontologies/datasets/files/search), `FoundryLlmModelController` (agent model list), `DiagramAgentController` (sessions/messages/archive).
+- Diagram agent services: `backend/app/Services/Foundry/DiagramAgentService.php` (orchestration), `FoundryLlmClient.php` (AIP LLM HTTP), `DiagramAgentContextBuilder.php`, `DiagramAgentPromptBuilder.php`, `DiagramAgentPatchValidator.php`. Models: `FoundryLlmModel`, `DiagramAgentSession`, `DiagramAgentMessage`.
+- `frontend/src/components/Diagram/DiagramAgentPanel.vue` + `frontend/src/services/DiagramAgent.js` (API) + `frontend/src/services/diagramAgentPatch.js` (client-side patch apply via `TableActions`).
 - `backend/app/Http/Controllers/AdminFoundryController.php` + `backend/resources/views/admin/foundry.blade.php`: admin host management at `/admin/foundry`.
 - `foundry-runtime/foundry.mjs` + `sdk.mjs`: Node dispatcher + `@osdk/foundry` adapter (commit `package-lock.json`; deps are gitignored).
 - `frontend/src/services/Foundry.js`, `frontend/src/services/foundryImport.js`: Foundry API client and dataset-schema→JSON Schema converter.
