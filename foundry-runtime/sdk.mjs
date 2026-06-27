@@ -50,13 +50,15 @@ function platformFetch() {
 
     if (!response.ok && (response.status === 406 || response.status === 415 || response.status >= 500)) {
       try {
-        const bodyText = (await response.clone().text()).slice(0, 400).replace(/\s+/g, " ");
-        const respHeaders = ["content-type", "server", "via", "www-authenticate", "x-akamai-request-id"]
+        const rawBody = (await response.clone().text()).replace(/\s+/g, " ");
+        // Surface a WAF reference id if the body is a block page.
+        const wafId = rawBody.match(/(waf[-_ ]?id|reference|request id)[^a-z0-9]{0,4}([a-z0-9-]{6,})/i)?.[2];
+        const respHeaders = ["content-type", "server", "via", "www-authenticate", "x-served-by", "x-cache", "retry-after", "x-akamai-request-id"]
           .map((k) => `${k}=${response.headers.get(k) ?? ""}`)
           .join(" ");
         const sentHeaders = [...headers.keys()].filter((k) => k.toLowerCase() !== "authorization").join(",");
         process.stderr.write(
-          `[foundry-runtime] HTTP ${response.status} "${response.statusText}" sent{${sentHeaders}} resp{${respHeaders}} body=${bodyText}\n`,
+          `[foundry-runtime] HTTP ${response.status} "${response.statusText}"${wafId ? ` waf-id=${wafId}` : ""} sent{${sentHeaders}} resp{${respHeaders}} body=${rawBody.slice(0, 1200)}\n`,
         );
       } catch { /* ignore diagnostic failures */ }
     }
